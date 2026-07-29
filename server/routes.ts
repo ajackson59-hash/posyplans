@@ -21,7 +21,7 @@ import { generateInviteToneAi, type InviteTone } from "./inviteAi";
 import { generateBudgetSuggestionAi } from "./budgetAi";
 import { isFuzzyNameMatch } from "./fuzzyMatch";
 import { generateInviteDesignConcepts, extractInspirationNotes } from "./inviteDesignAi";
-import { generateInviteIllustration } from "./illustrationGen";
+import { generateInviteIllustration, generateInviteIllustrationWithQualityGate } from "./illustrationGen";
 import { isValidInviteDesignConcept, type InviteDesignConcept, parseInviteDesignConcept, getFontPairing } from "@shared/inviteDesign";
 import { deriveThemeDna, isLinerPattern, isStampStyle } from "@shared/themeDna";
 import { computeEventDna, dnaSummaryForPrompt } from "@shared/eventDna";
@@ -924,7 +924,7 @@ export async function registerRoutes(
     }
     try {
       const aspectRatio = concept.layoutStyle === "banner" ? "16:9" : concept.layoutStyle === "full-bleed" ? "9:16" : "1:1";
-      const illustrationUrl = await generateInviteIllustration(concept, aspectRatio);
+      const illustrationUrl = await generateInviteIllustrationWithQualityGate(concept, aspectRatio);
       res.json({ illustrationUrl });
     } catch (err) {
       console.error("preview-concept illustration generation failed:", err);
@@ -950,7 +950,7 @@ export async function registerRoutes(
     const preGenerated = typeof req.body?.illustrationUrl === "string" ? req.body.illustrationUrl : null;
     try {
       const aspectRatio = concept.layoutStyle === "banner" ? "16:9" : concept.layoutStyle === "full-bleed" ? "9:16" : "1:1";
-      const illustrationUrl = preGenerated ?? (await generateInviteIllustration(concept, aspectRatio));
+      const illustrationUrl = preGenerated ?? (await generateInviteIllustrationWithQualityGate(concept, aspectRatio));
       // Coordinate the rest of the stationery suite from the concept's Theme
       // DNA so envelope/liner/stamp match by default. Pure derivation, no LLM
       // call. The host can override any of these later via the suite route.

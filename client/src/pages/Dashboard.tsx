@@ -1248,6 +1248,30 @@ export default function Dashboard() {
                           className="mb-3 h-40 w-full rounded-md object-cover"
                         />
                       )}
+                      {event.inviteIllustrationUrl && concept.layoutStyle === "full-bleed" && (
+                        <div className="relative min-h-[160px] overflow-hidden rounded-md" style={{ backgroundImage: `url(${event.inviteIllustrationUrl})`, backgroundSize: "cover", backgroundPosition: "center" }}>
+                          <img src={event.inviteIllustrationUrl} alt="" data-testid="img-invite-artwork" className="absolute inset-0 h-full w-full object-cover" />
+                        </div>
+                      )}
+                      {event.inviteIllustrationUrl && concept.layoutStyle === "split" && (
+                        <div className="flex min-h-[140px] rounded-md overflow-hidden">
+                          <div className="w-2/5" style={{ backgroundImage: `url(${event.inviteIllustrationUrl})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+                          <div className="flex-1 p-3">
+                            <p className="text-sm font-medium" style={conceptHeadingStyle(concept)}>
+                              {applyInviteTokens(event.inviteSubject, previewCtx)}
+                            </p>
+                            <p className="mt-1 whitespace-pre-wrap text-sm" style={conceptBodyStyle(concept)}>
+                              {applyInviteTokens(event.inviteMessage, previewCtx)}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      {event.inviteIllustrationUrl && concept.layoutStyle === "centered" && (
+                        <div className="flex flex-col items-center p-4">
+                          <img src={event.inviteIllustrationUrl} alt="" data-testid="img-invite-artwork" className="mb-3 h-20 w-20 rounded-full object-cover" />
+                        </div>
+                      )}
+                      {concept.layoutStyle !== "split" && (
                       <div
                         className="relative rounded-md p-3"
                         style={
@@ -1257,24 +1281,40 @@ export default function Dashboard() {
                                 backgroundSize: "cover",
                                 backgroundPosition: "center",
                               }
+                            : event.inviteIllustrationUrl && concept.layoutStyle === "full-bleed"
+                            ? { position: "relative", zIndex: 1, marginTop: "-60px" }
                             : undefined
                         }
                       >
                         <div
                           className={
-                            event.inviteIllustrationUrl && concept.layoutStyle === "backdrop"
-                              ? "rounded-md bg-white/85 p-2"
+                            event.inviteIllustrationUrl && (concept.layoutStyle === "backdrop" || concept.layoutStyle === "full-bleed")
+                              ? "rounded-md bg-white/90 p-2"
                               : undefined
                           }
                         >
-                          <p className="text-sm font-medium" style={conceptHeadingStyle(concept)}>
-                            {applyInviteTokens(event.inviteSubject, previewCtx)}
-                          </p>
-                          <p className="mt-1 whitespace-pre-wrap text-sm" style={conceptBodyStyle(concept)}>
-                            {applyInviteTokens(event.inviteMessage, previewCtx)}
-                          </p>
+                          {concept.layoutStyle === "centered" ? (
+                            <div className="text-center">
+                              <p className="text-sm font-medium" style={conceptHeadingStyle(concept)}>
+                                {applyInviteTokens(event.inviteSubject, previewCtx)}
+                              </p>
+                              <p className="mt-1 whitespace-pre-wrap text-sm" style={conceptBodyStyle(concept)}>
+                                {applyInviteTokens(event.inviteMessage, previewCtx)}
+                              </p>
+                            </div>
+                          ) : (
+                            <>
+                              <p className="text-sm font-medium" style={conceptHeadingStyle(concept)}>
+                                {applyInviteTokens(event.inviteSubject, previewCtx)}
+                              </p>
+                              <p className="mt-1 whitespace-pre-wrap text-sm" style={conceptBodyStyle(concept)}>
+                                {applyInviteTokens(event.inviteMessage, previewCtx)}
+                              </p>
+                            </>
+                          )}
                         </div>
                       </div>
+                      )}
                     </div>
                   );
                 }

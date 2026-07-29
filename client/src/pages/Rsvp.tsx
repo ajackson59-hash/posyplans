@@ -333,39 +333,103 @@ export default function Rsvp() {
                   className="h-48 w-full object-cover sm:h-56"
                 />
               )}
+              {event.inviteIllustrationUrl && concept.layoutStyle === "full-bleed" && (
+                <div className="relative min-h-[200px]" style={{ backgroundImage: `url(${event.inviteIllustrationUrl})`, backgroundSize: "cover", backgroundPosition: "center" }}>
+                  <img src={event.inviteIllustrationUrl} alt="" data-testid="img-rsvp-artwork" className="absolute inset-0 h-full w-full object-cover" />
+                </div>
+              )}
+              {event.inviteIllustrationUrl && concept.layoutStyle === "split" && (
+                <div className="flex min-h-[160px]">
+                  <div className="w-2/5" style={{ backgroundImage: `url(${event.inviteIllustrationUrl})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+                  <div className="flex-1 p-5">
+                    <p className="text-sm font-medium" style={conceptHeadingStyle(concept)}>
+                      {applyInviteTokens(event.inviteSubject, {
+                        guestName: selected?.name.split(" ")[0],
+                        eventName: event.eventName,
+                        eventDate: event.eventDate,
+                        location: event.location,
+                        hostNames: event.hostNames,
+                      })}
+                    </p>
+                    <p className="mt-1 whitespace-pre-wrap text-sm" style={conceptBodyStyle(concept)}>
+                      {applyInviteTokens(event.inviteMessage, {
+                        guestName: selected?.name.split(" ")[0],
+                        eventName: event.eventName,
+                        eventDate: event.eventDate,
+                        location: event.location,
+                        hostNames: event.hostNames,
+                      })}
+                    </p>
+                  </div>
+                </div>
+              )}
+              {event.inviteIllustrationUrl && concept.layoutStyle === "centered" && (
+                <div className="flex flex-col items-center p-6">
+                  <img src={event.inviteIllustrationUrl} alt="" data-testid="img-rsvp-artwork" className="mb-4 h-24 w-24 rounded-full object-cover" />
+                </div>
+              )}
+              {concept.layoutStyle !== "split" && (
               <CardContent
                 className="p-5"
                 style={
                   event.inviteIllustrationUrl && concept.layoutStyle === "backdrop"
                     ? { backgroundImage: `url(${event.inviteIllustrationUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+                    : event.inviteIllustrationUrl && concept.layoutStyle === "full-bleed"
+                    ? { position: "relative", zIndex: 1, marginTop: "-80px" }
                     : undefined
                 }
               >
                 <div
                   className={
-                    event.inviteIllustrationUrl && concept.layoutStyle === "backdrop" ? "rounded-md bg-white/85 p-3" : undefined
+                    event.inviteIllustrationUrl && (concept.layoutStyle === "backdrop" || concept.layoutStyle === "full-bleed") ? "rounded-md bg-white/90 p-3" : undefined
                   }
                 >
-                  <p className="text-sm font-medium" style={conceptHeadingStyle(concept)}>
-                    {applyInviteTokens(event.inviteSubject, {
-                      guestName: selected?.name.split(" ")[0],
-                      eventName: event.eventName,
-                      eventDate: event.eventDate,
-                      location: event.location,
-                      hostNames: event.hostNames,
-                    })}
-                  </p>
-                  <p className="mt-1 whitespace-pre-wrap text-sm" style={conceptBodyStyle(concept)}>
-                    {applyInviteTokens(event.inviteMessage, {
-                      guestName: selected?.name.split(" ")[0],
-                      eventName: event.eventName,
-                      eventDate: event.eventDate,
-                      location: event.location,
-                      hostNames: event.hostNames,
-                    })}
-                  </p>
+                  {concept.layoutStyle === "centered" ? (
+                    <div className="text-center">
+                      <p className="text-sm font-medium" style={conceptHeadingStyle(concept)}>
+                        {applyInviteTokens(event.inviteSubject, {
+                          guestName: selected?.name.split(" ")[0],
+                          eventName: event.eventName,
+                          eventDate: event.eventDate,
+                          location: event.location,
+                          hostNames: event.hostNames,
+                        })}
+                      </p>
+                      <p className="mt-1 whitespace-pre-wrap text-sm" style={conceptBodyStyle(concept)}>
+                        {applyInviteTokens(event.inviteMessage, {
+                          guestName: selected?.name.split(" ")[0],
+                          eventName: event.eventName,
+                          eventDate: event.eventDate,
+                          location: event.location,
+                          hostNames: event.hostNames,
+                        })}
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-sm font-medium" style={conceptHeadingStyle(concept)}>
+                        {applyInviteTokens(event.inviteSubject, {
+                          guestName: selected?.name.split(" ")[0],
+                          eventName: event.eventName,
+                          eventDate: event.eventDate,
+                          location: event.location,
+                          hostNames: event.hostNames,
+                        })}
+                      </p>
+                      <p className="mt-1 whitespace-pre-wrap text-sm" style={conceptBodyStyle(concept)}>
+                        {applyInviteTokens(event.inviteMessage, {
+                          guestName: selected?.name.split(" ")[0],
+                          eventName: event.eventName,
+                          eventDate: event.eventDate,
+                          location: event.location,
+                          hostNames: event.hostNames,
+                        })}
+                      </p>
+                    </>
+                  )}
                 </div>
               </CardContent>
+              )}
             </>
           ) : (
             <>

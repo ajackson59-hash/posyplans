@@ -32,7 +32,7 @@ import { generateMenuAi, type MenuSuggestion } from "./menuAi";
 import { generateShoppingAi, type ShoppingSuggestion } from "./shoppingAi";
 import { generateTimeline } from "@shared/timelineGenerator";
 import { generateInviteDesignConcepts } from "./inviteDesignAi";
-import { generateInviteIllustration } from "./illustrationGen";
+import { generateInviteIllustrationWithQualityGate } from "./illustrationGen";
 import { matchThemeLibrary } from "./themeLibrary";
 import { resolveGuestCount } from "@shared/guestCount";
 import {
@@ -61,7 +61,7 @@ export interface OrchestratorDeps {
   generateMenu: typeof generateMenuAi;
   generateShopping: typeof generateShoppingAi;
   generateInviteConcepts: typeof generateInviteDesignConcepts;
-  generateIllustration: typeof generateInviteIllustration;
+  generateIllustration: typeof generateInviteIllustrationWithQualityGate;
 }
 
 const defaultDeps: OrchestratorDeps = {
@@ -70,7 +70,7 @@ const defaultDeps: OrchestratorDeps = {
   generateMenu: generateMenuAi,
   generateShopping: generateShoppingAi,
   generateInviteConcepts: generateInviteDesignConcepts,
-  generateIllustration: generateInviteIllustration,
+  generateIllustration: generateInviteIllustrationWithQualityGate,
 };
 
 async function setDraftStage(eventId: number, stage: CoarseDraftStage): Promise<void> {

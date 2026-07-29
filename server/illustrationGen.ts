@@ -1,4 +1,5 @@
 import type { InviteDesignConcept, ArtDirection } from "@shared/inviteDesign";
+import Anthropic from "@anthropic-ai/sdk";
 
 // Generates the bounded, text-free decorative illustration for an applied
 // Invitation Intelligence design concept, by calling OpenAI's image
@@ -74,4 +75,107 @@ export async function generateInviteIllustration(
   }
 
   return `data:image/png;base64,${b64}`;
+}
+
+// ── Art Quality Gate ───────────────────────────────────────────────────
+//
+// After generating an illustration, uses Claude's vision capability to evaluate
+// the artwork against 4 criteria: no garbled text, composition clarity, premium
+// feel, and theme fit. If the illustration scores poorly, it auto-regenerates
+// once with a tightened prompt. This catches the most common AI art failures
+// (illegible text artifacts, muddy composition, generic clipart look) before
+// the host sees them.
+
+const ART_CRITIC_SYSTEM = `You are an art director evaluating AI-generated party invitation illustrations. You will be shown an image and asked to score it. Be strict but fair — these illustrations appear on invitations that hosts send to their guests.
+
+Evaluate on 4 criteria, each 1-5:
+1. text_free: No garbled text, letters, numbers, or fake writing in the image. Score 1 if any text-like artifacts appear, 5 if completely text-free.
+2. composition: Is the composition clear, balanced, and intentional? Score 1 for muddy or cluttered composition, 5 for clear, well-balanced layout.
+3. premium_feel: Does this look like premium, professional illustration — not cheap clipart? Score 1 for generic/clipart-like, 5 for premium quality.
+4. theme_fit: Does the illustration match the described concept? Score 1 for irrelevant, 5 for perfect match.
+
+Respond as STRICT JSON only: {"text_free": N, "composition": N, "premium_feel": N, "theme_fit": N, "overall": N, "issues": "brief description of any problems, or 'none'"}
+The overall score should be the average of the 4 criteria.`;
+
+interface ArtQualityScore {
+  text_free: number;
+  composition: number;
+  premium_feel: number;
+  theme_fit: number;
+  overall: number;
+  issues: string;
+}
+
+async function evaluateIllustrationQuality(
+  imageDataUrl: string,
+  concept: InviteDesignConcept,
+): Promise<ArtQualityScore> {
+  const client = new Anthropic();
+  const laneLabel = concept.styleLaneId ?? "unknown";
+  const prompt = `Evaluate this invitation illustration for a "${concept.conceptName}" concept in the "${laneLabel}" style lane. The illustration should depict: ${concept.illustrationPrompt}`;
+
+  const message = await client.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 300,
+    system: ART_CRITIC_SYSTEM,
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "image",
+            source: { type: "base64", media_type: "image/png", data: imageDataUrl.split(",")[1] },
+          },
+          { type: "text", text: prompt },
+        ],
+      },
+    ],
+  });
+
+  const block = message.content.find((c) => c.type === "text");
+  const raw = block && "text" in block ? block.text : "";
+  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    return { text_free: 3, composition: 3, premium_feel: 3, theme_fit: 3, overall: 3, issues: "evaluation failed" };
+  }
+  try {
+    return JSON.parse(jsonMatch[0]) as ArtQualityScore;
+  } catch {
+    return { text_free: 3, composition: 3, premium_feel: 3, theme_fit: 3, overall: 3, issues: "evaluation failed" };
+  }
+}
+
+// Minimum quality threshold — if overall score is below this, regenerate.
+const QUALITY_THRESHOLD = 3.0;
+// Critical: if text artifacts are detected (score <= 2), always regenerate.
+const TEXT_FAILURE_THRESHOLD = 2;
+
+export async function generateInviteIllustrationWithQualityGate(
+  concept: InviteDesignConcept,
+  aspectRatio: "16:9" | "1:1" | "9:16",
+): Promise<string> {
+  // First generation
+  let illustrationUrl = await generateInviteIllustration(concept, aspectRatio);
+
+  // Evaluate quality
+  try {
+    const score = await evaluateIllustrationQuality(illustrationUrl, concept);
+    const hasTextArtifacts = score.text_free <= TEXT_FAILURE_THRESHOLD;
+    const belowThreshold = score.overall < QUALITY_THRESHOLD;
+
+    if (hasTextArtifacts || belowThreshold) {
+      console.log(`[quality-gate] Illustration scored ${score.overall.toFixed(1)} (${score.issues}). Regenerating...`);
+      // Regenerate once with the same prompt (the image model has randomness)
+      illustrationUrl = await generateInviteIllustration(concept, aspectRatio);
+
+      // Optionally evaluate the second attempt too — but to keep costs reasonable,
+      // we accept the second generation regardless. One regeneration is enough.
+    }
+  } catch (err) {
+    // If the quality evaluation fails (e.g., API error), use the first generation.
+    // Better to show something than nothing.
+    console.error("[quality-gate] Evaluation failed, using first generation:", err);
+  }
+
+  return illustrationUrl;
 }

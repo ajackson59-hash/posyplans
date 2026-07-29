@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { FONT_PAIRINGS, BORDER_STYLES, LAYOUT_STYLES, STYLE_LANES, isValidInviteDesignConcept, type InviteDesignConcept, type ArtDirection } from "@shared/inviteDesign";
 import { CONCEPT_INFERABLE_AXES, DNA_AXES } from "@shared/eventDna";
+import { selectTopConcepts } from "./conceptQualityGate";
 
 // "Invitation Intelligence": given a free-text theme prompt, generates 4
 // distinct, coordinated design concepts (palette + font pairing + border +
@@ -39,7 +40,7 @@ Each of the 4 concepts MUST be assigned to a DIFFERENT style lane. The style lan
 
 ${STYLE_LANE_DESCRIPTIONS}
 
-${"```"}If the host specified preferred style lanes below, use those 4. Otherwise, choose the 4 lanes you think best fit the theme, but they MUST all be different — never assign two concepts to the same lane.${"```"}
+${"```"}If the host specified preferred style lanes below, generate exactly 4 concepts (one per preferred lane). Otherwise, use ALL 6 lanes — generate one concept per lane. The quality gate will automatically select the best 4.${"```"}
 
 Return exactly this shape:
 {
@@ -68,7 +69,7 @@ Return exactly this shape:
 }
 
 Rules:
-- Generate exactly 4 concepts, each in a DIFFERENT style lane. The 4 concepts should look like they came from 4 different designers — different font pairings, different border styles, different layout styles, different color moods, different illustration mediums.
+-       Generate exactly 6 concepts, each in a DIFFERENT style lane. You have 6 lanes available — use all 6. The 6 concepts should look like they came from 6 different designers — different font pairings, different border styles, different layout styles, different color moods, different illustration mediums. The quality gate will automatically select the best 4 to show the host.
 - styleLaneId MUST be one of the lane ids listed above, and each concept MUST use a different lane.
 - artDirection is REQUIRED for every concept — it's what gives the image generator real design intent.
 - illustrationPrompt: combine the artDirection fields into one flowing description for the image generator. It MUST explicitly instruct "no text, no letters, no words, no numbers" since this image has zero tolerance for garbled AI-generated text. Keep each prompt under 80 words.
@@ -195,7 +196,7 @@ export async function generateInviteDesignConcepts(params: {
 
   const message = await client.messages.create({
     model: "claude-sonnet-4-6",
-    max_tokens: 3000,
+    max_tokens: 4500,
     system: RESPONSE_SHAPE_INSTRUCTIONS,
     messages: [{ role: "user", content: userPrompt }],
   });
@@ -213,6 +214,12 @@ export async function generateInviteDesignConcepts(params: {
   const concepts = parsed.concepts.filter(isValidInviteDesignConcept);
   if (concepts.length === 0) {
     throw new Error("AI response did not contain any valid design concepts");
+  }
+  // Quality gate: if we generated more than 4 concepts (6 lanes),
+  // score and select the top 4. When the host specified preferred lanes
+  // (4 concepts), pass through as-is.
+  if (concepts.length > 4) {
+    return selectTopConcepts(concepts, params.themePrompt, 4);
   }
   return concepts;
 }

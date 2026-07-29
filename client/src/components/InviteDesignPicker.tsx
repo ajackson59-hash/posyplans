@@ -556,37 +556,122 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
           <Sparkles className="h-3.5 w-3.5" /> Invitation Intelligence
         </p>
 
-        {/* Full-size preview — exactly what guests see on the invite and RSVP page, not a small thumbnail. */}
+        {/* Full-size preview — exactly what guests see on the invite and RSVP page, not a small thumbnail.
+            Each layoutStyle renders differently, matching the concept card mockup. */}
         <div
           className="overflow-hidden rounded-md bg-background"
           style={conceptBorderStyle(appliedConcept)}
           data-testid="preview-applied-concept"
         >
-          {illustrationUrl && appliedConcept.layoutStyle === "banner" && (
-            <img
-              src={illustrationUrl}
-              alt=""
-              data-testid="img-applied-concept-preview"
-              className="h-40 w-full object-cover sm:h-48"
-            />
+          {appliedConcept.layoutStyle === "banner" && (
+            <>
+              {illustrationUrl && (
+                <img
+                  src={illustrationUrl}
+                  alt=""
+                  data-testid="img-applied-concept-preview"
+                  className="h-40 w-full object-cover sm:h-48"
+                />
+              )}
+              <div className="p-4">
+                <p className="text-sm font-semibold" style={conceptHeadingStyle(appliedConcept)} data-testid="text-applied-concept-subject">
+                  {previewSubject}
+                </p>
+                <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground" style={conceptBodyStyle(appliedConcept)} data-testid="text-applied-concept-message">
+                  {previewMessage}
+                </p>
+              </div>
+            </>
           )}
-          <div
-            className="p-4"
-            style={
-              illustrationUrl && appliedConcept.layoutStyle === "backdrop"
+          {appliedConcept.layoutStyle === "backdrop" && (
+            <div
+              className="p-4"
+              style={illustrationUrl
                 ? { backgroundImage: `url(${illustrationUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
-                : undefined
-            }
-          >
-            <div className={illustrationUrl && appliedConcept.layoutStyle === "backdrop" ? "rounded-md bg-white/85 p-3" : undefined}>
-              <p className="text-sm font-semibold" style={conceptHeadingStyle(appliedConcept)} data-testid="text-applied-concept-subject">
+                : undefined}
+            >
+              <div className="rounded-md bg-white/85 p-3">
+                <p className="text-sm font-semibold" style={conceptHeadingStyle(appliedConcept)} data-testid="text-applied-concept-subject">
+                  {previewSubject}
+                </p>
+                <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground" style={conceptBodyStyle(appliedConcept)} data-testid="text-applied-concept-message">
+                  {previewMessage}
+                </p>
+              </div>
+            </div>
+          )}
+          {appliedConcept.layoutStyle === "full-bleed" && (
+            <div
+              className="relative min-h-[200px]"
+              style={illustrationUrl
+                ? { backgroundImage: `url(${illustrationUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+                : undefined}
+            >
+              {illustrationUrl && (
+                <img
+                  src={illustrationUrl}
+                  alt=""
+                  data-testid="img-applied-concept-preview"
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              )}
+              <div className="relative flex min-h-[200px] flex-col justify-end p-4">
+                <div className="rounded-md bg-background/90 p-3">
+                  <p className="text-sm font-semibold" style={conceptHeadingStyle(appliedConcept)} data-testid="text-applied-concept-subject">
+                    {previewSubject}
+                  </p>
+                  <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground" style={conceptBodyStyle(appliedConcept)} data-testid="text-applied-concept-message">
+                    {previewMessage}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          {appliedConcept.layoutStyle === "split" && (
+            <div className="flex min-h-[160px]">
+              <div
+                className="w-2/5"
+                style={illustrationUrl
+                  ? { backgroundImage: `url(${illustrationUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+                  : { backgroundColor: appliedConcept.paletteColors[2] || appliedConcept.paletteColors[0] }}
+              >
+                {illustrationUrl && (
+                  <img
+                    src={illustrationUrl}
+                    alt=""
+                    data-testid="img-applied-concept-preview"
+                    className="h-full w-full object-cover"
+                  />
+                )}
+              </div>
+              <div className="flex-1 p-4">
+                <p className="text-sm font-semibold" style={conceptHeadingStyle(appliedConcept)} data-testid="text-applied-concept-subject">
+                  {previewSubject}
+                </p>
+                <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground" style={conceptBodyStyle(appliedConcept)} data-testid="text-applied-concept-message">
+                  {previewMessage}
+                </p>
+              </div>
+            </div>
+          )}
+          {appliedConcept.layoutStyle === "centered" && (
+            <div className="flex flex-col items-center p-6">
+              {illustrationUrl && (
+                <img
+                  src={illustrationUrl}
+                  alt=""
+                  data-testid="img-applied-concept-preview"
+                  className="mb-4 h-24 w-24 rounded-full object-cover"
+                />
+              )}
+              <p className="text-center text-sm font-semibold" style={conceptHeadingStyle(appliedConcept)} data-testid="text-applied-concept-subject">
                 {previewSubject}
               </p>
-              <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground" style={conceptBodyStyle(appliedConcept)} data-testid="text-applied-concept-message">
+              <p className="mt-1 whitespace-pre-wrap text-center text-xs text-muted-foreground" style={conceptBodyStyle(appliedConcept)} data-testid="text-applied-concept-message">
                 {previewMessage}
               </p>
             </div>
-          </div>
+          )}
         </div>
         <p className="mt-1.5 text-[11px] text-muted-foreground">
           <span className="font-medium text-foreground" data-testid="text-applied-concept-name">{appliedConcept.conceptName}</span> — this is exactly what guests will see.
@@ -826,8 +911,11 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
                     style={conceptBorderStyle(concept)}
                     data-testid={`preview-concept-${i}`}
                   >
-                    {concept.layoutStyle === "banner" &&
-                      (previewUrl ? (
+                    {/* Layout archetype rendering — each layoutStyle has its own
+                        visual structure. The placeholder art gradient stands in
+                        for the real AI illustration until the host previews or applies. */}
+                    {concept.layoutStyle === "banner" && (
+                      previewUrl ? (
                         <img
                           src={previewUrl}
                           alt=""
@@ -840,32 +928,109 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
                             {isPreviewing ? "Generating…" : "Illustration generates after you apply"}
                           </span>
                         </div>
-                      ))}
-                    <div
-                      className="p-3"
-                      style={
-                        concept.layoutStyle === "backdrop"
-                          ? previewUrl
+                      )
+                    )}
+                    {concept.layoutStyle === "full-bleed" && (
+                      <div
+                        className="relative min-h-[120px]"
+                        style={previewUrl
+                          ? { backgroundImage: `url(${previewUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+                          : placeholderArt}
+                        data-testid={previewUrl ? undefined : `art-placeholder-concept-${i}`}
+                      >
+                        <div className="flex min-h-[120px] flex-col justify-end p-3">
+                          <div className="rounded-md bg-background/90 p-2">
+                            <p className="truncate text-sm font-semibold" style={conceptHeadingStyle(concept)} data-testid={`text-concept-preview-subject-${i}`}>
+                              {previewSubjectDraft}
+                            </p>
+                            <p className="mt-1 line-clamp-2 whitespace-pre-wrap text-xs text-muted-foreground" style={conceptBodyStyle(concept)}>
+                              {previewMessageDraft}
+                            </p>
+                          </div>
+                          {!previewUrl && (
+                            <span className="mt-1.5 self-center rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                              {isPreviewing ? "Generating…" : "Illustration generates after you apply"}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {concept.layoutStyle === "split" && (
+                      <div className="flex min-h-[100px]">
+                        <div
+                          className="flex w-2/5 items-center justify-center"
+                          style={previewUrl
                             ? { backgroundImage: `url(${previewUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
-                            : placeholderArt
-                          : undefined
-                      }
-                      data-testid={concept.layoutStyle === "backdrop" && !previewUrl ? `art-placeholder-concept-${i}` : undefined}
-                    >
-                      <div className={concept.layoutStyle === "backdrop" ? "rounded-md bg-background/85 p-2" : undefined}>
-                        <p className="truncate text-sm font-semibold" style={conceptHeadingStyle(concept)} data-testid={`text-concept-preview-subject-${i}`}>
+                            : placeholderArt}
+                          data-testid={previewUrl ? `img-concept-preview-${i}` : `art-placeholder-concept-${i}`}
+                        >
+                          {!previewUrl && (
+                            <span className="rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                              {isPreviewing ? "Generating…" : "Art"}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex-1 p-3">
+                          <p className="truncate text-sm font-semibold" style={conceptHeadingStyle(concept)} data-testid={`text-concept-preview-subject-${i}`}>
+                            {previewSubjectDraft}
+                          </p>
+                          <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-xs text-muted-foreground" style={conceptBodyStyle(concept)}>
+                            {previewMessageDraft}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {concept.layoutStyle === "centered" && (
+                      <div className="flex flex-col items-center p-4">
+                        <div
+                          className="mb-3 flex h-16 w-16 items-center justify-center rounded-full"
+                          style={previewUrl
+                            ? { backgroundImage: `url(${previewUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+                            : placeholderArt}
+                          data-testid={previewUrl ? `img-concept-preview-${i}` : `art-placeholder-concept-${i}`}
+                        >
+                          {!previewUrl && (
+                            <span className="text-[9px] font-medium text-muted-foreground">
+                              {isPreviewing ? "..." : "Art"}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-center text-sm font-semibold" style={conceptHeadingStyle(concept)} data-testid={`text-concept-preview-subject-${i}`}>
                           {previewSubjectDraft}
                         </p>
-                        <p className="mt-1 line-clamp-2 whitespace-pre-wrap text-xs text-muted-foreground" style={conceptBodyStyle(concept)}>
+                        <p className="mt-1 line-clamp-2 whitespace-pre-wrap text-center text-xs text-muted-foreground" style={conceptBodyStyle(concept)}>
                           {previewMessageDraft}
                         </p>
+                        {!previewUrl && (
+                          <span className="mt-2 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                            {isPreviewing ? "Generating…" : "Illustration generates after you apply"}
+                          </span>
+                        )}
                       </div>
-                      {concept.layoutStyle === "backdrop" && !previewUrl && (
-                        <span className="mt-1.5 inline-block rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                          {isPreviewing ? "Generating…" : "Illustration generates after you apply"}
-                        </span>
-                      )}
-                    </div>
+                    )}
+                    {concept.layoutStyle === "backdrop" && (
+                      <div
+                        className="p-3"
+                        style={previewUrl
+                          ? { backgroundImage: `url(${previewUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+                          : placeholderArt}
+                        data-testid={previewUrl ? undefined : `art-placeholder-concept-${i}`}
+                      >
+                        <div className="rounded-md bg-background/85 p-2">
+                          <p className="truncate text-sm font-semibold" style={conceptHeadingStyle(concept)} data-testid={`text-concept-preview-subject-${i}`}>
+                            {previewSubjectDraft}
+                          </p>
+                          <p className="mt-1 line-clamp-2 whitespace-pre-wrap text-xs text-muted-foreground" style={conceptBodyStyle(concept)}>
+                            {previewMessageDraft}
+                          </p>
+                        </div>
+                        {!previewUrl && (
+                          <span className="mt-1.5 inline-block rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                            {isPreviewing ? "Generating…" : "Illustration generates after you apply"}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="mt-2 flex items-center gap-1.5" data-testid={`row-concept-palette-${i}`}>
