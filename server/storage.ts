@@ -74,6 +74,7 @@ export interface IStorage {
   getEventById(eventId: number): Promise<Event | undefined>;
   updateEventById(eventId: number, data: Partial<Event>): Promise<Event | undefined>;
   setEventCapturedEmail(eventId: number, email: string): Promise<Event | undefined>;
+  getEventsByEmail(email: string): Promise<Event[]>;
 
   getLatestGenerationForEvent(eventId: number): Promise<MasterPlannerGeneration | undefined>;
   getGeneration(id: number): Promise<MasterPlannerGeneration | undefined>;
@@ -314,6 +315,16 @@ export class DatabaseStorage implements IStorage {
       .where(eq(events.id, eventId))
       .returning();
     return rows[0];
+  }
+
+  async getEventsByEmail(email: string): Promise<Event[]> {
+    const normalized = email.trim().toLowerCase();
+    const rows = await db
+      .select()
+      .from(events)
+      .where(eq(events.capturedEmail, normalized));
+    // Most recent first
+    return rows.sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
   }
 
   async getLatestGenerationForEvent(eventId: number): Promise<MasterPlannerGeneration | undefined> {

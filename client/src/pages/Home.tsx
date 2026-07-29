@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { SiInstagram, SiTiktok, SiFacebook, SiX } from "react-icons/si";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, apiRequestJson } from "@/lib/queryClient";
 import { Wordmark, Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -102,6 +102,7 @@ export default function Home() {
   const [eventDate, setEventDate] = useState("");
   const [location, setLocationField] = useState(handoff?.location || "");
   const [hostNames, setHostNames] = useState(handoff?.hostNames || "");
+  const [hostEmail, setHostEmail] = useState("");
 
   useEffect(() => {
     if (handoff) {
@@ -131,12 +132,27 @@ export default function Home() {
         inviteMessage: defaultMessage,
         budgetTotal: handoff?.budget ? Number(handoff.budget) : 0,
       });
-      return (await res.json()) as EventRecord;
+      const event = (await res.json()) as EventRecord;
+      // Capture email immediately after creation if the host provided one,
+      // so they can recover access later via /recover
+      if (hostEmail.trim()) {
+        try {
+          await apiRequestJson("POST", `/api/events/${event.id}/email-capture`, {
+            email: hostEmail,
+            ownerToken: event.ownerToken,
+          });
+        } catch {
+          // Non-blocking — the event is already created
+        }
+      }
+      return event;
     },
     onSuccess: (event) => {
       toast({
         title: "Event created",
-        description: "Bookmark your dashboard link — it's the only way back in.",
+        description: hostEmail.trim()
+          ? "Bookmark your dashboard link — or use your email to find it later at posyplans.com/recover"
+          : "Bookmark your dashboard link — it's the only way back in.",
       });
       navigate(`/dashboard/${event.ownerToken}`);
     },
@@ -173,6 +189,13 @@ export default function Home() {
               data-testid="link-nav-pricing"
             >
               Pricing
+            </Link>
+            <Link
+              href="/recover"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              data-testid="link-nav-recover"
+            >
+              Find my event
             </Link>
           </nav>
           <Button
@@ -398,6 +421,21 @@ export default function Home() {
                           value={hostNames}
                           onChange={(e) => setHostNames(e.target.value)}
                         />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="hostEmail">Your email (optional)</Label>
+                        <Input
+                          id="hostEmail"
+                          type="email"
+                          data-testid="input-host-email"
+                          placeholder="you@example.com"
+                          value={hostEmail}
+                          onChange={(e) => setHostEmail(e.target.value)}
+                        />
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          We'll use this to help you find your event if you lose the link.
+                        </p>
                       </div>
 
                       <Button

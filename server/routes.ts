@@ -79,6 +79,55 @@ export async function registerRoutes(
     res.json(event);
   });
 
+  // Email capture — stamps the host's email onto the event so they can
+  // recover access later. The client (DraftGenerating.tsx) already calls
+  // this route, but it was missing on the server, causing captured_email to
+  // stay NULL on every event. Requires the ownerToken to verify ownership.
+  app.post("/api/events/:eventId/email-capture", async (req, res) => {
+    const eventId = Number(req.params.eventId);
+    if (!Number.isFinite(eventId) || eventId <= 0) {
+      return res.status(400).json({ error: "Invalid event ID" });
+    }
+    const { email, ownerToken } = req.body as { email?: string; ownerToken?: string };
+    if (!email || !email.trim()) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+    if (!ownerToken) {
+      return res.status(400).json({ error: "Owner token is required" });
+    }
+    // Verify ownership before stamping the email
+    const event = await storage.getEventById(eventId);
+    if (!event || event.ownerToken !== ownerToken) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+    await storage.setEventCapturedEmail(eventId, email);
+    // Return the updated event so the client can refetch entitlements
+    const updated = await storage.getEventById(eventId);
+    res.json(updated);
+  });
+
+  // Email-based event lookup — lets a returning host find their events by
+  // entering the email they used. Returns only the minimal info needed to
+  // redirect to the dashboard (no sensitive guest/budget data).
+  app.post("/api/events/lookup", async (req, res) => {
+    const { email } = req.body as { email?: string };
+    if (!email || !email.trim()) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+    const normalized = email.trim().toLowerCase();
+    const found = await storage.getEventsByEmail(normalized);
+    // Return only the fields needed for recovery — ownerToken, event name,
+    // date, and type. No guest lists, budgets, or other sensitive data.
+    const safe = found.map((e) => ({
+      ownerToken: e.ownerToken,
+      eventName: e.eventName,
+      eventType: e.eventType,
+      eventDate: e.eventDate,
+      createdAt: e.createdAt,
+    }));
+    res.json({ events: safe });
+  });
+
   app.get("/api/events/owner/:ownerToken", async (req, res) => {
     const event = await storage.getEventByOwnerToken(req.params.ownerToken);
     if (!event) return res.status(404).json({ error: "Event not found" });

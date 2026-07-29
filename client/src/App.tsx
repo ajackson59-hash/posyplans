@@ -17,6 +17,7 @@ import Terms from "@/pages/Terms";
 import Refund from "@/pages/Refund";
 import SmsTerms from "@/pages/SmsTerms";
 import EventLanding from "@/pages/EventLanding";
+import Recover from "@/pages/Recover";
 import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 
 function AppRouter() {
@@ -31,6 +32,7 @@ function AppRouter() {
       <Route path="/rsvp/:shareSlug" component={Rsvp} />
       <Route path="/pricing" component={Pricing} />
       <Route path="/checkout/success" component={CheckoutSuccess} />
+      <Route path="/recover" component={Recover} />
       <Route path="/privacy" component={Privacy} />
       <Route path="/terms" component={Terms} />
       <Route path="/refund-policy" component={Refund} />
