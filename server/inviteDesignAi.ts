@@ -155,7 +155,15 @@ The illustrationPrompt is the most important field — it directly controls the 
 
 ## RULES
 
-- CRITICAL — SUBJECT SELECTION: Read each lane's "Subject guidance" carefully. Choose abstract, design-forward subjects — NOT literal interpretations of the theme. A "rustic farmhouse" theme should use botanical elements (wildflowers, eucalyptus, wheat stalks) — NEVER farm animals (no roosters, pigs, cows). A "birthday party" theme should use abstract festive elements (confetti shapes, geometric garlands) — NEVER literal birthday cakes with candles. Think like a premium stationery designer, not someone searching stock photos.
+- CRITICAL — SUBJECT SELECTION: First classify the theme, then choose subjects accordingly. Read each lane's "Subject guidance" carefully for how to render, but WHAT to render depends on theme type:
+
+  A) SUBJECT-DRIVEN THEMES (the theme names a concrete subject that IS the party): construction, dinosaur, princess, superhero, unicorn, mermaid, space/astronaut, pirate, dragon, cars/trucks, safari/jungle, under-the-sea, farm (for kids), fairy, ninja, sports (basketball/soccer/etc.), music/rock, movie/character themes, holiday themes (halloween, christmas), etc. For these, the subject IS the point — hosts and guests EXPECT to see that subject prominently illustrated. Feature the subject in at least 3 of the 4 shown concepts, rendered in each lane's style (a construction party gets: watercolor bulldozer for editorial-premium, cartoon dump truck for playful-illustrated, bold flat hard-hat icon for bold-graphic, storybook excavator scene for storybook-whimsical, single minimal orange cone for minimal-modern, hand-drawn wooden-toy truck for handcrafted-rustic). NEVER default to generic confetti, geometric shapes, or botanicals when the theme names a specific subject. NEVER produce a concept that a host would look at and think "that has nothing to do with my theme".
+
+  B) AESTHETIC/MOOD THEMES (the theme names a vibe, era, or aesthetic — not a subject): rustic farmhouse, minimalist beach, moody garden, tropical, boho, industrial, art deco, mid-century, coastal, Tuscan, garden party (adult), cocktail party, dinner party, holiday-mood (fall, winter), etc. For these, use abstract/botanical/geometric design-forward interpretations. Rustic farmhouse → wildflowers, eucalyptus, wheat stalks (NEVER roosters, pigs, cows, barns). Minimalist beach → abstract wave lines, single shell, sand-tone gradients (NEVER literal sand castles or beach umbrellas). Garden party → botanical florals (NEVER literal picnic tables). Think like a premium stationery designer.
+
+  C) INSPIRATION IMAGES TAKE PRECEDENCE: If the host uploaded inspiration images and the extracted notes mention concrete subjects (hard hats, machinery, dinosaurs, specific characters, etc.), those subjects are the source of truth — feature them, don't override them with abstract shapes. The host chose those images to show you exactly what they want. Ignore the "aesthetic themes stay abstract" guidance when inspiration images provide concrete subject direction.
+
+  When in doubt: would a designer at Minted, Papier, or Paperless Post feature this subject on an invitation for this theme? If yes, feature it. If the theme is a kid's party naming a specific subject (construction, dinosaur, etc.), the answer is always yes.
 - Generate exactly 6 concepts, each in a DIFFERENT style lane. Use all 6 lanes. The quality gate will select the best 4 to show the host.
 - Each concept should look like it came from a different professional designer — different font pairings, different border styles, different layout styles, different color moods, different illustration mediums.
 - styleLaneId MUST be one of the lane ids listed above, and each concept MUST use a different lane.
@@ -187,12 +195,16 @@ function parseImageDataUrl(dataUrl: string): { mediaType: VisionMediaType; data:
   return { mediaType, data: match[2] };
 }
 
-const INSPIRATION_EXTRACTION_SYSTEM = `You are a design analyst. You are shown 1-3 inspiration images a party host uploaded to steer the mood of their invitation. Describe ONLY the abstract, reusable style attributes across the images in one or two compact sentences: overall mood/tone, color palette, key motifs or textures, and style descriptors (e.g. "modern minimalist", "whimsical hand-drawn").
+const INSPIRATION_EXTRACTION_SYSTEM = `You are a design analyst. You are shown 1-3 inspiration images a party host uploaded to steer the direction of their invitation. Describe the shared visual direction in two compact sentences covering BOTH:
+
+1) Subject matter — what generic objects, creatures, or scenes appear across the images (e.g. "construction vehicles and hard hats", "dinosaurs and prehistoric plants", "floral wreaths and wildflowers", "abstract geometric shapes"). Be concrete about generic subject types — the host chose these images to show you WHAT they want illustrated.
+2) Style attributes — mood/tone, color palette, textures, and style descriptors (e.g. "cartoon-style, playful, primary colors", "delicate watercolor, muted earth tones").
 
 Critical rules:
-- Extract abstract style direction ONLY. Do NOT identify, copy, or describe any specific character, mascot, logo, brand, celebrity, or another party's exact invitation design/artwork.
-- Never suggest reproducing a recognizable copyrighted or trademarked element. If the image contains such elements, describe only the generic style around them (colors, composition, texture, mood).
-- Output plain prose, no lists, no preamble, under 45 words.`;
+- DO extract generic subject types (hard hats, dinosaurs, flowers, mountains, animals-by-generic-category). These guide what appears in the illustration.
+- Do NOT identify, name, or suggest copying any specific character, mascot, logo, brand, celebrity, or another party's exact invitation design/artwork. Generic "a cartoon dinosaur" is fine; naming a specific character or franchise is not.
+- Never suggest reproducing a recognizable copyrighted or trademarked element. If the image contains such elements, describe only the generic subject category and style (colors, composition, texture, mood).
+- Output plain prose, no lists, no preamble, under 60 words.`;
 
 // Makes ONE vision LLM call (reusing the same Anthropic client as concept
 // generation) to distill uploaded inspiration images into a short, abstract
@@ -277,7 +289,7 @@ export async function generateInviteDesignConcepts(params: {
     params.themeName && `Existing app theme on file: ${params.themeName}`,
     params.dnaSummary && `Host's established style so far: ${params.dnaSummary}`,
     params.formatGuidance && `Guest count and scale guidance: ${params.formatGuidance}`,
-    params.inspirationNotes && `Style direction from the host's inspiration images (use for mood/palette/style only; do NOT copy any specific character, logo, brand, or another party's exact design): ${params.inspirationNotes}`,
+    params.inspirationNotes && `Direction from the host's inspiration images — use BOTH the generic subject matter AND the style/mood/palette. The host chose these images to show you what they want illustrated. Do NOT copy any specific named character, logo, brand, or another party's exact design, but generic subjects (hard hats, dinosaurs, wildflowers, etc.) SHOULD be featured in the concepts: ${params.inspirationNotes}`,
     preferredStyleLanesLine,
     previousConceptsSummary,
     params.feedback && `Host's refinement feedback: "${params.feedback}"`,
