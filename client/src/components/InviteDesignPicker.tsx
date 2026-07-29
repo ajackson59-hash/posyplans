@@ -1185,7 +1185,7 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
                   size="sm"
                   onClick={() => {
                     const liked = concepts.filter((_, i) => likedConcepts.has(i));
-                    const feedback = `I love "${liked.map(c => c.conceptName).join(" and “")}" — show me more designs like these.`;
+                    const feedback = `I love "${liked.map(c => c.conceptName).join(" and ")}" — show me more designs like these.`;
                     refineConcepts.mutate(feedback);
                     setLikedConcepts(new Set());
                     setDislikedConcepts(new Set());

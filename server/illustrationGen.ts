@@ -59,6 +59,7 @@ export function buildIllustrationPrompt(concept: InviteDesignConcept): string {
     `${ad.illustrationMedium} illustration`,
     ad.subjectFocus,
     `${ad.compositionType}`,
+    `with ${ad.negativeSpace} negative space`,
     `${ad.colorTreatment}`,
     `${ad.texture}`,
     styleRef,

@@ -491,10 +491,7 @@ export default function Rsvp() {
               </div>
             )}
             {concept && event.inviteIllustrationUrl && concept.layoutStyle === "split" && (
-              <div className="flex">
-                <div className="w-1/3" style={{ backgroundImage: `url(${event.inviteIllustrationUrl})`, backgroundSize: "cover", backgroundPosition: "center" }} />
-                <div className="w-2/3" />
-              </div>
+              <img src={event.inviteIllustrationUrl} alt="" data-testid="img-thank-you-artwork" className="h-24 w-full object-cover" />
             )}
             <CardContent
               className="p-6 text-center"

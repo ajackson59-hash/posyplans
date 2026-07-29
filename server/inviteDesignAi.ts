@@ -40,7 +40,7 @@ const FEW_SHOT_EXAMPLES = `Here are two examples of the quality bar. Your output
 Example 1 (editorial-premium lane, theme "enchanted garden tea party"):
 {
   "conceptName": "Twilight Bloom",
-  "description": "A moody, romantic palette of deep plum and brushed gold with a single watercolor iris — feels like a Vogue garden party spread.",
+  "description": "A moody, romantic palette of deep plum and brushed gold with a single watercolor iris — feels like a luxury garden party spread.",
   "paletteColors": ["#4A2C3D", "#C9A961", "#E8D5C4", "#2D1B2E"],
   "fontPairingId": "editorial-serif",
   "borderStyle": "thin-frame",
@@ -81,7 +81,7 @@ Example 2 (bold-graphic lane, theme "retro arcade birthday"):
   "dnaHints": { "elegantCasual": -0.8, "traditionalModern": 0.7, "indoorOutdoor": -0.5, "formalPlayful": -0.7, "diyCatered": -0.3, "familyCorporate": -0.4 }
 }`;
 
-const RESPONSE_SHAPE_INSTRUCTIONS = `You are a senior art director at a premium invitation studio (think Paperless Post's design team). A non-professional host has described their party theme, and you need to produce complete, coordinated invitation design concepts that look like they came from a professional stationery designer — not generic AI output.
+const RESPONSE_SHAPE_INSTRUCTIONS = `You are a senior art director at a premium invitation studio. A non-professional host has described their party theme, and you need to produce complete, coordinated invitation design concepts that look like they came from a professional stationery designer — not generic AI output.
 
 Your output must be STRICT JSON only — no markdown fences, no commentary.
 
@@ -91,7 +91,7 @@ Each concept MUST be assigned to a DIFFERENT style lane. The lanes are:
 
 ${STYLE_LANE_DESCRIPTIONS}
 
-${"```"}If the host specified preferred style lanes below, generate exactly 4 concepts (one per preferred lane). Otherwise, use ALL 6 lanes — generate one concept per lane. The quality gate will automatically select the best 4.${"```"}
+${"```"}Always generate 6 concepts, one per style lane. If the host specified preferred style lanes below, include those lanes first, then fill remaining concepts with complementary distinct lanes. The quality gate will automatically select the best 4 to show the host.${"```"}
 
 ## QUALITY BAR
 
