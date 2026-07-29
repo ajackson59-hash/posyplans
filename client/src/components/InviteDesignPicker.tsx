@@ -1,0 +1,1006 @@
+import { useRef, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequest, apiRequestJson, queryClient } from "@/lib/queryClient";
+import { readImageFileAsDataUrl } from "@/lib/imageUpload";
+import {
+  type InviteDesignConcept,
+  parseInviteDesignConcept,
+  getFontPairing,
+  conceptHeadingStyle,
+  conceptBodyStyle,
+  conceptBorderStyle,
+  STYLE_LANES,
+  getStyleLane,
+} from "@shared/inviteDesign";
+import {
+  type LinerPattern,
+  type StampStyle,
+  LINER_PATTERNS,
+  STAMP_STYLES,
+  deriveThemeDna,
+  linerPatternStyle,
+  stampGlyph,
+  isLinerPattern,
+  isStampStyle,
+} from "@shared/themeDna";
+import type { EventDnaProfile } from "@shared/eventDna";
+import type { EventRecord } from "@/lib/types";
+import { applyInviteTokens } from "@shared/inviteTokens";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import PaletteEditor from "@/components/PaletteEditor";
+import { useToast } from "@/hooks/use-toast";
+import { Sparkles, Wand2, RotateCcw, X, Check, ImagePlus } from "lucide-react";
+
+interface InviteDesignPickerProps {
+  ownerToken: string;
+  event: EventRecord;
+}
+
+// One-tap refinement directions for the "Not quite right?" section — clicking
+// one immediately refines the current 4 concepts in that direction.
+const REFINE_CHIPS = [
+  "More elegant",
+  "More playful",
+  "Less busy",
+  "Keep this palette, change the artwork",
+  "Make 4 variations of this one",
+] as const;
+
+export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPickerProps) {
+  const { toast } = useToast();
+  const [themePromptDraft, setThemePromptDraft] = useState(event.themeName || "");
+  const [concepts, setConcepts] = useState<InviteDesignConcept[] | null>(null);
+  const [browsing, setBrowsing] = useState(false);
+  const [appliedConceptIndex, setAppliedConceptIndex] = useState<number | null>(null);
+  // Real AI artwork a host has previewed per concept card (keyed by index),
+  // so they can see the actual illustration before committing to one.
+  const [previewUrls, setPreviewUrls] = useState<Record<number, string>>({});
+  const [previewingIndexes, setPreviewingIndexes] = useState<Set<number>>(new Set());
+  const [generatingAll, setGeneratingAll] = useState(false);
+  const [refineFeedback, setRefineFeedback] = useState("");
+  // Selected vibe/style lanes — when the host picks exactly 4, concepts are
+  // generated in those lanes. Empty array = let the AI choose 4 lanes.
+  const [selectedStyleLanes, setSelectedStyleLanes] = useState<string[]>([]);
+  // Optional inspiration images (data URLs, up to 3) the host uploads to steer
+  // the mood/style of generated concepts, plus the short style summary the
+  // server extracts from them.
+  const [inspirationImages, setInspirationImages] = useState<string[]>([]);
+  const [inspirationNotes, setInspirationNotes] = useState<string | null>(null);
+  const artworkInputRef = useRef<HTMLInputElement>(null);
+  const inspirationInputRef = useRef<HTMLInputElement>(null);
+  const customDesignInputRef = useRef<HTMLInputElement>(null);
+
+  const appliedConcept = parseInviteDesignConcept(event.inviteDesignConceptJson);
+
+  const invalidateEvent = () => {
+    queryClient.invalidateQueries({ queryKey: [`/api/events/owner/${ownerToken}`] });
+  };
+
+  // Event DNA: a quiet, read-only style profile inferred from menu/budget/event-type
+  // choices already made elsewhere. Shown as context, never as an editable form —
+  // it exists to explain why generated concepts lean a certain way, not to be tuned.
+  const dnaQuery = useQuery<EventDnaProfile>({
+    queryKey: [`/api/events/owner/${ownerToken}/dna`],
+  });
+
+  const generateConcepts = useMutation({
+    mutationFn: async () =>
+      apiRequestJson<{ concepts: InviteDesignConcept[]; dnaProfile: EventDnaProfile; inspirationNotes?: string }>(
+        "POST",
+        `/api/events/owner/${ownerToken}/invite/generate-concepts`,
+        { themePrompt: themePromptDraft, inspirationImages, preferredStyleLanes: selectedStyleLanes.length === 4 ? selectedStyleLanes : undefined },
+      ),
+    onSuccess: (result) => {
+      setConcepts(result.concepts);
+      setAppliedConceptIndex(null);
+      setPreviewUrls({});
+      setInspirationNotes(result.inspirationNotes ?? null);
+      toast({ title: "4 design concepts ready", description: "Pick one to generate its illustration and apply it." });
+    },
+    onError: () => {
+      toast({ title: "Couldn't generate design concepts", description: "Please try again in a moment.", variant: "destructive" });
+    },
+  });
+
+  // "Not quite right?" refinement: sends the 4 concepts the host is looking at
+  // plus plain-English feedback, and swaps in 4 new concepts that address it.
+  // The new set is fresh, so per-card previews and the applied badge reset.
+  const refineConcepts = useMutation({
+    mutationFn: async (feedback: string) =>
+      apiRequestJson<{ concepts: InviteDesignConcept[]; dnaProfile: EventDnaProfile; inspirationNotes?: string }>(
+        "POST",
+        `/api/events/owner/${ownerToken}/invite/refine-concepts`,
+        { themePrompt: themePromptDraft, previousConcepts: concepts ?? [], feedback, inspirationImages },
+      ),
+    onSuccess: (result) => {
+      setConcepts(result.concepts);
+      setAppliedConceptIndex(null);
+      setPreviewUrls({});
+      setRefineFeedback("");
+      setInspirationNotes(result.inspirationNotes ?? null);
+      toast({ title: "4 fresh concepts ready", description: "Tuned to your feedback — preview or apply any of them." });
+    },
+    onError: () => {
+      toast({ title: "Couldn't refine the concepts", description: "Please try again in a moment.", variant: "destructive" });
+    },
+  });
+
+  const applyConcept = useMutation({
+    mutationFn: async ({ concept, index }: { concept: InviteDesignConcept; index: number }) =>
+      apiRequestJson<EventRecord>("POST", `/api/events/owner/${ownerToken}/invite/apply-concept`, {
+        concept,
+        illustrationUrl: previewUrls[index],
+      }),
+    onSuccess: (_data, variables) => {
+      invalidateEvent();
+      queryClient.invalidateQueries({ queryKey: [`/api/events/owner/${ownerToken}/dna`] });
+      // Keep the 4 concepts in memory so "Change design" shows them again
+      // instead of forcing a regenerate; just record which one is applied.
+      setAppliedConceptIndex(variables.index);
+      setBrowsing(false);
+      toast({ title: "Design applied", description: "Your invite, RSVP page, and thank-you card now match this look." });
+    },
+    onError: () => {
+      toast({ title: "Couldn't apply this design", description: "The illustration generator may be busy — please try again.", variant: "destructive" });
+    },
+  });
+
+  const clearConcept = useMutation({
+    mutationFn: async () => apiRequestJson<EventRecord>("POST", `/api/events/owner/${ownerToken}/invite/clear-concept`),
+    onSuccess: () => {
+      invalidateEvent();
+      queryClient.invalidateQueries({ queryKey: [`/api/events/owner/${ownerToken}/dna`] });
+      toast({ title: "AI design removed", description: "Back to your manual font and color choices." });
+    },
+  });
+
+  // Palette-only tweak on an already-applied concept — free for every plan
+  // tier, and never touches the illustration (no regeneration cost).
+  const updateConceptPalette = useMutation({
+    mutationFn: async (paletteColors: string[]) =>
+      apiRequestJson<EventRecord>("PATCH", `/api/events/owner/${ownerToken}/invite/concept-palette`, { paletteColors }),
+    onSuccess: () => {
+      invalidateEvent();
+      toast({ title: "Colors updated" });
+    },
+    onError: () => {
+      toast({ title: "Couldn't update colors", description: "Please try again.", variant: "destructive" });
+    },
+  });
+
+  // Coordinated stationery suite (envelope, liner, stamp). Each control sends
+  // only the field it changed, so the other two keep whatever the host — or the
+  // concept's derived defaults — already set.
+  const updateSuite = useMutation({
+    mutationFn: async (updates: { envelopeColor?: string; envelopeLinerPattern?: LinerPattern; stampStyle?: StampStyle }) =>
+      apiRequestJson<EventRecord>("PATCH", `/api/events/owner/${ownerToken}/invite/suite`, updates),
+    onSuccess: () => {
+      invalidateEvent();
+    },
+    onError: () => {
+      toast({ title: "Couldn't update the suite", description: "Please try again.", variant: "destructive" });
+    },
+  });
+
+  // Swaps the AI-generated illustration for a host's own photo, while
+  // keeping the applied concept's palette, fonts, and border — free for
+  // every plan tier, no new illustration generation cost.
+  const uploadOwnImage = useMutation({
+    mutationFn: async (file: File) => {
+      const dataUrl = await readImageFileAsDataUrl(file);
+      await apiRequest("PATCH", `/api/events/owner/${ownerToken}`, { inviteIllustrationUrl: dataUrl });
+    },
+    onSuccess: () => {
+      invalidateEvent();
+      toast({ title: "Your photo is now on the invite", description: "The colors, fonts, and border from your design stay the same." });
+    },
+    onError: () => {
+      toast({ title: "Couldn't use that image", description: "Please try a different photo.", variant: "destructive" });
+    },
+  });
+
+  // "Upload my complete invitation design" — a finished invite used AS-IS,
+  // with no Posy border, font overlay, or palette. Different from
+  // uploadOwnImage above, which slots a photo INTO a Posy concept template.
+  const uploadCustomDesign = useMutation({
+    mutationFn: async (file: File) => {
+      const dataUrl = await readImageFileAsDataUrl(file);
+      await apiRequest("PATCH", `/api/events/owner/${ownerToken}/invite/custom-design`, { imageDataUrl: dataUrl });
+    },
+    onSuccess: () => {
+      invalidateEvent();
+      toast({ title: "Your design is live", description: "Guests will see your invitation exactly as you uploaded it." });
+    },
+    onError: () => {
+      toast({ title: "Couldn't upload that design", description: "Please try a different image.", variant: "destructive" });
+    },
+  });
+
+  // Non-destructive revert: clears only inviteRenderMode, so a previously
+  // applied concept (and the uploaded design) both stay intact.
+  const clearCustomDesign = useMutation({
+    mutationFn: async () => apiRequest("PATCH", `/api/events/owner/${ownerToken}/invite/custom-design/clear`),
+    onSuccess: () => {
+      invalidateEvent();
+      toast({ title: "Back to Posy's design tools", description: "Your uploaded design is saved if you want it again." });
+    },
+    onError: () => {
+      toast({ title: "Couldn't switch back", description: "Please try again.", variant: "destructive" });
+    },
+  });
+
+  // Generates the real AI artwork for one concept without committing it, so a
+  // host can see the actual illustration on the card before applying. The url
+  // is cached in previewUrls and later handed to apply-concept so the same
+  // image isn't paid for twice.
+  const runPreview = async (concept: InviteDesignConcept, index: number) => {
+    if (previewingIndexes.has(index)) return;
+    setPreviewingIndexes((prev) => new Set(prev).add(index));
+    try {
+      const result = await apiRequestJson<{ illustrationUrl: string }>(
+        "POST",
+        `/api/events/owner/${ownerToken}/invite/preview-concept`,
+        { concept },
+      );
+      setPreviewUrls((prev) => ({ ...prev, [index]: result.illustrationUrl }));
+    } catch {
+      toast({ title: "Couldn't generate that artwork", description: "Please try again.", variant: "destructive" });
+    } finally {
+      setPreviewingIndexes((prev) => {
+        const next = new Set(prev);
+        next.delete(index);
+        return next;
+      });
+    }
+  };
+
+  // Previews artwork for all 4 concepts that don't have one yet, two at a time
+  // so the grid fills in progressively without hammering the image API.
+  const generateAllArtwork = async () => {
+    if (!concepts || generatingAll) return;
+    setGeneratingAll(true);
+    try {
+      const pending = concepts
+        .map((concept, index) => ({ concept, index }))
+        .filter(({ index }) => !previewUrls[index]);
+      let cursor = 0;
+      const worker = async () => {
+        while (cursor < pending.length) {
+          const item = pending[cursor++];
+          await runPreview(item.concept, item.index);
+        }
+      };
+      await Promise.all([worker(), worker()]);
+    } finally {
+      setGeneratingAll(false);
+    }
+  };
+
+  // Reads picked inspiration files into compressed data URLs (same helper as
+  // "Use your own photo"), capping the total kept at 3.
+  const addInspirationImages = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const room = 3 - inspirationImages.length;
+    if (room <= 0) {
+      toast({ title: "Up to 3 inspiration images", description: "Remove one to add another." });
+      return;
+    }
+    try {
+      const dataUrls = await Promise.all(Array.from(files).slice(0, room).map(readImageFileAsDataUrl));
+      setInspirationImages((prev) => [...prev, ...dataUrls].slice(0, 3));
+    } catch {
+      toast({ title: "Couldn't add that image", description: "Please try a different file.", variant: "destructive" });
+    }
+  };
+
+  // The "Add inspiration (optional)" control + thumbnails, reused near the
+  // theme input and inside the refinement section. A single shared hidden file
+  // input (rendered once below) is triggered by every "Add inspiration" button.
+  const renderInspirationControl = (location: "theme" | "refine") => (
+    <div className="mt-2" data-testid={`inspiration-control-${location}`}>
+      <Button
+        size="sm"
+        variant="outline"
+        className="h-auto px-2.5 py-1 text-[11px]"
+        onClick={() => inspirationInputRef.current?.click()}
+        disabled={inspirationImages.length >= 3}
+        data-testid={`button-add-inspiration-${location}`}
+      >
+        <ImagePlus className="mr-1.5 h-3.5 w-3.5" />
+        {inspirationImages.length > 0 ? `Inspiration (${inspirationImages.length}/3)` : "Add inspiration (optional)"}
+      </Button>
+      {inspirationImages.length > 0 && (
+        <div className="mt-1.5 flex flex-wrap gap-1.5" data-testid={`inspiration-thumbs-${location}`}>
+          {inspirationImages.map((src, i) => (
+            <div key={i} className="relative h-12 w-12 overflow-hidden rounded border border-border">
+              <img src={src} alt="" className="h-full w-full object-cover" data-testid={`img-inspiration-${location}-${i}`} />
+              <button
+                type="button"
+                onClick={() => setInspirationImages((prev) => prev.filter((_, j) => j !== i))}
+                className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center rounded-bl bg-black/60 text-white"
+                aria-label="Remove inspiration image"
+                data-testid={`button-remove-inspiration-${location}-${i}`}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  // The hidden file input + entry-point link for full-custom upload. Rendered
+  // in every non-custom branch so a host can switch to their own finished
+  // design whether or not they've generated or applied a concept yet.
+  // The coordinated suite that surrounds the invite. Everything defaults to the
+  // concept's derived Theme DNA, so an event whose suite fields are still empty
+  // (any event created before this feature) shows a complete, sensible suite.
+  const renderSuiteSection = (concept: InviteDesignConcept) => {
+    const dna = deriveThemeDna(concept);
+    const envelopeColor = /^#[0-9a-fA-F]{6}$/.test(event.envelopeColor || "") ? (event.envelopeColor as string) : dna.primaryColor;
+    const linerPattern: LinerPattern = isLinerPattern(event.envelopeLinerPattern) ? event.envelopeLinerPattern : dna.linerPattern;
+    const stamp: StampStyle = isStampStyle(event.stampStyle) ? event.stampStyle : dna.stampStyle;
+    const stampMark = stampGlyph(stamp);
+
+    return (
+      <div className="mt-4 border-t border-primary/20 pt-3" data-testid="section-design-suite">
+        <p className="text-xs font-semibold text-foreground">Your design suite</p>
+        <p className="mt-0.5 text-[11px] text-muted-foreground">
+          Everything around the invite, matched to it automatically. Adjust anything you like.
+        </p>
+
+        <div className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-4" data-testid="row-suite-previews">
+          <div className="rounded-md border border-border bg-background p-2" data-testid="preview-suite-envelope">
+            <div
+              className="relative h-16 overflow-hidden rounded-sm"
+              style={{ backgroundColor: envelopeColor }}
+            >
+              {/* The liner shows as the inside of the open flap. */}
+              <div className="absolute inset-x-0 bottom-0 h-8" style={linerPatternStyle(linerPattern, dna.accentColor, dna.backgroundColor)} />
+              <div
+                className="absolute inset-x-0 top-0 h-8"
+                style={{ backgroundColor: envelopeColor, clipPath: "polygon(0 0, 100% 0, 50% 100%)" }}
+              />
+            </div>
+            <p className="mt-1 text-[10px] text-muted-foreground">Envelope</p>
+          </div>
+
+          <div className="rounded-md border border-border bg-background p-2" data-testid="preview-suite-stamp">
+            <div className="flex h-16 items-center justify-center rounded-sm" style={{ backgroundColor: dna.backgroundColor }}>
+              <span
+                className="flex h-10 w-9 items-center justify-center rounded-[2px] border-2 border-dashed text-lg"
+                style={{ borderColor: dna.accentColor, color: dna.accentColor }}
+                data-testid="glyph-suite-stamp"
+              >
+                {stampMark.glyph}
+              </span>
+            </div>
+            <p className="mt-1 text-[10px] text-muted-foreground">Stamp — {stampMark.label}</p>
+          </div>
+
+          <div className="rounded-md border border-border bg-background p-2" data-testid="preview-suite-backdrop">
+            <div
+              className="flex h-16 items-center justify-center rounded-sm px-1 text-center"
+              style={{ backgroundColor: dna.backgroundColor }}
+            >
+              <span className="text-[10px] capitalize" style={{ color: dna.accentColor }} data-testid="text-suite-motif">
+                {dna.motifDescriptor}
+              </span>
+            </div>
+            <p className="mt-1 text-[10px] text-muted-foreground">Backdrop</p>
+          </div>
+
+          <div className="rounded-md border border-border bg-background p-2" data-testid="preview-suite-thankyou">
+            <div
+              className="flex h-16 flex-col items-center justify-center rounded-sm px-1 text-center"
+              style={{ backgroundColor: dna.backgroundColor, ...conceptBorderStyle(concept) }}
+            >
+              <span className="text-[11px] font-semibold" style={conceptHeadingStyle(concept)}>Thank you</span>
+              <span className="text-[9px] text-muted-foreground" style={conceptBodyStyle(concept)}>for celebrating</span>
+            </div>
+            <p className="mt-1 text-[10px] text-muted-foreground">Thank-you card</p>
+          </div>
+        </div>
+
+        <div className="mt-3 space-y-2.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground">Envelope color:</span>
+            <PaletteEditor
+              colors={[envelopeColor]}
+              size="sm"
+              testIdPrefix="swatch-envelope-color"
+              onChange={(_i, color) => updateSuite.mutate({ envelopeColor: color })}
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-xs text-muted-foreground">Liner:</span>
+            {LINER_PATTERNS.map((p) => (
+              <Button
+                key={p}
+                size="sm"
+                variant={p === linerPattern ? "default" : "outline"}
+                className="h-7 px-2.5 text-[11px] capitalize"
+                onClick={() => updateSuite.mutate({ envelopeLinerPattern: p })}
+                disabled={updateSuite.isPending}
+                data-testid={`button-liner-${p}`}
+              >
+                {p}
+              </Button>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground">Stamp:</span>
+            <Select value={stamp} onValueChange={(v) => updateSuite.mutate({ stampStyle: v as StampStyle })}>
+              <SelectTrigger className="h-7 w-36 text-xs" data-testid="select-stamp-style">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STAMP_STYLES.map((s) => (
+                  <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderCustomDesignEntry = () => (
+    <>
+      <input
+        ref={customDesignInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        data-testid="input-custom-design"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) uploadCustomDesign.mutate(file);
+          e.target.value = "";
+        }}
+      />
+      <button
+        type="button"
+        onClick={() => customDesignInputRef.current?.click()}
+        disabled={uploadCustomDesign.isPending}
+        className="mt-2 text-left text-[11px] font-medium text-primary underline underline-offset-2 disabled:opacity-60"
+        data-testid="button-upload-custom-design"
+      >
+        {uploadCustomDesign.isPending ? "Uploading your design…" : "Already have a design? Upload it instead"}
+      </button>
+    </>
+  );
+
+  // Full-custom mode: the host's finished invitation is shown exactly as
+  // uploaded — no border, no font overlay, no palette. Takes priority over
+  // the concept-driven views below. Gated on an explicit "custom" check so
+  // every pre-existing event (inviteRenderMode "" or absent) is unaffected.
+  if (event.inviteRenderMode === "custom" && event.customInviteImageUrl) {
+    return (
+      <div className="rounded-md border border-primary/30 bg-primary/5 p-4" data-testid="card-custom-invite-design">
+        <p className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-primary">
+          <ImagePlus className="h-3.5 w-3.5" /> Your own invitation design
+        </p>
+        <div className="overflow-hidden rounded-md bg-muted">
+          <img
+            src={event.customInviteImageUrl}
+            alt="Your uploaded invitation design"
+            className="max-h-[28rem] w-full object-contain"
+            data-testid="img-custom-invite-design"
+          />
+        </div>
+        <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-foreground" data-testid="text-custom-design-live">
+          <Check className="h-3.5 w-3.5 text-primary" /> This design is now live — no Posy styling is applied.
+        </p>
+        <p className="mt-1 text-[11px] text-muted-foreground">
+          Guests see your image exactly as uploaded. Event details and the RSVP form appear below it in the page's normal type.
+        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => customDesignInputRef.current?.click()}
+            disabled={uploadCustomDesign.isPending}
+            data-testid="button-replace-custom-design"
+          >
+            <ImagePlus className="mr-1.5 h-3.5 w-3.5" /> {uploadCustomDesign.isPending ? "Uploading…" : "Replace design"}
+          </Button>
+          <button
+            type="button"
+            onClick={() => clearCustomDesign.mutate()}
+            disabled={clearCustomDesign.isPending}
+            className="text-[11px] font-medium text-primary underline underline-offset-2 disabled:opacity-60"
+            data-testid="button-switch-back-to-posy"
+          >
+            {clearCustomDesign.isPending ? "Switching back…" : "Switch back to Posy's design tools"}
+          </button>
+        </div>
+        <input
+          ref={customDesignInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          data-testid="input-custom-design"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) uploadCustomDesign.mutate(file);
+            e.target.value = "";
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (appliedConcept && !browsing) {
+    const illustrationUrl = event.inviteIllustrationUrl;
+    const previewSubject = applyInviteTokens(event.inviteSubject || "You're invited to {{eventName}}!", {
+      eventName: event.eventName,
+      eventDate: event.eventDate,
+      location: event.location,
+      hostNames: event.hostNames,
+    });
+    const previewMessage = applyInviteTokens(
+      event.inviteMessage || "Join us on {{eventDate}} at {{location}}. We can't wait to celebrate with you!",
+      { eventName: event.eventName, eventDate: event.eventDate, location: event.location, hostNames: event.hostNames },
+    );
+    return (
+      <div className="rounded-md border border-primary/30 bg-primary/5 p-4" data-testid="card-applied-concept">
+        <p className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-primary">
+          <Sparkles className="h-3.5 w-3.5" /> Invitation Intelligence
+        </p>
+
+        {/* Full-size preview — exactly what guests see on the invite and RSVP page, not a small thumbnail. */}
+        <div
+          className="overflow-hidden rounded-md bg-background"
+          style={conceptBorderStyle(appliedConcept)}
+          data-testid="preview-applied-concept"
+        >
+          {illustrationUrl && appliedConcept.layoutStyle === "banner" && (
+            <img
+              src={illustrationUrl}
+              alt=""
+              data-testid="img-applied-concept-preview"
+              className="h-40 w-full object-cover sm:h-48"
+            />
+          )}
+          <div
+            className="p-4"
+            style={
+              illustrationUrl && appliedConcept.layoutStyle === "backdrop"
+                ? { backgroundImage: `url(${illustrationUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+                : undefined
+            }
+          >
+            <div className={illustrationUrl && appliedConcept.layoutStyle === "backdrop" ? "rounded-md bg-white/85 p-3" : undefined}>
+              <p className="text-sm font-semibold" style={conceptHeadingStyle(appliedConcept)} data-testid="text-applied-concept-subject">
+                {previewSubject}
+              </p>
+              <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground" style={conceptBodyStyle(appliedConcept)} data-testid="text-applied-concept-message">
+                {previewMessage}
+              </p>
+            </div>
+          </div>
+        </div>
+        <p className="mt-1.5 text-[11px] text-muted-foreground">
+          <span className="font-medium text-foreground" data-testid="text-applied-concept-name">{appliedConcept.conceptName}</span> — this is exactly what guests will see.
+        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-2" data-testid="row-applied-concept-palette">
+          <span className="text-xs text-muted-foreground">Colors:</span>
+          <PaletteEditor
+            colors={appliedConcept.paletteColors}
+            size="sm"
+            testIdPrefix="swatch-applied-concept"
+            onChange={(i, color) => {
+              const next = [...appliedConcept.paletteColors];
+              next[i] = color;
+              updateConceptPalette.mutate(next);
+            }}
+          />
+          <span className="text-[11px] text-muted-foreground">Click a color to change it</span>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={() => setBrowsing(true)} data-testid="button-change-design">
+            <Wand2 className="mr-1.5 h-3.5 w-3.5" /> Change design
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => artworkInputRef.current?.click()}
+            disabled={uploadOwnImage.isPending}
+            data-testid="button-upload-own-image"
+          >
+            <ImagePlus className="mr-1.5 h-3.5 w-3.5" /> {uploadOwnImage.isPending ? "Uploading…" : "Use your own photo"}
+          </Button>
+          <input
+            ref={artworkInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            data-testid="input-upload-own-image"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) uploadOwnImage.mutate(file);
+              e.target.value = "";
+            }}
+          />
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => clearConcept.mutate()}
+            disabled={clearConcept.isPending}
+            data-testid="button-remove-concept"
+          >
+            <X className="mr-1.5 h-3.5 w-3.5" /> Remove
+          </Button>
+        </div>
+        <p className="mt-1.5 text-[11px] text-muted-foreground">
+          Swap the AI illustration for your own photo any time — your colors, fonts, and border stay the same.
+        </p>
+        {renderSuiteSection(appliedConcept)}
+        {renderCustomDesignEntry()}
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-4" data-testid="card-invite-design-picker">
+      <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+        <Sparkles className="h-4 w-4 text-primary" /> Invitation Intelligence
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Describe your party's theme and get 4 complete design concepts{" — "}palette, fonts, border, and a custom illustration{" — "}
+        applied across your invite, RSVP page, and thank-you card in one click.
+      </p>
+      {renderCustomDesignEntry()}
+
+      {dnaQuery.data && (
+        <p
+          className="mt-2 flex items-center gap-1 text-[11px] italic text-muted-foreground"
+          data-testid="text-event-dna-summary"
+          title={dnaQuery.data.reasons.join(" ")}
+        >
+          {dnaQuery.data.summary}
+        </p>
+      )}
+
+      {/* Vibe Picker — optional. Host picks up to 4 style lanes to control which
+          design directions the AI explores. When none are selected, the AI
+          chooses 4 diverse lanes automatically. */}
+      <div className="mt-3" data-testid="section-vibe-picker">
+        <p className="text-xs font-medium text-foreground">Pick your vibes (optional)</p>
+        <p className="mt-0.5 text-[11px] text-muted-foreground">
+          Select up to 4 styles — each concept will use a different one. Or skip this and let the AI surprise you.
+        </p>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {STYLE_LANES.map((lane) => {
+            const selected = selectedStyleLanes.includes(lane.id);
+            return (
+              <button
+                key={lane.id}
+                type="button"
+                onClick={() => {
+                  if (selected) {
+                    setSelectedStyleLanes(selectedStyleLanes.filter((id) => id !== lane.id));
+                  } else if (selectedStyleLanes.length < 4) {
+                    setSelectedStyleLanes([...selectedStyleLanes, lane.id]);
+                  }
+                }}
+                className={
+                  "h-auto rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors " +
+                  (selected
+                    ? "bg-primary text-primary-foreground"
+                    : "border border-border bg-background text-muted-foreground hover:bg-muted")
+                }
+                data-testid={`chip-vibe-${lane.id}`}
+              >
+                {lane.label}
+              </button>
+            );
+          })}
+          {selectedStyleLanes.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setSelectedStyleLanes([])}
+              className="h-auto rounded-full px-2 py-1 text-[11px] font-medium text-muted-foreground underline underline-offset-2"
+              data-testid="button-clear-vibes"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Input
+          value={themePromptDraft}
+          onChange={(e) => setThemePromptDraft(e.target.value)}
+          placeholder="e.g. Enchanted garden tea party at golden hour"
+          className="max-w-sm"
+          data-testid="input-theme-prompt"
+        />
+        <Button
+          size="sm"
+          onClick={() => generateConcepts.mutate()}
+          disabled={!themePromptDraft.trim() || generateConcepts.isPending}
+          data-testid="button-generate-concepts"
+        >
+          {generateConcepts.isPending ? "Designing…" : "Generate 4 concepts"}
+        </Button>
+        {appliedConcept && browsing && (
+          <Button size="sm" variant="ghost" onClick={() => { setBrowsing(false); setConcepts(null); }} data-testid="button-cancel-browse">
+            Cancel
+          </Button>
+        )}
+      </div>
+
+      {/* Shared hidden file input for all "Add inspiration" buttons. */}
+      <input
+        ref={inspirationInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        data-testid="input-inspiration-images"
+        onChange={(e) => {
+          addInspirationImages(e.target.files);
+          e.target.value = "";
+        }}
+      />
+      {renderInspirationControl("theme")}
+      <p className="mt-1 text-[11px] text-muted-foreground">
+        Upload up to 3 images that capture the vibe you want (e.g. a Pinterest screenshot). We'll read the mood, colors, and style — never copy anyone's exact design.
+      </p>
+
+      {concepts && inspirationNotes && (
+        <p className="mt-3 text-[11px] italic text-muted-foreground" data-testid="text-inspiration-notes">
+          Inspired by your images: {inspirationNotes}
+        </p>
+      )}
+
+      {concepts && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground">
+            Preview the real artwork on any card before you commit — or generate all four at once.
+          </p>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={generateAllArtwork}
+            disabled={generatingAll || concepts.every((_, i) => previewUrls[i])}
+            data-testid="button-generate-all-artwork"
+          >
+            <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+            {generatingAll
+              ? `Generating ${concepts.filter((_, i) => previewUrls[i]).length} of ${concepts.length}…`
+              : "Generate artwork for all 4"}
+          </Button>
+        </div>
+      )}
+
+      {concepts && (
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2" data-testid="grid-invite-concepts">
+          {concepts.map((concept, i) => {
+            const font = getFontPairing(concept.fontPairingId);
+            const isApplying = applyConcept.isPending && applyConcept.variables?.index === i;
+            const isApplied = appliedConceptIndex === i;
+            const previewUrl = previewUrls[i];
+            const isPreviewing = previewingIndexes.has(i);
+            const previewSubjectDraft = applyInviteTokens(event.inviteSubject || "You're invited to {{eventName}}!", {
+              eventName: event.eventName,
+              eventDate: event.eventDate,
+              location: event.location,
+              hostNames: event.hostNames,
+            });
+            const previewMessageDraft = applyInviteTokens(
+              event.inviteMessage || "Join us on {{eventDate}} at {{location}}. We can't wait to celebrate with you!",
+              { eventName: event.eventName, eventDate: event.eventDate, location: event.location, hostNames: event.hostNames },
+            );
+            // No illustration exists yet at this stage — a host is still choosing.
+            // A soft gradient built from the concept's own palette stands in for
+            // the AI artwork, so the mockup reads as "your actual invite" (real
+            // text, real fonts, real border, real colors) rather than a generic
+            // swatch row. The real illustration only generates after "Use this design."
+            const placeholderArt = {
+              backgroundImage: `linear-gradient(135deg, ${concept.paletteColors[2] || concept.paletteColors[0]}33, ${concept.paletteColors[3] || concept.paletteColors[1]}55)`,
+            };
+            return (
+              <div
+                key={i}
+                className="flex flex-col justify-between rounded-md border border-border bg-background p-3"
+                data-testid={`card-concept-${i}`}
+              >
+                <div>
+                  {/* Mockup preview — same rendering the applied concept uses (heading/body/border
+                      styles, real invite text), so a host sees what they're about to commit to. The
+                      only difference from the post-apply view is the placeholder art panel, since the
+                      real illustration is generated on-demand only after "Use this design" is clicked. */}
+                  <div
+                    className="overflow-hidden rounded-md bg-background"
+                    style={conceptBorderStyle(concept)}
+                    data-testid={`preview-concept-${i}`}
+                  >
+                    {concept.layoutStyle === "banner" &&
+                      (previewUrl ? (
+                        <img
+                          src={previewUrl}
+                          alt=""
+                          className="h-20 w-full object-cover sm:h-24"
+                          data-testid={`img-concept-preview-${i}`}
+                        />
+                      ) : (
+                        <div className="flex h-20 w-full items-center justify-center sm:h-24" style={placeholderArt} data-testid={`art-placeholder-concept-${i}`}>
+                          <span className="rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                            {isPreviewing ? "Generating…" : "Illustration generates after you apply"}
+                          </span>
+                        </div>
+                      ))}
+                    <div
+                      className="p-3"
+                      style={
+                        concept.layoutStyle === "backdrop"
+                          ? previewUrl
+                            ? { backgroundImage: `url(${previewUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+                            : placeholderArt
+                          : undefined
+                      }
+                      data-testid={concept.layoutStyle === "backdrop" && !previewUrl ? `art-placeholder-concept-${i}` : undefined}
+                    >
+                      <div className={concept.layoutStyle === "backdrop" ? "rounded-md bg-background/85 p-2" : undefined}>
+                        <p className="truncate text-sm font-semibold" style={conceptHeadingStyle(concept)} data-testid={`text-concept-preview-subject-${i}`}>
+                          {previewSubjectDraft}
+                        </p>
+                        <p className="mt-1 line-clamp-2 whitespace-pre-wrap text-xs text-muted-foreground" style={conceptBodyStyle(concept)}>
+                          {previewMessageDraft}
+                        </p>
+                      </div>
+                      {concept.layoutStyle === "backdrop" && !previewUrl && (
+                        <span className="mt-1.5 inline-block rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                          {isPreviewing ? "Generating…" : "Illustration generates after you apply"}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mt-2 flex items-center gap-1.5" data-testid={`row-concept-palette-${i}`}>
+                    {concept.paletteColors.map((c, ci) => (
+                      <span
+                        key={ci}
+                        className="h-4 w-4 rounded-full border border-black/10"
+                        style={{ backgroundColor: c }}
+                        title={c}
+                      />
+                    ))}
+                    <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                      {concept.styleLaneId ? (getStyleLane(concept.styleLaneId)?.label ?? concept.layoutStyle) : concept.layoutStyle === "banner" ? "Banner art" : "Backdrop art"}
+                    </span>
+                    {isApplied && (
+                      <span
+                        className="ml-auto flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary"
+                        data-testid={`badge-applied-concept-${i}`}
+                      >
+                        <Check className="h-3 w-3" /> Applied
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-1 truncate text-sm font-medium" data-testid={`text-concept-name-${i}`}>
+                    {concept.conceptName}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {concept.description}
+                  </p>
+                  <p className="mt-1.5 text-[11px] text-muted-foreground">
+                    {font.label} {"·"} {concept.borderStyle.replace("-", " ")}
+                  </p>
+                </div>
+                <div className="mt-3 flex flex-col gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => runPreview(concept, i)}
+                    disabled={isPreviewing || generatingAll}
+                    data-testid={`button-preview-concept-${i}`}
+                  >
+                    <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                    {isPreviewing ? "Generating…" : previewUrl ? "Regenerate art" : "Preview art"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => applyConcept.mutate({ concept, index: i })}
+                    disabled={applyConcept.isPending}
+                    data-testid={`button-apply-concept-${i}`}
+                  >
+                    {isApplying ? (previewUrl ? "Applying…" : "Generating illustration… (this can take up to a minute)") : (
+                      <>
+                        <Check className="mr-1.5 h-3.5 w-3.5" /> Use this design
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {concepts && (
+        <div className="mt-4 rounded-md border border-border bg-background/60 p-3" data-testid="section-refine-concepts">
+          <p className="text-xs font-medium text-foreground">Not quite right?</p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            Tell us what to change and we'll regenerate all 4 — no need to start over.
+          </p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {REFINE_CHIPS.map((chip) => (
+              <Button
+                key={chip}
+                size="sm"
+                variant="outline"
+                className="h-auto rounded-full px-2.5 py-1 text-[11px]"
+                onClick={() => refineConcepts.mutate(chip)}
+                disabled={refineConcepts.isPending}
+                data-testid={`chip-refine-${chip.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`}
+              >
+                {chip}
+              </Button>
+            ))}
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <Input
+              value={refineFeedback}
+              onChange={(e) => setRefineFeedback(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && refineFeedback.trim() && !refineConcepts.isPending) {
+                  refineConcepts.mutate(refineFeedback.trim());
+                }
+              }}
+              placeholder="e.g. warmer colors and a hand-drawn feel"
+              className="max-w-sm"
+              data-testid="input-refine-feedback"
+            />
+            <Button
+              size="sm"
+              onClick={() => refineConcepts.mutate(refineFeedback.trim())}
+              disabled={!refineFeedback.trim() || refineConcepts.isPending}
+              data-testid="button-refine-concepts"
+            >
+              <Wand2 className="mr-1.5 h-3.5 w-3.5" /> {refineConcepts.isPending ? "Refining…" : "Refine"}
+            </Button>
+          </div>
+          {renderInspirationControl("refine")}
+        </div>
+      )}
+
+      {concepts && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => generateConcepts.mutate()}
+            disabled={generateConcepts.isPending}
+            data-testid="button-regenerate-concepts"
+          >
+            <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Try again with this theme
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setConcepts(null);
+              setAppliedConceptIndex(null);
+              setPreviewUrls({});
+            }}
+            data-testid="button-start-over-concepts"
+          >
+            Start over
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}

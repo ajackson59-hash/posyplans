@@ -1,0 +1,393 @@
+import { useEffect, useRef, useState } from "react";
+import { Link, useParams, useLocation } from "wouter";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequestJson } from "@/lib/queryClient";
+import { touchRecentEvent } from "@/lib/eventRecovery";
+import { Wordmark } from "@/components/Logo";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { CheckCircle2, Loader2, CircleDashed } from "lucide-react";
+
+// Loading screen shown right after intake finishes, while the AI Master
+// Planner drafts the whole first pass (theme, budget, menu, shopping,
+// timeline, invitation design, and rule-based checks) in the background.
+// Purely functional per the deferred-visual-polish instruction — real
+// styling comes once Brand Standards / Design DNA are finalized. Narration
+// copy is verbatim from PartyPilot_AI_Master_Planner_Design_Spec.md (filename predates the Posy rebrand) §1.
+
+interface MasterPlannerStatus {
+  draftStatus: "none" | "generating" | "ready" | "failed_partial";
+  draftStage: string | null;
+  completedStages: string[];
+  failedStage: string | null;
+}
+
+interface EntitlementSummary {
+  eventId: number;
+  freeDraftState: string;
+  planTier: string;
+  sparkUnlocked: boolean;
+  canGenerate: boolean;
+}
+
+interface ChecklistLine {
+  label: string;
+  coarseStage: string;
+  isDone: (completed: string[]) => boolean;
+}
+
+// 6 narration lines mapped onto the orchestrator's 5 coarse stages (Design
+// Spec §1 State 2 / §4) — budget_menu covers two lines since it runs two
+// parallel AI calls (budget + menu), the rest map one-to-one.
+const CHECKLIST: ChecklistLine[] = [
+  {
+    label: "Picking a theme that fits what you described...",
+    coarseStage: "theme",
+    isDone: (c) => c.includes("theme"),
+  },
+  {
+    label: "Sketching your budget...",
+    coarseStage: "budget_menu",
+    isDone: (c) => c.includes("budget"),
+  },
+  {
+    label: "Building a menu...",
+    coarseStage: "budget_menu",
+    isDone: (c) => c.includes("menu"),
+  },
+  {
+    label: "Mapping out your day...",
+    coarseStage: "shopping_timeline",
+    isDone: (c) => c.includes("shopping") && c.includes("timeline"),
+  },
+  {
+    label: "Putting together a few invitation looks...",
+    coarseStage: "invites",
+    isDone: (c) => c.includes("invites"),
+  },
+  {
+    label: "Double-checking everything lines up...",
+    coarseStage: "checks",
+    isDone: (c) => c.includes("checks"),
+  },
+];
+
+const STAGE_ORDER = ["theme", "budget_menu", "shopping_timeline", "invites", "checks", "done"];
+
+export default function DraftGenerating() {
+  const { ownerToken } = useParams<{ ownerToken: string }>();
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
+  const startedGenerationRef = useRef(false);
+  const confirmedRef = useRef(false);
+  const [email, setEmail] = useState("");
+  const [plusEmail, setPlusEmail] = useState("");
+
+  // Returning from a Spark checkout lands back here with these params (see
+  // server/routes.ts create-session success_url). We confirm the session to
+  // mark the event unlocked before generation can proceed.
+  const searchParams = new URLSearchParams(window.location.search);
+  const sessionId = searchParams.get("session_id") || undefined;
+  const checkoutStatus = searchParams.get("checkout") || undefined;
+  const returningFromCheckout = checkoutStatus === "success" && !!sessionId;
+
+  useEffect(() => {
+    if (ownerToken) touchRecentEvent(ownerToken);
+  }, [ownerToken]);
+
+  const { data: config } = useQuery<{ configured: boolean }>({
+    queryKey: ["/api/checkout/config"],
+  });
+
+  const entitlement = useQuery<EntitlementSummary>({
+    queryKey: ["master-planner-entitlement", ownerToken],
+    queryFn: () =>
+      apiRequestJson<EntitlementSummary>("GET", `/api/events/owner/${ownerToken}/master-planner/entitlement`),
+    enabled: !!ownerToken,
+  });
+
+  // If we came back from a completed Spark checkout, activate the unlock
+  // (pull-based, mirrors the Plus success page) before anything else.
+  const confirmCheckout = useMutation({
+    mutationFn: () =>
+      apiRequestJson<{ plan: string; unlocked: boolean }>(
+        "GET",
+        `/api/checkout/confirm?sessionId=${encodeURIComponent(sessionId || "")}`,
+      ),
+    onSettled: () => {
+      entitlement.refetch();
+    },
+  });
+
+  useEffect(() => {
+    if (!returningFromCheckout || confirmedRef.current) return;
+    confirmedRef.current = true;
+    confirmCheckout.mutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [returningFromCheckout]);
+
+  const startGeneration = useMutation({
+    mutationFn: () =>
+      apiRequestJson("POST", `/api/events/owner/${ownerToken}/master-planner/generate`, {}),
+  });
+
+  // Start a Spark checkout for this specific event, then hand off to Stripe.
+  const startSparkCheckout = useMutation({
+    mutationFn: () =>
+      apiRequestJson<{ url: string }>("POST", "/api/checkout/create-session", {
+        email,
+        plan: "spark",
+        returnToken: ownerToken,
+      }),
+    onSuccess: (result) => {
+      window.location.href = result.url;
+    },
+    onError: (err: Error) => {
+      toast({ title: "Couldn't start checkout", description: err.message, variant: "destructive" });
+    },
+  });
+
+  // Existing Plus members reach this event with no captured email on it, so
+  // the gate can't see their plan and shows the paywall. Letting them supply
+  // the email on their Plus plan stamps it onto the event; the refetched
+  // entitlement then flips canGenerate true and the auto-start effect fires.
+  const captureEmail = useMutation({
+    mutationFn: () => {
+      const eventId = entitlement.data?.eventId;
+      if (!eventId) throw new Error("We couldn't load this event just yet — please try again.");
+      return apiRequestJson<EntitlementSummary>("POST", `/api/events/${eventId}/email-capture`, {
+        email: plusEmail,
+        ownerToken,
+      });
+    },
+    onSuccess: (summary) => {
+      entitlement.refetch();
+      if (!summary.canGenerate) {
+        toast({
+          title: "We couldn't find a Plus plan for that email",
+          description: "Double-check the address, or unlock just this event with Spark below.",
+        });
+      }
+    },
+    onError: (err: Error) => {
+      toast({ title: "Couldn't check that email", description: err.message, variant: "destructive" });
+    },
+  });
+
+  // Only auto-fire generation once we know this event is allowed to draft
+  // (Spark unlocked or Plus). Never before entitlement resolves, and never
+  // while a returning checkout is still being confirmed.
+  useEffect(() => {
+    if (startedGenerationRef.current || !ownerToken) return;
+    if (returningFromCheckout && !confirmCheckout.isSuccess && !confirmCheckout.isError) return;
+    if (!entitlement.data?.canGenerate) return;
+    startedGenerationRef.current = true;
+    startGeneration.mutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ownerToken, entitlement.data?.canGenerate, returningFromCheckout, confirmCheckout.isSuccess, confirmCheckout.isError]);
+
+  const { data: status } = useQuery<MasterPlannerStatus>({
+    queryKey: ["master-planner-status", ownerToken],
+    queryFn: () => apiRequestJson<MasterPlannerStatus>("GET", `/api/events/owner/${ownerToken}/master-planner/status`),
+    enabled: !!ownerToken && startGeneration.isSuccess,
+    refetchInterval: (query) => {
+      const current = query.state.data as MasterPlannerStatus | undefined;
+      if (current?.draftStatus === "ready" || current?.draftStatus === "failed_partial") return false;
+      return 2000;
+    },
+  });
+
+  useEffect(() => {
+    if (status?.draftStatus === "ready" && ownerToken) {
+      navigate(`/draft-overview/${ownerToken}`);
+    }
+  }, [status?.draftStatus, ownerToken, navigate]);
+
+  const completedStages = status?.completedStages ?? [];
+  const currentCoarseStage = status?.draftStage ?? null;
+  const currentStageIndex = currentCoarseStage ? STAGE_ORDER.indexOf(currentCoarseStage) : -1;
+  const hasFailed = status?.draftStatus === "failed_partial";
+
+  const startError = startGeneration.error as Error | undefined;
+  // This event has already spent its one plan (409). An expected, non-broken
+  // state — not a technical failure.
+  const capExceeded = startGeneration.isError && !!startError?.message?.includes("already been generated");
+  // Payment is required before this event can draft anything (402). Show the
+  // same paywall the pre-generation entitlement check would.
+  const needsPaymentFromStart = startGeneration.isError && !!startError?.message?.includes("needs Spark or Plus");
+  const startupFailed = startGeneration.isError && !capExceeded && !needsPaymentFromStart;
+
+  // The paywall shows when the event isn't yet allowed to draft: either the
+  // upfront entitlement check says so, or the generate call came back 402.
+  const stillConfirming = returningFromCheckout && (confirmCheckout.isPending || (!confirmCheckout.isSuccess && !confirmCheckout.isError));
+  const showPaywall =
+    !stillConfirming &&
+    ((entitlement.isSuccess && !entitlement.data.canGenerate && !startGeneration.isSuccess) || needsPaymentFromStart);
+
+  const checkoutConfigured = config?.configured ?? false;
+
+  if (showPaywall) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 py-16">
+        <Wordmark className="mb-10" />
+        <div className="w-full max-w-md space-y-5 text-center" data-testid="draft-generating-paywall">
+          <div>
+            <h1 className="font-serif text-2xl font-semibold text-foreground">Unlock this event to see your plan</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Spark unlocks one full AI-drafted plan for this event — a one-time $9.99. Or go Plus
+              for unlimited plans across everything you host.
+            </p>
+          </div>
+
+          {checkoutConfigured ? (
+            <form
+              className="space-y-3 text-left"
+              onSubmit={(e) => {
+                e.preventDefault();
+                startSparkCheckout.mutate();
+              }}
+            >
+              <div>
+                <Label htmlFor="sparkEmail">Email</Label>
+                <Input
+                  id="sparkEmail"
+                  type="email"
+                  required
+                  data-testid="input-spark-email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <Button
+                type="submit"
+                className="w-full"
+                data-testid="button-unlock-spark"
+                disabled={startSparkCheckout.isPending}
+              >
+                {startSparkCheckout.isPending ? "Starting checkout…" : "Unlock this event — $9.99"}
+              </Button>
+            </form>
+          ) : (
+            <p className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
+              Checkout is launching soon — please check back shortly.
+            </p>
+          )}
+
+          <div className="rounded-lg border border-border p-4 text-left" data-testid="already-plus-panel">
+            <p className="text-sm font-medium text-foreground">Already on Plus?</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Enter the email on your Plus plan and we'll unlock this event for you.
+            </p>
+            <form
+              className="mt-3 space-y-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                captureEmail.mutate();
+              }}
+            >
+              <div>
+                <Label htmlFor="plusEmail" className="sr-only">
+                  Plus email
+                </Label>
+                <Input
+                  id="plusEmail"
+                  type="email"
+                  required
+                  data-testid="input-plus-email"
+                  placeholder="you@example.com"
+                  value={plusEmail}
+                  onChange={(e) => setPlusEmail(e.target.value)}
+                />
+              </div>
+              <Button
+                type="submit"
+                variant="outline"
+                className="w-full"
+                data-testid="button-use-plus-email"
+                disabled={captureEmail.isPending}
+              >
+                {captureEmail.isPending ? "Checking…" : "Use my Plus email"}
+              </Button>
+            </form>
+          </div>
+
+          <Button asChild variant="outline" className="w-full" data-testid="button-paywall-plus">
+            <Link href={`/pricing?returnToken=${ownerToken}`}>Go Plus — unlimited plans</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 py-16">
+      <Wordmark className="mb-10" />
+      <div className="w-full max-w-md space-y-4" data-testid="draft-generating-checklist">
+        {CHECKLIST.map((line) => {
+          const done = line.isDone(completedStages);
+          const isActive = !done && !hasFailed && STAGE_ORDER.indexOf(line.coarseStage) === currentStageIndex;
+          return (
+            <div
+              key={line.label}
+              className="flex items-center gap-3 text-sm"
+              data-testid={`checklist-item-${line.coarseStage}-${line.label.slice(0, 10).replace(/\W+/g, "")}`}
+            >
+              {done ? (
+                <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" />
+              ) : isActive ? (
+                <Loader2 className="h-5 w-5 shrink-0 animate-spin text-muted-foreground" />
+              ) : (
+                <CircleDashed className="h-5 w-5 shrink-0 text-muted-foreground/40" />
+              )}
+              <span className={done || isActive ? "text-foreground" : "text-muted-foreground/60"}>{line.label}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {capExceeded && (
+        <div className="mt-10 max-w-md space-y-3 text-center" data-testid="draft-generating-cap-exceeded">
+          <p className="text-sm text-muted-foreground">
+            This event's plan is ready. To regenerate, unlock again with Spark or go Plus for unlimited plans.
+          </p>
+          <Button asChild data-testid="button-cap-exceeded-pricing">
+            <Link href={`/pricing?returnToken=${ownerToken}`}>Go Plus</Link>
+          </Button>
+        </div>
+      )}
+
+      {startupFailed && (
+        <div className="mt-10 max-w-md space-y-3 text-center" data-testid="draft-generating-startup-failed">
+          <p className="text-sm text-muted-foreground">
+            I couldn't get started just now. Nothing has been spent yet, so it's safe to try again.
+          </p>
+          <Button
+            onClick={() => startGeneration.mutate()}
+            disabled={startGeneration.isPending}
+            data-testid="button-retry-start"
+          >
+            {startGeneration.isPending ? "Trying again..." : "Try again"}
+          </Button>
+        </div>
+      )}
+
+      {hasFailed && (
+        <div className="mt-10 max-w-md space-y-3 text-center" data-testid="draft-generating-failed">
+          <p className="text-sm text-muted-foreground">
+            That draft didn't finish this time — nothing was lost. Whatever's already done is saved, and picking up won't redo it.
+          </p>
+          <Button
+            onClick={() => startGeneration.mutate()}
+            disabled={startGeneration.isPending}
+            data-testid="button-retry-draft"
+          >
+            {startGeneration.isPending ? "Picking up where I left off..." : "Try again"}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
