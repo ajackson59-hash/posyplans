@@ -339,8 +339,8 @@ export default function Rsvp() {
                 </div>
               )}
               {event.inviteIllustrationUrl && concept.layoutStyle === "split" && (
-                <div className="flex min-h-[160px]">
-                  <div className="w-2/5" style={{ backgroundImage: `url(${event.inviteIllustrationUrl})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+                <div className="flex min-h-[160px] flex-col sm:flex-row">
+                  <div className="h-32 w-full sm:h-auto sm:w-2/5" style={{ backgroundImage: `url(${event.inviteIllustrationUrl})`, backgroundSize: "cover", backgroundPosition: "center" }} />
                   <div className="flex-1 p-5">
                     <p className="text-sm font-medium" style={conceptHeadingStyle(concept)}>
                       {applyInviteTokens(event.inviteSubject, {
@@ -375,7 +375,7 @@ export default function Rsvp() {
                   event.inviteIllustrationUrl && concept.layoutStyle === "backdrop"
                     ? { backgroundImage: `url(${event.inviteIllustrationUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
                     : event.inviteIllustrationUrl && concept.layoutStyle === "full-bleed"
-                    ? { position: "relative", zIndex: 1, marginTop: "-80px" }
+                    ? { position: "relative", zIndex: 1, marginTop: "-60px" }
                     : undefined
                 }
               >
@@ -484,6 +484,17 @@ export default function Rsvp() {
           >
             {concept && event.inviteIllustrationUrl && concept.layoutStyle === "banner" && (
               <img src={event.inviteIllustrationUrl} alt="" data-testid="img-thank-you-artwork" className="h-32 w-full object-cover" />
+            )}
+            {concept && event.inviteIllustrationUrl && concept.layoutStyle === "centered" && (
+              <div className="flex justify-center pt-6">
+                <img src={event.inviteIllustrationUrl} alt="" data-testid="img-thank-you-artwork" className="h-20 w-20 rounded-full object-cover" />
+              </div>
+            )}
+            {concept && event.inviteIllustrationUrl && concept.layoutStyle === "split" && (
+              <div className="flex">
+                <div className="w-1/3" style={{ backgroundImage: `url(${event.inviteIllustrationUrl})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+                <div className="w-2/3" />
+              </div>
             )}
             <CardContent
               className="p-6 text-center"

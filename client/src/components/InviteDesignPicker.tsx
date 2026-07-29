@@ -32,21 +32,19 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PaletteEditor from "@/components/PaletteEditor";
 import { useToast } from "@/hooks/use-toast";
-import { Sparkles, Wand2, RotateCcw, X, Check, ImagePlus } from "lucide-react";
+import { Sparkles, Wand2, RotateCcw, X, Check, ImagePlus, Heart, ThumbsDown } from "lucide-react";
 
 interface InviteDesignPickerProps {
   ownerToken: string;
   event: EventRecord;
 }
 
-// One-tap refinement directions for the "Not quite right?" section — clicking
-// one immediately refines the current 4 concepts in that direction.
-const REFINE_CHIPS = [
-  "More elegant",
-  "More playful",
-  "Less busy",
-  "Keep this palette, change the artwork",
-  "Make 4 variations of this one",
+// Contextual refinement options — plain language a non-designer would use.
+// Replaces the old developer-oriented chips like "More elegant" / "More playful".
+const REFINE_OPTIONS = [
+  "Show me different colors",
+  "Show me different artwork",
+  "Show me completely different designs",
 ] as const;
 
 export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPickerProps) {
@@ -64,6 +62,10 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
   // Selected vibe/style lanes — when the host picks exactly 4, concepts are
   // generated in those lanes. Empty array = let the AI choose 4 lanes.
   const [selectedStyleLanes, setSelectedStyleLanes] = useState<string[]>([]);
+  // Per-card feedback: tracks which concepts the host loves or doesn't like,
+  // so we can offer "show more like this" instead of generic refinement.
+  const [likedConcepts, setLikedConcepts] = useState<Set<number>>(new Set());
+  const [dislikedConcepts, setDislikedConcepts] = useState<Set<number>>(new Set());
   // Optional inspiration images (data URLs, up to 3) the host uploads to steer
   // the mood/style of generated concepts, plus the short style summary the
   // server extracts from them.
@@ -98,7 +100,9 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
       setAppliedConceptIndex(null);
       setPreviewUrls({});
       setInspirationNotes(result.inspirationNotes ?? null);
-      toast({ title: "4 design concepts ready", description: "Pick one to generate its illustration and apply it." });
+      setLikedConcepts(new Set());
+      setDislikedConcepts(new Set());
+      toast({ title: "4 design concepts ready", description: "Preview the artwork on any design, then pick your favorite." });
     },
     onError: () => {
       toast({ title: "Couldn't generate design concepts", description: "Please try again in a moment.", variant: "destructive" });
@@ -121,7 +125,9 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
       setPreviewUrls({});
       setRefineFeedback("");
       setInspirationNotes(result.inspirationNotes ?? null);
-      toast({ title: "4 fresh concepts ready", description: "Tuned to your feedback — preview or apply any of them." });
+      setLikedConcepts(new Set());
+      setDislikedConcepts(new Set());
+      toast({ title: "4 fresh concepts ready", description: "Preview or apply any of them." });
     },
     onError: () => {
       toast({ title: "Couldn't refine the concepts", description: "Please try again in a moment.", variant: "destructive" });
@@ -850,9 +856,25 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
       )}
 
       {concepts && (
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+        <div className="mt-4 flex items-center gap-2 text-[11px] font-medium" data-testid="progress-steps">
+          <span className="flex items-center gap-1 text-primary">
+            <Check className="h-3 w-3" /> Describe your vibe
+          </span>
+          <span className="text-muted-foreground/40">→</span>
+          <span className="flex items-center gap-1 text-primary">
+            <Check className="h-3 w-3" /> Browse designs
+          </span>
+          <span className="text-muted-foreground/40">→</span>
+          <span className="flex items-center gap-1 text-muted-foreground">
+            <span className="h-3 w-3 rounded-full border border-current" /> Make it yours
+          </span>
+        </div>
+      )}
+
+      {concepts && (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs text-muted-foreground">
-            Preview the real artwork on any card before you commit — or generate all four at once.
+            Preview the artwork on any design — then pick your favorite.
           </p>
           <Button
             size="sm"
@@ -1067,26 +1089,79 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
                 <div className="mt-3 flex flex-col gap-2">
                   <Button
                     size="sm"
-                    variant="outline"
                     onClick={() => runPreview(concept, i)}
                     disabled={isPreviewing || generatingAll}
                     data-testid={`button-preview-concept-${i}`}
                   >
                     <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                    {isPreviewing ? "Generating…" : previewUrl ? "Regenerate art" : "Preview art"}
+                    {isPreviewing ? "Generating artwork…" : previewUrl ? "Regenerate art" : "Preview artwork"}
                   </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => applyConcept.mutate({ concept, index: i })}
-                    disabled={applyConcept.isPending}
-                    data-testid={`button-apply-concept-${i}`}
-                  >
-                    {isApplying ? (previewUrl ? "Applying…" : "Generating illustration… (this can take up to a minute)") : (
-                      <>
-                        <Check className="mr-1.5 h-3.5 w-3.5" /> Use this design
-                      </>
-                    )}
-                  </Button>
+                  {previewUrl && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => applyConcept.mutate({ concept, index: i })}
+                      disabled={applyConcept.isPending}
+                      data-testid={`button-apply-concept-${i}`}
+                    >
+                      {isApplying ? "Applying…" : (
+                        <>
+                          <Check className="mr-1.5 h-3.5 w-3.5" /> Use this design
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  {/* Per-card feedback — intuitive love/pass that drives refinement */}
+                  <div className="flex items-center gap-2" data-testid={`row-card-feedback-${i}`}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLikedConcepts((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(i)) next.delete(i); else next.add(i);
+                          return next;
+                        });
+                        setDislikedConcepts((prev) => {
+                          const next = new Set(prev);
+                          next.delete(i);
+                          return next;
+                        });
+                      }}
+                      className={`flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium transition-colors ${
+                        likedConcepts.has(i)
+                          ? "bg-primary/15 text-primary"
+                          : "text-muted-foreground hover:bg-muted"
+                      }`}
+                      data-testid={`button-love-concept-${i}`}
+                    >
+                      <Heart className={`h-3 w-3 ${likedConcepts.has(i) ? "fill-current" : ""}`} />
+                      {likedConcepts.has(i) ? "Love this" : "Love this"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDislikedConcepts((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(i)) next.delete(i); else next.add(i);
+                          return next;
+                        });
+                        setLikedConcepts((prev) => {
+                          const next = new Set(prev);
+                          next.delete(i);
+                          return next;
+                        });
+                      }}
+                      className={`flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium transition-colors ${
+                        dislikedConcepts.has(i)
+                          ? "bg-muted text-muted-foreground"
+                          : "text-muted-foreground hover:bg-muted"
+                      }`}
+                      data-testid={`button-pass-concept-${i}`}
+                    >
+                      <ThumbsDown className="h-3 w-3" />
+                      Not my style
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -1096,47 +1171,79 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
 
       {concepts && (
         <div className="mt-4 rounded-md border border-border bg-background/60 p-3" data-testid="section-refine-concepts">
-          <p className="text-xs font-medium text-foreground">Not quite right?</p>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">
-            Tell us what to change and we'll regenerate all 4 — no need to start over.
-          </p>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {REFINE_CHIPS.map((chip) => (
-              <Button
-                key={chip}
-                size="sm"
-                variant="outline"
-                className="h-auto rounded-full px-2.5 py-1 text-[11px]"
-                onClick={() => refineConcepts.mutate(chip)}
-                disabled={refineConcepts.isPending}
-                data-testid={`chip-refine-${chip.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`}
-              >
-                {chip}
-              </Button>
-            ))}
-          </div>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <Input
-              value={refineFeedback}
-              onChange={(e) => setRefineFeedback(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && refineFeedback.trim() && !refineConcepts.isPending) {
-                  refineConcepts.mutate(refineFeedback.trim());
-                }
-              }}
-              placeholder="e.g. warmer colors and a hand-drawn feel"
-              className="max-w-sm"
-              data-testid="input-refine-feedback"
-            />
-            <Button
-              size="sm"
-              onClick={() => refineConcepts.mutate(refineFeedback.trim())}
-              disabled={!refineFeedback.trim() || refineConcepts.isPending}
-              data-testid="button-refine-concepts"
-            >
-              <Wand2 className="mr-1.5 h-3.5 w-3.5" /> {refineConcepts.isPending ? "Refining…" : "Refine"}
-            </Button>
-          </div>
+          {/* If the host loved a concept, offer to show more like it */}
+          {likedConcepts.size > 0 ? (
+            <>
+              <p className="text-xs font-medium text-foreground">
+                Love the direction? Want more like it?
+              </p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                We'll generate new designs inspired by the one you loved.
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    const liked = concepts.filter((_, i) => likedConcepts.has(i));
+                    const feedback = `I love "${liked.map(c => c.conceptName).join(" and “")}" — show me more designs like these.`;
+                    refineConcepts.mutate(feedback);
+                    setLikedConcepts(new Set());
+                    setDislikedConcepts(new Set());
+                  }}
+                  disabled={refineConcepts.isPending}
+                  data-testid="button-more-like-loved"
+                >
+                  <Heart className="mr-1.5 h-3.5 w-3.5" /> Show me more like this
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-xs font-medium text-foreground">
+                Don't love any of these?
+              </p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                Tell us what you're looking for and we'll try again.
+              </p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {REFINE_OPTIONS.map((option) => (
+                  <Button
+                    key={option}
+                    size="sm"
+                    variant="outline"
+                    className="h-auto rounded-full px-2.5 py-1 text-[11px]"
+                    onClick={() => refineConcepts.mutate(option)}
+                    disabled={refineConcepts.isPending}
+                    data-testid={`chip-refine-${option.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`}
+                  >
+                    {option}
+                  </Button>
+                ))}
+              </div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Input
+                  value={refineFeedback}
+                  onChange={(e) => setRefineFeedback(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && refineFeedback.trim() && !refineConcepts.isPending) {
+                      refineConcepts.mutate(refineFeedback.trim());
+                    }
+                  }}
+                  placeholder="e.g. I want something warm and cozy with flowers"
+                  className="max-w-sm"
+                  data-testid="input-refine-feedback"
+                />
+                <Button
+                  size="sm"
+                  onClick={() => refineConcepts.mutate(refineFeedback.trim())}
+                  disabled={!refineFeedback.trim() || refineConcepts.isPending}
+                  data-testid="button-refine-concepts"
+                >
+                  {refineConcepts.isPending ? "Designing…" : "Show me"}
+                </Button>
+              </div>
+            </>
+          )}
           {renderInspirationControl("refine")}
         </div>
       )}
@@ -1150,7 +1257,7 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
             disabled={generateConcepts.isPending}
             data-testid="button-regenerate-concepts"
           >
-            <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Try again with this theme
+            <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Show me different designs
           </Button>
           <Button
             size="sm"

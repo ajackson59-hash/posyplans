@@ -8,9 +8,13 @@ import Anthropic from "@anthropic-ai/sdk";
 // use the OpenAI SDK — a plain fetch() keeps the dependency footprint small
 // and avoids any SDK version drift, since this is a single, simple request.
 
-// Builds a rich, structured image generation prompt from the concept's
+// Builds a rich, professional image generation prompt from the concept's
 // artDirection + illustrationPrompt. This gives the image model real design
 // intent instead of a loose text summary.
+//
+// The prompt is structured as a professional art brief with quality modifiers
+// that steer the image model toward premium, clean illustration — not
+// generic clipart or muddy AI art.
 export function buildIllustrationPrompt(concept: InviteDesignConcept): string {
   const ad = concept.artDirection;
   if (!ad) {
@@ -18,13 +22,47 @@ export function buildIllustrationPrompt(concept: InviteDesignConcept): string {
     return concept.illustrationPrompt;
   }
 
+  // Professional quality modifiers that apply to ALL illustrations
+  const QUALITY_MODIFIERS = "professional illustration, high quality, clean composition, intentional design, no clipart, no stock photo look";
+
+  // Style reference per illustration medium — gives the image model a
+  // recognizable quality benchmark to aim for.
+  const STYLE_REFERENCES: Record<string, string> = {
+    watercolor: "in the style of fine editorial watercolor illustration",
+    "editorial illustration": "in the style of high-end magazine editorial illustration",
+    "fine line art": "in the style of delicate botanical line art",
+    "botanical illustration": "in the style of vintage botanical scientific illustration",
+    "flat vector illustration": "in the style of modern flat design illustration",
+    "cartoon illustration": "in the style of polished character illustration",
+    "character illustration": "in the style of polished character illustration",
+    "sticker art": "in the style of modern sticker design",
+    "flat graphic design": "in the style of bold contemporary graphic design",
+    "geometric illustration": "in the style of modern geometric art",
+    "typographic art": "in the style of abstract typographic art",
+    "abstract geometric": "in the style of modern abstract geometric art",
+    "minimal line art": "in the style of elegant minimal line illustration",
+    "single-element botanical": "in the style of minimal botanical illustration",
+    "monoline illustration": "in the style of clean monoline illustration",
+    gouache: "in the style of warm gouache storybook illustration",
+    "colored pencil": "in the style of textured colored pencil illustration",
+    "papercut illustration": "in the style of layered papercut art",
+    linocut: "in the style of bold linocut print",
+    papercut: "in the style of layered papercut art",
+    woodcut: "in the style of traditional woodcut print",
+    "hand-drawn illustration": "in the style of warm hand-drawn illustration",
+  };
+
+  const styleRef = STYLE_REFERENCES[ad.illustrationMedium.toLowerCase()] || "in the style of professional illustration";
+
+  // Build the prompt as a flowing art brief, not a field concatenation
   const parts = [
     `${ad.illustrationMedium} illustration`,
     ad.subjectFocus,
-    `Composition: ${ad.compositionType}`,
-    `Negative space: ${ad.negativeSpace}`,
-    `Color treatment: ${ad.colorTreatment}`,
-    `Texture: ${ad.texture}`,
+    `${ad.compositionType}`,
+    `${ad.colorTreatment}`,
+    `${ad.texture}`,
+    styleRef,
+    QUALITY_MODIFIERS,
     concept.illustrationPrompt, // includes the "no text" guardrail from the LLM
     ad.avoidList,
   ].filter(Boolean);
