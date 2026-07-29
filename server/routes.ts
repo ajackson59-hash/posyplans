@@ -924,7 +924,7 @@ export async function registerRoutes(
     }
     try {
       const aspectRatio = concept.layoutStyle === "banner" ? "16:9" : concept.layoutStyle === "full-bleed" ? "9:16" : "1:1";
-      const illustrationUrl = await generateInviteIllustrationWithQualityGate(concept, aspectRatio);
+      const illustrationUrl = await generateInviteIllustration(concept, aspectRatio);
       res.json({ illustrationUrl });
     } catch (err) {
       console.error("preview-concept illustration generation failed:", err);

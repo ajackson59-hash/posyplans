@@ -91,7 +91,7 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
       apiRequestJson<{ concepts: InviteDesignConcept[]; dnaProfile: EventDnaProfile; inspirationNotes?: string }>(
         "POST",
         `/api/events/owner/${ownerToken}/invite/generate-concepts`,
-        { themePrompt: themePromptDraft, inspirationImages, preferredStyleLanes: selectedStyleLanes.length === 4 ? selectedStyleLanes : undefined },
+        { themePrompt: themePromptDraft, inspirationImages, preferredStyleLanes: selectedStyleLanes.length > 0 ? selectedStyleLanes : undefined },
       ),
     onSuccess: (result) => {
       setConcepts(result.concepts);
@@ -761,7 +761,7 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
       <div className="mt-3" data-testid="section-vibe-picker">
         <p className="text-xs font-medium text-foreground">Pick your vibes (optional)</p>
         <p className="mt-0.5 text-[11px] text-muted-foreground">
-          Select up to 4 styles — each concept will use a different one. Or skip this and let the AI surprise you.
+          Select up to 4 styles — each concept will use a different one. Pick fewer and we'll fill the rest. Or skip this and let the AI surprise you.
         </p>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {STYLE_LANES.map((lane) => {

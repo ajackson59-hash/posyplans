@@ -33,10 +33,10 @@ const STYLE_LANE_DESCRIPTIONS = STYLE_LANES.map((lane) => {
   ].join("\n");
 }).join("\n\n");
 
-const RESPONSE_SHAPE_INSTRUCTIONS = `You are a party invitation designer helping a non-professional host turn a short theme description into complete, coordinated invitation design concepts. Produce exactly 4 DISTINCT concepts as STRICT JSON only — no markdown fences, no commentary, just the JSON object.
+const RESPONSE_SHAPE_INSTRUCTIONS = `You are a party invitation designer helping a non-professional host turn a short theme description into complete, coordinated invitation design concepts. Produce concepts as STRICT JSON only — no markdown fences, no commentary, just the JSON object.
 
 CRITICAL — CREATIVE DIRECTION MATRIX:
-Each of the 4 concepts MUST be assigned to a DIFFERENT style lane. The style lanes are:
+Each concept MUST be assigned to a DIFFERENT style lane. The style lanes are:
 
 ${STYLE_LANE_DESCRIPTIONS}
 
@@ -77,11 +77,11 @@ Rules:
 - fontPairingId must be exactly one of the listed ids — never invent a new one.
 - borderStyle must be exactly one of the listed ids.
 - layoutStyle: choose from the lane's preferred layouts when possible. Use "banner" when the illustration works well as a standalone top image; "backdrop" for soft texture behind text; "split" for side-by-side art and text; "centered" for small focal art with margins; "full-bleed" when art fills the card with text overlaid.
-- dnaHints: your honest read of where THIS SPECIFIC concept sits on each listed axis, as a number from -1 to 1. Every concept should read a little differently here — don't give all 4 concepts the same hints.
+- dnaHints: your honest read of where THIS SPECIFIC concept sits on each listed axis, as a number from -1 to 1. Every concept should read a little differently here — don't give all concepts the same hints.
 - Ground every concept in the given theme and event details — don't produce generic designs unrelated to the theme.
-- If a "Host's established style so far" line is given below, treat it as useful context about this host's taste, not a hard constraint: let it influence the overall mood and at least 2 of the 4 concepts, while still keeping all 4 concepts in different lanes.
-- If a "Guest count and scale guidance" line is given below, follow it for layoutStyle and overall formality/polish across at least 3 of the 4 concepts, while still keeping all 4 concepts in different lanes.
-- If a "Previous concepts the host has already seen" section and a "Host's refinement feedback" line are given below, treat this as a refinement pass: produce 4 NEW concepts that directly address the feedback while keeping the same party theme and event details. Don't simply re-emit the previous concepts — evolve them in the direction the feedback asks for.
+- If a "Host's established style so far" line is given below, treat it as useful context about this host's taste, not a hard constraint: let it influence the overall mood and at least 2 of the concepts, while still keeping all concepts in different lanes.
+- If a "Guest count and scale guidance" line is given below, follow it for layoutStyle and overall formality/polish across at least 3 of the concepts, while still keeping all concepts in different lanes.
+- If a "Previous concepts the host has already seen" section and a "Host's refinement feedback" line are given below, treat this as a refinement pass: produce NEW concepts that directly address the feedback while keeping the same party theme and event details. Don't simply re-emit the previous concepts — evolve them in the direction the feedback asks for.
 - Output raw JSON only.`;
 
 // Supported by both the Anthropic vision API and the browser upload helper.
@@ -156,7 +156,7 @@ export async function generateInviteDesignConcepts(params: {
   feedback?: string | null;
   /** Style direction extracted from host-uploaded inspiration images (see extractInspirationNotes) — omit/null when none uploaded. */
   inspirationNotes?: string | null;
-  /** Optional: the host's preferred style lane ids. When provided, the 4 concepts will be generated in these lanes. */
+  /** Optional: the host's preferred style lane ids (1-4). When 4 are provided, concepts are generated in those lanes. When 1-3 are provided, the AI fills the remaining lanes. When null/empty, the AI uses all 6 lanes. */
   preferredStyleLanes?: string[] | null;
 }): Promise<InviteDesignConcept[]> {
   const client = new Anthropic();
@@ -173,7 +173,9 @@ export async function generateInviteDesignConcepts(params: {
 
   const preferredStyleLanesLine =
     params.preferredStyleLanes && params.preferredStyleLanes.length > 0
-      ? `Host's preferred style lanes: ${params.preferredStyleLanes.join(", ")}. Generate exactly 4 concepts, one per preferred lane.`
+      ? params.preferredStyleLanes.length === 4
+        ? `Host's preferred style lanes: ${params.preferredStyleLanes.join(", ")}. Generate exactly 4 concepts, one per preferred lane.`
+        : `Host's preferred style lanes: ${params.preferredStyleLanes.join(", ")}. Generate 6 concepts: one per preferred lane (${params.preferredStyleLanes.length} lane(s)) plus one per each of the remaining lanes. The quality gate will select the best 4.`
       : null;
 
   const userPrompt = [
