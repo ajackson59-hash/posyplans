@@ -924,11 +924,26 @@ export async function registerRoutes(
     }
     try {
       const aspectRatio = concept.layoutStyle === "banner" ? "16:9" : concept.layoutStyle === "full-bleed" ? "9:16" : "1:1";
-      const illustrationUrl = await generateInviteIllustration(concept, aspectRatio, "medium");
+      let illustrationUrl: string | null = null;
+      try {
+        // First attempt at medium quality — fast, good enough for preview
+        illustrationUrl = await generateInviteIllustration(concept, aspectRatio, "medium");
+      } catch (firstErr) {
+        console.error("preview-concept first attempt failed, retrying at low quality:", firstErr);
+        try {
+          // Silent retry at low quality — faster, more likely to succeed
+          illustrationUrl = await generateInviteIllustration(concept, aspectRatio, "low");
+        } catch (secondErr) {
+          console.error("preview-concept retry also failed:", secondErr);
+          // Return a graceful fallback instead of an error — the client shows
+          // a styled CSS card with the concept's palette/fonts
+          return res.json({ illustrationUrl: null, fallback: true });
+        }
+      }
       res.json({ illustrationUrl });
     } catch (err) {
-      console.error("preview-concept illustration generation failed:", err);
-      res.status(502).json({ error: "Couldn't generate the illustration right now — please try again." });
+      console.error("preview-concept unexpected error:", err);
+      res.json({ illustrationUrl: null, fallback: true });
     }
   });
 

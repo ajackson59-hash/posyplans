@@ -58,6 +58,11 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
   const [previewUrls, setPreviewUrls] = useState<Record<number, string>>({});
   const [previewingIndexes, setPreviewingIndexes] = useState<Set<number>>(new Set());
   const [generatingAll, setGeneratingAll] = useState(false);
+  // Tracks cards where artwork generation failed — used to show a graceful
+  // fallback label instead of an error toast (Pattern 3: Resilient Fallback)
+  const [failedPreviews, setFailedPreviews] = useState<Set<number>>(new Set());
+  // Named stage label for the progress indicator (Pattern 2: Named Stages)
+  const [stageLabel, setStageLabel] = useState<string>("");
   const [refineFeedback, setRefineFeedback] = useState("");
   // Selected vibe/style lanes — when the host picks exactly 4, concepts are
   // generated in those lanes. Empty array = let the AI choose 4 lanes.
@@ -99,10 +104,11 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
       setConcepts(result.concepts);
       setAppliedConceptIndex(null);
       setPreviewUrls({});
+      setFailedPreviews(new Set());
       setInspirationNotes(result.inspirationNotes ?? null);
       setLikedConcepts(new Set());
       setDislikedConcepts(new Set());
-      toast({ title: "4 design concepts ready", description: "Generating artwork for each design — hang tight…" });
+      toast({ title: "4 design concepts ready", description: "Generating artwork — hang tight…" });
       // Auto-generate artwork for all concepts so the host sees real art immediately
       generateAllArtwork(result.concepts);
     },
@@ -125,6 +131,7 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
       setConcepts(result.concepts);
       setAppliedConceptIndex(null);
       setPreviewUrls({});
+      setFailedPreviews(new Set());
       setRefineFeedback("");
       setInspirationNotes(result.inspirationNotes ?? null);
       setLikedConcepts(new Set());
@@ -245,18 +252,33 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
   // host can see the actual illustration on the card before applying. The url
   // is cached in previewUrls and later handed to apply-concept so the same
   // image isn't paid for twice.
+  // Pattern 3: On failure, silently marks the card as fallback — no error toast.
+  // The card stays in its styled CSS placeholder state with a subtle label.
   const runPreview = async (concept: InviteDesignConcept, index: number) => {
     if (previewingIndexes.has(index)) return;
     setPreviewingIndexes((prev) => new Set(prev).add(index));
     try {
-      const result = await apiRequestJson<{ illustrationUrl: string }>(
+      const result = await apiRequestJson<{ illustrationUrl: string | null; fallback?: boolean }>(
         "POST",
         `/api/events/owner/${ownerToken}/invite/preview-concept`,
         { concept },
       );
-      setPreviewUrls((prev) => ({ ...prev, [index]: result.illustrationUrl }));
+      if (result.illustrationUrl) {
+        const url: string = result.illustrationUrl;
+        setPreviewUrls((prev) => ({ ...prev, [index]: url }));
+        // Clear any previous failure flag for this card
+        setFailedPreviews((prev) => {
+          const next = new Set(prev);
+          next.delete(index);
+          return next;
+        });
+      } else if (result.fallback) {
+        // Server tried twice and failed — mark as fallback, no error toast
+        setFailedPreviews((prev) => new Set(prev).add(index));
+      }
     } catch {
-      toast({ title: "Couldn't generate that artwork", description: "Please try again.", variant: "destructive" });
+      // Network error or unexpected failure — mark as fallback, no error toast
+      setFailedPreviews((prev) => new Set(prev).add(index));
     } finally {
       setPreviewingIndexes((prev) => {
         const next = new Set(prev);
@@ -274,6 +296,8 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
     const list = conceptList ?? concepts;
     if (!list || generatingAll) return;
     setGeneratingAll(true);
+    setFailedPreviews(new Set());
+    setStageLabel("Painting artwork…");
     try {
       const pending = list
         .map((concept, index) => ({ concept, index }))
@@ -283,9 +307,15 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
         while (cursor < pending.length) {
           const item = pending[cursor++];
           await runPreview(item.concept, item.index);
+          // Update stage label based on progress (Pattern 2: Named Stages)
+          const completed = list.filter((_, i) => previewUrls[i] || failedPreviews.has(i)).length;
+          if (completed < list.length) {
+            setStageLabel(`Painting artwork (${completed} of ${list.length})…`);
+          }
         }
       };
       await Promise.all([worker(), worker()]);
+      setStageLabel("");
     } finally {
       setGeneratingAll(false);
     }
@@ -882,7 +912,12 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
           {generatingAll ? (
             <p className="flex items-center gap-1.5 text-xs font-medium text-primary" data-testid="text-auto-generating">
               <Sparkles className="h-3.5 w-3.5 animate-pulse" />
-              Generating artwork for {concepts.filter((_, i) => previewUrls[i]).length} of {concepts.length} designs…
+              {stageLabel || `Generating artwork (${concepts.filter((_, i) => previewUrls[i]).length} of ${concepts.length})…`}
+            </p>
+          ) : generateConcepts.isPending || refineConcepts.isPending ? (
+            <p className="flex items-center gap-1.5 text-xs font-medium text-primary" data-testid="text-designing-concepts">
+              <Sparkles className="h-3.5 w-3.5 animate-pulse" />
+              Designing concepts…
             </p>
           ) : (
             <p className="text-xs text-muted-foreground">
@@ -898,7 +933,7 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
           >
             <Sparkles className="mr-1.5 h-3.5 w-3.5" />
             {generatingAll
-              ? `Generating ${concepts.filter((_, i) => previewUrls[i]).length} of ${concepts.length}…`
+              ? `${concepts.filter((_, i) => previewUrls[i]).length} of ${concepts.length} done`
               : "Generate artwork for all 4"}
           </Button>
         </div>
@@ -958,9 +993,9 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
                           data-testid={`img-concept-preview-${i}`}
                         />
                       ) : (
-                        <div className="flex h-20 w-full items-center justify-center sm:h-24" style={placeholderArt} data-testid={`art-placeholder-concept-${i}`}>
+                        <div className={`flex h-20 w-full items-center justify-center sm:h-24 ${(isPreviewing || (generatingAll && !failedPreviews.has(i))) ? "skeleton-shimmer animate-pulse" : ""}`} style={placeholderArt} data-testid={`art-placeholder-concept-${i}`}>
                           <span className="rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                            {isPreviewing ? "Generating…" : "Illustration generates after you apply"}
+                            {isPreviewing ? "Generating…" : failedPreviews.has(i) ? "Style shown — art still processing" : generatingAll ? "In queue…" : "Illustration generates after you apply"}
                           </span>
                         </div>
                       )
@@ -983,8 +1018,8 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
                             </p>
                           </div>
                           {!previewUrl && (
-                            <span className="mt-1.5 self-center rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                              {isPreviewing ? "Generating…" : "Illustration generates after you apply"}
+                            <span className={`mt-1.5 self-center rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground ${(isPreviewing || generatingAll) && !failedPreviews.has(i) ? "animate-pulse" : ""}`}>
+                              {isPreviewing ? "Generating…" : failedPreviews.has(i) ? "Style shown — art still processing" : generatingAll ? "In queue…" : "Illustration generates after you apply"}
                             </span>
                           )}
                         </div>
@@ -1000,8 +1035,8 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
                           data-testid={previewUrl ? `img-concept-preview-${i}` : `art-placeholder-concept-${i}`}
                         >
                           {!previewUrl && (
-                            <span className="rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                              {isPreviewing ? "Generating…" : "Art"}
+                            <span className={`rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground ${(isPreviewing || generatingAll) && !failedPreviews.has(i) ? "animate-pulse" : ""}`}>
+                              {isPreviewing ? "Generating…" : failedPreviews.has(i) ? "Art N/A" : generatingAll ? "…" : "Art"}
                             </span>
                           )}
                         </div>
@@ -1025,8 +1060,8 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
                           data-testid={previewUrl ? `img-concept-preview-${i}` : `art-placeholder-concept-${i}`}
                         >
                           {!previewUrl && (
-                            <span className="text-[9px] font-medium text-muted-foreground">
-                              {isPreviewing ? "..." : "Art"}
+                            <span className={`text-[9px] font-medium text-muted-foreground ${(isPreviewing || generatingAll) && !failedPreviews.has(i) ? "animate-pulse" : ""}`}>
+                              {isPreviewing ? "..." : failedPreviews.has(i) ? "N/A" : generatingAll ? "..." : "Art"}
                             </span>
                           )}
                         </div>
@@ -1037,8 +1072,8 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
                           {previewMessageDraft}
                         </p>
                         {!previewUrl && (
-                          <span className="mt-2 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                            {isPreviewing ? "Generating…" : "Illustration generates after you apply"}
+                          <span className={`mt-2 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground ${(isPreviewing || generatingAll) && !failedPreviews.has(i) ? "animate-pulse" : ""}`}>
+                            {isPreviewing ? "Generating…" : failedPreviews.has(i) ? "Style shown — art still processing" : generatingAll ? "In queue…" : "Illustration generates after you apply"}
                           </span>
                         )}
                       </div>
@@ -1060,8 +1095,8 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
                           </p>
                         </div>
                         {!previewUrl && (
-                          <span className="mt-1.5 inline-block rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                            {isPreviewing ? "Generating…" : "Illustration generates after you apply"}
+                          <span className={`mt-1.5 inline-block rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground ${(isPreviewing || generatingAll) && !failedPreviews.has(i) ? "animate-pulse" : ""}`}>
+                            {isPreviewing ? "Generating…" : failedPreviews.has(i) ? "Style shown — art still processing" : generatingAll ? "In queue…" : "Illustration generates after you apply"}
                           </span>
                         )}
                       </div>
@@ -1109,7 +1144,7 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
                     <Sparkles className={`mr-1.5 h-3.5 w-3.5 ${isPreviewing ? "animate-pulse" : ""}`} />
                     {isPreviewing ? "Generating artwork…" : previewUrl ? "Regenerate art" : generatingAll ? "In queue…" : "Preview artwork"}
                   </Button>
-                  {previewUrl && (
+                  {(previewUrl || failedPreviews.has(i)) && (
                     <Button
                       size="sm"
                       variant="outline"
