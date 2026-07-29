@@ -130,6 +130,8 @@ export interface StyleLane {
   preferredLayouts: LayoutStyle[];
   /** What to avoid in this lane */
   avoid: string;
+  /** Specific subject guidance: what subjects produce premium results, and what literal interpretations to NEVER use */
+  subjectGuidance: string;
 }
 
 export const STYLE_LANES: StyleLane[] = [
@@ -143,6 +145,7 @@ export const STYLE_LANES: StyleLane[] = [
     compositionGuidance: "Generous negative space (40%+). Single elegant focal subject. Asymmetric or off-center balance.",
     preferredLayouts: ["centered", "banner", "split"],
     avoid: "Cartoon characters, bright primary colors, cluttered layouts, clipart aesthetics",
+    subjectGuidance: "Choose ONE elegant botanical or abstract subject: a single flower stem, a sprig of olive branch, a pressed flower, an abstract watercolor wash, a single feather, or a minimalist botanical line drawing. NEVER use literal theme objects (no birthday cakes, no balloons, no farm animals). The subject should feel like fine art, not decoration.",
   },
   {
     id: "playful-illustrated",
@@ -154,6 +157,7 @@ export const STYLE_LANES: StyleLane[] = [
     compositionGuidance: "Centered focal character or scene. Energetic, fills the frame. Confetti or scattered elements OK.",
     preferredLayouts: ["banner", "full-bleed", "centered"],
     avoid: "Muted or monochrome palettes, overly formal layouts, photorealistic illustration",
+    subjectGuidance: "Choose ONE cheerful abstract or geometric subject: scattered confetti shapes, a bunting/garland pattern, abstract balloons as geometric shapes, a festive crown, or a stylized party hat. Keep it modern and design-forward, NOT literal. Avoid realistic animals, realistic cakes, or any subject that looks like clipart.",
   },
   {
     id: "bold-graphic",
@@ -165,6 +169,7 @@ export const STYLE_LANES: StyleLane[] = [
     compositionGuidance: "Strong geometric grid. Diagonal or asymmetrical composition. Bold negative space as a design element.",
     preferredLayouts: ["split", "full-bleed", "banner"],
     avoid: "Soft pastels, hand-drawn styles, decorative flourishes, muted tones",
+    subjectGuidance: "Choose ONE bold abstract or geometric subject: geometric shapes (triangles, circles, arches), a bold typographic element, an abstract sunburst, or a modern architectural silhouette. NEVER use literal objects (no cakes, no animals, no balloons). The subject should feel like modern graphic design, not illustration.",
   },
   {
     id: "storybook-whimsical",
@@ -176,6 +181,7 @@ export const STYLE_LANES: StyleLane[] = [
     compositionGuidance: "Layered panels or vignette style. Soft edges, organic shapes. Storybook illustration feel.",
     preferredLayouts: ["banner", "centered", "split"],
     avoid: "Hard geometric shapes, high-contrast palettes, sterile minimalism, flat vector art",
+    subjectGuidance: "Choose ONE dreamy, atmospheric subject: a watercolor landscape (rolling hills, a meadow, a garden scene), a whimsical tree with hanging leaves, a crescent moon with stars, or a soft floral wreath. The subject should feel like a children's book illustration — soft, warm, and magical. NEVER use cartoon animals, literal party objects, or anything that looks like clipart.",
   },
   {
     id: "minimal-modern",
@@ -187,6 +193,7 @@ export const STYLE_LANES: StyleLane[] = [
     compositionGuidance: "Maximum negative space (50%+). Single small accent element. Rule-of-thirds composition.",
     preferredLayouts: ["centered", "split", "backdrop"],
     avoid: "Busy illustrations, multiple colors, decorative borders, ornate fonts, cluttered layouts",
+    subjectGuidance: "Choose ONE ultra-minimal subject: a single continuous-line drawing (one flower, one leaf, one abstract shape), a single geometric accent, or a small abstract mark. The subject should be small and surrounded by generous white space. NEVER use literal objects, busy scenes, or anything that fills more than 20% of the frame.",
   },
   {
     id: "handcrafted-rustic",
@@ -198,6 +205,7 @@ export const STYLE_LANES: StyleLane[] = [
     compositionGuidance: "Organic framing, imperfect edges. Texture-forward. Cozy, filled composition with warm border treatment.",
     preferredLayouts: ["banner", "centered", "backdrop"],
     avoid: "Glossy digital look, bright neon colors, sterile minimalism, photorealistic illustration",
+    subjectGuidance: "Choose ONE elegant natural subject: a wildflower bouquet, a eucalyptus sprig, a pressed flower, a cotton branch, a wheat stalk, a botanical wreath, or a textured kraft paper background with organic edges. NEVER use farm animals (no roosters, pigs, cows, chickens), barns, tractors, or any literal farm objects. The subject should feel like artisan stationery, not a farm themed birthday party.",
   },
 ];
 

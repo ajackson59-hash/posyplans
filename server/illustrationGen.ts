@@ -23,7 +23,7 @@ export function buildIllustrationPrompt(concept: InviteDesignConcept): string {
   }
 
   // Professional quality modifiers that apply to ALL illustrations
-  const QUALITY_MODIFIERS = "professional illustration, high quality, clean composition, intentional design, no clipart, no stock photo look";
+  const QUALITY_MODIFIERS = "professional illustration, high quality, elegant, sophisticated, premium stationery quality, clean composition, intentional design, no clipart, no stock photo look, no amateur art";
 
   // Style reference per illustration medium — gives the image model a
   // recognizable quality benchmark to aim for.

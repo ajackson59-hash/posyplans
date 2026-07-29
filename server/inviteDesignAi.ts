@@ -28,6 +28,7 @@ const STYLE_LANE_DESCRIPTIONS = STYLE_LANES.map((lane) => {
     `  Typography: ${lane.typographyMood}`,
     `  Composition: ${lane.compositionGuidance}`,
     `  Layouts: ${layouts}`,
+    `  Subject guidance: ${lane.subjectGuidance}`,
     `  AVOID: ${lane.avoid}`,
   ].join("\n");
 }).join("\n\n");
@@ -154,6 +155,7 @@ The illustrationPrompt is the most important field — it directly controls the 
 
 ## RULES
 
+- CRITICAL — SUBJECT SELECTION: Read each lane's "Subject guidance" carefully. Choose abstract, design-forward subjects — NOT literal interpretations of the theme. A "rustic farmhouse" theme should use botanical elements (wildflowers, eucalyptus, wheat stalks) — NEVER farm animals (no roosters, pigs, cows). A "birthday party" theme should use abstract festive elements (confetti shapes, geometric garlands) — NEVER literal birthday cakes with candles. Think like a premium stationery designer, not someone searching stock photos.
 - Generate exactly 6 concepts, each in a DIFFERENT style lane. Use all 6 lanes. The quality gate will select the best 4 to show the host.
 - Each concept should look like it came from a different professional designer — different font pairings, different border styles, different layout styles, different color moods, different illustration mediums.
 - styleLaneId MUST be one of the lane ids listed above, and each concept MUST use a different lane.
