@@ -102,7 +102,9 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
       setInspirationNotes(result.inspirationNotes ?? null);
       setLikedConcepts(new Set());
       setDislikedConcepts(new Set());
-      toast({ title: "4 design concepts ready", description: "Preview the artwork on any design, then pick your favorite." });
+      toast({ title: "4 design concepts ready", description: "Generating artwork for each design — hang tight…" });
+      // Auto-generate artwork for all concepts so the host sees real art immediately
+      generateAllArtwork(result.concepts);
     },
     onError: () => {
       toast({ title: "Couldn't generate design concepts", description: "Please try again in a moment.", variant: "destructive" });
@@ -127,7 +129,8 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
       setInspirationNotes(result.inspirationNotes ?? null);
       setLikedConcepts(new Set());
       setDislikedConcepts(new Set());
-      toast({ title: "4 fresh concepts ready", description: "Preview or apply any of them." });
+      toast({ title: "4 fresh concepts ready", description: "Generating artwork…" });
+      generateAllArtwork(result.concepts);
     },
     onError: () => {
       toast({ title: "Couldn't refine the concepts", description: "Please try again in a moment.", variant: "destructive" });
@@ -265,11 +268,14 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
 
   // Previews artwork for all 4 concepts that don't have one yet, two at a time
   // so the grid fills in progressively without hammering the image API.
-  const generateAllArtwork = async () => {
-    if (!concepts || generatingAll) return;
+  // Accepts an optional conceptList to avoid stale state when called from
+  // onSuccess callbacks (where setConcepts hasn't flushed yet).
+  const generateAllArtwork = async (conceptList?: InviteDesignConcept[]) => {
+    const list = conceptList ?? concepts;
+    if (!list || generatingAll) return;
     setGeneratingAll(true);
     try {
-      const pending = concepts
+      const pending = list
         .map((concept, index) => ({ concept, index }))
         .filter(({ index }) => !previewUrls[index]);
       let cursor = 0;
@@ -873,13 +879,20 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
 
       {concepts && (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs text-muted-foreground">
-            Preview the artwork on any design — then pick your favorite.
-          </p>
+          {generatingAll ? (
+            <p className="flex items-center gap-1.5 text-xs font-medium text-primary" data-testid="text-auto-generating">
+              <Sparkles className="h-3.5 w-3.5 animate-pulse" />
+              Generating artwork for {concepts.filter((_, i) => previewUrls[i]).length} of {concepts.length} designs…
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Preview the artwork on any design — then pick your favorite.
+            </p>
+          )}
           <Button
             size="sm"
             variant="outline"
-            onClick={generateAllArtwork}
+            onClick={() => generateAllArtwork()}
             disabled={generatingAll || concepts.every((_, i) => previewUrls[i])}
             data-testid="button-generate-all-artwork"
           >
@@ -1093,8 +1106,8 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
                     disabled={isPreviewing || generatingAll}
                     data-testid={`button-preview-concept-${i}`}
                   >
-                    <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                    {isPreviewing ? "Generating artwork…" : previewUrl ? "Regenerate art" : "Preview artwork"}
+                    <Sparkles className={`mr-1.5 h-3.5 w-3.5 ${isPreviewing ? "animate-pulse" : ""}`} />
+                    {isPreviewing ? "Generating artwork…" : previewUrl ? "Regenerate art" : generatingAll ? "In queue…" : "Preview artwork"}
                   </Button>
                   {previewUrl && (
                     <Button

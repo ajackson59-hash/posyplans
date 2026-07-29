@@ -74,6 +74,7 @@ export function buildIllustrationPrompt(concept: InviteDesignConcept): string {
 export async function generateInviteIllustration(
   concept: InviteDesignConcept,
   aspectRatio: "16:9" | "1:1" | "9:16",
+  quality: "high" | "medium" | "low" = "high",
 ): Promise<string> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
@@ -97,7 +98,7 @@ export async function generateInviteIllustration(
       model: "gpt-image-1",
       prompt,
       size,
-      quality: "high",
+      quality,
       n: 1,
     }),
   });
