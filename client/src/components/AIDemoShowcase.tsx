@@ -76,8 +76,8 @@ const STEPS: DemoStep[] = [
   },
   {
     label: "Customize fonts, colors & layout",
-    duration: 2000,
-    posySays: "Now make it yours — swap fonts, colors, and layout in real time.",
+    duration: 5200,
+    posySays: "Now make it yours — tell me what to change and watch it update live.",
     reveal: "inviteCustomize",
   },
   {
@@ -134,20 +134,46 @@ const INVITE_CONCEPTS = [
 
 // Font samples for the customization card — each renders in its own typeface
 const FONT_SAMPLES = [
-  { name: "Editorial Serif", className: "font-serif", selected: true },
-  { name: "Modern Sans", className: "font-sans", selected: false },
-  { name: "Playful Rounded", className: "font-sans font-medium", selected: false },
+  { name: "Editorial Serif", className: "font-serif" },
+  { name: "Modern Sans", className: "font-sans" },
+  { name: "Playful Rounded", className: "font-sans font-medium" },
 ];
 
 // Layout options for the customization card
 const LAYOUT_OPTIONS = [
-  { name: "Banner", glyph: "\u25AC", selected: true },
-  { name: "Split", glyph: "\u25A5", selected: false },
-  { name: "Centered", glyph: "\u25C9", selected: false },
+  { name: "Banner", glyph: "\u25AC" },
+  { name: "Split", glyph: "\u25A5" },
+  { name: "Centered", glyph: "\u25C9" },
 ];
 
-// Color palette swatches for the customization card
-const PALETTE_SWATCHES = ["#f97316", "#1e293b", "#fde047", "#fed7aa"];
+// Color palettes — each stage swaps the invite's colors
+type Palette = { bg: string; text: string; dots: string[]; label: string };
+const CUSTOMIZE_STAGES: { prompt: string; fontIdx: number; layoutIdx: number; palette: Palette }[] = [
+  {
+    prompt: "Try softer, warmer colors",
+    fontIdx: 0,
+    layoutIdx: 0,
+    palette: { bg: "#fde047", text: "#1e293b", dots: ["#f97316", "#1e293b", "#fde047", "#fed7aa"], label: "Original" },
+  },
+  {
+    prompt: "Make it more playful",
+    fontIdx: 2,
+    layoutIdx: 0,
+    palette: { bg: "#fce7f3", text: "#be185d", dots: ["#ec4899", "#831843", "#fce7f3", "#f9a8d4"], label: "Rose" },
+  },
+  {
+    prompt: "Center the title",
+    fontIdx: 2,
+    layoutIdx: 2,
+    palette: { bg: "#fce7f3", text: "#be185d", dots: ["#ec4899", "#831843", "#fce7f3", "#f9a8d4"], label: "Rose" },
+  },
+  {
+    prompt: "Perfect — save it!",
+    fontIdx: 2,
+    layoutIdx: 2,
+    palette: { bg: "#fce7f3", text: "#be185d", dots: ["#ec4899", "#831843", "#fce7f3", "#f9a8d4"], label: "Rose" },
+  },
+];
 
 // ── Typing hook ───────────────────────────────────────────────────────────────
 
@@ -193,6 +219,8 @@ export default function AIDemoShowcase({
   const [stepIndex, setStepIndex] = useState(-1);
   const [playing, setPlaying] = useState(false);
   const [hasPlayed, setHasPlayed] = useState(false);
+  // Cycles through visible invite transformations during the customization step.
+  const [customizeStage, setCustomizeStage] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = useRef(false);
 
@@ -209,8 +237,25 @@ export default function AIDemoShowcase({
   const reset = useCallback(() => {
     setStepIndex(-1);
     setPlaying(false);
+    setCustomizeStage(0);
     setTimeout(() => start(), 100);
   }, [start]);
+
+  // Advance through the 4 customize sub-stages during step 8. Each sub-stage
+  // shows a prompt, then the visible invite transforms (colors, font, layout).
+  const CUSTOMIZE_STEP = 8;
+  useEffect(() => {
+    if (stepIndex !== CUSTOMIZE_STEP) {
+      if (stepIndex < CUSTOMIZE_STEP) setCustomizeStage(0);
+      return;
+    }
+    const stageMs = prefersReducedMotion.current ? 400 : 1250;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    for (let s = 1; s < CUSTOMIZE_STAGES.length; s++) {
+      timers.push(setTimeout(() => setCustomizeStage(s), stageMs * s));
+    }
+    return () => timers.forEach(clearTimeout);
+  }, [stepIndex]);
 
   // Play immediately on mount when embedded in a dialog
   useEffect(() => {
@@ -480,25 +525,47 @@ export default function AIDemoShowcase({
                 </DemoCard>
               )}
 
-              {/* Live customization editor */}
-              {revealed.has("inviteCustomize") && (
+              {/* Live customization editor — the invite preview transforms in real time */}
+              {revealed.has("inviteCustomize") && (() => {
+                const stage = CUSTOMIZE_STAGES[customizeStage];
+                const palette = stage.palette;
+                const fontIdx = stage.fontIdx;
+                const layoutIdx = stage.layoutIdx;
+                return (
                 <DemoCard icon={Palette} title="Live Design Studio" delay={0} testId="demo-invite-customize">
-                  {/* Mini invite preview */}
+                  {/* Prompt bar — shows what the user asked for */}
+                  <div className="mb-2 flex items-center gap-1.5 rounded-md bg-primary/5 px-2.5 py-1.5" data-testid={`demo-customize-prompt-${customizeStage}`}>
+                    <Sparkles className="h-2.5 w-2.5 shrink-0 text-primary" />
+                    <span className="text-[10px] font-medium text-foreground">{stage.prompt}</span>
+                  </div>
+
+                  {/* Mini invite preview — colors, font, and layout all change with the stage */}
                   <div
-                    className="mb-2.5 overflow-hidden rounded-md p-2.5"
-                    style={{ backgroundColor: PALETTE_SWATCHES[2] }}
+                    className="mb-2.5 overflow-hidden rounded-md p-3 transition-all duration-500"
+                    style={{ backgroundColor: palette.bg }}
                   >
-                    <p className="text-center text-[10px] font-bold uppercase" style={{ color: PALETTE_SWATCHES[1] }}>
-                      Maren is turning 3!
+                    <p
+                      className={`${FONT_SAMPLES[fontIdx].className} text-center text-[11px] font-bold transition-all duration-500`}
+                      style={{ color: palette.text }}
+                    >
+                      {layoutIdx === 2 ? "Maren is turning 3!" : "MAREN IS TURNING 3!"}
                     </p>
-                    <div className="mt-1 flex justify-center gap-0.5">
-                      {PALETTE_SWATCHES.map((c, i) => (
-                        <span key={i} className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: c }} />
+                    {layoutIdx === 0 && (
+                      <p
+                        className={`${FONT_SAMPLES[fontIdx].className} mt-0.5 text-center text-[7px] transition-all duration-500`}
+                        style={{ color: palette.text, opacity: 0.7 }}
+                      >
+                        Saturday, August 16 · 2pm
+                      </p>
+                    )}
+                    <div className="mt-1.5 flex justify-center gap-0.5 transition-all duration-500">
+                      {palette.dots.map((c, i) => (
+                        <span key={i} className="h-1.5 w-1.5 rounded-full transition-all duration-500" style={{ backgroundColor: c }} />
                       ))}
                     </div>
                   </div>
 
-                  {/* Font picker row */}
+                  {/* Font picker row — selected highlight follows the stage */}
                   <div className="mb-2">
                     <p className="mb-1 flex items-center gap-1 text-[9px] font-medium text-muted-foreground">
                       <TypeIcon className="h-2.5 w-2.5" /> Fonts
@@ -507,7 +574,7 @@ export default function AIDemoShowcase({
                       {FONT_SAMPLES.map((f, i) => (
                         <span
                           key={i}
-                          className={`flex-1 truncate rounded px-1.5 py-1 text-center text-[8px] ${f.className} ${f.selected ? "bg-primary/15 text-primary ring-1 ring-primary/30" : "bg-muted text-muted-foreground"}`}
+                          className={`flex-1 truncate rounded px-1.5 py-1 text-center text-[8px] transition-all duration-300 ${f.className} ${i === fontIdx ? "bg-primary/15 text-primary ring-1 ring-primary/30" : "bg-muted text-muted-foreground"}`}
                         >
                           Aa
                         </span>
@@ -515,7 +582,7 @@ export default function AIDemoShowcase({
                     </div>
                   </div>
 
-                  {/* Layout + Colors row */}
+                  {/* Layout + Colors row — selected highlight follows the stage */}
                   <div className="flex gap-2">
                     <div className="flex-1">
                       <p className="mb-1 flex items-center gap-1 text-[9px] font-medium text-muted-foreground">
@@ -525,7 +592,7 @@ export default function AIDemoShowcase({
                         {LAYOUT_OPTIONS.map((l, i) => (
                           <span
                             key={i}
-                            className={`flex h-5 w-5 items-center justify-center rounded text-[10px] ${l.selected ? "bg-primary/15 text-primary ring-1 ring-primary/30" : "bg-muted text-muted-foreground"}`}
+                            className={`flex h-5 w-5 items-center justify-center rounded text-[10px] transition-all duration-300 ${i === layoutIdx ? "bg-primary/15 text-primary ring-1 ring-primary/30" : "bg-muted text-muted-foreground"}`}
                           >
                             {l.glyph}
                           </span>
@@ -537,10 +604,10 @@ export default function AIDemoShowcase({
                         <Palette className="h-2.5 w-2.5" /> Colors
                       </p>
                       <div className="flex gap-1">
-                        {PALETTE_SWATCHES.map((c, i) => (
+                        {palette.dots.map((c, i) => (
                           <span
                             key={i}
-                            className="h-5 w-5 rounded-full border border-border"
+                            className="h-5 w-5 rounded-full border border-border transition-all duration-500"
                             style={{ backgroundColor: c }}
                           />
                         ))}
@@ -552,7 +619,8 @@ export default function AIDemoShowcase({
                     Changes save automatically · envelope & RSVP update live
                   </p>
                 </DemoCard>
-              )}
+                );
+              })()}
 
               {/* Checklist + Budget */}
               {revealed.has("checklist") && (

@@ -12,6 +12,7 @@ import { touchRecentEvent } from "@/lib/eventRecovery";
 import { applyInviteTokens, INVITE_TOKENS, INVITE_TONES, type InviteTone } from "@shared/inviteTokens";
 import { suggestRsvpDeadline } from "@shared/rsvpDeadline";
 import { Wordmark } from "@/components/Logo";
+import AskPosy from "@/components/AskPosy";
 import ThemeTab from "@/components/ThemeTab";
 import BudgetTab from "@/components/BudgetTab";
 import MenuTab from "@/components/MenuTab";
@@ -1722,6 +1723,7 @@ export default function Dashboard() {
           </TabsContent>
         </Tabs>
       </main>
+      <AskPosy page="dashboard" />
     </div>
   );
 }

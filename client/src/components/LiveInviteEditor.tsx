@@ -46,6 +46,7 @@ import { Textarea } from "@/components/ui/textarea";
 import PaletteEditor from "@/components/PaletteEditor";
 import EnvelopeMockup, { PostageStamp } from "@/components/EnvelopeMockup";
 import { useToast } from "@/hooks/use-toast";
+import AskPosy from "@/components/AskPosy";
 import {
   Sparkles,
   Wand2,
@@ -748,6 +749,7 @@ export default function LiveInviteEditor({ ownerToken, event, onBrowse }: LiveIn
           <X className="mr-1.5 h-3.5 w-3.5" /> Remove
         </Button>
       </div>
+      <AskPosy page="editor" />
     </div>
   );
 }
