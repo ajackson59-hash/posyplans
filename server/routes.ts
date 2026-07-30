@@ -24,6 +24,19 @@ import { generateInviteDesignConcepts, extractInspirationNotes } from "./inviteD
 import { generateInviteIllustration, generateInviteIllustrationWithQualityGate } from "./illustrationGen";
 import { isValidInviteDesignConcept, type InviteDesignConcept, parseInviteDesignConcept, getFontPairing, FONT_PAIRINGS, LAYOUT_STYLES, BORDER_STYLES } from "@shared/inviteDesign";
 import { deriveThemeDna, isLinerPattern, isStampStyle } from "@shared/themeDna";
+import {
+  getLaunchTheme,
+  getPaletteVariant,
+  getPlacement,
+  getOverlay,
+  getFontPairingIdFor,
+  paletteVariantColors,
+  buildThemedConcept,
+  readThemeSelection,
+  defaultEnvelopeForTheme,
+  themeCopyForEvent,
+  type ThemeCopy,
+} from "@shared/themeCatalog";
 import { computeEventDna, dnaSummaryForPrompt } from "@shared/eventDna";
 import { recommendInviteFormat } from "@shared/inviteFormatRecommendation";
 import { detectContradictions } from "@shared/contradictions";
@@ -1032,6 +1045,100 @@ export async function registerRoutes(
       console.error("apply-concept illustration generation failed:", err);
       res.status(502).json({ error: "Couldn't generate the illustration right now — please try again." });
     }
+  });
+
+  // ── Curated theme: instant, AI-free ───────────────────────────────
+  // Applying one of the eight launch themes is a pure data write. The artwork
+  // is a static asset that already exists, so there is no image model on this
+  // path and no reason for a host to wait. (Contrast apply-concept above,
+  // which is the Advanced/AI path and does generate an image.)
+  app.post("/api/events/owner/:ownerToken/invite/apply-theme", async (req, res) => {
+    const event = await storage.getEventByOwnerToken(req.params.ownerToken);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+
+    const theme = typeof req.body?.themeId === "string" ? getLaunchTheme(req.body.themeId) : undefined;
+    if (!theme) return res.status(400).json({ error: "Unknown themeId" });
+
+    const concept = buildThemedConcept(theme, {
+      paletteVariantId: typeof req.body?.paletteVariantId === "string" ? req.body.paletteVariantId : undefined,
+      placementId: typeof req.body?.placementId === "string" ? req.body.placementId : undefined,
+      overlay: req.body?.overlay,
+      fontPairingId: typeof req.body?.fontPairingId === "string" ? req.body.fontPairingId : undefined,
+      copy: themeCopyForEvent(theme, event),
+    });
+
+    const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, {
+      inviteDesignConceptJson: JSON.stringify(concept),
+      // Untaught renderers (existing email templates, older cached clients)
+      // read this field, so pointing it at the static artwork keeps them
+      // showing the right image instead of nothing.
+      inviteIllustrationUrl: theme.artwork.fullUrl,
+      themeName: theme.name,
+      paletteColors: JSON.stringify(concept.paletteColors),
+      // Applying a theme returns the host to Posy-rendered mode; any uploaded
+      // custom image is preserved so they can switch back.
+      inviteRenderMode: "",
+      ...defaultEnvelopeForTheme(theme),
+    });
+    if (!updated) return res.status(404).json({ error: "Event not found" });
+    res.json(updated);
+  });
+
+  // Customises an applied curated theme: palette variant, type pairing, type
+  // placement, overlay treatment, and the invitation's own words. Every option
+  // is validated against the theme's own curated set, so a host can restyle
+  // freely without being able to break the theme's integrity.
+  app.patch("/api/events/owner/:ownerToken/invite/theme", async (req, res) => {
+    const event = await storage.getEventByOwnerToken(req.params.ownerToken);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+
+    const applied = parseInviteDesignConcept(event.inviteDesignConceptJson);
+    const selection = readThemeSelection(applied);
+    if (!applied || !selection) return res.status(400).json({ error: "No curated theme is applied yet" });
+
+    const theme = getLaunchTheme(selection.themeId);
+    if (!theme) return res.status(400).json({ error: "No curated theme is applied yet" });
+
+    const palette = getPaletteVariant(
+      theme,
+      typeof req.body?.paletteVariantId === "string" ? req.body.paletteVariantId : selection.paletteVariantId,
+    );
+    const placement = getPlacement(
+      theme,
+      typeof req.body?.placementId === "string" ? req.body.placementId : selection.placementId,
+    );
+    const overlay = getOverlay(theme, req.body?.overlay ?? selection.overlay);
+    const fontPairingId = getFontPairingIdFor(
+      theme,
+      typeof req.body?.fontPairingId === "string" ? req.body.fontPairingId : applied.fontPairingId,
+    );
+
+    const copy: ThemeCopy = { ...selection.copy };
+    for (const key of ["eyebrow", "dateLine", "timeLine", "locationLine", "rsvpLine"] as const) {
+      if (typeof req.body?.copy?.[key] === "string") copy[key] = req.body.copy[key].slice(0, 160);
+    }
+
+    const nextConcept = {
+      ...applied,
+      paletteColors: paletteVariantColors(palette),
+      fontPairingId,
+      theme: { ...selection, paletteVariantId: palette.id, placementId: placement.id, overlay, copy },
+    };
+
+    const eventUpdates: Record<string, string> = {
+      inviteDesignConceptJson: JSON.stringify(nextConcept),
+      paletteColors: JSON.stringify(nextConcept.paletteColors),
+    };
+    if (typeof req.body?.inviteSubject === "string") {
+      eventUpdates.inviteSubject = req.body.inviteSubject.slice(0, 200);
+    }
+    if (typeof req.body?.inviteMessage === "string") {
+      eventUpdates.inviteMessage = req.body.inviteMessage.slice(0, 1000);
+    }
+
+    const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, eventUpdates);
+    if (!updated) return res.status(404).json({ error: "Event not found" });
+    res.json(updated);
   });
 
   // Lets a host nudge individual colors on an already-applied concept

@@ -34,7 +34,9 @@ import PaletteEditor from "@/components/PaletteEditor";
 import LiveInviteEditor from "@/components/LiveInviteEditor";
 import { useToast } from "@/hooks/use-toast";
 import { Sparkles, Wand2, RotateCcw, X, Check, ImagePlus, Heart, ThumbsDown, ArrowLeft } from "lucide-react";
-import ThemeGallery from "./ThemeGallery";
+import ThemeChooser from "./ThemeChooser";
+import InviteStudio from "./InviteStudio";
+import { resolveThemeView } from "@/lib/themeInvite";
 
 interface InviteDesignPickerProps {
   ownerToken: string;
@@ -611,6 +613,23 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
     );
   }
 
+  // ═══ Stage 2: curated theme studio ════════════════════════════════════
+  // A curated theme has its own composed-portrait studio. The AI concept path
+  // below keeps the older live editor, which is built around a generated
+  // illustration rather than art-directed artwork.
+  if (resolveThemeView(event) && !browsing) {
+    return (
+      <div data-testid="card-invite-studio">
+        <InviteStudio
+          ownerToken={ownerToken}
+          event={event}
+          onChangeDesign={() => { setBrowsing(true); setConcepts(null); setShowCustomTheme(false); }}
+        />
+        {renderCustomDesignEntry()}
+      </div>
+    );
+  }
+
   if (appliedConcept && !browsing) {
     return (
       <LiveInviteEditor
@@ -621,20 +640,21 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
     );
   }
 
-  // ═══ Primary path: Curated theme gallery ══════════════════════════════
-  // Shows professionally designed themes that apply instantly — no AI
-  // generation wait. The AI custom path is available as a secondary option.
+  // ═══ Stage 1: curated design catalogue ════════════════════════════════
+  // The primary experience. Applying a design is instant — static artwork plus
+  // design metadata, no image model. AI generation is a secondary path.
   if (!showCustomTheme) {
     return (
-      <div className="rounded-md border border-primary/30 bg-primary/5 p-4" data-testid="card-theme-gallery">
-        <ThemeGallery
+      <div data-testid="card-theme-gallery">
+        <ThemeChooser
           ownerToken={ownerToken}
           event={event}
           onCustomTheme={() => setShowCustomTheme(true)}
           onThemeApplied={() => {
-            // The event query will refetch and appliedConcept will be set,
-            // which re-renders to LiveInviteEditor automatically.
+            // The event refetch resolves a theme view, which re-renders into
+            // the studio automatically.
             setShowCustomTheme(false);
+            setBrowsing(false);
           }}
         />
         {renderCustomDesignEntry()}
