@@ -15,7 +15,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Sparkles, Wand2, Check, Users, ClipboardList, Mail, DollarSign, Calendar } from "lucide-react";
+import { Sparkles, Wand2, Check, Users, ClipboardList, Mail, DollarSign, Calendar, Palette, Type as TypeIcon, Layout } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // ── Script ────────────────────────────────────────────────────────────────────
@@ -28,7 +28,7 @@ interface DemoStep {
   userTypes?: string;
   posySays?: string;
   // Cards that appear when this step completes
-  reveal?: "thinking" | "timeline" | "guests" | "invite" | "checklist" | "budget" | "done";
+  reveal?: "thinking" | "timeline" | "guests" | "invite" | "inviteConcepts" | "inviteCustomize" | "checklist" | "budget" | "done";
 }
 
 const STEPS: DemoStep[] = [
@@ -67,6 +67,18 @@ const STEPS: DemoStep[] = [
     label: "Invitation design",
     duration: 1400,
     reveal: "invite",
+  },
+  {
+    label: "Posy generates invite concepts",
+    duration: 2200,
+    posySays: "Here are four invitation directions. Pick one and I'll make it yours.",
+    reveal: "inviteConcepts",
+  },
+  {
+    label: "Customize fonts, colors & layout",
+    duration: 2000,
+    posySays: "Now make it yours — swap fonts, colors, and layout in real time.",
+    reveal: "inviteCustomize",
   },
   {
     label: "Shopping list & budget",
@@ -111,6 +123,31 @@ const BUDGET_ITEMS = [
   { label: "Food & drinks", amount: "$120" },
   { label: "Total so far", amount: "$225", bold: true },
 ];
+
+// Four AI-generated invite concepts shown as thumbnails
+const INVITE_CONCEPTS = [
+  { name: "Hard Hat Zone", lane: "Bold Graphic", colors: ["#f97316", "#1e293b", "#fde047", "#fed7aa"] },
+  { name: "Digging It", lane: "Playful Illustrated", colors: ["#fbbf24", "#1d4ed8", "#fef3c7", "#fca5a5"] },
+  { name: "Construction Site", lane: "Handcrafted Rustic", colors: ["#d97706", "#451a03", "#fef3c7", "#84cc16"] },
+  { name: "Little Builder", lane: "Storybook Whimsical", colors: ["#f59e0b", "#075985", "#fffbeb", "#fbbf24"] },
+];
+
+// Font samples for the customization card — each renders in its own typeface
+const FONT_SAMPLES = [
+  { name: "Editorial Serif", className: "font-serif", selected: true },
+  { name: "Modern Sans", className: "font-sans", selected: false },
+  { name: "Playful Rounded", className: "font-sans font-medium", selected: false },
+];
+
+// Layout options for the customization card
+const LAYOUT_OPTIONS = [
+  { name: "Banner", glyph: "\u25AC", selected: true },
+  { name: "Split", glyph: "\u25A5", selected: false },
+  { name: "Centered", glyph: "\u25C9", selected: false },
+];
+
+// Color palette swatches for the customization card
+const PALETTE_SWATCHES = ["#f97316", "#1e293b", "#fde047", "#fed7aa"];
 
 // ── Typing hook ───────────────────────────────────────────────────────────────
 
@@ -290,7 +327,7 @@ export default function AIDemoShowcase() {
                   </div>
                 )}
 
-                {/* Step 3: posy responds */}
+                {/* Step 3: posy responds with plan */}
                 {stepIndex >= 3 && (
                   <div className="flex justify-start">
                     <div className="max-w-[85%] rounded-2xl rounded-bl-sm bg-muted px-4 py-2.5 text-sm text-foreground">
@@ -301,8 +338,28 @@ export default function AIDemoShowcase() {
                   </div>
                 )}
 
+                {/* Step 7: posy presents invite concepts */}
+                {stepIndex >= 7 && (
+                  <div className="flex justify-start">
+                    <div className="max-w-[85%] rounded-2xl rounded-bl-sm bg-muted px-4 py-2.5 text-sm text-foreground">
+                      {stepIndex === 7 ? typedPosy : STEPS[7].posySays}
+                      {stepIndex === 7 && playing && <span className="ml-0.5 inline-block h-3.5 w-0.5 animate-pulse bg-foreground/40 align-middle" />}
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 8: posy invites customization */}
+                {stepIndex >= 8 && (
+                  <div className="flex justify-start">
+                    <div className="max-w-[85%] rounded-2xl rounded-bl-sm bg-muted px-4 py-2.5 text-sm text-foreground">
+                      {stepIndex === 8 ? typedPosy : STEPS[8].posySays}
+                      {stepIndex === 8 && playing && <span className="ml-0.5 inline-block h-3.5 w-0.5 animate-pulse bg-foreground/40 align-middle" />}
+                    </div>
+                  </div>
+                )}
+
                 {/* Thinking dots while building */}
-                {stepIndex >= 3 && stepIndex < STEPS.length - 1 && (
+                {stepIndex >= 3 && stepIndex < 4 && (
                   <div className="flex items-center gap-1.5 pl-1 text-xs text-muted-foreground">
                     <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary/50 [animation-delay:0ms]" />
                     <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary/50 [animation-delay:150ms]" />
@@ -369,7 +426,7 @@ export default function AIDemoShowcase() {
               )}
 
               {/* Invite card */}
-              {revealed.has("invite") && (
+              {revealed.has("invite") && !revealed.has("inviteConcepts") && (
                 <DemoCard icon={Mail} title="Invitation Design" delay={80} testId="demo-invite">
                   <div className="flex items-center gap-3">
                     <div className="flex h-16 w-12 shrink-0 flex-col items-center justify-center rounded-md border-2 border-dashed border-orange-400/50 bg-orange-50 text-orange-600">
@@ -385,6 +442,113 @@ export default function AIDemoShowcase() {
                       </div>
                     </div>
                   </div>
+                </DemoCard>
+              )}
+
+              {/* AI invite concepts — 4 thumbnails */}
+              {revealed.has("inviteConcepts") && (
+                <DemoCard icon={Sparkles} title="4 Invite Concepts Generated" delay={0} testId="demo-invite-concepts">
+                  <div className="grid grid-cols-2 gap-2">
+                    {INVITE_CONCEPTS.map((c, i) => (
+                      <div
+                        key={i}
+                        className={`relative overflow-hidden rounded-md border p-2 ${i === 0 ? "border-primary ring-1 ring-primary/30" : "border-border"}`}
+                        style={{ backgroundColor: c.colors[2] }}
+                      >
+                        <div className="flex gap-0.5">
+                          {c.colors.map((color, ci) => (
+                            <span key={ci} className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+                          ))}
+                        </div>
+                        <p className="mt-1.5 text-[9px] font-bold leading-tight" style={{ color: c.colors[1] }}>
+                          {c.name}
+                        </p>
+                        <p className="text-[7px] text-muted-foreground">{c.lane}</p>
+                        {i === 0 && (
+                          <span className="absolute right-1 top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                            <Check className="h-2 w-2" />
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-1.5 text-[9px] text-muted-foreground">
+                    Selected: Hard Hat Zone · click to preview
+                  </p>
+                </DemoCard>
+              )}
+
+              {/* Live customization editor */}
+              {revealed.has("inviteCustomize") && (
+                <DemoCard icon={Palette} title="Live Design Studio" delay={0} testId="demo-invite-customize">
+                  {/* Mini invite preview */}
+                  <div
+                    className="mb-2.5 overflow-hidden rounded-md p-2.5"
+                    style={{ backgroundColor: PALETTE_SWATCHES[2] }}
+                  >
+                    <p className="text-center text-[10px] font-bold uppercase" style={{ color: PALETTE_SWATCHES[1] }}>
+                      Maren is turning 3!
+                    </p>
+                    <div className="mt-1 flex justify-center gap-0.5">
+                      {PALETTE_SWATCHES.map((c, i) => (
+                        <span key={i} className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: c }} />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Font picker row */}
+                  <div className="mb-2">
+                    <p className="mb-1 flex items-center gap-1 text-[9px] font-medium text-muted-foreground">
+                      <TypeIcon className="h-2.5 w-2.5" /> Fonts
+                    </p>
+                    <div className="flex gap-1">
+                      {FONT_SAMPLES.map((f, i) => (
+                        <span
+                          key={i}
+                          className={`flex-1 truncate rounded px-1.5 py-1 text-center text-[8px] ${f.className} ${f.selected ? "bg-primary/15 text-primary ring-1 ring-primary/30" : "bg-muted text-muted-foreground"}`}
+                        >
+                          Aa
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Layout + Colors row */}
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <p className="mb-1 flex items-center gap-1 text-[9px] font-medium text-muted-foreground">
+                        <Layout className="h-2.5 w-2.5" /> Layout
+                      </p>
+                      <div className="flex gap-1">
+                        {LAYOUT_OPTIONS.map((l, i) => (
+                          <span
+                            key={i}
+                            className={`flex h-5 w-5 items-center justify-center rounded text-[10px] ${l.selected ? "bg-primary/15 text-primary ring-1 ring-primary/30" : "bg-muted text-muted-foreground"}`}
+                          >
+                            {l.glyph}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="mb-1 flex items-center gap-1 text-[9px] font-medium text-muted-foreground">
+                        <Palette className="h-2.5 w-2.5" /> Colors
+                      </p>
+                      <div className="flex gap-1">
+                        {PALETTE_SWATCHES.map((c, i) => (
+                          <span
+                            key={i}
+                            className="h-5 w-5 rounded-full border border-border"
+                            style={{ backgroundColor: c }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="mt-2 text-[9px] text-muted-foreground">
+                    Changes save automatically · envelope & RSVP update live
+                  </p>
                 </DemoCard>
               )}
 
