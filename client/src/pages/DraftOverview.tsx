@@ -1,4 +1,4 @@
-import { useParams, useLocation } from "wouter";
+import { useParams, useLocation, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -68,7 +68,9 @@ export default function DraftOverview() {
   return (
     <div className="min-h-screen bg-background px-6 py-12">
       <div className="mx-auto w-full max-w-2xl space-y-6" data-testid="page-draft-overview">
-        <Wordmark className="mb-2" />
+        <Link href="/" data-testid="link-logo-home">
+          <Wordmark className="mb-2" />
+        </Link>
 
         {/* Event Identity line */}
         <p className="text-lg text-foreground" data-testid="text-event-identity">

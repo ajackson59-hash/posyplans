@@ -231,7 +231,9 @@ export default function DraftGenerating() {
   if (showPaywall) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 py-16">
-        <Wordmark className="mb-10" />
+        <Link href="/" data-testid="link-logo-home">
+          <Wordmark className="mb-10" />
+        </Link>
         <div className="w-full max-w-md space-y-5 text-center" data-testid="draft-generating-paywall">
           <div>
             <h1 className="font-serif text-2xl font-semibold text-foreground">Unlock this event to see your plan</h1>

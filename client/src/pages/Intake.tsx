@@ -190,7 +190,9 @@ export default function Intake() {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-6 py-5">
-          <Wordmark />
+          <Link href="/" data-testid="link-logo-home">
+            <Wordmark />
+          </Link>
         </div>
       </header>
 

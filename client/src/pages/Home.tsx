@@ -163,7 +163,9 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-          <Wordmark />
+          <Link href="/" data-testid="link-logo-home">
+            <Wordmark />
+          </Link>
           <nav className="hidden items-center gap-8 md:flex" data-testid="nav-primary">
             <button
               type="button"
