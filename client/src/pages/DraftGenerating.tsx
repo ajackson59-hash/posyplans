@@ -8,7 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle2, Loader2, CircleDashed, Check } from "lucide-react";
+import { CheckCircle2, Loader2, CircleDashed, Check, Play } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import AIDemoShowcase from "@/components/AIDemoShowcase";
 
 // Loading screen shown right after intake finishes, while the AI Master
 // Planner drafts the whole first pass (theme, budget, menu, shopping,
@@ -89,6 +91,7 @@ export default function DraftGenerating() {
   const [selectedPlan, setSelectedPlan] = useState<"spark" | "plus">("spark");
   const [plusInterval, setPlusInterval] = useState<"annual" | "monthly">("annual");
   const [showPlusEmail, setShowPlusEmail] = useState(false);
+  const [demoOpen, setDemoOpen] = useState(false);
 
   // Returning from a Spark checkout lands back here with these params (see
   // server/routes.ts create-session success_url). We confirm the session to
@@ -266,6 +269,19 @@ export default function DraftGenerating() {
               Pay once for just this event, or go Plus for unlimited plans across everything you
               host. Both unlock this plan right now.
             </p>
+          </div>
+
+          {/* See-how-it-works button — opens demo in a dialog so users stay on the paywall */}
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => setDemoOpen(true)}
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-primary underline underline-offset-2 hover:text-primary/80"
+              data-testid="link-paywall-see-demo"
+            >
+              <Play className="h-3.5 w-3.5" />
+              See how Posy builds your plan
+            </button>
           </div>
 
           {/* Side-by-side plan choice */}
@@ -524,6 +540,20 @@ export default function DraftGenerating() {
             </Link>
           </p>
         </div>
+
+        {/* Demo dialog — opens in-place so users see how Posy works without leaving the paywall */}
+        <Dialog open={demoOpen} onOpenChange={setDemoOpen}>
+          <DialogContent className="max-w-2xl overflow-y-auto max-h-[90vh]">
+            <DialogHeader>
+              <DialogTitle>See how Posy builds your plan</DialogTitle>
+              <DialogDescription>
+                Watch Posy turn one sentence into a complete event plan — timeline, guests,
+                invitation concepts, envelope customization, and checklist — in 30 seconds.
+              </DialogDescription>
+            </DialogHeader>
+            <AIDemoShowcase bare autoPlay />
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }

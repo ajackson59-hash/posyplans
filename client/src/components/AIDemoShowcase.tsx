@@ -36,17 +36,17 @@ const STEPS: DemoStep[] = [
   {
     label: "You describe your event",
     duration: 2600,
-    userTypes: "Maren's 3rd birthday, construction theme, backyard, ~35 kids and parents, mid-August.",
+    userTypes: "Sofia's garden party, rose & gold theme, turning 30, ~20 close friends, backyard brunch.",
   },
   {
     label: "Posy asks one quick question",
     duration: 2400,
-    posySays: "Got it! Any must-haves — a cake moment, a piñata, a specific time for presents?",
+    posySays: "Love it! Any must-haves — a toast moment, live music, a specific flower palette?",
   },
   {
     label: "You answer",
     duration: 2000,
-    userTypes: "Definitely a cake moment and a hard-hat craft station.",
+    userTypes: "Definitely a champagne toast and soft pink roses everywhere.",
   },
   {
     label: "Posy builds your plan",
@@ -96,33 +96,65 @@ const STEPS: DemoStep[] = [
 // ── Fake data shown in the generated cards ────────────────────────────────────
 
 const TIMELINE_ITEMS = [
-  { time: "2:00 PM", title: "Guests arrive", icon: Users },
-  { time: "2:15 PM", title: "Hard-hat craft station", icon: Wand2 },
-  { time: "3:00 PM", title: "Cake moment & photos", icon: Sparkles },
-  { time: "3:30 PM", title: "Open presents", icon: Check },
-  { time: "4:00 PM", title: "Free play & send-off", icon: Check },
+  { time: "11:00 AM", title: "Guests arrive", icon: Users },
+  { time: "11:30 AM", title: "Garden toast & brunch", icon: Sparkles },
+  { time: "1:00 PM", title: "Live acoustic set", icon: Check },
+  { time: "2:00 PM", title: "Cake & photos", icon: Check },
+  { time: "3:30 PM", title: "Farewell favors", icon: Check },
 ];
 
 const GUESTS = [
-  { name: "Sarah Chen", status: "Yes", color: "bg-green-500" },
-  { name: "Marcus Reid", status: "Yes", color: "bg-green-500" },
-  { name: "Priya Patel", status: "Maybe", color: "bg-yellow-500" },
-  { name: "Tom Walsh", status: "Pending", color: "bg-gray-400" },
+  { name: "Elena Voss", status: "Yes", color: "bg-green-500" },
+  { name: "James Park", status: "Yes", color: "bg-green-500" },
+  { name: "Mira Kapoor", status: "Maybe", color: "bg-yellow-500" },
+  { name: "Leo Marchetti", status: "Pending", color: "bg-gray-400" },
 ];
 
 const CHECKLIST = [
-  "Order construction-zone cake (Aug 10)",
-  "Buy mini hard hats for craft station",
+  "Order rose bouquet centerpieces",
+  "Book acoustic guitarist for brunch",
   "Send invitations (this week!)",
-  "Confirm backyard tent rental",
-  "Stock drinks & snacks for 35",
+  "Reserve champagne for toast",
+  "Prepare garden favors for 20",
 ];
 
 const INVITE_CONCEPTS = [
-  { name: "Hard Hat Zone", lane: "Bold Graphic", colors: ["#f97316", "#1e293b", "#fde047", "#fed7aa"] },
-  { name: "Digging It", lane: "Playful Illustrated", colors: ["#fbbf24", "#1d4ed8", "#fef3c7", "#fca5a5"] },
-  { name: "Construction Site", lane: "Handcrafted Rustic", colors: ["#d97706", "#451a03", "#fef3c7", "#84cc16"] },
-  { name: "Little Builder", lane: "Storybook Whimsical", colors: ["#f59e0b", "#075985", "#fffbeb", "#fbbf24"] },
+  {
+    name: "Garden Rose Soirée",
+    lane: "Editorial Premium",
+    colors: ["#fce7f3", "#be185d", "#fef7ed", "#d4af37"],
+    bgGradient: "linear-gradient(135deg, #fef7ed 0%, #fce7f3 100%)",
+    borderColor: "#d4af37",
+    borderWidth: "1px",
+    motif: "rose-corner",
+  },
+  {
+    name: "Sage Terrace Brunch",
+    lane: "Minimal Modern",
+    colors: ["#d4e4c4", "#3a5a40", "#fef7ed", "#fce7f3"],
+    bgGradient: "linear-gradient(135deg, #fef7ed 0%, #d4e4c4 100%)",
+    borderColor: "#3a5a40",
+    borderWidth: "1px",
+    motif: "leaf-frame",
+  },
+  {
+    name: "Vintage Rose Garden",
+    lane: "Handcrafted Rustic",
+    colors: ["#d4a5a5", "#7f1d1d", "#fef7ed", "#c9a227"],
+    bgGradient: "linear-gradient(135deg, #fef7ed 0%, #f5e6e6 100%)",
+    borderColor: "#c9a227",
+    borderWidth: "2px",
+    motif: "botanical",
+  },
+  {
+    name: "Modern Floral Minimal",
+    lane: "Storybook Whimsical",
+    colors: ["#fce7f3", "#ec4899", "#fef7ed", "#d4af37"],
+    bgGradient: "linear-gradient(180deg, #fef7ed 0%, #fce7f3 100%)",
+    borderColor: "#fce7f3",
+    borderWidth: "1px",
+    motif: "single-rose",
+  },
 ];
 
 // Font samples for the customization card
@@ -143,49 +175,49 @@ const LAYOUT_OPTIONS = [
 type Palette = { bg: string; text: string; dots: string[]; label: string };
 const CUSTOMIZE_STAGES: { prompt: string; fontIdx: number; layoutIdx: number; palette: Palette; envelopeColor?: string; linerPattern?: "solid" | "dots" | "stripes" | "chevron" | "floral" | "waves" | "lattice" | "confetti" | "stars" | "hearts" | "diamonds" | "scallops"; stampStyle?: "classic" | "seal" | "postmark" | "motif" | "wax-seal" | "heart" | "star" | "floral" | "bow" | "monogram" }[] = [
   {
-    prompt: "Try softer, warmer colors",
+    prompt: "Try warmer rose tones",
     fontIdx: 0,
     layoutIdx: 0,
-    palette: { bg: "#fde047", text: "#1e293b", dots: ["#f97316", "#1e293b", "#fde047", "#fed7aa"], label: "Original" },
-    envelopeColor: "#f97316",
+    palette: { bg: "#fef7ed", text: "#9f1239", dots: ["#fce7f3", "#be185d", "#fef7ed", "#d4af37"], label: "Blush" },
+    envelopeColor: "#fce7f3",
     linerPattern: "dots",
     stampStyle: "classic",
   },
   {
-    prompt: "Make it more playful",
+    prompt: "Make it more romantic",
     fontIdx: 2,
     layoutIdx: 0,
-    palette: { bg: "#fce7f3", text: "#be185d", dots: ["#ec4899", "#831843", "#fce7f3", "#f9a8d4"], label: "Rose" },
+    palette: { bg: "#fce7f3", text: "#831843", dots: ["#ec4899", "#831843", "#fce7f3", "#d4af37"], label: "Rose" },
     envelopeColor: "#ec4899",
     linerPattern: "stripes",
-    stampStyle: "star",
+    stampStyle: "floral",
   },
   {
     prompt: "Switch to a floral liner",
     fontIdx: 2,
     layoutIdx: 2,
-    palette: { bg: "#fce7f3", text: "#be185d", dots: ["#ec4899", "#831843", "#fce7f3", "#f9a8d4"], label: "Rose" },
+    palette: { bg: "#fce7f3", text: "#831843", dots: ["#ec4899", "#831843", "#fce7f3", "#d4af37"], label: "Rose" },
     envelopeColor: "#ec4899",
     linerPattern: "floral",
-    stampStyle: "star",
+    stampStyle: "floral",
   },
   {
     prompt: "Center the title",
     fontIdx: 2,
     layoutIdx: 2,
-    palette: { bg: "#fce7f3", text: "#be185d", dots: ["#ec4899", "#831843", "#fce7f3", "#f9a8d4"], label: "Rose" },
+    palette: { bg: "#fce7f3", text: "#831843", dots: ["#ec4899", "#831843", "#fce7f3", "#d4af37"], label: "Rose" },
     envelopeColor: "#ec4899",
     linerPattern: "floral",
-    stampStyle: "star",
+    stampStyle: "floral",
   },
   {
     prompt: "Perfect — your invite suite is ready!",
     fontIdx: 2,
     layoutIdx: 2,
-    palette: { bg: "#fce7f3", text: "#be185d", dots: ["#ec4899", "#831843", "#fce7f3", "#f9a8d4"], label: "Rose" },
+    palette: { bg: "#fce7f3", text: "#831843", dots: ["#ec4899", "#831843", "#fce7f3", "#d4af37"], label: "Rose" },
     envelopeColor: "#ec4899",
     linerPattern: "floral",
-    stampStyle: "star",
+    stampStyle: "floral",
   },
 ];
 
@@ -524,12 +556,12 @@ export default function AIDemoShowcase({
                 </DemoCard>
                 <DemoCard icon={Mail} title="Invitation" delay={120} testId="demo-invite">
                   <div className="flex items-center gap-2">
-                    <div className="flex h-10 w-8 shrink-0 flex-col items-center justify-center rounded border border-dashed border-orange-400/50 bg-orange-50 text-orange-600">
+                    <div className="flex h-10 w-8 shrink-0 flex-col items-center justify-center rounded border border-dashed border-rose-300/50 bg-rose-50 text-rose-500">
                       <Wand2 className="h-3 w-3" />
                     </div>
                     <div className="text-[10px]">
-                      <p className="font-medium text-foreground">Construction Zone</p>
-                      <p className="text-muted-foreground">Orange & black</p>
+                      <p className="font-medium text-foreground">Garden Rose Soirée</p>
+                      <p className="text-muted-foreground">Blush & gold</p>
                     </div>
                   </div>
                 </DemoCard>
@@ -546,7 +578,7 @@ export default function AIDemoShowcase({
               </div>
             )}
 
-            {/* Stage 3: Invite concepts — 4 thumbnails in one frame */}
+            {/* Stage 3: Invite concepts — 4 elegant mini-invite previews */}
             {showConcepts && !showCustomize && (
               <div className="h-full" data-testid="demo-canvas-concepts">
                 <div className="mb-2 flex items-center gap-1.5">
@@ -557,18 +589,34 @@ export default function AIDemoShowcase({
                   {INVITE_CONCEPTS.map((c, i) => (
                     <div
                       key={i}
-                      className={`relative overflow-hidden rounded-md border p-2 transition-all ${i === 0 ? "border-primary ring-1 ring-primary/30" : "border-border"}`}
-                      style={{ backgroundColor: c.colors[2] }}
+                      className={`relative overflow-hidden rounded-md transition-all ${i === 0 ? "ring-2 ring-primary" : "ring-1 ring-border"}`}
+                      style={{
+                        background: c.bgGradient,
+                        border: `${c.borderWidth} solid ${c.borderColor}`,
+                      }}
                     >
-                      <div className="flex gap-0.5">
-                        {c.colors.map((color, ci) => (
-                          <span key={ci} className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-                        ))}
+                      {/* Inner padding frame */}
+                      <div className="p-2.5">
+                        {/* Top border accent */}
+                        <div className="mb-1.5 h-px" style={{ background: `linear-gradient(90deg, transparent, ${c.borderColor}, transparent)` }} />
+                        {/* Title in serif */}
+                        <p className="font-serif text-[10px] font-bold leading-tight" style={{ color: c.colors[1] }}>
+                          {c.name}
+                        </p>
+                        {/* Date line */}
+                        <p className="mt-0.5 text-[7px] text-muted-foreground" style={{ color: c.colors[1], opacity: 0.6 }}>
+                          Sep 14 · 11am
+                        </p>
+                        {/* Palette dots */}
+                        <div className="mt-1.5 flex gap-0.5">
+                          {c.colors.map((color, ci) => (
+                            <span key={ci} className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
+                          ))}
+                        </div>
+                        {/* Lane label */}
+                        <p className="mt-1 text-[6px] text-muted-foreground">{c.lane}</p>
                       </div>
-                      <p className="mt-1.5 text-[9px] font-bold leading-tight" style={{ color: c.colors[1] }}>
-                        {c.name}
-                      </p>
-                      <p className="text-[7px] text-muted-foreground">{c.lane}</p>
+                      {/* Selected checkmark */}
                       {i === 0 && (
                         <span className="absolute right-1 top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary text-primary-foreground">
                           <Check className="h-2 w-2" />
@@ -578,7 +626,7 @@ export default function AIDemoShowcase({
                   ))}
                 </div>
                 <p className="mt-2 text-[9px] text-muted-foreground">
-                  Selected: Hard Hat Zone
+                  Selected: Garden Rose Soirée
                 </p>
               </div>
             )}
@@ -608,14 +656,14 @@ export default function AIDemoShowcase({
                       className={`${FONT_SAMPLES[fontIdx].className} text-center text-[10px] font-bold transition-all duration-500`}
                       style={{ color: palette.text }}
                     >
-                      {layoutIdx === 2 ? "Maren is 3!" : "MAREN IS 3!"}
+                      {layoutIdx === 2 ? "Sofia's Garden Party" : "SOFIA'S GARDEN PARTY"}
                     </p>
                     {layoutIdx === 0 && (
                       <p
                         className={`${FONT_SAMPLES[fontIdx].className} mt-0.5 text-center text-[6px] transition-all duration-500`}
                         style={{ color: palette.text, opacity: 0.7 }}
                       >
-                        Aug 16 · 2pm
+                        Sep 14 · 11am
                       </p>
                     )}
                     <div className="mt-1 flex justify-center gap-0.5 transition-all duration-500">
@@ -628,14 +676,14 @@ export default function AIDemoShowcase({
                   {/* Envelope mockup — uses the real shared component */}
                   <div className="flex items-center justify-center rounded-md bg-muted/30 p-1.5 transition-all duration-500">
                     <EnvelopeMockup
-                      envelopeColor={stage.envelopeColor || "#f97316"}
+                      envelopeColor={stage.envelopeColor || "#fce7f3"}
                       linerPattern={stage.linerPattern || "solid"}
-                      linerColor={stage.envelopeColor || "#f97316"}
+                      linerColor={stage.envelopeColor || "#fce7f3"}
                       linerBaseColor={palette.dots[2]}
                       stampStyle={stage.stampStyle || "classic"}
-                      stampColor={stage.envelopeColor || "#f97316"}
+                      stampColor={stage.envelopeColor || "#fce7f3"}
                       finish="premium"
-                      addressee="Maren & friends"
+                      addressee="Sofia & friends"
                       opened={false}
                       className="max-w-[120px]"
                     />
@@ -763,7 +811,8 @@ export default function AIDemoShowcase({
           </h2>
           <p className="mt-4 text-base leading-relaxed text-muted-foreground">
             No setup, no templates to pick. Just describe your event and Posy builds the timeline,
-            guest list, invitation, envelope, and checklist — then you customize the full invite suite live.
+            guest list, invitation concepts, and checklist — then you customize the full invite suite
+            live: card, envelope, liner, stamp, and RSVP page.
           </p>
         </div>
         {demoWindow}
