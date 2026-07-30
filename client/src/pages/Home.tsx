@@ -32,9 +32,6 @@ import {
   Heart,
   MessageSquare,
   SlidersHorizontal,
-  Loader2,
-  CheckCircle2,
-  RotateCcw,
 } from "lucide-react";
 
 const BLUEPRINT_EVENT_TYPE_MAP: Record<string, string> = {
@@ -504,7 +501,7 @@ export default function Home() {
                   decisions. Posy does the opposite.
                 </p>
                 <p>
-                  It takes what you tell it and quietly shapes a plan around you, surfacing only
+                  She takes what you tell her and quietly shapes a plan around you, surfacing only
                   what needs a human touch. The rest simply gets handled.
                 </p>
                 <p>
@@ -524,7 +521,7 @@ export default function Home() {
                 How Posy helps
               </p>
               <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl" data-testid="text-how-it-helps-heading">
-                Tell it once. It carries the rest.
+                Tell her once. She carries the rest.
               </h2>
               <p className="mt-4 text-base leading-relaxed text-muted-foreground">
                 No blank pages. No setup labyrinth. A short conversation is all Posy needs to
@@ -552,7 +549,7 @@ export default function Home() {
               </h2>
               <div className="mt-5 space-y-4 text-base leading-relaxed text-muted-foreground">
                 <p>
-                  Posy Concierge doesn't bark commands or hide behind jargon. It notices,
+                  Posy Concierge doesn't bark commands or hide behind jargon. She notices,
                   suggests, and reassures — the way a thoughtful friend who happens to be very
                   organized would.
                 </p>
@@ -595,30 +592,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* SECTION 5 — The Posy voice */}
-        <section className="border-t border-border bg-card/40 px-6 py-16 sm:py-20">
-          <div className="mx-auto max-w-6xl">
-            <div className="mx-auto max-w-2xl text-center">
-              <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-primary">
-                The Posy voice
-              </p>
-              <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl" data-testid="text-voice-heading">
-                Even the small moments feel calm.
-              </h2>
-              <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-                No "processing," no "error," no cold system-speak. Posy always sounds like it's
-                on your side.
-              </p>
-            </div>
-
-            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              <VoiceCard icon={Loader2} tag="While it works" message="Putting together a few ideas…" note='Instead of "Processing"' />
-              <VoiceCard icon={CheckCircle2} tag="When it's ready" message="Here's what I came up with." note='Not "Generation complete"' />
-              <VoiceCard icon={ShieldCheck} tag="Reassurance" message="You're on track." note="A quiet nudge of confidence" />
-              <VoiceCard icon={RotateCcw} tag="If something slips" message="That didn't go through — let's try again." note='Never "Invalid" or "Failure"' />
-            </div>
-          </div>
-        </section>
 
         {/* SECTION 6 — Closing CTA band */}
         <section className="bg-primary px-6 py-16 text-primary-foreground sm:py-20">
@@ -849,25 +822,3 @@ function ChatBubble({
   );
 }
 
-function VoiceCard({
-  icon: Icon,
-  tag,
-  message,
-  note,
-}: {
-  icon: typeof Loader2;
-  tag: string;
-  message: string;
-  note: string;
-}) {
-  return (
-    <div className="rounded-xl border border-card-border bg-card p-6" data-testid={`card-voice-${tag.toLowerCase().replace(/\s+/g, "-")}`}>
-      <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-full bg-accent/40 text-foreground">
-        <Icon className="h-4 w-4" />
-      </div>
-      <p className="text-xs font-semibold uppercase tracking-wide text-primary">{tag}</p>
-      <p className="mt-2 font-serif text-base font-semibold text-foreground">"{message}"</p>
-      <p className="mt-2 text-xs text-muted-foreground">{note}</p>
-    </div>
-  );
-}
