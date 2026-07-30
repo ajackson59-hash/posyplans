@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle2, Loader2, CircleDashed } from "lucide-react";
+import { CheckCircle2, Loader2, CircleDashed, Check } from "lucide-react";
 
 // Loading screen shown right after intake finishes, while the AI Master
 // Planner drafts the whole first pass (theme, budget, menu, shopping,
@@ -84,6 +84,11 @@ export default function DraftGenerating() {
   const confirmedRef = useRef(false);
   const [email, setEmail] = useState("");
   const [plusEmail, setPlusEmail] = useState("");
+  // The paywall shows Spark and Plus side by side rather than burying Plus in a
+  // secondary link — repeat hosts were only being offered the per-event unlock.
+  const [selectedPlan, setSelectedPlan] = useState<"spark" | "plus">("spark");
+  const [plusInterval, setPlusInterval] = useState<"annual" | "monthly">("annual");
+  const [showPlusEmail, setShowPlusEmail] = useState(false);
 
   // Returning from a Spark checkout lands back here with these params (see
   // server/routes.ts create-session success_url). We confirm the session to
@@ -139,6 +144,24 @@ export default function DraftGenerating() {
       apiRequestJson<{ url: string }>("POST", "/api/checkout/create-session", {
         email,
         plan: "spark",
+        returnToken: ownerToken,
+      }),
+    onSuccess: (result) => {
+      window.location.href = result.url;
+    },
+    onError: (err: Error) => {
+      toast({ title: "Couldn't start checkout", description: err.message, variant: "destructive" });
+    },
+  });
+
+  // Subscribing to Plus from the paywall, so hosts who plan more than one event
+  // aren't forced through the per-event unlock to get here.
+  const startPlusCheckout = useMutation({
+    mutationFn: () =>
+      apiRequestJson<{ url: string }>("POST", "/api/checkout/create-session", {
+        email,
+        plan: "plus",
+        billingInterval: plusInterval,
         returnToken: ownerToken,
       }),
     onSuccess: (result) => {
@@ -234,21 +257,181 @@ export default function DraftGenerating() {
         <Link href="/" data-testid="link-logo-home">
           <Wordmark className="mb-10" />
         </Link>
-        <div className="w-full max-w-md space-y-5 text-center" data-testid="draft-generating-paywall">
-          <div>
-            <h1 className="font-serif text-2xl font-semibold text-foreground">Unlock this event to see your plan</h1>
+        <div className="w-full max-w-2xl space-y-5" data-testid="draft-generating-paywall">
+          <div className="text-center">
+            <h1 className="font-serif text-2xl font-semibold text-foreground">
+              Your plan is ready — choose how to unlock it
+            </h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Spark unlocks one full AI-drafted plan for this event — a one-time $9.99. Or go Plus
-              for unlimited plans across everything you host.
+              Pay once for just this event, or go Plus for unlimited plans across everything you
+              host. Both unlock this plan right now.
             </p>
           </div>
 
+          {/* Side-by-side plan choice */}
+          <div className="grid gap-3 sm:grid-cols-2">
+            {/* Spark */}
+            <button
+              type="button"
+              onClick={() => setSelectedPlan("spark")}
+              data-testid="option-plan-spark"
+              aria-pressed={selectedPlan === "spark"}
+              className={`relative rounded-xl border-2 bg-card p-4 text-left transition-all ${
+                selectedPlan === "spark"
+                  ? "border-primary shadow-sm ring-1 ring-primary/20"
+                  : "border-border hover:border-primary/40"
+              }`}
+            >
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Spark</p>
+                  <p className="text-xs text-muted-foreground">This event only</p>
+                </div>
+                {selectedPlan === "spark" && (
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                    <Check className="h-3 w-3" />
+                  </span>
+                )}
+              </div>
+              <div className="mt-3 flex items-baseline gap-1.5">
+                <span className="text-sm text-muted-foreground line-through">$12.99</span>
+                <span className="text-2xl font-semibold text-foreground">$9.99</span>
+                <span className="text-xs text-muted-foreground">once</span>
+              </div>
+              <ul className="mt-3 space-y-1.5">
+                {[
+                  "One full AI-drafted plan",
+                  "Guests, RSVPs & invitations",
+                  "Budget, menu & timeline",
+                  "No subscription",
+                ].map((f) => (
+                  <li key={f} className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                    <Check className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </button>
+
+            {/* Plus */}
+            <button
+              type="button"
+              onClick={() => setSelectedPlan("plus")}
+              data-testid="option-plan-plus"
+              aria-pressed={selectedPlan === "plus"}
+              className={`relative rounded-xl border-2 bg-card p-4 text-left transition-all ${
+                selectedPlan === "plus"
+                  ? "border-primary shadow-sm ring-1 ring-primary/20"
+                  : "border-border hover:border-primary/40"
+              }`}
+            >
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                    Plus
+                    <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-primary">
+                      Best value
+                    </span>
+                  </p>
+                  <p className="text-xs text-muted-foreground">Every event you host</p>
+                </div>
+                {selectedPlan === "plus" && (
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                    <Check className="h-3 w-3" />
+                  </span>
+                )}
+              </div>
+              <div className="mt-3 flex items-baseline gap-1.5">
+                <span className="text-sm text-muted-foreground line-through">
+                  {plusInterval === "annual" ? "$129" : "$13.99"}
+                </span>
+                <span className="text-2xl font-semibold text-foreground">
+                  {plusInterval === "annual" ? "$99" : "$11.99"}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {plusInterval === "annual" ? "/yr" : "/mo"}
+                </span>
+              </div>
+
+              {/* Interval toggle */}
+              <div className="mt-2 inline-flex rounded-full border border-border p-0.5">
+                <span
+                  role="button"
+                  tabIndex={0}
+                  data-testid="toggle-paywall-annual"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedPlan("plus");
+                    setPlusInterval("annual");
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.stopPropagation();
+                      setSelectedPlan("plus");
+                      setPlusInterval("annual");
+                    }
+                  }}
+                  className={`cursor-pointer rounded-full px-2.5 py-0.5 text-[10px] font-medium transition-colors ${
+                    plusInterval === "annual"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  Annual
+                </span>
+                <span
+                  role="button"
+                  tabIndex={0}
+                  data-testid="toggle-paywall-monthly"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedPlan("plus");
+                    setPlusInterval("monthly");
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.stopPropagation();
+                      setSelectedPlan("plus");
+                      setPlusInterval("monthly");
+                    }
+                  }}
+                  className={`cursor-pointer rounded-full px-2.5 py-0.5 text-[10px] font-medium transition-colors ${
+                    plusInterval === "monthly"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  Monthly
+                </span>
+              </div>
+              {plusInterval === "annual" && (
+                <p className="mt-1.5 text-[10px] font-medium text-primary">Save $44.88 vs monthly</p>
+              )}
+
+              <ul className="mt-2.5 space-y-1.5">
+                {[
+                  "Unlimited plans, every event",
+                  "Unlimited plan regenerations",
+                  "Alternate menu, timeline & invite drafts",
+                  "Priority AI generation queue",
+                ].map((f) => (
+                  <li key={f} className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                    <Check className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </button>
+          </div>
+
+          {/* Single email + CTA that follows the selection */}
           {checkoutConfigured ? (
             <form
-              className="space-y-3 text-left"
+              className="mx-auto max-w-sm space-y-3"
               onSubmit={(e) => {
                 e.preventDefault();
-                startSparkCheckout.mutate();
+                if (selectedPlan === "spark") startSparkCheckout.mutate();
+                else startPlusCheckout.mutate();
               }}
             >
               <div>
@@ -267,32 +450,47 @@ export default function DraftGenerating() {
                 type="submit"
                 className="w-full"
                 data-testid="button-unlock-spark"
-                disabled={startSparkCheckout.isPending}
+                disabled={startSparkCheckout.isPending || startPlusCheckout.isPending}
               >
-                {startSparkCheckout.isPending ? "Starting checkout…" : "Unlock this event — $9.99"}
+                {startSparkCheckout.isPending || startPlusCheckout.isPending
+                  ? "Starting checkout…"
+                  : selectedPlan === "spark"
+                    ? "Unlock this event — $9.99"
+                    : `Subscribe to Plus — ${plusInterval === "annual" ? "$99/yr" : "$11.99/mo"}`}
               </Button>
+              <p className="text-center text-xs text-muted-foreground">
+                {selectedPlan === "spark"
+                  ? "One-time payment. No subscription, no auto-renew."
+                  : "Cancel anytime. Unlocks this event and every event after."}
+              </p>
             </form>
           ) : (
-            <p className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
+            <p className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
               Checkout is launching soon — please check back shortly.
             </p>
           )}
 
-          <div className="rounded-lg border border-border p-4 text-left" data-testid="already-plus-panel">
-            <p className="text-sm font-medium text-foreground">Already on Plus?</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Enter the email on your Plus plan and we'll unlock this event for you.
-            </p>
-            <form
-              className="mt-3 space-y-3"
-              onSubmit={(e) => {
-                e.preventDefault();
-                captureEmail.mutate();
-              }}
-            >
-              <div>
-                <Label htmlFor="plusEmail" className="sr-only">
-                  Plus email
+          {/* Existing Plus members — collapsed so it doesn't compete with the choice above */}
+          <div className="mx-auto max-w-sm text-center" data-testid="already-plus-panel">
+            {!showPlusEmail ? (
+              <button
+                type="button"
+                onClick={() => setShowPlusEmail(true)}
+                data-testid="button-show-plus-email"
+                className="text-xs font-medium text-muted-foreground underline underline-offset-2 hover:text-foreground"
+              >
+                Already on Plus? Unlock with your Plus email
+              </button>
+            ) : (
+              <form
+                className="space-y-2 rounded-lg border border-border p-4 text-left"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  captureEmail.mutate();
+                }}
+              >
+                <Label htmlFor="plusEmail" className="text-xs">
+                  Email on your Plus plan
                 </Label>
                 <Input
                   id="plusEmail"
@@ -303,22 +501,28 @@ export default function DraftGenerating() {
                   value={plusEmail}
                   onChange={(e) => setPlusEmail(e.target.value)}
                 />
-              </div>
-              <Button
-                type="submit"
-                variant="outline"
-                className="w-full"
-                data-testid="button-use-plus-email"
-                disabled={captureEmail.isPending}
-              >
-                {captureEmail.isPending ? "Checking…" : "Use my Plus email"}
-              </Button>
-            </form>
+                <Button
+                  type="submit"
+                  variant="outline"
+                  className="w-full"
+                  data-testid="button-use-plus-email"
+                  disabled={captureEmail.isPending}
+                >
+                  {captureEmail.isPending ? "Checking…" : "Use my Plus email"}
+                </Button>
+              </form>
+            )}
           </div>
 
-          <Button asChild variant="outline" className="w-full" data-testid="button-paywall-plus">
-            <Link href={`/pricing?returnToken=${ownerToken}`}>Go Plus — unlimited plans</Link>
-          </Button>
+          <p className="text-center">
+            <Link
+              href={`/pricing?returnToken=${ownerToken}`}
+              className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+              data-testid="button-paywall-plus"
+            >
+              Compare all plans →
+            </Link>
+          </p>
         </div>
       </div>
     );
@@ -326,7 +530,9 @@ export default function DraftGenerating() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 py-16">
-      <Wordmark className="mb-10" />
+      <Link href="/" data-testid="link-logo-home">
+        <Wordmark className="mb-10" />
+      </Link>
       <div className="w-full max-w-md space-y-4" data-testid="draft-generating-checklist">
         {CHECKLIST.map((line) => {
           const done = line.isDone(completedStages);

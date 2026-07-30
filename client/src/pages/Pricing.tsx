@@ -9,7 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Check, Sparkles, Lock } from "lucide-react";
+import { Check, Sparkles, Lock, Play } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import AIDemoShowcase from "@/components/AIDemoShowcase";
 
 type BillingInterval = "annual" | "monthly";
 
@@ -51,6 +53,8 @@ const CONCIERGE_FEATURES = [
 export default function Pricing() {
   const { toast } = useToast();
   const [billingInterval, setBillingInterval] = useState<BillingInterval>("annual");
+  // Plays the A-to-Z demo in a dialog so shoppers never leave the pricing page.
+  const [demoOpen, setDemoOpen] = useState(false);
   const [email, setEmail] = useState("");
 
   // Carries the event a host was mid-build on when they clicked "Upgrade to
@@ -113,13 +117,15 @@ export default function Pricing() {
           >
             ☀️ Exclusive Summer Savings
           </span>
-          <a
-            href="/#see-posy-build"
+          <button
+            type="button"
+            onClick={() => setDemoOpen(true)}
             className="inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted/50"
             data-testid="link-pricing-see-demo"
           >
-            See what Posy does in 30 seconds →
-          </a>
+            <Play className="h-3.5 w-3.5 text-primary" />
+            See what Posy does in 30 seconds
+          </button>
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -306,6 +312,25 @@ export default function Pricing() {
           </Card>
         </div>
       </main>
+
+      {/* A-to-Z demo, played in place so shoppers stay on the pricing page */}
+      <Dialog open={demoOpen} onOpenChange={setDemoOpen}>
+        <DialogContent
+          className="max-h-[92vh] max-w-4xl overflow-y-auto"
+          data-testid="dialog-pricing-demo"
+        >
+          <DialogHeader>
+            <DialogTitle className="font-serif text-xl">
+              Tell her once. Watch her build the whole plan.
+            </DialogTitle>
+            <DialogDescription>
+              Describe your event and Posy builds the timeline, guest list, invitation design, and
+              checklist — then you fine-tune the invite live.
+            </DialogDescription>
+          </DialogHeader>
+          {demoOpen && <AIDemoShowcase bare autoPlay />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

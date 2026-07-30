@@ -180,7 +180,16 @@ function useTypewriter(text: string, duration: number, active: boolean, reducedM
 
 type Revealed = Set<string>;
 
-export default function AIDemoShowcase() {
+export default function AIDemoShowcase({
+  bare = false,
+  autoPlay = false,
+}: {
+  /** Render only the demo window, without the surrounding section + heading.
+   *  Used when embedding inside a dialog (e.g. the pricing page). */
+  bare?: boolean;
+  /** Start playing immediately on mount instead of waiting to scroll into view. */
+  autoPlay?: boolean;
+} = {}) {
   const [stepIndex, setStepIndex] = useState(-1);
   const [playing, setPlaying] = useState(false);
   const [hasPlayed, setHasPlayed] = useState(false);
@@ -203,9 +212,16 @@ export default function AIDemoShowcase() {
     setTimeout(() => start(), 100);
   }, [start]);
 
+  // Play immediately on mount when embedded in a dialog
+  useEffect(() => {
+    if (!autoPlay || hasPlayed) return;
+    const t = setTimeout(() => start(), 250);
+    return () => clearTimeout(t);
+  }, [autoPlay, hasPlayed, start]);
+
   // Auto-play when scrolled into view
   useEffect(() => {
-    if (hasPlayed) return;
+    if (autoPlay || hasPlayed) return;
     const el = containerRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
@@ -258,22 +274,8 @@ export default function AIDemoShowcase() {
 
   const stepLabel = isDone ? "Done" : currentStep?.label ?? (stepIndex === -1 ? "" : "");
 
-  return (
-    <section className="border-t border-border bg-card/40 px-6 py-16 sm:py-20" id="see-posy-build">
-      <div className="mx-auto max-w-4xl">
-        <div className="mx-auto mb-10 max-w-2xl text-center">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-primary">
-            See it happen
-          </p>
-          <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl" data-testid="text-demo-heading">
-            Tell her once. Watch her build the whole plan.
-          </h2>
-          <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-            No setup, no templates to pick. Just describe your event and Posy builds the timeline,
-            guest list, invitation, and checklist in seconds.
-          </p>
-        </div>
-
+  const demoWindow = (
+    <>
         <div
           ref={containerRef}
           className="overflow-hidden rounded-2xl border border-card-border bg-background shadow-lg"
@@ -613,6 +615,28 @@ export default function AIDemoShowcase() {
         <p className="mt-4 text-center text-sm text-muted-foreground">
           This is a simulated demo. <a href="/intake" className="font-medium text-primary underline underline-offset-2">Try it for real →</a>
         </p>
+    </>
+  );
+
+  // Embedded in a dialog — just the demo window, no section chrome or heading.
+  if (bare) return demoWindow;
+
+  return (
+    <section className="border-t border-border bg-card/40 px-6 py-16 sm:py-20" id="see-posy-build">
+      <div className="mx-auto max-w-4xl">
+        <div className="mx-auto mb-10 max-w-2xl text-center">
+          <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-primary">
+            See it happen
+          </p>
+          <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl" data-testid="text-demo-heading">
+            Tell her once. Watch her build the whole plan.
+          </h2>
+          <p className="mt-4 text-base leading-relaxed text-muted-foreground">
+            No setup, no templates to pick. Just describe your event and Posy builds the timeline,
+            guest list, invitation, and checklist in seconds.
+          </p>
+        </div>
+        {demoWindow}
       </div>
     </section>
   );

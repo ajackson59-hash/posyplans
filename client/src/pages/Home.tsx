@@ -112,6 +112,24 @@ export default function Home() {
     }
   }, []);
 
+  // Landing here with a hash (e.g. /#see-posy-build from the pricing page) needs
+  // an explicit scroll: the browser resolves the fragment before React has
+  // mounted the target section, so the native jump silently no-ops at the top.
+  useEffect(() => {
+    const hash = window.location.hash.replace("#", "");
+    if (!hash) return;
+    let tries = 0;
+    const attempt = () => {
+      const el = document.getElementById(hash);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+      if (tries++ < 20) setTimeout(attempt, 100);
+    };
+    attempt();
+  }, []);
+
   const createEvent = useMutation({
     mutationFn: async () => {
       const defaultSubject = `You're invited: ${eventName || "our celebration"}!`;
