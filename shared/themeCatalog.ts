@@ -1,0 +1,812 @@
+// Posy Launch Theme Catalog
+// ─────────────────────────────────────────────────────────────────────────
+// Eight art-directed invitation themes. Each theme owns a piece of original
+// portrait (3:4) artwork plus the full design system that sits on top of it:
+// curated palette variants, curated type pairings, curated type placements,
+// a readable overlay treatment, and a coordinated envelope bundle.
+//
+// The artwork is a static asset. Selecting a theme is a pure data operation —
+// no image model is ever called on this path. Typography is live HTML layered
+// over the artwork, so every word stays editable and every design stays
+// crisp at any size.
+//
+// Framework-agnostic (plain data, no React types) so the Express server, the
+// React client, and the test suite can all import it.
+
+import type { BorderStyle, InviteDesignConcept } from "./inviteDesign";
+import type { LinerPattern, StampStyle } from "./themeDna";
+
+/* ── Filters ─────────────────────────────────────────────────────────── */
+
+export const THEME_STYLES = ["elegant", "modern", "bold", "storybook", "kids"] as const;
+export type ThemeStyle = (typeof THEME_STYLES)[number];
+
+export const THEME_STYLE_LABELS: Record<ThemeStyle, string> = {
+  elegant: "Elegant",
+  modern: "Modern",
+  bold: "Bold",
+  storybook: "Storybook",
+  kids: "Kids & Teen",
+};
+
+export const THEME_OCCASIONS = [
+  "milestone-birthday",
+  "kids-birthday",
+  "teen-birthday",
+  "dinner-party",
+  "shower",
+  "celebration",
+  "summer-party",
+  "holiday-party",
+] as const;
+export type ThemeOccasion = (typeof THEME_OCCASIONS)[number];
+
+export const THEME_OCCASION_LABELS: Record<ThemeOccasion, string> = {
+  "milestone-birthday": "Milestone birthday",
+  "kids-birthday": "Kids birthday",
+  "teen-birthday": "Teen birthday",
+  "dinner-party": "Dinner party",
+  shower: "Shower",
+  celebration: "Celebration",
+  "summer-party": "Summer party",
+  "holiday-party": "Holiday party",
+};
+
+/* ── Design primitives ───────────────────────────────────────────────── */
+
+/**
+ * Where the type block sits on the 3:4 canvas, expressed in percentages so it
+ * scales identically in a 180px gallery thumbnail and a 640px editor preview.
+ * Every theme ships placements that respect its artwork's own composition —
+ * a host cannot drop text onto the roller skate or into the flower corners.
+ */
+export interface TextPlacement {
+  id: string;
+  label: string;
+  box: { top: number; left: number; width: number; height: number };
+  align: "left" | "center" | "right";
+  justify: "start" | "center" | "end";
+}
+
+/**
+ * Readable overlay treatment applied behind the type. Artwork carries the
+ * colour; these exist purely so the words stay legible on busy passages.
+ * - "none"    : artwork is already quiet where the type sits
+ * - "veil"    : soft wash of the palette surface colour across the type box
+ * - "plate"   : a defined stationery panel behind the type
+ * - "gradient": vertical scrim, strongest behind the type
+ */
+export const OVERLAY_TREATMENTS = ["none", "veil", "plate", "gradient"] as const;
+export type OverlayTreatment = (typeof OVERLAY_TREATMENTS)[number];
+
+export const OVERLAY_LABELS: Record<OverlayTreatment, string> = {
+  none: "Clear",
+  veil: "Soft veil",
+  plate: "Paper panel",
+  gradient: "Gradient",
+};
+
+/**
+ * A curated colourway for a theme. Semantic rather than positional, so the
+ * renderer never has to guess which of four hexes is the heading colour.
+ */
+export interface PaletteVariant {
+  id: string;
+  label: string;
+  /** Headline / primary display type. */
+  ink: string;
+  /** Rules, eyebrow, and the RSVP cue. */
+  accent: string;
+  /** Overlay + plate surface. */
+  surface: string;
+  /** Body copy. */
+  body: string;
+}
+
+/** The legacy 4-hex `paletteColors` contract, derived from a variant. */
+export function paletteVariantColors(variant: PaletteVariant): string[] {
+  return [variant.ink, variant.accent, variant.surface, variant.body];
+}
+
+export interface EnvelopePaperOption {
+  id: string;
+  label: string;
+  color: string;
+}
+
+export interface EnvelopeLinerOption {
+  id: string;
+  label: string;
+  pattern: LinerPattern;
+  color: string;
+}
+
+export interface EnvelopeSealOption {
+  id: string;
+  label: string;
+  style: StampStyle;
+  color: string;
+}
+
+/** Everything the invitation arrives in, coordinated per theme. */
+export interface EnvelopeBundle {
+  papers: EnvelopePaperOption[];
+  liners: EnvelopeLinerOption[];
+  seals: EnvelopeSealOption[];
+}
+
+/** Realistic stationery copy shown in the gallery before a host edits a word. */
+export interface SampleCopy {
+  eyebrow: string;
+  headline: string;
+  dateLine: string;
+  timeLine: string;
+  locationLine: string;
+  rsvpLine: string;
+}
+
+export interface ThemeArtwork {
+  fullUrl: string;
+  thumbUrl: string;
+  alt: string;
+  width: number;
+  height: number;
+}
+
+export interface LaunchTheme {
+  id: string;
+  name: string;
+  tagline: string;
+  description: string;
+  style: ThemeStyle;
+  occasions: ThemeOccasion[];
+  artwork: ThemeArtwork;
+  /** First entry is the default. */
+  palettes: PaletteVariant[];
+  /** Curated pairing ids from shared/inviteDesign.ts. First is the default. */
+  fontPairingIds: string[];
+  /** First entry is the default. */
+  placements: TextPlacement[];
+  defaultOverlay: OverlayTreatment;
+  overlayOptions: OverlayTreatment[];
+  envelope: EnvelopeBundle;
+  sample: SampleCopy;
+  /** Card frame treatment carried into the legacy concept representation. */
+  borderStyle: BorderStyle;
+  styleLaneId: string;
+}
+
+/* ── The eight launch themes ─────────────────────────────────────────── */
+
+export const LAUNCH_THEMES: LaunchTheme[] = [
+  {
+    id: "garden-editorial",
+    name: "Garden Editorial",
+    tagline: "Painted roses on deckled cotton",
+    description:
+      "Watercolour garden roses drift across two corners of soft deckled paper, leaving a quiet centre for beautifully set type.",
+    style: "elegant",
+    occasions: ["dinner-party", "shower", "milestone-birthday", "celebration"],
+    artwork: {
+      fullUrl: "/themes/garden-editorial.webp",
+      thumbUrl: "/themes/garden-editorial-thumb.webp",
+      alt: "Watercolour garden roses in plum and blush painted across the corners of deckled cream paper",
+      width: 896,
+      height: 1200,
+    },
+    palettes: [
+      { id: "plum-garden", label: "Plum Garden", ink: "#6d3f52", accent: "#8d6335", surface: "#f7f0e6", body: "#4a3b3f" },
+      { id: "sage-linen", label: "Sage Linen", ink: "#4f5f49", accent: "#846747", surface: "#f6f2e8", body: "#43483f" },
+      { id: "ink-charcoal", label: "Charcoal Ink", ink: "#33292c", accent: "#8c5c6d", surface: "#f8f2e9", body: "#3d3639" },
+    ],
+    fontPairingIds: ["garden-editorial-type", "romantic-italic", "playfair-classic"],
+    placements: [
+      { id: "centre", label: "Centred", box: { top: 27, left: 15, width: 70, height: 44 }, align: "center", justify: "center" },
+      { id: "high", label: "Raised", box: { top: 19, left: 16, width: 68, height: 40 }, align: "center", justify: "start" },
+      { id: "left-column", label: "Left column", box: { top: 26, left: 14, width: 56, height: 46 }, align: "left", justify: "center" },
+    ],
+    defaultOverlay: "none",
+    overlayOptions: ["none", "veil", "plate"],
+    envelope: {
+      papers: [
+        { id: "cotton", label: "Cotton Cream", color: "#efe4d3" },
+        { id: "plum", label: "Deep Plum", color: "#6d3f52" },
+        { id: "sage", label: "Garden Sage", color: "#7c8f6b" },
+      ],
+      liners: [
+        { id: "floral", label: "Pressed floral", pattern: "floral", color: "#a8763f" },
+        { id: "solid", label: "Plain plum", pattern: "solid", color: "#6d3f52" },
+        { id: "lattice", label: "Garden lattice", pattern: "lattice", color: "#8a9a7b" },
+      ],
+      seals: [
+        { id: "wax", label: "Gold wax seal", style: "wax-seal", color: "#a8763f" },
+        { id: "monogram", label: "Monogram seal", style: "seal", color: "#6d3f52" },
+        { id: "botanical", label: "Botanical stamp", style: "motif", color: "#7c8f6b" },
+      ],
+    },
+    sample: {
+      eyebrow: "You are warmly invited to",
+      headline: "The Summer Garden Dinner",
+      dateLine: "Saturday, the fourteenth of June",
+      timeLine: "Half past six in the evening",
+      locationLine: "The Rosewood Terrace · Charleston",
+      rsvpLine: "Kindly reply by the first of June",
+    },
+    borderStyle: "none",
+    styleLaneId: "editorial-premium",
+  },
+
+  {
+    id: "deco-midnight",
+    name: "Deco Midnight",
+    tagline: "Gilded lines on midnight navy",
+    description:
+      "A fine gold deco frame and a rising sunburst on deep navy — the most formal thing in the catalogue, and the most confident.",
+    style: "elegant",
+    occasions: ["milestone-birthday", "dinner-party", "holiday-party", "celebration"],
+    artwork: {
+      fullUrl: "/themes/deco-midnight.webp",
+      thumbUrl: "/themes/deco-midnight-thumb.webp",
+      alt: "A thin gold Art Deco border and rising sunburst motif on a deep midnight navy field",
+      width: 896,
+      height: 1200,
+    },
+    palettes: [
+      { id: "gilt", label: "Gilt", ink: "#d8b45f", accent: "#c9a227", surface: "#16233d", body: "#e8ddc4" },
+      { id: "ivory", label: "Ivory", ink: "#f2e6cc", accent: "#c9a227", surface: "#16233d", body: "#d7cdb6" },
+      { id: "platinum", label: "Platinum", ink: "#dfe4ec", accent: "#9fb0c9", surface: "#141f36", body: "#c3cbd9" },
+    ],
+    fontPairingIds: ["deco-luxe", "deco-poiret", "quiet-garamond"],
+    placements: [
+      { id: "centre", label: "Centred", box: { top: 28, left: 17, width: 66, height: 40 }, align: "center", justify: "center" },
+      { id: "high", label: "Raised", box: { top: 20, left: 17, width: 66, height: 38 }, align: "center", justify: "start" },
+      { id: "low", label: "Above the sunburst", box: { top: 40, left: 17, width: 66, height: 38 }, align: "center", justify: "end" },
+    ],
+    defaultOverlay: "none",
+    overlayOptions: ["none", "gradient"],
+    envelope: {
+      papers: [
+        { id: "midnight", label: "Midnight", color: "#16233d" },
+        { id: "champagne", label: "Champagne", color: "#e3d3ab" },
+        { id: "onyx", label: "Onyx", color: "#1b1b22" },
+      ],
+      liners: [
+        { id: "diamonds", label: "Deco diamonds", pattern: "diamonds", color: "#c9a227" },
+        { id: "chevron", label: "Gold chevron", pattern: "chevron", color: "#c9a227" },
+        { id: "solid", label: "Plain champagne", pattern: "solid", color: "#e3d3ab" },
+      ],
+      seals: [
+        { id: "wax", label: "Gold wax seal", style: "wax-seal", color: "#c9a227" },
+        { id: "crest", label: "Deco crest", style: "seal", color: "#c9a227" },
+        { id: "star", label: "Starburst stamp", style: "star", color: "#d8b45f" },
+      ],
+    },
+    sample: {
+      eyebrow: "Cocktails & celebration",
+      headline: "Margaret's Sixtieth",
+      dateLine: "Friday, the eleventh of October",
+      timeLine: "Eight o'clock in the evening",
+      locationLine: "The Astor Room · 220 Fifth Avenue",
+      rsvpLine: "Black tie · Kindly reply by October first",
+    },
+    borderStyle: "none",
+    styleLaneId: "bold-graphic",
+  },
+
+  {
+    id: "neon-arena",
+    name: "Neon Arena",
+    tagline: "Electric geometry after dark",
+    description:
+      "Magenta and cyan light traces cut a hard-edged frame through a dark skyline. Built for teenagers who would be embarrassed by anything sweet.",
+    style: "kids",
+    occasions: ["teen-birthday", "celebration", "milestone-birthday"],
+    artwork: {
+      fullUrl: "/themes/neon-arena.webp",
+      thumbUrl: "/themes/neon-arena-thumb.webp",
+      alt: "Magenta and cyan neon light trails forming an angular frame over a dark violet skyline",
+      width: 896,
+      height: 1200,
+    },
+    palettes: [
+      { id: "magenta", label: "Magenta", ink: "#ff4fa3", accent: "#22d3ee", surface: "#140a26", body: "#e9defb" },
+      { id: "cyan", label: "Cyan", ink: "#3fe0f5", accent: "#ff4fa3", surface: "#120a24", body: "#dcecfb" },
+      { id: "chrome", label: "Chrome", ink: "#f4f6ff", accent: "#a97bff", surface: "#150c28", body: "#cfc9e6" },
+    ],
+    fontPairingIds: ["neon-display", "tech-grotesk", "poolside-geometric"],
+    placements: [
+      { id: "centre", label: "Centred", box: { top: 30, left: 18, width: 64, height: 40 }, align: "center", justify: "center" },
+      { id: "stacked", label: "Stacked left", box: { top: 28, left: 18, width: 60, height: 44 }, align: "left", justify: "center" },
+      { id: "low", label: "Lower block", box: { top: 42, left: 18, width: 64, height: 38 }, align: "center", justify: "end" },
+    ],
+    defaultOverlay: "veil",
+    overlayOptions: ["none", "veil", "gradient"],
+    envelope: {
+      papers: [
+        { id: "midnight", label: "Midnight violet", color: "#1d1033" },
+        { id: "magenta", label: "Hot magenta", color: "#b02576" },
+        { id: "graphite", label: "Graphite", color: "#232634" },
+      ],
+      liners: [
+        { id: "chevron", label: "Neon chevron", pattern: "chevron", color: "#22d3ee" },
+        { id: "dots", label: "Pixel dots", pattern: "dots", color: "#ff4fa3" },
+        { id: "stripes", label: "Light stripes", pattern: "stripes", color: "#a97bff" },
+      ],
+      seals: [
+        { id: "star", label: "Neon star", style: "star", color: "#22d3ee" },
+        { id: "motif", label: "Circuit mark", style: "motif", color: "#ff4fa3" },
+        { id: "seal", label: "Chrome seal", style: "seal", color: "#c9d4ff" },
+      ],
+    },
+    sample: {
+      eyebrow: "Level up",
+      headline: "Jordan Turns Fifteen",
+      dateLine: "Friday, November 8",
+      timeLine: "7:00 PM until 11:00 PM",
+      locationLine: "Voltage Arena · 44 Mill Street",
+      rsvpLine: "Tap to RSVP by November 1",
+    },
+    borderStyle: "none",
+    styleLaneId: "bold-graphic",
+  },
+
+  {
+    id: "pool-editorial",
+    name: "Poolside",
+    tagline: "Sunlight on turquoise water",
+    description:
+      "Afternoon light breaking across a swimming pool, with a single ring float holding the lower corner. Refined rather than inflatable.",
+    style: "modern",
+    occasions: ["summer-party", "celebration", "milestone-birthday", "teen-birthday"],
+    artwork: {
+      fullUrl: "/themes/pool-editorial.webp",
+      thumbUrl: "/themes/pool-editorial-thumb.webp",
+      alt: "Sunlit turquoise swimming pool water with a coral and white ring float in the lower corner",
+      width: 896,
+      height: 1200,
+    },
+    palettes: [
+      { id: "chlorine", label: "Chlorine White", ink: "#ffffff", accent: "#ffd9c4", surface: "#0d5f86", body: "#eef7fb" },
+      { id: "coral", label: "Coral", ink: "#ffe9dd", accent: "#f7a997", surface: "#0b5175", body: "#f4f9fc" },
+      { id: "deep-blue", label: "Deep Water", ink: "#06344b", accent: "#0d5f86", surface: "#e9f6fb", body: "#124f6b" },
+    ],
+    fontPairingIds: ["poolside-geometric", "tech-grotesk", "playfair-classic"],
+    placements: [
+      { id: "high", label: "Raised", box: { top: 13, left: 13, width: 68, height: 40 }, align: "left", justify: "start" },
+      { id: "centre", label: "Centred", box: { top: 20, left: 15, width: 66, height: 40 }, align: "center", justify: "center" },
+      { id: "left-column", label: "Left column", box: { top: 16, left: 12, width: 55, height: 50 }, align: "left", justify: "center" },
+    ],
+    defaultOverlay: "gradient",
+    overlayOptions: ["none", "veil", "gradient", "plate"],
+    envelope: {
+      papers: [
+        { id: "pool", label: "Pool Blue", color: "#0d5f86" },
+        { id: "sand", label: "Warm Sand", color: "#e8d9c2" },
+        { id: "coral", label: "Coral", color: "#e0664a" },
+      ],
+      liners: [
+        { id: "waves", label: "Ripple", pattern: "waves", color: "#7fd3ec" },
+        { id: "stripes", label: "Cabana stripe", pattern: "stripes", color: "#f0603f" },
+        { id: "scallops", label: "Scallop", pattern: "scallops", color: "#ffd9c4" },
+      ],
+      seals: [
+        { id: "motif", label: "Sun mark", style: "motif", color: "#f0603f" },
+        { id: "seal", label: "Wave seal", style: "seal", color: "#0d5f86" },
+        { id: "star", label: "Sunburst", style: "star", color: "#f2b134" },
+      ],
+    },
+    sample: {
+      eyebrow: "Swim · Sun · Supper",
+      headline: "The Poolside Social",
+      dateLine: "Saturday, July 19",
+      timeLine: "Four in the afternoon",
+      locationLine: "18 Alameda Drive",
+      rsvpLine: "RSVP by July 10",
+    },
+    borderStyle: "none",
+    styleLaneId: "minimal-modern",
+  },
+
+  {
+    id: "meadow-storybook",
+    name: "Meadow Storybook",
+    tagline: "Wildflowers and two quiet hares",
+    description:
+      "A hand-painted meadow of grasses and buttercups under a soft morning sky, with all the space in the world above it for your words.",
+    style: "storybook",
+    occasions: ["shower", "kids-birthday", "celebration", "dinner-party"],
+    artwork: {
+      fullUrl: "/themes/meadow-storybook.webp",
+      thumbUrl: "/themes/meadow-storybook-thumb.webp",
+      alt: "A painted wildflower meadow with grasses, buttercups, and two hares beneath a pale morning sky",
+      width: 896,
+      height: 1200,
+    },
+    palettes: [
+      { id: "meadow-sage", label: "Meadow Sage", ink: "#4a5a42", accent: "#866922", surface: "#f4f1e6", body: "#4f5850" },
+      { id: "buttercup", label: "Buttercup", ink: "#7a6320", accent: "#627354", surface: "#f6f3e8", body: "#54513f" },
+      { id: "soft-ink", label: "Soft Ink", ink: "#3a4048", accent: "#66725b", surface: "#f5f3ea", body: "#4b5158" },
+    ],
+    fontPairingIds: ["storybook-garamond", "quiet-garamond", "garden-editorial-type"],
+    placements: [
+      { id: "high", label: "Raised", box: { top: 13, left: 14, width: 72, height: 40 }, align: "center", justify: "start" },
+      { id: "centre", label: "Centred", box: { top: 18, left: 15, width: 70, height: 40 }, align: "center", justify: "center" },
+      { id: "left-column", label: "Left column", box: { top: 15, left: 13, width: 58, height: 44 }, align: "left", justify: "start" },
+    ],
+    defaultOverlay: "none",
+    overlayOptions: ["none", "veil"],
+    envelope: {
+      papers: [
+        { id: "oat", label: "Oat", color: "#e7e0cd" },
+        { id: "sage", label: "Meadow Sage", color: "#7d8f6e" },
+        { id: "clay", label: "Soft Clay", color: "#c9a68a" },
+      ],
+      liners: [
+        { id: "floral", label: "Wildflower", pattern: "floral", color: "#b8902f" },
+        { id: "solid", label: "Plain oat", pattern: "solid", color: "#e7e0cd" },
+        { id: "dots", label: "Seed dots", pattern: "dots", color: "#6f8360" },
+      ],
+      seals: [
+        { id: "motif", label: "Pressed leaf", style: "motif", color: "#6f8360" },
+        { id: "seal", label: "Wax seal", style: "seal", color: "#b8902f" },
+        { id: "bow", label: "Ribbon", style: "bow", color: "#c9a68a" },
+      ],
+    },
+    sample: {
+      eyebrow: "A gentle morning for",
+      headline: "Baby Wren",
+      dateLine: "Sunday, the fourth of May",
+      timeLine: "Ten in the morning",
+      locationLine: "The Old Meadow House · Hillsdale",
+      rsvpLine: "Kindly reply by the twenty-fifth of April",
+    },
+    borderStyle: "none",
+    styleLaneId: "storybook-whimsical",
+  },
+
+  {
+    id: "celestial-heirloom",
+    name: "Celestial Heirloom",
+    tagline: "Gold constellations on watercolour night",
+    description:
+      "Hand-painted indigo washes scattered with gilded stars and a crescent moon. Formal without being stiff.",
+    style: "elegant",
+    occasions: ["milestone-birthday", "dinner-party", "holiday-party", "celebration"],
+    artwork: {
+      fullUrl: "/themes/celestial-heirloom.webp",
+      thumbUrl: "/themes/celestial-heirloom-thumb.webp",
+      alt: "Indigo watercolour night sky with gold-leaf constellations, stars, and a crescent moon",
+      width: 896,
+      height: 1200,
+    },
+    palettes: [
+      { id: "gold-leaf", label: "Gold Leaf", ink: "#e2b455", accent: "#d9a441", surface: "#132a52", body: "#e7e3d5" },
+      { id: "moonlight", label: "Moonlight", ink: "#f5efe1", accent: "#d9a441", surface: "#12294f", body: "#dcd8ca" },
+      { id: "starlight", label: "Starlight", ink: "#e8eefc", accent: "#9db6e0", surface: "#10224a", body: "#cdd8ee" },
+    ],
+    fontPairingIds: ["playfair-classic", "quiet-garamond", "deco-luxe"],
+    placements: [
+      { id: "centre", label: "Centred", box: { top: 30, left: 16, width: 68, height: 40 }, align: "center", justify: "center" },
+      { id: "high", label: "Raised", box: { top: 22, left: 17, width: 66, height: 38 }, align: "center", justify: "start" },
+      { id: "low", label: "Lower block", box: { top: 40, left: 17, width: 66, height: 38 }, align: "center", justify: "end" },
+    ],
+    defaultOverlay: "veil",
+    overlayOptions: ["none", "veil", "gradient"],
+    envelope: {
+      papers: [
+        { id: "indigo", label: "Indigo", color: "#1c3564" },
+        { id: "parchment", label: "Parchment", color: "#efe6d2" },
+        { id: "slate", label: "Night Slate", color: "#26324a" },
+      ],
+      liners: [
+        { id: "stars", label: "Star map", pattern: "stars", color: "#d9a441" },
+        { id: "diamonds", label: "Gilt diamonds", pattern: "diamonds", color: "#d9a441" },
+        { id: "solid", label: "Plain parchment", pattern: "solid", color: "#efe6d2" },
+      ],
+      seals: [
+        { id: "wax", label: "Gold wax seal", style: "wax-seal", color: "#d9a441" },
+        { id: "star", label: "Star stamp", style: "star", color: "#e2b455" },
+        { id: "seal", label: "Crescent seal", style: "seal", color: "#c8dbff" },
+      ],
+    },
+    sample: {
+      eyebrow: "Under the winter stars",
+      headline: "Amelia & Theo",
+      dateLine: "Saturday, the thirteenth of December",
+      timeLine: "Seven in the evening",
+      locationLine: "The Observatory · Hudson, New York",
+      rsvpLine: "Kindly reply by the twentieth of November",
+    },
+    borderStyle: "none",
+    styleLaneId: "editorial-premium",
+  },
+
+  {
+    id: "dinosaur-museum",
+    name: "Field Museum",
+    tagline: "A block-printed brontosaurus",
+    description:
+      "A natural-history print on textured cotton: sauropod, palms, and ochre hills. Genuinely exciting for a six-year-old, and no cartoon in sight.",
+    style: "kids",
+    occasions: ["kids-birthday", "celebration"],
+    artwork: {
+      fullUrl: "/themes/dinosaur-museum.webp",
+      thumbUrl: "/themes/dinosaur-museum-thumb.webp",
+      alt: "Block-print illustration of a brontosaurus among palms and ochre hills on textured cream paper",
+      width: 896,
+      height: 1200,
+    },
+    palettes: [
+      { id: "field-green", label: "Field Green", ink: "#34503f", accent: "#a35131", surface: "#f2ebdc", body: "#4a5347" },
+      { id: "terracotta", label: "Terracotta", ink: "#a4502f", accent: "#34503f", surface: "#f3ecdd", body: "#5b4a3d" },
+      { id: "ochre", label: "Ochre", ink: "#8a6320", accent: "#3f6b4f", surface: "#f4eede", body: "#55503f" },
+    ],
+    fontPairingIds: ["museum-slab", "tech-grotesk", "quiet-garamond"],
+    placements: [
+      { id: "high", label: "Raised", box: { top: 8, left: 12, width: 76, height: 33 }, align: "center", justify: "start" },
+      { id: "left-column", label: "Left column", box: { top: 9, left: 11, width: 60, height: 34 }, align: "left", justify: "start" },
+      { id: "centre", label: "Centred", box: { top: 10, left: 13, width: 74, height: 32 }, align: "center", justify: "center" },
+    ],
+    defaultOverlay: "none",
+    overlayOptions: ["none", "veil"],
+    envelope: {
+      papers: [
+        { id: "kraft", label: "Kraft", color: "#d7c3a1" },
+        { id: "forest", label: "Forest", color: "#34503f" },
+        { id: "clay", label: "Clay", color: "#b95c38" },
+      ],
+      liners: [
+        { id: "lattice", label: "Fern lattice", pattern: "lattice", color: "#3f6b4f" },
+        { id: "dots", label: "Fossil dots", pattern: "dots", color: "#b95c38" },
+        { id: "stripes", label: "Field stripe", pattern: "stripes", color: "#d29b3f" },
+      ],
+      seals: [
+        { id: "motif", label: "Fossil stamp", style: "motif", color: "#34503f" },
+        { id: "seal", label: "Museum seal", style: "seal", color: "#b95c38" },
+        { id: "star", label: "Expedition star", style: "star", color: "#d29b3f" },
+      ],
+    },
+    sample: {
+      eyebrow: "A prehistoric expedition for",
+      headline: "Felix is Six",
+      dateLine: "Saturday, March 22",
+      timeLine: "10:30 in the morning",
+      locationLine: "Natural History Museum · Hall of Fossils",
+      rsvpLine: "RSVP to Dana by March 15",
+    },
+    borderStyle: "none",
+    styleLaneId: "handcrafted-rustic",
+  },
+
+  {
+    id: "roller-editorial",
+    name: "Roller Disco",
+    tagline: "Seventies swirls and a white skate",
+    description:
+      "Concentric maroon, rust, and blue arcs sweep around a cream disc, with a single roller skate anchoring the base. Retro poster art, properly typeset.",
+    style: "bold",
+    occasions: ["teen-birthday", "milestone-birthday", "celebration", "kids-birthday"],
+    artwork: {
+      fullUrl: "/themes/roller-editorial.webp",
+      thumbUrl: "/themes/roller-editorial-thumb.webp",
+      alt: "Retro seventies poster of concentric maroon, rust and blue arcs around a cream disc with a white roller skate below",
+      width: 896,
+      height: 1200,
+    },
+    palettes: [
+      { id: "maroon", label: "Maroon", ink: "#7c2338", accent: "#ac4b22", surface: "#f4e7c8", body: "#5a3a30" },
+      { id: "rust", label: "Rust", ink: "#b7431d", accent: "#2f5c8a", surface: "#f5e9cd", body: "#6a3b26" },
+      { id: "midnight-blue", label: "Midnight Blue", ink: "#2f5c8a", accent: "#b2411d", surface: "#f3e6c6", body: "#3f4a5c" },
+    ],
+    fontPairingIds: ["disco-display", "neon-display", "tech-grotesk"],
+    placements: [
+      { id: "disc", label: "In the disc", box: { top: 17, left: 27, width: 55, height: 30 }, align: "center", justify: "center" },
+      { id: "disc-high", label: "Top of disc", box: { top: 14, left: 26, width: 57, height: 28 }, align: "center", justify: "start" },
+      { id: "disc-wide", label: "Wide disc", box: { top: 18, left: 23, width: 62, height: 30 }, align: "center", justify: "center" },
+    ],
+    defaultOverlay: "none",
+    overlayOptions: ["none", "veil"],
+    envelope: {
+      papers: [
+        { id: "cream", label: "Disco Cream", color: "#f0e2be" },
+        { id: "maroon", label: "Maroon", color: "#7c2338" },
+        { id: "rust", label: "Rust", color: "#c1471f" },
+      ],
+      liners: [
+        { id: "stripes", label: "Rainbow stripe", pattern: "stripes", color: "#e0622c" },
+        { id: "scallops", label: "Arc scallop", pattern: "scallops", color: "#2f5c8a" },
+        { id: "confetti", label: "Confetti", pattern: "confetti", color: "#7c2338" },
+      ],
+      seals: [
+        { id: "star", label: "Disco star", style: "star", color: "#e0622c" },
+        { id: "motif", label: "Skate mark", style: "motif", color: "#7c2338" },
+        { id: "seal", label: "Retro seal", style: "seal", color: "#2f5c8a" },
+      ],
+    },
+    sample: {
+      eyebrow: "Lace up for",
+      headline: "Nina's Roller Disco",
+      dateLine: "Saturday, September 6",
+      timeLine: "Eight until late",
+      locationLine: "The Starlight Rollerdrome",
+      rsvpLine: "RSVP by August 30 · Skates provided",
+    },
+    borderStyle: "none",
+    styleLaneId: "bold-graphic",
+  },
+];
+
+/* ── Lookups ─────────────────────────────────────────────────────────── */
+
+export function getLaunchTheme(id: string): LaunchTheme | undefined {
+  return LAUNCH_THEMES.find((t) => t.id === id);
+}
+
+export function isLaunchThemeId(id: unknown): id is string {
+  return typeof id === "string" && LAUNCH_THEMES.some((t) => t.id === id);
+}
+
+export function getPaletteVariant(theme: LaunchTheme, id: string | undefined): PaletteVariant {
+  return theme.palettes.find((p) => p.id === id) ?? theme.palettes[0];
+}
+
+export function getPlacement(theme: LaunchTheme, id: string | undefined): TextPlacement {
+  return theme.placements.find((p) => p.id === id) ?? theme.placements[0];
+}
+
+export function getOverlay(theme: LaunchTheme, value: unknown): OverlayTreatment {
+  return theme.overlayOptions.includes(value as OverlayTreatment)
+    ? (value as OverlayTreatment)
+    : theme.defaultOverlay;
+}
+
+export function getFontPairingIdFor(theme: LaunchTheme, id: string | undefined): string {
+  return id && theme.fontPairingIds.includes(id) ? id : theme.fontPairingIds[0];
+}
+
+/* ── Persisted design selection ──────────────────────────────────────── */
+
+/**
+ * The editable copy that sits on the invitation. Only `headline` and `message`
+ * map onto real event columns (inviteSubject / inviteMessage, which the email
+ * sender already reads); the rest live inside the concept JSON so no schema
+ * migration is required and older events keep rendering.
+ */
+export interface ThemeCopy {
+  eyebrow: string;
+  dateLine: string;
+  timeLine: string;
+  locationLine: string;
+  rsvpLine: string;
+}
+
+/**
+ * A curated theme selection, persisted inside `inviteDesignConceptJson`
+ * alongside the legacy concept fields. Every field is optional on read so a
+ * concept saved before this feature (or by the AI path) still parses.
+ */
+export interface ThemeSelection {
+  themeId: string;
+  artworkUrl: string;
+  artworkThumbUrl: string;
+  paletteVariantId: string;
+  placementId: string;
+  overlay: OverlayTreatment;
+  copy: ThemeCopy;
+}
+
+/** An InviteDesignConcept that also carries a curated theme selection. */
+export type ThemedInviteConcept = InviteDesignConcept & { theme?: ThemeSelection };
+
+export function defaultThemeCopy(theme: LaunchTheme): ThemeCopy {
+  return {
+    eyebrow: theme.sample.eyebrow,
+    dateLine: theme.sample.dateLine,
+    timeLine: theme.sample.timeLine,
+    locationLine: theme.sample.locationLine,
+    rsvpLine: theme.sample.rsvpLine,
+  };
+}
+
+/**
+ * Copy seeded from the host's real event so a freshly applied theme reads as
+ * their invitation immediately, falling back to the theme's sample lines for
+ * anything the event does not know yet.
+ */
+export function themeCopyForEvent(
+  theme: LaunchTheme,
+  event: { eventDate?: string; location?: string; hostNames?: string; rsvpDeadline?: string },
+): ThemeCopy {
+  const base = defaultThemeCopy(theme);
+  return {
+    eyebrow: event.hostNames ? `Hosted by ${event.hostNames}` : base.eyebrow,
+    dateLine: event.eventDate || base.dateLine,
+    timeLine: base.timeLine,
+    locationLine: event.location || base.locationLine,
+    rsvpLine: event.rsvpDeadline ? `Kindly reply by ${event.rsvpDeadline}` : base.rsvpLine,
+  };
+}
+
+function isThemeCopy(value: unknown): value is ThemeCopy {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  return (
+    typeof v.eyebrow === "string" &&
+    typeof v.dateLine === "string" &&
+    typeof v.timeLine === "string" &&
+    typeof v.locationLine === "string" &&
+    typeof v.rsvpLine === "string"
+  );
+}
+
+/** Reads a validated theme selection off a concept, or null if there isn't one. */
+export function readThemeSelection(concept: unknown): ThemeSelection | null {
+  if (!concept || typeof concept !== "object") return null;
+  const raw = (concept as { theme?: unknown }).theme;
+  if (!raw || typeof raw !== "object") return null;
+  const t = raw as Record<string, unknown>;
+  const theme = isLaunchThemeId(t.themeId) ? getLaunchTheme(t.themeId as string) : undefined;
+  if (!theme) return null;
+  return {
+    themeId: theme.id,
+    artworkUrl: typeof t.artworkUrl === "string" && t.artworkUrl ? t.artworkUrl : theme.artwork.fullUrl,
+    artworkThumbUrl:
+      typeof t.artworkThumbUrl === "string" && t.artworkThumbUrl ? t.artworkThumbUrl : theme.artwork.thumbUrl,
+    paletteVariantId: getPaletteVariant(theme, t.paletteVariantId as string | undefined).id,
+    placementId: getPlacement(theme, t.placementId as string | undefined).id,
+    overlay: getOverlay(theme, t.overlay),
+    copy: isThemeCopy(t.copy) ? t.copy : defaultThemeCopy(theme),
+  };
+}
+
+/**
+ * Builds the complete concept payload for a theme. This is the whole of
+ * "applying a theme" — a pure function, no network, no image model.
+ */
+export function buildThemedConcept(
+  theme: LaunchTheme,
+  options: {
+    paletteVariantId?: string;
+    placementId?: string;
+    overlay?: OverlayTreatment;
+    fontPairingId?: string;
+    copy?: ThemeCopy;
+  } = {},
+): ThemedInviteConcept {
+  const palette = getPaletteVariant(theme, options.paletteVariantId);
+  const placement = getPlacement(theme, options.placementId);
+  return {
+    conceptName: theme.name,
+    description: theme.tagline,
+    paletteColors: paletteVariantColors(palette),
+    fontPairingId: getFontPairingIdFor(theme, options.fontPairingId),
+    borderStyle: theme.borderStyle,
+    // Curated themes render through the composed portrait renderer. "full-bleed"
+    // is the closest legacy archetype, so any renderer that has not been taught
+    // about `theme` yet still shows the artwork behind the text rather than
+    // dropping it.
+    layoutStyle: "full-bleed",
+    illustrationPrompt: theme.description,
+    styleLaneId: theme.styleLaneId,
+    theme: {
+      themeId: theme.id,
+      artworkUrl: theme.artwork.fullUrl,
+      artworkThumbUrl: theme.artwork.thumbUrl,
+      paletteVariantId: palette.id,
+      placementId: placement.id,
+      overlay: getOverlay(theme, options.overlay ?? theme.defaultOverlay),
+      copy: options.copy ?? defaultThemeCopy(theme),
+    },
+  };
+}
+
+/** The default envelope selection for a theme (first option of each group). */
+export function defaultEnvelopeForTheme(theme: LaunchTheme) {
+  return {
+    envelopeColor: theme.envelope.papers[0].color,
+    envelopeLinerPattern: theme.envelope.liners[0].pattern,
+    linerColor: theme.envelope.liners[0].color,
+    stampStyle: theme.envelope.seals[0].style,
+    stampColor: theme.envelope.seals[0].color,
+  };
+}

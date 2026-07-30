@@ -22,7 +22,9 @@ export interface FontPairing {
   headingLetterSpacing?: string;
 }
 
-export const FONT_PAIRINGS: FontPairing[] = [
+// The original AI-facing set. Kept so concepts stored before the curated
+// theme launch keep resolving to the pairing they were saved with.
+const LEGACY_FONT_PAIRINGS: FontPairing[] = [
   {
     id: "editorial-serif",
     label: "Editorial Serif",
@@ -87,6 +89,109 @@ export const FONT_PAIRINGS: FontPairing[] = [
     headingWeight: 600,
   },
 ];
+
+// Curated stationery pairings used by the launch themes in shared/themeCatalog.ts.
+// Unlike the legacy set above, every family here is actually loaded by
+// client/index.html, so these render as designed instead of falling back to a
+// system face.
+export const CURATED_FONT_PAIRINGS: FontPairing[] = [
+  {
+    id: "garden-editorial-type",
+    label: "Garamond Editorial",
+    headingFontFamily: "'Cormorant Garamond', Georgia, serif",
+    bodyFontFamily: "'Jost', 'Lato', sans-serif",
+    headingWeight: 600,
+    headingLetterSpacing: "0.01em",
+  },
+  {
+    id: "romantic-italic",
+    label: "Romantic Italic",
+    headingFontFamily: "'Cormorant Garamond', Georgia, serif",
+    bodyFontFamily: "'Lato', sans-serif",
+    headingWeight: 500,
+    headingStyle: "italic",
+  },
+  {
+    id: "deco-luxe",
+    label: "Deco Luxe",
+    headingFontFamily: "'Cinzel', Georgia, serif",
+    bodyFontFamily: "'Jost', sans-serif",
+    headingWeight: 600,
+    headingLetterSpacing: "0.16em",
+  },
+  {
+    id: "deco-poiret",
+    label: "Poiret Deco",
+    headingFontFamily: "'Poiret One', 'Jost', sans-serif",
+    bodyFontFamily: "'Jost', sans-serif",
+    headingWeight: 400,
+    headingLetterSpacing: "0.2em",
+  },
+  {
+    id: "neon-display",
+    label: "Arena Display",
+    headingFontFamily: "'Bebas Neue', 'Space Grotesk', sans-serif",
+    bodyFontFamily: "'Space Grotesk', sans-serif",
+    headingWeight: 400,
+    headingLetterSpacing: "0.06em",
+  },
+  {
+    id: "tech-grotesk",
+    label: "Tech Grotesk",
+    headingFontFamily: "'Space Grotesk', sans-serif",
+    bodyFontFamily: "'Space Grotesk', sans-serif",
+    headingWeight: 700,
+    headingLetterSpacing: "0.02em",
+  },
+  {
+    id: "poolside-geometric",
+    label: "Poolside Geometric",
+    headingFontFamily: "'Jost', sans-serif",
+    bodyFontFamily: "'Lato', sans-serif",
+    headingWeight: 500,
+    headingLetterSpacing: "0.22em",
+  },
+  {
+    id: "storybook-garamond",
+    label: "Storybook Garamond",
+    headingFontFamily: "'EB Garamond', Georgia, serif",
+    bodyFontFamily: "'Jost', sans-serif",
+    headingWeight: 500,
+    headingStyle: "italic",
+  },
+  {
+    id: "quiet-garamond",
+    label: "Quiet Garamond",
+    headingFontFamily: "'EB Garamond', Georgia, serif",
+    bodyFontFamily: "'Lato', sans-serif",
+    headingWeight: 600,
+    headingLetterSpacing: "0.04em",
+  },
+  {
+    id: "museum-slab",
+    label: "Museum Slab",
+    headingFontFamily: "'Bitter', Georgia, serif",
+    bodyFontFamily: "'Jost', sans-serif",
+    headingWeight: 600,
+    headingLetterSpacing: "0.03em",
+  },
+  {
+    id: "disco-display",
+    label: "Disco Display",
+    headingFontFamily: "'Abril Fatface', Georgia, serif",
+    bodyFontFamily: "'Jost', sans-serif",
+    headingWeight: 400,
+  },
+  {
+    id: "playfair-classic",
+    label: "Playfair Classic",
+    headingFontFamily: "'Playfair Display', Georgia, serif",
+    bodyFontFamily: "'Lato', sans-serif",
+    headingWeight: 600,
+  },
+];
+
+export const FONT_PAIRINGS: FontPairing[] = [...LEGACY_FONT_PAIRINGS, ...CURATED_FONT_PAIRINGS];
 
 export function getFontPairing(id: string): FontPairing {
   return FONT_PAIRINGS.find((f) => f.id === id) || FONT_PAIRINGS[0];

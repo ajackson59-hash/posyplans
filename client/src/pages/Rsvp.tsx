@@ -7,6 +7,9 @@ import { applyInviteTokens } from "@shared/inviteTokens";
 import { DEFAULT_INVITE_FONT_ID, resolveInviteAccentColor, getInviteHeadingStyle, getInviteBodyStyle } from "@/lib/inviteStyles";
 import { parseInviteDesignConcept, conceptHeadingStyle, conceptBodyStyle, conceptBorderStyle } from "@shared/inviteDesign";
 import { deriveThemeDna, isLinerPattern, isStampStyle, envelopeFinish, flapAnimationMs, ENVELOPE_LINGER_MS } from "@shared/themeDna";
+import { getPaletteVariant } from "@shared/themeCatalog";
+import { resolveThemeView } from "@/lib/themeInvite";
+import { ThemeInvitation } from "@/components/ThemeInvitation";
 import EnvelopeMockup from "@/components/EnvelopeMockup";
 import { Wordmark } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
@@ -233,6 +236,9 @@ export default function Rsvp() {
   // overlay, or backdrop treatment is applied anywhere on this page.
   const customMode = event.inviteRenderMode === "custom" && !!event.customInviteImageUrl;
   const concept = customMode ? null : parseInviteDesignConcept(event.inviteDesignConceptJson);
+  // A curated launch theme renders through the same composed-portrait component
+  // the host designed with, so what they approved is exactly what arrives.
+  const themeView = customMode ? null : resolveThemeView(event);
 
   // Envelope reveal: only for a concept-styled invite. Suite fields fall back to
   // the concept's derived Theme DNA, so events saved before the suite existed
@@ -292,7 +298,11 @@ export default function Rsvp() {
               envelopeColor={envelopeColor!}
               linerPattern={linerPattern!}
               linerColor={linerColor}
-              linerBaseColor={dna.backgroundColor}
+              linerBaseColor={
+                themeView
+                  ? getPaletteVariant(themeView.theme, themeView.selection.paletteVariantId).surface
+                  : dna.backgroundColor
+              }
               stampStyle={stamp!}
               stampColor={stampColor}
               finish={envelopeFinish(concept?.styleLaneId)}
@@ -323,6 +333,22 @@ export default function Rsvp() {
               alt={`Invitation to ${event.eventName}`}
               className="max-h-[36rem] w-full object-contain"
               data-testid="img-custom-invite"
+            />
+          </div>
+        ) : themeView ? (
+          <div
+            className="mt-6 overflow-hidden rounded-sm shadow-[0_2px_6px_rgba(23,23,23,0.09),0_24px_48px_-20px_rgba(23,23,23,0.38)] ring-1 ring-black/5"
+            data-testid="card-theme-invite"
+          >
+            <ThemeInvitation
+              theme={themeView.theme}
+              headline={themeView.headline}
+              copy={themeView.selection.copy}
+              message={themeView.message}
+              paletteVariantId={themeView.selection.paletteVariantId}
+              placementId={themeView.selection.placementId}
+              overlay={themeView.selection.overlay}
+              fontPairingId={themeView.fontPairingId}
             />
           </div>
         ) : (
