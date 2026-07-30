@@ -23,7 +23,7 @@ export function buildIllustrationPrompt(concept: InviteDesignConcept): string {
   }
 
   // Professional quality modifiers that apply to ALL illustrations
-  const QUALITY_MODIFIERS = "professional illustration, high quality, elegant, sophisticated, premium stationery quality, clean composition, intentional design, no clipart, no stock photo look, no amateur art";
+  const QUALITY_MODIFIERS = "professional illustration, high quality, elegant, sophisticated, premium stationery quality, clean composition, intentional design, print-ready decorative illustration, not AI-looking, no clipart, no stock photo look, no amateur art, no watermark, no fake text, no stock icon";
 
   // Style reference per illustration medium — gives the image model a
   // recognizable quality benchmark to aim for.
@@ -100,6 +100,11 @@ export async function generateInviteIllustration(
       size,
       quality,
       n: 1,
+      // Request opaque background so the PNG has a proper (non-transparent)
+      // alpha channel. Without this, gpt-image-1 can return PNGs with
+      // alpha=0 everywhere, making the illustration invisible on the page
+      // even though the RGB data is present.
+      background: "opaque",
     }),
   });
 
@@ -190,12 +195,42 @@ const QUALITY_THRESHOLD = 3.0;
 // Critical: if text artifacts are detected (score <= 2), always regenerate.
 const TEXT_FAILURE_THRESHOLD = 2;
 
+/**
+ * Builds a tightened illustration prompt by appending the art critic's
+ * specific issues as stronger negative/positive constraints. Instead of
+ * regenerating with the exact same prompt and hoping for variance, this
+ * addresses the exact failure the critic identified.
+ */
+function tightenIllustrationPrompt(originalPrompt: string, score: ArtQualityScore): string {
+  const fixes: string[] = [];
+
+  if (score.text_free <= TEXT_FAILURE_THRESHOLD) {
+    fixes.push("absolutely no text, no letters, no numbers, no fake writing, no garbled characters anywhere in the image");
+  }
+  if (score.composition <= 3) {
+    fixes.push("clean balanced composition with clear focal point, generous negative space, no cluttered or muddy layout");
+  }
+  if (score.premium_feel <= 3) {
+    fixes.push("premium professional stationery illustration quality, polished and refined, not generic clipart or stock icon look, sophisticated color palette");
+  }
+  if (score.theme_fit <= 3) {
+    fixes.push(`closely matching the concept theme, subject matter must be clearly and accurately depicted`);
+  }
+
+  // If the critic didn't flag anything specific (edge case), add general polish
+  if (fixes.length === 0) {
+    fixes.push("refined professional illustration with cleaner composition and higher polish");
+  }
+
+  return `${originalPrompt}. CRITICAL IMPROVEMENTS: ${fixes.join(". ")}`;
+}
+
 export async function generateInviteIllustrationWithQualityGate(
   concept: InviteDesignConcept,
   aspectRatio: "16:9" | "1:1" | "9:16",
 ): Promise<string> {
-  // First generation
-  let illustrationUrl = await generateInviteIllustration(concept, aspectRatio);
+  // First generation at high quality
+  let illustrationUrl = await generateInviteIllustration(concept, aspectRatio, "high");
 
   // Evaluate quality
   try {
@@ -204,12 +239,14 @@ export async function generateInviteIllustrationWithQualityGate(
     const belowThreshold = score.overall < QUALITY_THRESHOLD;
 
     if (hasTextArtifacts || belowThreshold) {
-      console.log(`[quality-gate] Illustration scored ${score.overall.toFixed(1)} (${score.issues}). Regenerating...`);
-      // Regenerate once with the same prompt (the image model has randomness)
-      illustrationUrl = await generateInviteIllustration(concept, aspectRatio);
-
-      // Optionally evaluate the second attempt too — but to keep costs reasonable,
-      // we accept the second generation regardless. One regeneration is enough.
+      console.log(`[quality-gate] Illustration scored ${score.overall.toFixed(1)} (${score.issues}). Regenerating with tightened prompt...`);
+      // Regenerate once with a tightened prompt that addresses the critic's
+      // specific issues — not just the same prompt relying on random variance.
+      const tightenedConcept: InviteDesignConcept = {
+        ...concept,
+        illustrationPrompt: tightenIllustrationPrompt(concept.illustrationPrompt, score),
+      };
+      illustrationUrl = await generateInviteIllustration(tightenedConcept, aspectRatio, "high");
     }
   } catch (err) {
     // If the quality evaluation fails (e.g., API error), use the first generation.

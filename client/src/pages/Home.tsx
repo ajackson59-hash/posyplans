@@ -7,6 +7,14 @@ import { Wordmark, Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import elegantNeutral from "@/assets/templates/template-elegant-neutral.jpg";
+import floralGarden from "@/assets/templates/template-floral-garden.jpg";
+import golf from "@/assets/templates/template-golf.jpg";
+import beach from "@/assets/templates/template-beach.jpg";
+import rusticFarmhouse from "@/assets/templates/template-rustic-farmhouse.jpg";
+import superhero from "@/assets/templates/template-superhero.jpg";
+import unicorn from "@/assets/templates/template-unicorn.jpg";
+import winterHoliday from "@/assets/templates/template-winter-holiday.jpg";
 import {
   Select,
   SelectContent,
@@ -36,6 +44,17 @@ import {
   CheckCircle2,
   RotateCcw,
 } from "lucide-react";
+
+const SHOWCASE_TEMPLATES = [
+  { src: floralGarden, label: "Enchanted Garden", tag: "Wedding" },
+  { src: golf, label: "Golf / Hole in One", tag: "Birthday" },
+  { src: elegantNeutral, label: "Elegant Neutral", tag: "Dinner" },
+  { src: beach, label: "Tropical Luau", tag: "Summer" },
+  { src: rusticFarmhouse, label: "Rustic Farmhouse", tag: "Dinner" },
+  { src: superhero, label: "Superhero", tag: "Kids" },
+  { src: unicorn, label: "Unicorn & Rainbow", tag: "Kids" },
+  { src: winterHoliday, label: "Winter Wonderland", tag: "Holiday" },
+];
 
 const BLUEPRINT_EVENT_TYPE_MAP: Record<string, string> = {
   Wedding: "Wedding",
@@ -281,12 +300,33 @@ export default function Home() {
             </div>
 
             <div className="relative">
-              <img
-                src="/brand/photography/posy_hero_tablescape.png"
-                alt="A softly styled celebration tablescape"
-                className="w-full rounded-2xl border border-card-border object-cover shadow-sm"
-                data-testid="img-hero-tablescape"
-              />
+              {/* Stacked invite showcase instead of broken hero photo */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-3">
+                  <img
+                    src={SHOWCASE_TEMPLATES[0].src}
+                    alt={SHOWCASE_TEMPLATES[0].label}
+                    className="w-full rounded-xl border border-card-border object-cover shadow-sm"
+                  />
+                  <img
+                    src={SHOWCASE_TEMPLATES[3].src}
+                    alt={SHOWCASE_TEMPLATES[3].label}
+                    className="w-full rounded-xl border border-card-border object-cover shadow-sm"
+                  />
+                </div>
+                <div className="space-y-3 pt-8">
+                  <img
+                    src={SHOWCASE_TEMPLATES[1].src}
+                    alt={SHOWCASE_TEMPLATES[1].label}
+                    className="w-full rounded-xl border border-card-border object-cover shadow-sm"
+                  />
+                  <img
+                    src={SHOWCASE_TEMPLATES[2].src}
+                    alt={SHOWCASE_TEMPLATES[2].label}
+                    className="w-full rounded-xl border border-card-border object-cover shadow-sm"
+                  />
+                </div>
+              </div>
               <div className="absolute -bottom-5 -left-5 flex h-16 w-16 items-center justify-center rounded-full border border-card-border bg-card shadow-sm sm:h-20 sm:w-20">
                 <Logo className="h-9 w-9 sm:h-11 sm:w-11" />
               </div>
@@ -482,12 +522,61 @@ export default function Home() {
           </div>
         </section>
 
+        {/* SECTION — Invite showcase gallery */}
+        <section className="border-t border-border px-6 py-16 sm:py-20">
+          <div className="mx-auto max-w-6xl">
+            <div className="mx-auto max-w-2xl text-center">
+              <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-primary">
+                See what you'll create
+              </p>
+              <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl" data-testid="text-showcase-heading">
+                Every invitation, beautifully made.
+              </h2>
+              <p className="mt-4 text-base leading-relaxed text-muted-foreground">
+                Pick from ready-made artwork or let AI design something just for your theme.
+                Every invite comes with a matching envelope, liner pattern, and postage stamp.
+              </p>
+            </div>
+
+            <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {SHOWCASE_TEMPLATES.map((tpl, i) => (
+                <div
+                  key={tpl.label}
+                  className="group relative overflow-hidden rounded-xl border border-card-border shadow-sm transition-transform hover:scale-[1.02]"
+                  data-testid={`card-showcase-template-${i}`}
+                >
+                  <img
+                    src={tpl.src}
+                    alt={tpl.label}
+                    className="aspect-[3/4] w-full object-cover"
+                  />
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3">
+                    <p className="text-sm font-medium text-white">{tpl.label}</p>
+                    <span className="inline-block rounded-full bg-white/20 px-2 py-0.5 text-[10px] uppercase tracking-wide text-white">{tpl.tag}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-8 flex justify-center">
+              <Button
+                size="lg"
+                variant="ghost"
+                data-testid="button-showcase-start"
+                onClick={() => navigate("/intake")}
+              >
+                <Sparkles className="mr-2 h-4 w-4" /> Create yours
+              </Button>
+            </div>
+          </div>
+        </section>
+
         {/* SECTION 2 — Relief split */}
         <section className="px-6 py-16 sm:py-20">
           <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-2 lg:items-center">
             <img
-              src="/brand/photography/posy_relief_host.png"
-              alt="A host relaxed and present at their own celebration"
+              src={SHOWCASE_TEMPLATES[5].src}
+              alt="Sample invitation design"
               className="w-full rounded-2xl border border-card-border object-cover shadow-sm lg:order-2"
               data-testid="img-relief-host"
             />
@@ -536,6 +625,111 @@ export default function Home() {
               <Step icon={MessageSquare} number="01" title="Tell Posy about your event" body="The occasion, roughly when, who's coming, the feeling you're after. A few sentences — that's it." />
               <Step icon={Wand2} number="02" title="Posy builds the foundation" body="A thoughtful timeline, a tailored checklist, and the easy-to-forget details — ready for you to review, not to write." />
               <Step icon={SlidersHorizontal} number="03" title="You guide from here" body="Adjust anything with a word. Posy keeps everything in step and gently reminds you when something's worth a look." />
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION — Product preview: what the dashboard looks like */}
+        <section className="border-t border-border bg-card/40 px-6 py-16 sm:py-20">
+          <div className="mx-auto max-w-6xl">
+            <div className="mx-auto max-w-2xl text-center">
+              <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-primary">
+                Your planning dashboard
+              </p>
+              <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl" data-testid="text-dashboard-heading">
+                Everything in one calm place.
+              </h2>
+              <p className="mt-4 text-base leading-relaxed text-muted-foreground">
+                Guest list, RSVPs, timeline, budget, and your invitation design — all connected,
+                all in real time. No tabs to chase, no spreadsheets to reconcile.
+              </p>
+            </div>
+
+            <div className="mt-12 grid gap-6 lg:grid-cols-3">
+              {/* Guest list & RSVP tracking mockup */}
+              <div className="rounded-xl border border-card-border bg-background p-5 shadow-sm" data-testid="card-preview-guests">
+                <div className="mb-3 flex items-center gap-2">
+                  <Users className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold text-foreground">Guest list & RSVPs</span>
+                </div>
+                <div className="space-y-2">
+                  {[
+                    { name: "Sarah Chen", status: "yes", color: "bg-green-500" },
+                    { name: "Marcus Reid", status: "pending", color: "bg-yellow-500" },
+                    { name: "Priya Patel", status: "yes", color: "bg-green-500" },
+                    { name: "Tom Walsh", status: "no", color: "bg-red-400" },
+                  ].map((g) => (
+                    <div key={g.name} className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
+                      <span className="text-sm text-foreground">{g.name}</span>
+                      <span className="flex items-center gap-1.5">
+                        <span className={`h-2 w-2 rounded-full ${g.color}`} />
+                        <span className="text-xs capitalize text-muted-foreground">{g.status}</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground">
+                  <span>3 confirmed</span>
+                  <span>1 declined</span>
+                  <span>1 pending</span>
+                </div>
+              </div>
+
+              {/* Invitation design mockup */}
+              <div className="rounded-xl border border-card-border bg-background p-5 shadow-sm" data-testid="card-preview-design">
+                <div className="mb-3 flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold text-foreground">Invitation design</span>
+                </div>
+                <div className="relative overflow-hidden rounded-lg border border-border">
+                  <img
+                    src={floralGarden}
+                    alt="Sample invitation"
+                    className="aspect-[3/4] w-full object-cover"
+                  />
+                  <div className="absolute inset-x-0 bottom-0 h-8" style={{ backgroundImage: "radial-gradient(#d4a574 1.5px, transparent 1.6px)", backgroundSize: "10px 10px" }} />
+                </div>
+                <div className="mt-3 flex items-center gap-2">
+                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">floral liner</span>
+                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">wax seal</span>
+                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">envelope</span>
+                </div>
+              </div>
+
+              {/* Timeline & budget mockup */}
+              <div className="rounded-xl border border-card-border bg-background p-5 shadow-sm" data-testid="card-preview-timeline">
+                <div className="mb-3 flex items-center gap-2">
+                  <ClipboardList className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold text-foreground">Timeline & budget</span>
+                </div>
+                <div className="space-y-2.5">
+                  {[
+                    { label: "Send invitations", time: "3 weeks out", done: true },
+                    { label: "Confirm catering headcount", time: "1 week out", done: false },
+                    { label: "Final venue walkthrough", time: "2 days out", done: false },
+                    { label: "Day-of setup", time: "Day of", done: false },
+                  ].map((item) => (
+                    <div key={item.label} className="flex items-start gap-2">
+                      <div className={`mt-0.5 flex h-4 w-4 flex-none items-center justify-center rounded border ${item.done ? "border-primary bg-primary" : "border-border"}`}>
+                        {item.done && <CheckCircle2 className="h-3 w-3 text-primary-foreground" />}
+                      </div>
+                      <div>
+                        <p className={`text-sm ${item.done ? "text-muted-foreground line-through" : "text-foreground"}`}>{item.label}</p>
+                        <p className="text-xs text-muted-foreground">{item.time}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3 border-t border-border pt-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Budget</span>
+                    <span className="font-medium text-foreground">$2,340 / $3,000</span>
+                  </div>
+                  <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-muted">
+                    <div className="h-full rounded-full bg-primary" style={{ width: "78%" }} />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>

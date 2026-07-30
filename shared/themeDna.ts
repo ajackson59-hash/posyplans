@@ -13,10 +13,16 @@
 
 import type { InviteDesignConcept, BorderStyle } from "./inviteDesign";
 
-export const LINER_PATTERNS = ["solid", "dots", "stripes", "chevron", "floral"] as const;
+export const LINER_PATTERNS = [
+  "solid", "dots", "stripes", "chevron", "floral",
+  "waves", "lattice", "confetti", "stars", "hearts", "diamonds", "scallops",
+] as const;
 export type LinerPattern = (typeof LINER_PATTERNS)[number];
 
-export const STAMP_STYLES = ["classic", "seal", "postmark", "motif"] as const;
+export const STAMP_STYLES = [
+  "classic", "seal", "postmark", "motif",
+  "wax-seal", "heart", "star", "floral", "bow", "monogram",
+] as const;
 export type StampStyle = (typeof STAMP_STYLES)[number];
 
 export const FORMALITY_LEVELS = ["casual", "playful", "elegant"] as const;
@@ -214,6 +220,60 @@ export function linerPatternStyle(pattern: LinerPattern, patternColor: string, b
           `radial-gradient(circle at 70% 60%, ${patternColor} 2px, transparent 2.5px)`,
         backgroundSize: "20px 20px",
       };
+    case "waves":
+      return {
+        ...base,
+        backgroundImage:
+          `radial-gradient(circle at 50% 100%, ${patternColor} 5px, transparent 5.5px)`,
+        backgroundSize: "16px 8px",
+      };
+    case "lattice":
+      return {
+        ...base,
+        backgroundImage:
+          `repeating-linear-gradient(0deg, ${patternColor} 0 1px, transparent 1px 10px),` +
+          `repeating-linear-gradient(90deg, ${patternColor} 0 1px, transparent 1px 10px)`,
+      };
+    case "confetti":
+      return {
+        ...base,
+        backgroundImage:
+          `radial-gradient(circle at 20% 30%, ${patternColor} 1.5px, transparent 2px),` +
+          `radial-gradient(circle at 70% 20%, ${patternColor} 1px, transparent 1.5px),` +
+          `radial-gradient(circle at 50% 70%, ${patternColor} 2px, transparent 2.5px),` +
+          `radial-gradient(circle at 90% 80%, ${patternColor} 1px, transparent 1.5px)`,
+        backgroundSize: "24px 24px",
+      };
+    case "stars":
+      return {
+        ...base,
+        backgroundImage:
+          `radial-gradient(circle at 50% 50%, ${patternColor} 2px, transparent 2.5px)`,
+        backgroundSize: "14px 14px",
+      };
+    case "hearts":
+      return {
+        ...base,
+        backgroundImage:
+          `radial-gradient(circle at 30% 35%, ${patternColor} 3px, transparent 3.5px),` +
+          `radial-gradient(circle at 70% 35%, ${patternColor} 3px, transparent 3.5px)`,
+        backgroundSize: "16px 14px",
+      };
+    case "diamonds":
+      return {
+        ...base,
+        backgroundImage:
+          `repeating-linear-gradient(45deg, ${patternColor} 0 3px, transparent 3px 8px),` +
+          `repeating-linear-gradient(-45deg, ${patternColor} 0 3px, transparent 3px 8px)`,
+        backgroundSize: "12px 12px",
+      };
+    case "scallops":
+      return {
+        ...base,
+        backgroundImage:
+          `radial-gradient(circle at 50% 0%, ${patternColor} 6px, transparent 6.5px)`,
+        backgroundSize: "12px 12px",
+      };
     default:
       return base;
   }
@@ -228,6 +288,18 @@ export function stampGlyph(style: StampStyle): { glyph: string; label: string } 
       return { glyph: "◎", label: "Postmark" };
     case "motif":
       return { glyph: "❀", label: "Motif" };
+    case "wax-seal":
+      return { glyph: "⬤", label: "Wax Seal" };
+    case "heart":
+      return { glyph: "♥", label: "Heart" };
+    case "star":
+      return { glyph: "★", label: "Star" };
+    case "floral":
+      return { glyph: "❁", label: "Floral" };
+    case "bow":
+      return { glyph: "❧", label: "Bow" };
+    case "monogram":
+      return { glyph: "A", label: "Monogram" };
     default:
       return { glyph: "✉", label: "Classic" };
   }
@@ -240,3 +312,93 @@ export function isLinerPattern(value: unknown): value is LinerPattern {
 export function isStampStyle(value: unknown): value is StampStyle {
   return typeof value === "string" && (STAMP_STYLES as readonly string[]).includes(value);
 }
+
+// ── Envelope finish ───────────────────────────────────────────────────────────
+// Style lanes fall into two rendering finishes. "premium" gets heavier paper
+// stock, restrained shadow and a wax seal; "playful" gets brighter contrast,
+// a springier flap animation and a postage-style stamp. Driven by lane so a
+// christening and a neon 90s party don't render with the same gravitas.
+
+export const ENVELOPE_FINISHES = ["premium", "playful"] as const;
+export type EnvelopeFinish = (typeof ENVELOPE_FINISHES)[number];
+
+const PLAYFUL_LANES = new Set(["playful-illustrated", "bold-graphic", "storybook-whimsical"]);
+
+export function envelopeFinish(styleLaneId?: string | null): EnvelopeFinish {
+  if (styleLaneId && PLAYFUL_LANES.has(styleLaneId)) return "playful";
+  return "premium";
+}
+
+// ── Contrast ──────────────────────────────────────────────────────────────────
+// Palettes come straight from the model and are deliberately unconstrained, so
+// any text drawn over an envelope must pick its own colour rather than trusting
+// the palette's background token. Uses WCAG relative luminance.
+
+function srgbToLinear(channel: number): number {
+  const c = channel / 255;
+  return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+}
+
+/** WCAG relative luminance (0 = black, 1 = white). Returns 0 for unparseable input. */
+export function relativeLuminance(hex: string): number {
+  const m = /^#?([0-9a-fA-F]{6})$/.exec(hex.trim());
+  if (!m) return 0;
+  const int = parseInt(m[1], 16);
+  const r = srgbToLinear((int >> 16) & 0xff);
+  const g = srgbToLinear((int >> 8) & 0xff);
+  const b = srgbToLinear(int & 0xff);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/**
+ * Readable ink for text sitting directly on `backgroundHex`. Returns a near-white
+ * or near-black rather than pure #fff/#000, which reads softer on stationery.
+ */
+export function readableInk(backgroundHex: string): string {
+  return relativeLuminance(backgroundHex) > 0.45 ? "#2b2724" : "#fdfbf7";
+}
+
+/** Contrast ratio between two hex colours, per WCAG 2.1. */
+export function contrastRatio(a: string, b: string): number {
+  const la = relativeLuminance(a);
+  const lb = relativeLuminance(b);
+  const lighter = Math.max(la, lb);
+  const darker = Math.min(la, lb);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+/**
+ * Picks whichever of `preferred` / fallback ink clears 4.5:1 on `backgroundHex`.
+ * Lets a palette colour be used for accents when it is legible, without
+ * silently shipping unreadable text when it isn't.
+ */
+export function legibleOn(backgroundHex: string, preferred: string): string {
+  return contrastRatio(backgroundHex, preferred) >= 4.5 ? preferred : readableInk(backgroundHex);
+}
+
+/** Shifts a hex colour by `amount` (-1..1). Negative darkens, positive lightens. */
+export function shadeHex(hex: string, amount: number): string {
+  const m = /^#?([0-9a-fA-F]{6})$/.exec(hex.trim());
+  if (!m) return hex;
+  const int = parseInt(m[1], 16);
+  const adjust = (channel: number) =>
+    Math.max(0, Math.min(255, Math.round(amount >= 0 ? channel + (255 - channel) * amount : channel * (1 + amount))));
+  const r = adjust((int >> 16) & 0xff);
+  const g = adjust((int >> 8) & 0xff);
+  const b = adjust(int & 0xff);
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, "0")}`;
+}
+
+/**
+ * Flap opening duration per finish, in milliseconds. Exported as the single
+ * source of truth because the RSVP page has to hold the envelope on screen
+ * until the flap has finished rotating — when these two numbers were set
+ * independently the collapse fired mid-animation and the flap never appeared
+ * to move at all.
+ */
+export function flapAnimationMs(finish: EnvelopeFinish): number {
+  return finish === "premium" ? 820 : 620;
+}
+
+/** How long the opened envelope lingers after the flap settles, before collapsing. */
+export const ENVELOPE_LINGER_MS = 420;

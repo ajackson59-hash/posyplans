@@ -31,6 +31,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PaletteEditor from "@/components/PaletteEditor";
+import LiveInviteEditor from "@/components/LiveInviteEditor";
 import { useToast } from "@/hooks/use-toast";
 import { Sparkles, Wand2, RotateCcw, X, Check, ImagePlus, Heart, ThumbsDown } from "lucide-react";
 
@@ -148,7 +149,11 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
     mutationFn: async ({ concept, index }: { concept: InviteDesignConcept; index: number }) =>
       apiRequestJson<EventRecord>("POST", `/api/events/owner/${ownerToken}/invite/apply-concept`, {
         concept,
-        illustrationUrl: previewUrls[index],
+        // Don't send the medium-quality preview URL — let the server generate
+        // a high-quality, quality-gated final illustration that guests actually
+        // see on the invite and RSVP page. The preview was good enough for
+        // browsing/comparison but should not be the final artwork.
+        illustrationUrl: null,
       }),
     onSuccess: (_data, variables) => {
       invalidateEvent();
@@ -191,7 +196,7 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
   // only the field it changed, so the other two keep whatever the host — or the
   // concept's derived defaults — already set.
   const updateSuite = useMutation({
-    mutationFn: async (updates: { envelopeColor?: string; envelopeLinerPattern?: LinerPattern; stampStyle?: StampStyle }) =>
+    mutationFn: async (updates: { envelopeColor?: string; envelopeLinerPattern?: LinerPattern; stampStyle?: StampStyle; linerColor?: string; stampColor?: string }) =>
       apiRequestJson<EventRecord>("PATCH", `/api/events/owner/${ownerToken}/invite/suite`, updates),
     onSuccess: () => {
       invalidateEvent();
@@ -387,6 +392,9 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
     const linerPattern: LinerPattern = isLinerPattern(event.envelopeLinerPattern) ? event.envelopeLinerPattern : dna.linerPattern;
     const stamp: StampStyle = isStampStyle(event.stampStyle) ? event.stampStyle : dna.stampStyle;
     const stampMark = stampGlyph(stamp);
+    // Custom colors override derived DNA colors — empty string means "use derived"
+    const linerPatternColor = /^#[0-9a-fA-F]{6}$/.test(event.linerColor || "") ? (event.linerColor as string) : dna.accentColor;
+    const stampColorVal = /^#[0-9a-fA-F]{6}$/.test(event.stampColor || "") ? (event.stampColor as string) : dna.accentColor;
 
     return (
       <div className="mt-4 border-t border-primary/20 pt-3" data-testid="section-design-suite">
@@ -402,7 +410,7 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
               style={{ backgroundColor: envelopeColor }}
             >
               {/* The liner shows as the inside of the open flap. */}
-              <div className="absolute inset-x-0 bottom-0 h-8" style={linerPatternStyle(linerPattern, dna.accentColor, dna.backgroundColor)} />
+              <div className="absolute inset-x-0 bottom-0 h-8" style={linerPatternStyle(linerPattern, linerPatternColor, dna.backgroundColor)} />
               <div
                 className="absolute inset-x-0 top-0 h-8"
                 style={{ backgroundColor: envelopeColor, clipPath: "polygon(0 0, 100% 0, 50% 100%)" }}
@@ -415,7 +423,7 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
             <div className="flex h-16 items-center justify-center rounded-sm" style={{ backgroundColor: dna.backgroundColor }}>
               <span
                 className="flex h-10 w-9 items-center justify-center rounded-[2px] border-2 border-dashed text-lg"
-                style={{ borderColor: dna.accentColor, color: dna.accentColor }}
+                style={{ borderColor: stampColorVal, color: stampColorVal }}
                 data-testid="glyph-suite-stamp"
               >
                 {stampMark.glyph}
@@ -477,6 +485,16 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground">Liner color:</span>
+            <PaletteEditor
+              colors={[linerPatternColor]}
+              size="sm"
+              testIdPrefix="swatch-liner-color"
+              onChange={(_i, color) => updateSuite.mutate({ linerColor: color })}
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs text-muted-foreground">Stamp:</span>
             <Select value={stamp} onValueChange={(v) => updateSuite.mutate({ stampStyle: v as StampStyle })}>
               <SelectTrigger className="h-7 w-36 text-xs" data-testid="select-stamp-style">
@@ -484,10 +502,20 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
               </SelectTrigger>
               <SelectContent>
                 {STAMP_STYLES.map((s) => (
-                  <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
+                  <SelectItem key={s} value={s} className="capitalize">{s.replace("-", " ")}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground">Stamp color:</span>
+            <PaletteEditor
+              colors={[stampColorVal]}
+              size="sm"
+              testIdPrefix="swatch-stamp-color"
+              onChange={(_i, color) => updateSuite.mutate({ stampColor: color })}
+            />
           </div>
         </div>
       </div>
@@ -581,198 +609,12 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
   }
 
   if (appliedConcept && !browsing) {
-    const illustrationUrl = event.inviteIllustrationUrl;
-    const previewSubject = applyInviteTokens(event.inviteSubject || "You're invited to {{eventName}}!", {
-      eventName: event.eventName,
-      eventDate: event.eventDate,
-      location: event.location,
-      hostNames: event.hostNames,
-    });
-    const previewMessage = applyInviteTokens(
-      event.inviteMessage || "Join us on {{eventDate}} at {{location}}. We can't wait to celebrate with you!",
-      { eventName: event.eventName, eventDate: event.eventDate, location: event.location, hostNames: event.hostNames },
-    );
     return (
-      <div className="rounded-md border border-primary/30 bg-primary/5 p-4" data-testid="card-applied-concept">
-        <p className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-primary">
-          <Sparkles className="h-3.5 w-3.5" /> Invitation Intelligence
-        </p>
-
-        {/* Full-size preview — exactly what guests see on the invite and RSVP page, not a small thumbnail.
-            Each layoutStyle renders differently, matching the concept card mockup. */}
-        <div
-          className="overflow-hidden rounded-md bg-background"
-          style={conceptBorderStyle(appliedConcept)}
-          data-testid="preview-applied-concept"
-        >
-          {appliedConcept.layoutStyle === "banner" && (
-            <>
-              {illustrationUrl && (
-                <img
-                  src={illustrationUrl}
-                  alt=""
-                  data-testid="img-applied-concept-preview"
-                  className="h-40 w-full object-cover sm:h-48"
-                />
-              )}
-              <div className="p-4">
-                <p className="text-sm font-semibold" style={conceptHeadingStyle(appliedConcept)} data-testid="text-applied-concept-subject">
-                  {previewSubject}
-                </p>
-                <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground" style={conceptBodyStyle(appliedConcept)} data-testid="text-applied-concept-message">
-                  {previewMessage}
-                </p>
-              </div>
-            </>
-          )}
-          {appliedConcept.layoutStyle === "backdrop" && (
-            <div
-              className="p-4"
-              style={illustrationUrl
-                ? { backgroundImage: `url(${illustrationUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
-                : undefined}
-            >
-              <div className="rounded-md bg-white/85 p-3">
-                <p className="text-sm font-semibold" style={conceptHeadingStyle(appliedConcept)} data-testid="text-applied-concept-subject">
-                  {previewSubject}
-                </p>
-                <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground" style={conceptBodyStyle(appliedConcept)} data-testid="text-applied-concept-message">
-                  {previewMessage}
-                </p>
-              </div>
-            </div>
-          )}
-          {appliedConcept.layoutStyle === "full-bleed" && (
-            <div
-              className="relative min-h-[200px]"
-              style={illustrationUrl
-                ? { backgroundImage: `url(${illustrationUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
-                : undefined}
-            >
-              {illustrationUrl && (
-                <img
-                  src={illustrationUrl}
-                  alt=""
-                  data-testid="img-applied-concept-preview"
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
-              )}
-              <div className="relative flex min-h-[200px] flex-col justify-end p-4">
-                <div className="rounded-md bg-background/90 p-3">
-                  <p className="text-sm font-semibold" style={conceptHeadingStyle(appliedConcept)} data-testid="text-applied-concept-subject">
-                    {previewSubject}
-                  </p>
-                  <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground" style={conceptBodyStyle(appliedConcept)} data-testid="text-applied-concept-message">
-                    {previewMessage}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-          {appliedConcept.layoutStyle === "split" && (
-            <div className="flex min-h-[160px]">
-              <div
-                className="w-2/5"
-                style={illustrationUrl
-                  ? { backgroundImage: `url(${illustrationUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
-                  : { backgroundColor: appliedConcept.paletteColors[2] || appliedConcept.paletteColors[0] }}
-              >
-                {illustrationUrl && (
-                  <img
-                    src={illustrationUrl}
-                    alt=""
-                    data-testid="img-applied-concept-preview"
-                    className="h-full w-full object-cover"
-                  />
-                )}
-              </div>
-              <div className="flex-1 p-4">
-                <p className="text-sm font-semibold" style={conceptHeadingStyle(appliedConcept)} data-testid="text-applied-concept-subject">
-                  {previewSubject}
-                </p>
-                <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground" style={conceptBodyStyle(appliedConcept)} data-testid="text-applied-concept-message">
-                  {previewMessage}
-                </p>
-              </div>
-            </div>
-          )}
-          {appliedConcept.layoutStyle === "centered" && (
-            <div className="flex flex-col items-center p-6">
-              {illustrationUrl && (
-                <img
-                  src={illustrationUrl}
-                  alt=""
-                  data-testid="img-applied-concept-preview"
-                  className="mb-4 h-24 w-24 rounded-full object-cover"
-                />
-              )}
-              <p className="text-center text-sm font-semibold" style={conceptHeadingStyle(appliedConcept)} data-testid="text-applied-concept-subject">
-                {previewSubject}
-              </p>
-              <p className="mt-1 whitespace-pre-wrap text-center text-xs text-muted-foreground" style={conceptBodyStyle(appliedConcept)} data-testid="text-applied-concept-message">
-                {previewMessage}
-              </p>
-            </div>
-          )}
-        </div>
-        <p className="mt-1.5 text-[11px] text-muted-foreground">
-          <span className="font-medium text-foreground" data-testid="text-applied-concept-name">{appliedConcept.conceptName}</span> — this is exactly what guests will see.
-        </p>
-        <div className="mt-3 flex flex-wrap items-center gap-2" data-testid="row-applied-concept-palette">
-          <span className="text-xs text-muted-foreground">Colors:</span>
-          <PaletteEditor
-            colors={appliedConcept.paletteColors}
-            size="sm"
-            testIdPrefix="swatch-applied-concept"
-            onChange={(i, color) => {
-              const next = [...appliedConcept.paletteColors];
-              next[i] = color;
-              updateConceptPalette.mutate(next);
-            }}
-          />
-          <span className="text-[11px] text-muted-foreground">Click a color to change it</span>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Button size="sm" variant="outline" onClick={() => setBrowsing(true)} data-testid="button-change-design">
-            <Wand2 className="mr-1.5 h-3.5 w-3.5" /> Change design
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => artworkInputRef.current?.click()}
-            disabled={uploadOwnImage.isPending}
-            data-testid="button-upload-own-image"
-          >
-            <ImagePlus className="mr-1.5 h-3.5 w-3.5" /> {uploadOwnImage.isPending ? "Uploading…" : "Use your own photo"}
-          </Button>
-          <input
-            ref={artworkInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            data-testid="input-upload-own-image"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) uploadOwnImage.mutate(file);
-              e.target.value = "";
-            }}
-          />
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => clearConcept.mutate()}
-            disabled={clearConcept.isPending}
-            data-testid="button-remove-concept"
-          >
-            <X className="mr-1.5 h-3.5 w-3.5" /> Remove
-          </Button>
-        </div>
-        <p className="mt-1.5 text-[11px] text-muted-foreground">
-          Swap the AI illustration for your own photo any time — your colors, fonts, and border stay the same.
-        </p>
-        {renderSuiteSection(appliedConcept)}
-        {renderCustomDesignEntry()}
-      </div>
+      <LiveInviteEditor
+        ownerToken={ownerToken}
+        event={event}
+        onBrowse={() => { setBrowsing(true); setConcepts(null); }}
+      />
     );
   }
 
@@ -965,6 +807,14 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
             const placeholderArt = {
               backgroundImage: `linear-gradient(135deg, ${concept.paletteColors[2] || concept.paletteColors[0]}33, ${concept.paletteColors[3] || concept.paletteColors[1]}55)`,
             };
+            // Derive the envelope/stationery DNA for this concept so we can
+            // present it inside an envelope mockup during browsing — the same
+            // presentation Punchbowl uses where invites are shown in envelope holders.
+            const dna = deriveThemeDna(concept);
+            const stampMark = stampGlyph(dna.stampStyle);
+            const envelopeColor = dna.primaryColor;
+            const flapColor = dna.primaryColor;
+            const linerBg = linerPatternStyle(dna.linerPattern, dna.accentColor, dna.backgroundColor);
             return (
               <div
                 key={i}
@@ -972,15 +822,42 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
                 data-testid={`card-concept-${i}`}
               >
                 <div>
-                  {/* Mockup preview — same rendering the applied concept uses (heading/body/border
-                      styles, real invite text), so a host sees what they're about to commit to. The
-                      only difference from the post-apply view is the placeholder art panel, since the
-                      real illustration is generated on-demand only after "Use this design" is clicked. */}
+                  {/* Envelope mockup */}
                   <div
-                    className="overflow-hidden rounded-md bg-background"
-                    style={conceptBorderStyle(concept)}
-                    data-testid={`preview-concept-${i}`}
+                    className="relative overflow-hidden rounded-md p-1"
+                    style={{ backgroundColor: envelopeColor }}
+                    data-testid={`envelope-concept-${i}`}
                   >
+                    {/* Envelope liner */}
+                    <div className="absolute inset-0" style={linerBg} />
+
+                    {/* Envelope flap — a triangular fold at the top, with a
+                        gradient and bottom edge to create a visible fold seam. */}
+                    <div
+                      className="absolute inset-x-0 top-0 h-1/3"
+                      style={{
+                        background: `linear-gradient(to bottom, ${flapColor}, ${flapColor}dd)`,
+                        clipPath: "polygon(0 0, 100% 0, 50% 100%)",
+                        filter: "brightness(0.92)",
+                        boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
+                      }}
+                    />
+
+                    {/* Postage stamp */}
+                    <div
+                      className="absolute right-1.5 top-1.5 z-10 flex h-7 w-6 items-center justify-center rounded-[2px] border border-dashed text-xs"
+                      style={{ borderColor: dna.accentColor, color: dna.accentColor, backgroundColor: dna.backgroundColor + "cc" }}
+                      data-testid={`stamp-concept-${i}`}
+                    >
+                      {stampMark.glyph}
+                    </div>
+
+                    {/* Invite card mockup */}
+                    <div
+                      className="relative m-3 overflow-hidden rounded-md bg-background shadow-xl ring-1 ring-black/5"
+                      style={conceptBorderStyle(concept)}
+                      data-testid={`preview-concept-${i}`}
+                    >
                     {/* Layout archetype rendering — each layoutStyle has its own
                         visual structure. The placeholder art gradient stands in
                         for the real AI illustration until the host previews or applies. */}
@@ -1102,6 +979,8 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
                       </div>
                     )}
                   </div>
+                  {/* End envelope mockup wrapper */}
+                  </div>
 
                   <div className="mt-2 flex items-center gap-1.5" data-testid={`row-concept-palette-${i}`}>
                     {concept.paletteColors.map((c, ci) => (
@@ -1152,7 +1031,7 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
                       disabled={applyConcept.isPending}
                       data-testid={`button-apply-concept-${i}`}
                     >
-                      {isApplying ? "Applying…" : (
+                      {isApplying ? "Polishing artwork…" : (
                         <>
                           <Check className="mr-1.5 h-3.5 w-3.5" /> Use this design
                         </>

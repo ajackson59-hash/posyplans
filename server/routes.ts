@@ -22,7 +22,7 @@ import { generateBudgetSuggestionAi } from "./budgetAi";
 import { isFuzzyNameMatch } from "./fuzzyMatch";
 import { generateInviteDesignConcepts, extractInspirationNotes } from "./inviteDesignAi";
 import { generateInviteIllustration, generateInviteIllustrationWithQualityGate } from "./illustrationGen";
-import { isValidInviteDesignConcept, type InviteDesignConcept, parseInviteDesignConcept, getFontPairing } from "@shared/inviteDesign";
+import { isValidInviteDesignConcept, type InviteDesignConcept, parseInviteDesignConcept, getFontPairing, FONT_PAIRINGS, LAYOUT_STYLES, BORDER_STYLES } from "@shared/inviteDesign";
 import { deriveThemeDna, isLinerPattern, isStampStyle } from "@shared/themeDna";
 import { computeEventDna, dnaSummaryForPrompt } from "@shared/eventDna";
 import { recommendInviteFormat } from "@shared/inviteFormatRecommendation";
@@ -41,7 +41,7 @@ import { sendMetaPurchaseEvent } from "./metaCapi";
 
 function publicEventView(event: Event) {
   // Never expose ownerToken (the host's secret edit key) on public routes.
-  const { ownerToken, ...rest } = event;
+  const { ownerToken, capturedEmail, ...rest } = event;
   return rest;
 }
 
@@ -1077,7 +1077,7 @@ export async function registerRoutes(
     const event = await storage.getEventByOwnerToken(req.params.ownerToken);
     if (!event) return res.status(404).json({ error: "Event not found" });
 
-    const updates: { envelopeColor?: string; envelopeLinerPattern?: string; stampStyle?: string } = {};
+    const updates: { envelopeColor?: string; envelopeLinerPattern?: string; stampStyle?: string; linerColor?: string; stampColor?: string } = {};
 
     if (req.body?.envelopeColor !== undefined) {
       const color = req.body.envelopeColor;
@@ -1094,9 +1094,23 @@ export async function registerRoutes(
     }
     if (req.body?.stampStyle !== undefined) {
       if (!isStampStyle(req.body.stampStyle)) {
-        return res.status(400).json({ error: "stampStyle must be one of: classic, seal, postmark, motif" });
+        return res.status(400).json({ error: "stampStyle must be a valid stamp style" });
       }
       updates.stampStyle = req.body.stampStyle;
+    }
+    if (req.body?.linerColor !== undefined) {
+      const color = req.body.linerColor;
+      if (typeof color !== "string" || !/^#[0-9a-fA-F]{6}$/.test(color)) {
+        return res.status(400).json({ error: "linerColor must be a hex color" });
+      }
+      updates.linerColor = color;
+    }
+    if (req.body?.stampColor !== undefined) {
+      const color = req.body.stampColor;
+      if (typeof color !== "string" || !/^#[0-9a-fA-F]{6}$/.test(color)) {
+        return res.status(400).json({ error: "stampColor must be a hex color" });
+      }
+      updates.stampColor = color;
     }
 
     if (Object.keys(updates).length === 0) {
@@ -1104,6 +1118,104 @@ export async function registerRoutes(
     }
 
     const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, updates);
+    if (!updated) return res.status(404).json({ error: "Event not found" });
+    res.json(updated);
+  });
+
+  // Publish / unpublish the guest list. When "draft", the public RSVP page
+  // shows a "not ready yet" message instead of the RSVP form. Defaults to
+  // "published" so pre-existing events are unaffected.
+  app.patch("/api/events/owner/:ownerToken/invite-status", async (req, res) => {
+    const event = await storage.getEventByOwnerToken(req.params.ownerToken);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+    const status = req.body?.status;
+    if (status !== "draft" && status !== "published") {
+      return res.status(400).json({ error: "status must be 'draft' or 'published'" });
+    }
+    const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, { inviteStatus: status });
+    if (!updated) return res.status(404).json({ error: "Event not found" });
+    res.json(updated);
+  });
+
+  // Update RSVP phone number (shown on public RSVP page for guests who
+  // prefer to call or text instead of using the web form).
+  app.patch("/api/events/owner/:ownerToken/rsvp-phone", async (req, res) => {
+    const event = await storage.getEventByOwnerToken(req.params.ownerToken);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+    const phone = typeof req.body?.phone === "string" ? req.body.phone.trim() : "";
+    const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, { rsvpPhone: phone });
+    if (!updated) return res.status(404).json({ error: "Event not found" });
+    res.json(updated);
+  });
+
+  // ── Live Design Editor endpoint ───────────────────────────────────
+  // Accepts partial updates to the applied concept's design fields
+  // (font, layout, border, palette) and the invite text (subject, message).
+  // All changes preserve the existing illustration — no regeneration.
+  // Only fields actually supplied are written; missing fields stay as-is.
+  app.patch("/api/events/owner/:ownerToken/invite/live-design", async (req, res) => {
+    const event = await storage.getEventByOwnerToken(req.params.ownerToken);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+    const appliedConcept = parseInviteDesignConcept(event.inviteDesignConceptJson);
+    if (!appliedConcept) return res.status(400).json({ error: "No design concept is applied yet" });
+
+    const updates: Partial<InviteDesignConcept> = {};
+    const eventUpdates: Record<string, string> = {};
+
+    // Font pairing
+    if (typeof req.body?.fontPairingId === "string") {
+      if (!FONT_PAIRINGS.some((f) => f.id === req.body.fontPairingId)) {
+        return res.status(400).json({ error: "Invalid fontPairingId" });
+      }
+      updates.fontPairingId = req.body.fontPairingId;
+    }
+
+    // Layout style
+    if (typeof req.body?.layoutStyle === "string") {
+      if (!(LAYOUT_STYLES as readonly string[]).includes(req.body.layoutStyle)) {
+        return res.status(400).json({ error: "Invalid layoutStyle" });
+      }
+      updates.layoutStyle = req.body.layoutStyle as InviteDesignConcept["layoutStyle"];
+    }
+
+    // Border style
+    if (typeof req.body?.borderStyle === "string") {
+      if (!(BORDER_STYLES as readonly string[]).includes(req.body.borderStyle)) {
+        return res.status(400).json({ error: "Invalid borderStyle" });
+      }
+      updates.borderStyle = req.body.borderStyle as InviteDesignConcept["borderStyle"];
+    }
+
+    // Palette colors (must be exactly 4 hex colors if supplied)
+    if (Array.isArray(req.body?.paletteColors)) {
+      const pc = req.body.paletteColors;
+      if (pc.length !== 4 || !pc.every((c: unknown) => typeof c === "string" && /^#[0-9a-fA-F]{6}$/.test(c))) {
+        return res.status(400).json({ error: "paletteColors must be an array of 4 hex colors" });
+      }
+      updates.paletteColors = pc;
+    }
+
+    // Invite subject text
+    if (typeof req.body?.inviteSubject === "string") {
+      eventUpdates.inviteSubject = req.body.inviteSubject.slice(0, 200);
+    }
+
+    // Invite message text
+    if (typeof req.body?.inviteMessage === "string") {
+      eventUpdates.inviteMessage = req.body.inviteMessage.slice(0, 1000);
+    }
+
+    // Merge concept updates into the stored JSON
+    if (Object.keys(updates).length > 0) {
+      const updatedConcept = { ...appliedConcept, ...updates };
+      eventUpdates.inviteDesignConceptJson = JSON.stringify(updatedConcept);
+    }
+
+    if (Object.keys(eventUpdates).length === 0) {
+      return res.json(event); // no-op
+    }
+
+    const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, eventUpdates);
     if (!updated) return res.status(404).json({ error: "Event not found" });
     res.json(updated);
   });

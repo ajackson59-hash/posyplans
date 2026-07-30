@@ -64,6 +64,12 @@ export const events = pgTable("events", {
   envelopeColor: text("envelope_color").notNull().default(""),
   envelopeLinerPattern: text("envelope_liner_pattern").notNull().default(""),
   stampStyle: text("stamp_style").notNull().default(""),
+  // Custom colors for the liner pattern and stamp, overriding the derived
+  // accent/backgroundColor from the concept's Theme DNA. Empty string means
+  // "not set" — falls back to derived DNA values, so pre-existing events
+  // are unaffected.
+  linerColor: text("liner_color").notNull().default(""),
+  stampColor: text("stamp_color").notNull().default(""),
   budgetTotal: integer("budget_total"), // planned overall budget in whole dollars, editable by host
   // Structured venue details — separate from the short display `location` above.
   // Lets a host record exactly where the event is, how many people it holds,
@@ -80,6 +86,13 @@ export const events = pgTable("events", {
   // "no_additional_guests": guest can only RSVP for themselves (count locked to 1).
   rsvpRestriction: text("rsvp_restriction").notNull().default("none"),
   rsvpDeadline: text("rsvp_deadline").notNull().default(""), // friendly display date, same format as eventDate
+  // Controls whether the public RSVP page is live. "draft" shows a
+  // "not ready yet" message; "published" shows the full RSVP form.
+  // Defaults to "published" so pre-existing events are unaffected.
+  inviteStatus: text("invite_status").notNull().default("published"),
+  // Optional phone number the host can share on the RSVP page for guests
+  // who prefer to call or text instead of using the web form.
+  rsvpPhone: text("rsvp_phone").notNull().default(""),
   // Epoch-millisecond timestamps use bigint (Postgres 4-byte integer maxes
   // out around 2.1B, well below current Date.now() values ~1.7T).
   createdAt: bigint("created_at", { mode: "number" }).notNull(),

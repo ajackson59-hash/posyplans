@@ -91,6 +91,7 @@ import {
   ImagePlus,
   X,
   Check,
+  Lock,
   MessageSquareText,
 } from "lucide-react";
 
@@ -389,6 +390,28 @@ export default function Dashboard() {
     },
     onError: () => {
       toast({ title: "Couldn't send reminders", description: "Check your Gmail connection and try again.", variant: "destructive" });
+    },
+  });
+
+  const toggleInviteStatus = useMutation({
+    mutationFn: async (status: "draft" | "published") =>
+      apiRequestJson("PATCH", `/api/events/owner/${ownerToken}/invite-status`, { status }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/events/owner/${ownerToken}`] });
+    },
+    onError: () => {
+      toast({ title: "Couldn't update invite status", description: "Please try again.", variant: "destructive" });
+    },
+  });
+
+  const updateRsvpPhone = useMutation({
+    mutationFn: async (phone: string) =>
+      apiRequestJson("PATCH", `/api/events/owner/${ownerToken}/rsvp-phone`, { phone }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/events/owner/${ownerToken}`] });
+    },
+    onError: () => {
+      toast({ title: "Couldn't save phone number", description: "Please try again.", variant: "destructive" });
     },
   });
 
@@ -959,6 +982,52 @@ export default function Dashboard() {
               <Button size="sm" variant="secondary" onClick={copyLink} data-testid="button-copy-rsvp-link">
                 <Copy className="mr-1.5 h-3.5 w-3.5" /> Copy link
               </Button>
+            </div>
+
+            {/* Draft / Published toggle + RSVP phone */}
+            <div className="flex flex-wrap items-center gap-3 rounded-md border border-border bg-muted/30 p-3">
+              <div className="flex items-center gap-2">
+                {event.inviteStatus === "draft" ? (
+                  <>
+                    <Badge variant="outline" className="gap-1 text-yellow-700">
+                      <Lock className="h-3 w-3" /> Draft
+                    </Badge>
+                    <Button
+                      size="sm"
+                      onClick={() => toggleInviteStatus.mutate("published")}
+                      disabled={toggleInviteStatus.isPending}
+                      data-testid="button-publish-invites"
+                    >
+                      <Send className="mr-1.5 h-3.5 w-3.5" /> Publish &amp; make live
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Badge variant="outline" className="gap-1 text-green-700">
+                      <Check className="h-3 w-3" /> Live
+                    </Badge>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => toggleInviteStatus.mutate("draft")}
+                      disabled={toggleInviteStatus.isPending}
+                      data-testid="button-unpublish-invites"
+                    >
+                      <Lock className="mr-1.5 h-3.5 w-3.5" /> Switch to draft
+                    </Button>
+                  </>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  className="h-8 w-40 text-sm"
+                  placeholder="RSVP phone (optional)"
+                  defaultValue={event.rsvpPhone || ""}
+                  onBlur={(e) => updateRsvpPhone.mutate(e.target.value.trim())}
+                  data-testid="input-rsvp-phone"
+                />
+              </div>
             </div>
 
             <InviteDesignPicker ownerToken={ownerToken} event={event} />

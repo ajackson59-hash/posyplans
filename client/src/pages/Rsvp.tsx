@@ -6,7 +6,8 @@ import type { EventRecord, RsvpStatus } from "@/lib/types";
 import { applyInviteTokens } from "@shared/inviteTokens";
 import { DEFAULT_INVITE_FONT_ID, resolveInviteAccentColor, getInviteHeadingStyle, getInviteBodyStyle } from "@/lib/inviteStyles";
 import { parseInviteDesignConcept, conceptHeadingStyle, conceptBodyStyle, conceptBorderStyle } from "@shared/inviteDesign";
-import { deriveThemeDna, linerPatternStyle, stampGlyph, isLinerPattern, isStampStyle } from "@shared/themeDna";
+import { deriveThemeDna, isLinerPattern, isStampStyle, envelopeFinish, flapAnimationMs, ENVELOPE_LINGER_MS } from "@shared/themeDna";
+import EnvelopeMockup from "@/components/EnvelopeMockup";
 import { Wordmark } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle2, HelpCircle, MessageSquareText, Search, UserRound, XCircle } from "lucide-react";
+import { CheckCircle2, HelpCircle, Mail, MessageSquareText, Search, UserRound, XCircle } from "lucide-react";
 import { useDebouncedCallback } from "@/hooks/use-debounce";
 import CountStepper from "@/components/CountStepper";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -101,13 +102,20 @@ export default function Rsvp() {
   // no empty box is left behind.
   useEffect(() => {
     if (!envelopeOpened) return;
-    const collapse = setTimeout(() => setEnvelopeDismissed(true), 700);
-    const remove = setTimeout(() => setEnvelopeRemoved(true), 1200);
+    // Hold the envelope on screen for the full flap rotation plus a brief linger,
+    // otherwise the collapse starts while the flap is still moving and the guest
+    // never sees it open at all. Durations are shared with EnvelopeMockup.
+    // Read the lane off the raw query data rather than the derived `concept`,
+    // which is only in scope after this component's loading guards.
+    const lane = parseInviteDesignConcept(event?.inviteDesignConceptJson ?? "")?.styleLaneId;
+    const collapseAt = flapAnimationMs(envelopeFinish(lane)) + ENVELOPE_LINGER_MS;
+    const collapse = setTimeout(() => setEnvelopeDismissed(true), collapseAt);
+    const remove = setTimeout(() => setEnvelopeRemoved(true), collapseAt + 500);
     return () => {
       clearTimeout(collapse);
       clearTimeout(remove);
     };
-  }, [envelopeOpened]);
+  }, [envelopeOpened, event?.inviteDesignConceptJson]);
 
   const search = useDebouncedCallback(async (q: string) => {
     if (!q.trim()) {
@@ -180,6 +188,42 @@ export default function Rsvp() {
     );
   }
 
+  // Draft gate: when the host hasn't published yet, show a friendly
+  // "not ready" message instead of the RSVP form.
+  if (event.inviteStatus === "draft") {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="border-b border-border">
+          <div className="mx-auto max-w-lg px-6 py-5">
+            <Wordmark />
+          </div>
+        </header>
+        <div className="mx-auto max-w-lg px-6 py-24 text-center">
+          <div className="mb-6 flex justify-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+              <Mail className="h-7 w-7 text-primary" />
+            </div>
+          </div>
+          <h1 className="font-serif text-2xl font-semibold" data-testid="text-draft-title">
+            This invitation isn't quite ready yet
+          </h1>
+          <p className="mt-3 text-muted-foreground" data-testid="text-draft-body">
+            The host is still putting the finishing touches on this event.
+            Check back soon!
+          </p>
+          {event.rsvpPhone && (
+            <p className="mt-4 text-sm text-muted-foreground">
+              Questions? Contact the host at{" "}
+              <a href={`tel:${event.rsvpPhone}`} className="font-medium text-primary underline">
+                {event.rsvpPhone}
+              </a>
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   // Full-custom invite: the host uploaded a finished design to be shown AS-IS.
   // Gated on an explicit "custom" check, so every event created before this
   // feature (inviteRenderMode "" or absent) renders exactly as it does today.
@@ -195,6 +239,10 @@ export default function Rsvp() {
   const envelopeColor = /^#[0-9a-fA-F]{6}$/.test(event.envelopeColor || "") ? (event.envelopeColor as string) : dna?.primaryColor;
   const linerPattern = isLinerPattern(event.envelopeLinerPattern) ? event.envelopeLinerPattern : dna?.linerPattern;
   const stamp = isStampStyle(event.stampStyle) ? event.stampStyle : dna?.stampStyle;
+  // Suite colours are optional overrides; fall back to the concept's derived DNA
+  // so events saved before those columns existed still render a matched suite.
+  const linerColor = /^#[0-9a-fA-F]{6}$/.test(event.linerColor || "") ? (event.linerColor as string) : (dna?.accentColor ?? "#cbd5e1");
+  const stampColor = /^#[0-9a-fA-F]{6}$/.test(event.stampColor || "") ? (event.stampColor as string) : (dna?.accentColor ?? "#cbd5e1");
   const showEnvelope = !!dna && !!envelopeColor && !!linerPattern && !!stamp;
   const inviteRevealed = !showEnvelope || envelopeDismissed;
   const guestFirstName = selected?.name.split(" ")[0];
@@ -220,6 +268,14 @@ export default function Rsvp() {
             Please respond by {event.rsvpDeadline}
           </p>
         )}
+        {event.rsvpPhone && !submitted && (
+          <p className="mt-2 text-sm text-muted-foreground">
+            Prefer to call or text? Reach the host at{" "}
+            <a href={`tel:${event.rsvpPhone}`} className="font-medium text-primary underline" data-testid="link-rsvp-phone">
+              {event.rsvpPhone}
+            </a>
+          </p>
+        )}
 
         {showEnvelope && dna && !envelopeRemoved && (
           <div
@@ -228,80 +284,24 @@ export default function Rsvp() {
             }`}
             data-testid="section-envelope"
           >
-            <button
-              type="button"
-              onClick={() => setEnvelopeOpened(true)}
-              disabled={envelopeOpened}
-              aria-label="Open your invitation"
-              className="block w-full cursor-pointer disabled:cursor-default"
-              data-testid="button-open-envelope"
-            >
-              {/* No overflow clipping here: the flap rotates up past the top edge,
-                  and perspective must sit on its direct parent for the 3D lift. */}
-              <div
-                className="relative mx-auto aspect-[7/5] w-full max-w-sm rounded-md shadow-sm"
-                style={{ backgroundColor: envelopeColor, perspective: "900px", transformStyle: "preserve-3d" }}
-              >
-                {/* Liner + front pocket get their own clipped layer so the rounded
-                    corners stay masked without clipping the animating flap. */}
-                <div className="absolute inset-0 overflow-hidden rounded-md">
-                  {/* Patterned liner — the inside of the envelope, revealed as the flap lifts. */}
-                  <div className="absolute inset-0" style={linerPatternStyle(linerPattern!, dna.accentColor, dna.backgroundColor)} />
-                  {/* Front pocket, over the liner. */}
-                  <div className="absolute inset-x-0 bottom-0 top-[45%]" style={{ backgroundColor: envelopeColor }} />
-                </div>
+            <EnvelopeMockup
+              envelopeColor={envelopeColor!}
+              linerPattern={linerPattern!}
+              linerColor={linerColor}
+              linerBaseColor={dna.backgroundColor}
+              stampStyle={stamp!}
+              stampColor={stampColor}
+              finish={envelopeFinish(concept?.styleLaneId)}
+              addressee={guestFirstName ? `For ${guestFirstName}` : "You're invited"}
+              opened={envelopeOpened}
+              onOpen={() => setEnvelopeOpened(true)}
+            />
 
-                <span
-                  className="absolute right-3 top-[48%] z-20 flex h-10 w-9 items-center justify-center rounded-[2px] border-2 border-dashed text-lg"
-                  style={{ borderColor: dna.backgroundColor, color: dna.backgroundColor }}
-                  data-testid="glyph-envelope-stamp"
-                >
-                  {stampGlyph(stamp!).glyph}
-                </span>
-
-                <span
-                  className="absolute inset-x-0 bottom-5 z-20 px-6 text-center text-sm font-medium"
-                  style={{ color: dna.backgroundColor }}
-                  data-testid="text-envelope-addressee"
-                >
-                  {guestFirstName ? `For ${guestFirstName}` : "You're invited"}
-                </span>
-
-                {/* Flap. Hiding the back face avoids a hard flip past 90deg, and the
-                    matching opacity fade keeps that hand-off from reading as a pop. */}
-                <div
-                  className="absolute inset-x-0 top-0 z-30 h-[60%] transition-all duration-700 ease-in-out"
-                  style={{
-                    backgroundColor: envelopeColor,
-                    filter: "brightness(0.92)",
-                    clipPath: "polygon(0 0, 100% 0, 50% 100%)",
-                    transformOrigin: "top",
-                    transformStyle: "preserve-3d",
-                    backfaceVisibility: "hidden",
-                    transform: envelopeOpened ? "rotateX(-165deg)" : "rotateX(0deg)",
-                    opacity: envelopeOpened ? 0 : 1,
-                  }}
-                />
-
-                {/* Seal holding the flap shut — fades away on opening. */}
-                <span
-                  className="absolute left-1/2 top-[52%] z-40 flex h-9 w-9 -translate-x-1/2 items-center justify-center rounded-full text-sm transition-opacity duration-500"
-                  style={{
-                    backgroundColor: dna.accentColor,
-                    color: dna.backgroundColor,
-                    opacity: envelopeOpened ? 0 : 1,
-                  }}
-                >
-                  ✦
-                </span>
-              </div>
-
-              {!envelopeOpened && (
-                <span className="mt-2 block text-center text-sm font-medium text-primary" data-testid="text-envelope-hint">
-                  Tap to open your invitation
-                </span>
-              )}
-            </button>
+            {!envelopeOpened && (
+              <span className="mt-3 block text-center text-sm font-medium text-primary" data-testid="text-envelope-hint">
+                Tap to open your invitation
+              </span>
+            )}
           </div>
         )}
 

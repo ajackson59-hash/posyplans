@@ -28,6 +28,10 @@ export interface EventRecord {
   envelopeColor?: string;
   envelopeLinerPattern?: string;
   stampStyle?: string;
+  linerColor?: string;
+  stampColor?: string;
+  inviteStatus?: string;
+  rsvpPhone?: string;
   budgetTotal: number | null;
   venueName: string;
   venueAddress: string;
