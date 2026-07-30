@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import ContinuePlanning from "@/components/ContinuePlanningCard";
+import AIDemoShowcase from "@/components/AIDemoShowcase";
 import DatePickerField from "@/components/DatePickerField";
 import { EVENT_TYPES } from "@/lib/types";
 import type { EventRecord } from "@/lib/types";
@@ -265,11 +266,10 @@ export default function Home() {
                 </Button>
                 <Button
                   size="lg"
-                  variant="ghost"
                   data-testid="button-hero-see-how-it-works"
-                  onClick={() => scrollToId("how-posy-works")}
+                  onClick={() => scrollToId("see-posy-build")}
                 >
-                  See how it works
+                  See Posy build a plan
                 </Button>
               </div>
               <p className="mt-3 text-sm text-muted-foreground" data-testid="text-hero-reassurance">
@@ -290,6 +290,9 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {/* AI DEMO — scripted auto-playing showcase */}
+        <AIDemoShowcase />
 
         {/* GET STARTED — functional entry point (AI wizard vs. manual form) */}
         <section id="get-started" className="mx-auto max-w-6xl px-6 pb-14 sm:pb-20">

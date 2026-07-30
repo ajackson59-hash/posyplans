@@ -106,13 +106,20 @@ export default function Pricing() {
           </p>
         </div>
 
-        <div className="mb-8 flex justify-center">
+        <div className="mb-8 flex justify-center gap-3">
           <span
             className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary"
             data-testid="banner-summer-savings"
           >
             ☀️ Exclusive Summer Savings
           </span>
+          <a
+            href="/#see-posy-build"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted/50"
+            data-testid="link-pricing-see-demo"
+          >
+            See what Posy does in 30 seconds →
+          </a>
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
