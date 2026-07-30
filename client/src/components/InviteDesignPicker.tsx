@@ -33,7 +33,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import PaletteEditor from "@/components/PaletteEditor";
 import LiveInviteEditor from "@/components/LiveInviteEditor";
 import { useToast } from "@/hooks/use-toast";
-import { Sparkles, Wand2, RotateCcw, X, Check, ImagePlus, Heart, ThumbsDown } from "lucide-react";
+import { Sparkles, Wand2, RotateCcw, X, Check, ImagePlus, Heart, ThumbsDown, ArrowLeft } from "lucide-react";
+import ThemeGallery from "./ThemeGallery";
 
 interface InviteDesignPickerProps {
   ownerToken: string;
@@ -80,6 +81,8 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
   const artworkInputRef = useRef<HTMLInputElement>(null);
   const inspirationInputRef = useRef<HTMLInputElement>(null);
   const customDesignInputRef = useRef<HTMLInputElement>(null);
+  // When true, show the AI custom theme generation form instead of the gallery
+  const [showCustomTheme, setShowCustomTheme] = useState(false);
 
   const appliedConcept = parseInviteDesignConcept(event.inviteDesignConceptJson);
 
@@ -613,16 +616,48 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
       <LiveInviteEditor
         ownerToken={ownerToken}
         event={event}
-        onBrowse={() => { setBrowsing(true); setConcepts(null); }}
+        onBrowse={() => { setBrowsing(true); setConcepts(null); setShowCustomTheme(false); }}
       />
     );
   }
 
+  // ═══ Primary path: Curated theme gallery ══════════════════════════════
+  // Shows professionally designed themes that apply instantly — no AI
+  // generation wait. The AI custom path is available as a secondary option.
+  if (!showCustomTheme) {
+    return (
+      <div className="rounded-md border border-primary/30 bg-primary/5 p-4" data-testid="card-theme-gallery">
+        <ThemeGallery
+          ownerToken={ownerToken}
+          event={event}
+          onCustomTheme={() => setShowCustomTheme(true)}
+          onThemeApplied={() => {
+            // The event query will refetch and appliedConcept will be set,
+            // which re-renders to LiveInviteEditor automatically.
+            setShowCustomTheme(false);
+          }}
+        />
+        {renderCustomDesignEntry()}
+      </div>
+    );
+  }
+
+  // ═══ Secondary path: AI custom theme generation ════════════════════════
   return (
     <div className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-4" data-testid="card-invite-design-picker">
-      <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-        <Sparkles className="h-4 w-4 text-primary" /> Invitation Intelligence
-      </p>
+      <div className="mb-2 flex items-center justify-between">
+        <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+          <Sparkles className="h-4 w-4 text-primary" /> Custom AI Theme
+        </p>
+        <button
+          type="button"
+          onClick={() => setShowCustomTheme(false)}
+          className="flex items-center gap-1 text-[11px] font-medium text-primary underline underline-offset-2"
+          data-testid="button-back-to-themes"
+        >
+          <ArrowLeft className="h-3 w-3" /> Back to themes
+        </button>
+      </div>
       <p className="mt-1 text-xs text-muted-foreground">
         Describe your party's theme and get 4 complete design concepts{" — "}palette, fonts, border, and a custom illustration{" — "}
         applied across your invite, RSVP page, and thank-you card in one click.
