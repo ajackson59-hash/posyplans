@@ -9,10 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Check, Sparkles, Lock, Users, Mail, ClipboardList, Wand2 } from "lucide-react";
-import elegantNeutral from "@/assets/templates/template-elegant-neutral.jpg";
-import floralGarden from "@/assets/templates/template-floral-garden.jpg";
-import superhero from "@/assets/templates/template-superhero.jpg";
+import { Check, Sparkles, Lock } from "lucide-react";
 
 type BillingInterval = "annual" | "monthly";
 
@@ -107,76 +104,6 @@ export default function Pricing() {
             Start with a single event, or go Plus for unlimited plans, more options, and
             regenerations across everything you host.
           </p>
-        </div>
-
-        {/* See it in action */}
-        <div className="mb-14 rounded-2xl border border-card-border bg-card/40 p-8" data-testid="section-demo">
-          <div className="mb-8 text-center">
-            <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-primary">See it in action</p>
-            <h2 className="font-serif text-xl font-semibold text-foreground sm:text-2xl">From idea to invitation in three steps</h2>
-          </div>
-          <div className="grid gap-8 sm:grid-cols-3">
-            <div className="text-center">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                <Wand2 className="h-5 w-5 text-primary" />
-              </div>
-              <p className="mb-1 text-sm font-semibold text-foreground">1. Describe it</p>
-              <p className="text-xs leading-relaxed text-muted-foreground">Tell Posy about your event. The occasion, the vibe, the guests.</p>
-            </div>
-            <div className="text-center">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                <Sparkles className="h-5 w-5 text-primary" />
-              </div>
-              <p className="mb-1 text-sm font-semibold text-foreground">2. Generate</p>
-              <p className="text-xs leading-relaxed text-muted-foreground">AI designs your invitation, builds your timeline, and drafts your plan.</p>
-            </div>
-            <div className="text-center">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                <Check className="h-5 w-5 text-primary" />
-              </div>
-              <p className="mb-1 text-sm font-semibold text-foreground">3. Customize &amp; send</p>
-              <p className="text-xs leading-relaxed text-muted-foreground">Tweak the design, edit details, then publish and track RSVPs in real time.</p>
-            </div>
-          </div>
-          <div className="mt-8 flex justify-center gap-2">
-            <img src={floralGarden} alt="Wedding invitation" className="h-28 rounded-lg border border-card-border object-cover shadow-sm" />
-            <img src={superhero} alt="Kids birthday invitation" className="h-28 rounded-lg border border-card-border object-cover shadow-sm" />
-            <img src={elegantNeutral} alt="Dinner party invitation" className="h-28 rounded-lg border border-card-border object-cover shadow-sm" />
-          </div>
-        </div>
-
-        {/* What you get at each tier */}
-        <div className="mb-10 grid gap-4 sm:grid-cols-3">
-          <div className="rounded-xl border border-card-border p-4" data-testid="card-tier-preview-spark">
-            <div className="mb-2 flex items-center gap-2">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-semibold text-foreground">Spark</span>
-            </div>
-            <img src={elegantNeutral} alt="Spark tier invitation" className="mb-2 h-24 w-full rounded-lg border border-card-border object-cover" />
-            <p className="text-xs text-muted-foreground">One AI-drafted plan, one invitation design, full RSVP tracking.</p>
-          </div>
-          <div className="rounded-xl border border-primary/40 p-4" data-testid="card-tier-preview-plus">
-            <div className="mb-2 flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-sm font-semibold text-foreground">Plus</span>
-              <Badge variant="secondary" className="text-[10px]">Best Value</Badge>
-            </div>
-            <div className="mb-2 flex gap-1">
-              <img src={floralGarden} alt="Plus invitation" className="h-24 w-1/2 rounded-lg border border-card-border object-cover" />
-              <img src={superhero} alt="Plus invitation" className="h-24 w-1/2 rounded-lg border border-card-border object-cover" />
-            </div>
-            <p className="text-xs text-muted-foreground">Unlimited plans, all 13+ templates, AI regenerations, design suite customization.</p>
-          </div>
-          <div className="rounded-xl border border-card-border p-4 opacity-60" data-testid="card-tier-preview-concierge">
-            <div className="mb-2 flex items-center gap-2">
-              <Lock className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-semibold text-foreground">Concierge</span>
-            </div>
-            <div className="mb-2 flex h-24 items-center justify-center rounded-lg border border-dashed border-border">
-              <ClipboardList className="h-6 w-6 text-muted-foreground" />
-            </div>
-            <p className="text-xs text-muted-foreground">A dedicated human planner. Vendor sourcing, personal check-ins, priority support.</p>
-          </div>
         </div>
 
         <div className="mb-8 flex justify-center">
