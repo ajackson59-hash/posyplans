@@ -88,7 +88,28 @@ export default function ThemeTab({
 
   const usePalette = useMutation({
     mutationFn: async (colors: string[]) => {
+      // Update the event's overall palette
       await apiRequest("PATCH", `/api/events/owner/${ownerToken}`, { paletteColors: JSON.stringify(colors) });
+      // If an invite concept is applied, sync its palette AND envelope suite
+      // so the invite design matches the new theme instead of keeping stale colors.
+      const hasConcept = event.inviteDesignConceptJson && event.inviteDesignConceptJson.trim() !== "{}" && event.inviteDesignConceptJson.trim() !== "";
+      if (hasConcept) {
+        try {
+          await apiRequestJson("PATCH", `/api/events/owner/${ownerToken}/invite/concept-palette`, { paletteColors: colors });
+        } catch {
+          // If the concept palette sync fails, don't block the event palette update
+        }
+        try {
+          // Sync envelope color to the first palette color so it matches the new theme
+          await apiRequestJson("PATCH", `/api/events/owner/${ownerToken}/invite/suite`, {
+            envelopeColor: colors[0],
+            linerColor: colors[0],
+            stampColor: colors[1] || colors[0],
+          });
+        } catch {
+          // Suite sync is best-effort — don't block the palette update
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: eventQueryKey });
@@ -377,6 +398,18 @@ export default function ThemeTab({
                     </Button>
                   </div>
                   <p className="mt-1.5 text-[11px] text-muted-foreground">Click any color above to adjust it before applying</p>
+                  {event.inviteDesignConceptJson && event.inviteDesignConceptJson.trim() !== "{}" && event.inviteDesignConceptJson.trim() !== "" && (
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      Your invite design will update to match. To pick a new design direction,
+                      <button
+                        type="button"
+                        className="ml-1 font-medium text-primary underline underline-offset-1 hover:text-primary/80"
+                        onClick={() => onNavigateToTab?.("invite")}
+                      >
+                        browse invite concepts →
+                      </button>
+                    </p>
+                  )}
                 </div>
               )}
 

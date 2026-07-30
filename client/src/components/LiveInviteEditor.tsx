@@ -157,6 +157,23 @@ export default function LiveInviteEditor({ ownerToken, event, onBrowse }: LiveIn
     };
   }, []);
 
+  // Sync local state when the concept is updated externally (e.g. palette
+  // changed from the Theme tab, or a new concept was applied). We compare the
+  // concept JSON string so we only re-sync when something actually changed
+  // server-side — not on every event re-fetch.
+  const conceptJsonRef = useRef(event.inviteDesignConceptJson);
+  useEffect(() => {
+    if (event.inviteDesignConceptJson === conceptJsonRef.current) return;
+    conceptJsonRef.current = event.inviteDesignConceptJson;
+    const refreshed = parseInviteDesignConcept(event.inviteDesignConceptJson);
+    if (refreshed) {
+      if (refreshed.paletteColors) setPaletteColors(refreshed.paletteColors);
+      if (refreshed.fontPairingId) setFontPairingId(refreshed.fontPairingId);
+      if (refreshed.layoutStyle) setLayoutStyle(refreshed.layoutStyle);
+      if (refreshed.borderStyle) setBorderStyle(refreshed.borderStyle);
+    }
+  }, [event.inviteDesignConceptJson]);
+
   // ── Change handlers — update local state instantly, schedule save ─
   const onFontChange = (id: string) => {
     setFontPairingId(id);
