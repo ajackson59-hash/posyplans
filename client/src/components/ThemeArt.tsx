@@ -302,7 +302,7 @@ function BuntingGarland({ colors, className }: ArtProps) {
 
 // ── Starry Night ───────────────────────────────────────────────────
 function StarryNight({ colors, className }: ArtProps) {
-  const [primary, , surface] = colors;
+  const [primary, accent] = colors;
   const stars = [
     { x: 20, y: 15, r: 2.5, o: 0.9 },
     { x: 55, y: 25, r: 1.5, o: 0.6 },
@@ -325,9 +325,11 @@ function StarryNight({ colors, className }: ArtProps) {
   ];
   return (
     <svg viewBox="0 0 170 130" className={className} style={FILL} preserveAspectRatio="xMidYMid slice">
-      <g transform="translate(135, 30)">
-        <circle cx="0" cy="0" r="14" fill={primary} fillOpacity="0.85" />
-        <circle cx="5" cy="-3" r="12" fill={surface} fillOpacity="0.95" />
+      {/* A field, not a scene: the painted sheet already carries the moon, and a
+          single focal shape repeats badly once the field is tiled. */}
+      <g stroke={accent} strokeOpacity="0.5" strokeWidth="0.6" fill="none">
+        <path d="M 20 15 L 55 25 L 85 10 L 110 30" />
+        <path d="M 45 80 L 90 75 L 120 85 L 150 70" />
       </g>
       {stars.map((star, i) => (
         <path

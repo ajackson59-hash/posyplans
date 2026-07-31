@@ -210,6 +210,65 @@ describe("palette-responsive artwork", () => {
   });
 });
 
+/** The rendered type block's geometry, in percentages of the card. */
+function typeBlock(container: HTMLElement) {
+  const el = container.querySelector("[data-testid=theme-invitation-type]") as HTMLElement;
+  return {
+    top: parseFloat(el.style.top),
+    left: parseFloat(el.style.left),
+    width: parseFloat(el.style.width),
+    safeTop: Number(el.getAttribute("data-safe-top")),
+    safeBottom: Number(el.getAttribute("data-safe-bottom")),
+  };
+}
+
+const LONG_MESSAGE =
+  "We would love you to join us for a long evening of dinner, dancing and far too much cake.";
+
+describe("text safe area", () => {
+  it("holds every theme and placement inside the card's margins", () => {
+    for (const t of LAUNCH_THEMES) {
+      for (const p of t.placements) {
+        const { container } = render(
+          <ThemeInvitation
+            theme={t}
+            headline={t.sample.headline}
+            copy={defaultThemeCopy(t)}
+            placementId={p.id}
+            message={LONG_MESSAGE}
+          />,
+        );
+        const block = typeBlock(container);
+        expect(block.top).toBeGreaterThanOrEqual(7);
+        expect(block.left).toBeGreaterThanOrEqual(8);
+        expect(block.left + block.width).toBeLessThanOrEqual(92.001);
+        // A cropped layout must not push its type band off the bottom of the card.
+        expect(block.safeTop).toBeGreaterThanOrEqual(7);
+        expect(block.safeBottom).toBeLessThanOrEqual(93.001);
+        expect(block.safeBottom).toBeGreaterThan(block.top);
+      }
+    }
+  });
+
+  it("keeps the safe area the same at gallery, editor and mobile widths", () => {
+    const at = (props: Partial<React.ComponentProps<typeof ThemeInvitation>>) =>
+      typeBlock(
+        render(
+          <ThemeInvitation theme={theme} headline={theme.sample.headline} copy={defaultThemeCopy(theme)} {...props} />,
+        ).container,
+      );
+
+    expect(at({ thumbnail: true, decorative: true })).toEqual(at({}));
+    expect(at({ className: "max-w-md" })).toEqual(at({}));
+  });
+
+  it("masks decorative artwork out from behind the type", () => {
+    const { container } = render(<ThemeInvitation theme={theme} headline="Hello" copy={defaultThemeCopy(theme)} />);
+    const layer = container.querySelector("[data-art-layer]") as HTMLElement;
+    expect(layer.style.maskImage || layer.style.getPropertyValue("-webkit-mask-image")).toContain("radial-gradient");
+  });
+});
+
 describe("per-theme composition", () => {
   it("gives every theme a real layout archetype rather than forcing full-bleed", () => {
     for (const t of LAUNCH_THEMES) {

@@ -281,7 +281,10 @@ export const LAUNCH_THEMES: LaunchTheme[] = [
       height: 1200,
     },
     artFocus: "center",
-    art: { id: "rose-corner", placement: "corner-mirrored", opacity: 0.72, scale: 1 },
+    // The sheet is already painted with roses in its corners — a second rose in
+    // each corner read as translucent blobs. Fine sprigs down the outer margins
+    // add the palette-responsive botanical detail without competing.
+    art: { id: "botanical-sprig", placement: "side-mirrored", opacity: 0.5, scale: 0.85 },
     // The sheet is painted as a full floral frame with a clear centre — the
     // composition the artist drew is the whole page, so cropping it to a band
     // would throw away three of the four corners.
@@ -295,11 +298,15 @@ export const LAUNCH_THEMES: LaunchTheme[] = [
     ],
     fontPairingIds: ["garden-editorial-type", "romantic-italic", "playfair-classic"],
     placements: [
-      { id: "centre", label: "Centred", box: { top: 27, left: 15, width: 70, height: 44 }, align: "center", justify: "center" },
-      { id: "high", label: "Raised", box: { top: 19, left: 16, width: 68, height: 40 }, align: "center", justify: "start" },
-      { id: "left-column", label: "Left column", box: { top: 26, left: 14, width: 56, height: 46 }, align: "left", justify: "center" },
+      // Held inside the clear centre the artist left: the painted roses hang to
+      // roughly a third of the sheet at the top corners.
+      { id: "centre", label: "Centred", box: { top: 32, left: 21, width: 58, height: 40 }, align: "center", justify: "center" },
+      { id: "high", label: "Raised", box: { top: 28, left: 21, width: 58, height: 40 }, align: "center", justify: "start" },
+      { id: "left-column", label: "Left column", box: { top: 30, left: 20, width: 52, height: 42 }, align: "left", justify: "center" },
     ],
-    defaultOverlay: "none",
+    // A soft wash of the paper colour under the type — the eyebrow sat over
+    // painted foliage and lost too much contrast without it.
+    defaultOverlay: "veil",
     overlayOptions: ["none", "veil", "plate"],
     envelope: {
       papers: [
@@ -758,7 +765,7 @@ export const LAUNCH_THEMES: LaunchTheme[] = [
       height: 1200,
     },
     artFocus: "center",
-    art: { id: "confetti-scatter", placement: "scatter", opacity: 0.38, scale: 1 },
+    art: { id: "confetti-scatter", placement: "scatter", opacity: 0.3, scale: 1 },
     layoutStyle: "full-bleed",
     texture: { style: "grain", intensity: 0.75 },
     divider: "rule",
@@ -769,11 +776,13 @@ export const LAUNCH_THEMES: LaunchTheme[] = [
     ],
     fontPairingIds: ["disco-display", "neon-display", "tech-grotesk"],
     placements: [
-      { id: "disc", label: "In the disc", box: { top: 17, left: 27, width: 55, height: 30 }, align: "center", justify: "center" },
-      { id: "disc-high", label: "Top of disc", box: { top: 14, left: 26, width: 57, height: 28 }, align: "center", justify: "start" },
-      { id: "disc-wide", label: "Wide disc", box: { top: 18, left: 23, width: 62, height: 30 }, align: "center", justify: "center" },
+      { id: "disc", label: "In the disc", box: { top: 22, left: 25, width: 58, height: 30 }, align: "center", justify: "center" },
+      { id: "disc-high", label: "Top of disc", box: { top: 19, left: 24, width: 59, height: 28 }, align: "center", justify: "start" },
+      { id: "disc-wide", label: "Wide disc", box: { top: 22, left: 21, width: 64, height: 30 }, align: "center", justify: "center" },
     ],
-    defaultOverlay: "none",
+    // The retro arcs sweep dark maroon straight through the type column, so the
+    // eyebrow and RSVP lines need the cream disc washed back in behind them.
+    defaultOverlay: "veil",
     overlayOptions: ["none", "veil"],
     envelope: {
       papers: [

@@ -97,6 +97,22 @@ function projectPlacement(box: Frame, frame: Frame): Frame {
   };
 }
 
+/**
+ * No text ever crosses this margin. Cropped layouts (banner, split) can push a
+ * curated placement past the edge of the card, and long copy can grow past the
+ * bottom of its box — both clip the RSVP line. Every type region is intersected
+ * with this inset first, and the rendered block is then kept inside it.
+ */
+const SAFE_INSET = { x: 8, y: 7 };
+
+function withinSafeArea(frame: Frame): Frame {
+  const top = Math.max(frame.top, SAFE_INSET.y);
+  const left = Math.max(frame.left, SAFE_INSET.x);
+  const bottom = Math.min(frame.top + frame.height, 100 - SAFE_INSET.y);
+  const right = Math.min(frame.left + frame.width, 100 - SAFE_INSET.x);
+  return { top, left, width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
+}
+
 /** Grey paper grain, tuned per stock. Kept low so type contrast is untouched. */
 const TEXTURE_STOCK: Record<TextureStyle, { frequency: string; octaves: number; opacity: number }> = {
   none: { frequency: "0", octaves: 1, opacity: 0 },
@@ -139,6 +155,24 @@ function useCardWidth() {
   }, []);
 
   return { ref, width };
+}
+
+/** Measures the set type so the block can be kept inside the safe area. */
+function useTypeHeight() {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [height, setHeight] = useState(0);
+
+  useLayoutEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    setHeight(node.getBoundingClientRect().height);
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver((entries) => setHeight(entries[0]?.contentRect.height ?? 0));
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  return { ref, height };
 }
 
 /**
@@ -186,6 +220,7 @@ export function ThemeInvitation({
   className,
 }: ThemeInvitationProps) {
   const { ref, width } = useCardWidth();
+  const { ref: typeRef, height: typeHeight } = useTypeHeight();
 
   const palette = getPaletteVariant(theme, paletteVariantId);
   const placement = getPlacement(theme, placementId);
@@ -194,13 +229,43 @@ export function ThemeInvitation({
   const layout = LAYOUT_FRAMES[theme.layoutStyle];
   const artColors = paletteVariantColors(palette);
 
-  const typeBox = projectPlacement(placement.box, layout.type);
+  const band = withinSafeArea(layout.type);
+  const typeBox = withinSafeArea(projectPlacement(placement.box, layout.type));
   // Type scales with its own column, not the card, so a split panel is set at a
   // column size rather than at headline size squeezed into half the width.
   const rootSize = (width / 100) * Math.max(0.62, layout.type.width / 100);
   const frameUnit = Math.max(0.6, width / 380);
   const texture = textureLayer(theme.texture);
   const border = borderStyleCss(theme.borderStyle, palette.accent, frameUnit);
+
+  // Anchor the set type on the curated placement, then slide it back inside the
+  // safe band if the copy has grown taller than the box the theme reserved.
+  const cardHeight = (width * 4) / 3;
+  const typeHeightPct = cardHeight > 0 ? (typeHeight / cardHeight) * 100 : 0;
+  const bandBottom = band.top + band.height;
+  const boxBottom = typeBox.top + typeBox.height;
+  const anchored =
+    placement.justify === "center"
+      ? (typeBox.top + boxBottom - typeHeightPct) / 2
+      : placement.justify === "end"
+        ? boxBottom - typeHeightPct
+        : typeBox.top;
+  const typeTop = typeHeightPct
+    ? Math.min(Math.max(anchored, band.top), Math.max(band.top, bandBottom - typeHeightPct))
+    : typeBox.top;
+  const textBlock: Frame = {
+    top: typeTop,
+    left: typeBox.left,
+    width: typeBox.width,
+    height: typeHeightPct || typeBox.height,
+  };
+
+  // Decoration recedes behind the words: the motif layer is masked out over the
+  // block of type, so no theme can drop a petal or a confetti chip on a line.
+  const typeMask =
+    `radial-gradient(ellipse ${textBlock.width * 0.85}% ${textBlock.height * 0.92}% at ` +
+    `${textBlock.left + textBlock.width / 2}% ${textBlock.top + textBlock.height / 2}%, ` +
+    `rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.08) 55%, rgba(0,0,0,1) 100%)`;
 
   const headingFont: React.CSSProperties = {
     fontFamily: font.headingFontFamily,
@@ -216,12 +281,17 @@ export function ThemeInvitation({
           <div
             aria-hidden
             className="pointer-events-none absolute"
+            // A blurred plate, not a radial gradient: a gradient wide enough to
+            // still cover the first and last line leaves a visible rectangular
+            // seam where it meets the edge of its own box.
             style={{
-              top: `${typeBox.top - 4}%`,
-              left: `${typeBox.left - 4}%`,
-              width: `${typeBox.width + 8}%`,
-              height: `${typeBox.height + 8}%`,
-              background: `radial-gradient(ellipse at center, ${rgba(palette.surface, 0.82)} 45%, ${rgba(palette.surface, 0)} 78%)`,
+              top: `${textBlock.top - 3}%`,
+              left: `${textBlock.left - 3}%`,
+              width: `${textBlock.width + 6}%`,
+              height: `${textBlock.height + 6}%`,
+              backgroundColor: rgba(palette.surface, 0.86),
+              borderRadius: `${rootSize * 4}px`,
+              filter: `blur(${rootSize * 2.6}px)`,
             }}
           />
         );
@@ -231,10 +301,10 @@ export function ThemeInvitation({
             aria-hidden
             className="pointer-events-none absolute"
             style={{
-              top: `${typeBox.top - 5}%`,
-              left: `${typeBox.left - 5}%`,
-              width: `${typeBox.width + 10}%`,
-              height: `${typeBox.height + 10}%`,
+              top: `${textBlock.top - 4}%`,
+              left: `${textBlock.left - 5}%`,
+              width: `${textBlock.width + 10}%`,
+              height: `${textBlock.height + 8}%`,
               backgroundColor: rgba(palette.surface, 0.94),
               boxShadow: `0 ${rootSize * 0.6}px ${rootSize * 2.4}px ${rgba("#000000", 0.12)}`,
             }}
@@ -265,7 +335,7 @@ export function ThemeInvitation({
 
     switch (spot) {
       case "corner-mirrored": {
-        const size = `${34 * scale}%`;
+        const size = `${24 * scale}%`;
         const corners: React.CSSProperties[] = [
           { top: 0, left: 0 },
           { top: 0, right: 0, transform: "scaleX(-1)" },
@@ -289,9 +359,28 @@ export function ThemeInvitation({
         ];
       }
       case "asymmetric":
-        return art({ top: "3%", right: "-6%", width: `${48 * scale}%`, aspectRatio: "1 / 1" }, "asymmetric");
-      default:
-        return art({ inset: 0 }, "scatter");
+        return art({ top: "4%", right: "-4%", width: `${40 * scale}%`, aspectRatio: "1 / 1" }, "asymmetric");
+      default: {
+        // Tiled at the card's own 3:4 ratio, so each tile is square and the
+        // motif keeps its drawn proportions. Stretching one instance across the
+        // whole card turned confetti chips into hand-sized capsules.
+        const cols = 3;
+        const rows = 4;
+        return Array.from({ length: cols * rows }, (_, i) => {
+          const col = i % cols;
+          const row = Math.floor(i / cols);
+          return art(
+            {
+              top: `${(row * 100) / rows}%`,
+              left: `${(col * 100) / cols}%`,
+              width: `${100 / cols}%`,
+              height: `${100 / rows}%`,
+              transform: `scale(${col % 2 ? -1 : 1}, ${row % 2 ? -1 : 1})`,
+            },
+            `scatter-${i}`,
+          );
+        });
+      }
     }
   })();
 
@@ -336,7 +425,7 @@ export function ThemeInvitation({
         aria-hidden
         data-art-layer
         className="pointer-events-none absolute inset-0"
-        style={{ opacity: theme.art.opacity }}
+        style={{ opacity: theme.art.opacity, WebkitMaskImage: typeMask, maskImage: typeMask }}
       >
         {artNode}
       </div>
@@ -353,18 +442,20 @@ export function ThemeInvitation({
       )}
 
       <div
+        ref={typeRef}
+        data-testid="theme-invitation-type"
+        data-safe-top={band.top}
+        data-safe-bottom={bandBottom}
         className="absolute flex flex-col"
         style={{
-          top: `${typeBox.top}%`,
+          top: `${typeTop}%`,
           left: `${typeBox.left}%`,
           width: `${typeBox.width}%`,
-          height: `${typeBox.height}%`,
           fontSize: `${rootSize}px`,
+          gap: "2.1em",
           textAlign: placement.align,
           alignItems:
             placement.align === "center" ? "center" : placement.align === "right" ? "flex-end" : "flex-start",
-          justifyContent:
-            placement.justify === "center" ? "center" : placement.justify === "end" ? "flex-end" : "flex-start",
         }}
       >
         {copy.eyebrow && (
@@ -373,6 +464,7 @@ export function ThemeInvitation({
               fontFamily: font.bodyFontFamily,
               color: palette.accent,
               fontSize: "2.7em",
+              fontWeight: 600,
               letterSpacing: "0.22em",
               textTransform: "uppercase",
               lineHeight: 1.5,
@@ -388,7 +480,6 @@ export function ThemeInvitation({
             color: palette.ink,
             fontSize: `${headlineScale(headline)}em`,
             lineHeight: 1.08,
-            marginTop: "1.6em",
             textWrap: "balance",
           }}
         >
@@ -412,7 +503,6 @@ export function ThemeInvitation({
               color: palette.body,
               fontSize: "2.8em",
               lineHeight: 1.7,
-              marginTop: "1.6em",
               maxWidth: "34em",
             }}
           >
@@ -429,7 +519,7 @@ export function ThemeInvitation({
               letterSpacing: "0.16em",
               textTransform: "uppercase",
               lineHeight: 1.6,
-              marginTop: "3.4em",
+              marginTop: "1.2em",
             }}
           >
             {copy.rsvpLine}
@@ -451,7 +541,7 @@ function Divider({
 }) {
   if (style === "none") return null;
   const weight = Math.max(1, rootSize * 0.14);
-  const spacing: React.CSSProperties = { marginTop: "4em", marginBottom: "4em", opacity: 0.85 };
+  const spacing: React.CSSProperties = { marginTop: "0.7em", marginBottom: "0.7em", opacity: 0.85 };
 
   if (style === "dots") {
     return (
