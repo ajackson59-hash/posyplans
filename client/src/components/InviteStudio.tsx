@@ -17,6 +17,7 @@ import {
   OVERLAY_LABELS,
   getFontPairingIdFor,
   getPaletteVariant,
+  getPostageStamp,
   type LaunchTheme,
   type OverlayTreatment,
   type ThemeCopy,
@@ -26,7 +27,7 @@ import { envelopeFinish, linerPatternStyle, type LinerPattern, type StampStyle }
 import type { EventRecord } from "@/lib/types";
 import { resolveThemeView } from "@/lib/themeInvite";
 import { ThemeInvitation } from "./ThemeInvitation";
-import EnvelopeMockup from "./EnvelopeMockup";
+import EnvelopeMockup, { PostageStamp } from "./EnvelopeMockup";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,6 +42,13 @@ interface InviteStudioProps {
   event: EventRecord;
   /** Return to stage 1. */
   onChangeDesign: () => void;
+  /**
+   * Set when the host has just arrived from the chooser. They may have picked a
+   * design from far down the gallery, which leaves the editor's controls above
+   * the viewport; this brings the editor heading into view and moves focus to
+   * it. Left off on a normal page load so returning hosts aren't yanked around.
+   */
+  focusOnMount?: boolean;
 }
 
 type Tab = "words" | "style" | "envelope";
@@ -101,10 +109,26 @@ function SwatchOption({
   );
 }
 
-export default function InviteStudio({ ownerToken, event, onChangeDesign }: InviteStudioProps) {
+export default function InviteStudio({
+  ownerToken,
+  event,
+  onChangeDesign,
+  focusOnMount = false,
+}: InviteStudioProps) {
   const { toast } = useToast();
   const [tab, setTab] = useState<Tab>("words");
   const [envelopeOpen, setEnvelopeOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    if (!focusOnMount) return;
+    const prefersReduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    rootRef.current?.scrollIntoView?.({ behavior: prefersReduced ? "auto" : "smooth", block: "start" });
+    // Focus lands on the heading rather than the first control, so a screen
+    // reader announces the stage change instead of an unexplained text field.
+    headingRef.current?.focus?.({ preventScroll: true });
+  }, [focusOnMount]);
 
   const view = resolveThemeView(event);
 
@@ -116,6 +140,7 @@ export default function InviteStudio({ ownerToken, event, onChangeDesign }: Invi
     paletteVariantId: view?.selection.paletteVariantId ?? "",
     placementId: view?.selection.placementId ?? "",
     overlay: (view?.selection.overlay ?? "none") as OverlayTreatment,
+    postageStampId: view?.selection.postageStampId ?? "",
     fontPairingId: view?.fontPairingId ?? "",
   }));
 
@@ -132,6 +157,7 @@ export default function InviteStudio({ ownerToken, event, onChangeDesign }: Invi
       paletteVariantId: view.selection.paletteVariantId,
       placementId: view.selection.placementId,
       overlay: view.selection.overlay,
+      postageStampId: view.selection.postageStampId ?? "",
       fontPairingId: view.fontPairingId,
     });
   }, [event.inviteDesignConceptJson, view]);
@@ -203,6 +229,7 @@ export default function InviteStudio({ ownerToken, event, onChangeDesign }: Invi
   }
 
   const palette = getPaletteVariant(theme, draft.paletteVariantId);
+  const postage = getPostageStamp(theme, draft.postageStampId);
 
   const setCopy = (key: keyof ThemeCopy, value: string) => {
     setDraft((d) => ({ ...d, copy: { ...d.copy, [key]: value } }));
@@ -210,10 +237,17 @@ export default function InviteStudio({ ownerToken, event, onChangeDesign }: Invi
   };
 
   return (
-    <div data-testid="invite-studio">
+    <div ref={rootRef} data-testid="invite-studio" className="scroll-mt-4">
       <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="font-serif text-2xl tracking-tight text-foreground sm:text-3xl">Make it yours</h2>
+          <h2
+            ref={headingRef}
+            tabIndex={-1}
+            className="font-serif text-2xl tracking-tight text-foreground focus:outline-none sm:text-3xl"
+            data-testid="heading-studio"
+          >
+            Make it yours
+          </h2>
           <p className="mt-1.5 text-sm text-muted-foreground">
             {theme.name} — {theme.tagline}
           </p>
@@ -254,6 +288,7 @@ export default function InviteStudio({ ownerToken, event, onChangeDesign }: Invi
                 linerBaseColor={palette.surface}
                 stampStyle={envelope.stampStyle}
                 stampColor={envelope.stampColor}
+                postage={postage}
                 finish={envelopeFinish(theme.styleLaneId)}
                 addressee={event.hostNames ? `From ${event.hostNames}` : "Your guests"}
                 opened={envelopeOpen}
@@ -269,7 +304,16 @@ export default function InviteStudio({ ownerToken, event, onChangeDesign }: Invi
 
         {/* ── Controls ──────────────────────────────────────────── */}
         <div>
-          <div className="mb-5 flex gap-1 rounded-lg bg-muted p-1" role="tablist" aria-label="Customisation controls">
+          {/* Sticky within the control column so the tabs stay reachable while
+              scrolling a long panel. There is no fixed site header to clear, so
+              top-0 is safe; the backdrop is opaque to stop panel content
+              showing through as it scrolls beneath. */}
+          <div
+            className="sticky top-0 z-20 mb-5 flex gap-1 rounded-lg bg-muted p-1 shadow-[0_6px_10px_-8px_rgba(23,23,23,0.5)]"
+            role="tablist"
+            aria-label="Customisation controls"
+            data-testid="studio-tablist"
+          >
             {TABS.map((t) => (
               <button
                 key={t.id}
@@ -487,8 +531,39 @@ export default function InviteStudio({ ownerToken, event, onChangeDesign }: Invi
                 </div>
               </Section>
 
-              <Section title="Seal">
-                <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Envelope seal">
+              {/* Postage and wax are two different objects on a real envelope —
+                  franked in the corner, pressed on the flap — so they get two
+                  controls rather than one that means both. */}
+              <Section title="Postage stamp">
+                <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Postage stamp">
+                  {theme.envelope.stamps.map((s) => (
+                    <SwatchOption
+                      key={s.id}
+                      selected={s.id === postage.id}
+                      label={s.label}
+                      testId={`swatch-postage-${s.id}`}
+                      onSelect={() => {
+                        setDraft((d) => ({ ...d, postageStampId: s.id }));
+                        scheduleSave({ postageStampId: s.id });
+                      }}
+                    >
+                      <span className="block h-12 w-[2.55rem]">
+                        <PostageStamp
+                          style={s.motif}
+                          color={s.inkColor}
+                          paperColor={s.paperColor}
+                          denomination={s.denomination}
+                          caption={s.caption}
+                          label={s.label}
+                        />
+                      </span>
+                    </SwatchOption>
+                  ))}
+                </div>
+              </Section>
+
+              <Section title="Wax seal">
+                <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Wax seal">
                   {theme.envelope.seals.map((s) => (
                     <SwatchOption
                       key={s.id}

@@ -29,6 +29,7 @@ import {
   getPaletteVariant,
   getPlacement,
   getOverlay,
+  getPostageStamp,
   getFontPairingIdFor,
   paletteVariantColors,
   buildThemedConcept,
@@ -1108,6 +1109,12 @@ export async function registerRoutes(
       typeof req.body?.placementId === "string" ? req.body.placementId : selection.placementId,
     );
     const overlay = getOverlay(theme, req.body?.overlay ?? selection.overlay);
+    // Re-resolved through the theme's own bundle, so a host cannot persist
+    // another theme's postage by posting its id.
+    const postage = getPostageStamp(
+      theme,
+      typeof req.body?.postageStampId === "string" ? req.body.postageStampId : selection.postageStampId,
+    );
     const fontPairingId = getFontPairingIdFor(
       theme,
       typeof req.body?.fontPairingId === "string" ? req.body.fontPairingId : applied.fontPairingId,
@@ -1122,7 +1129,14 @@ export async function registerRoutes(
       ...applied,
       paletteColors: paletteVariantColors(palette),
       fontPairingId,
-      theme: { ...selection, paletteVariantId: palette.id, placementId: placement.id, overlay, copy },
+      theme: {
+        ...selection,
+        paletteVariantId: palette.id,
+        placementId: placement.id,
+        overlay,
+        postageStampId: postage.id,
+        copy,
+      },
     };
 
     const eventUpdates: Record<string, string> = {

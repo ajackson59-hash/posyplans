@@ -85,6 +85,10 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
   const customDesignInputRef = useRef<HTMLInputElement>(null);
   // When true, show the AI custom theme generation form instead of the gallery
   const [showCustomTheme, setShowCustomTheme] = useState(false);
+  // Set when a curated design was applied in this session, so the studio knows
+  // to pull itself into view. A host arriving on an already-themed event is
+  // left where they are.
+  const [cameFromChooser, setCameFromChooser] = useState(false);
 
   const appliedConcept = parseInviteDesignConcept(event.inviteDesignConceptJson);
 
@@ -623,7 +627,13 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
         <InviteStudio
           ownerToken={ownerToken}
           event={event}
-          onChangeDesign={() => { setBrowsing(true); setConcepts(null); setShowCustomTheme(false); }}
+          focusOnMount={cameFromChooser}
+          onChangeDesign={() => {
+            setBrowsing(true);
+            setConcepts(null);
+            setShowCustomTheme(false);
+            setCameFromChooser(false);
+          }}
         />
         {renderCustomDesignEntry()}
       </div>
@@ -655,6 +665,7 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
             // the studio automatically.
             setShowCustomTheme(false);
             setBrowsing(false);
+            setCameFromChooser(true);
           }}
         />
         {renderCustomDesignEntry()}

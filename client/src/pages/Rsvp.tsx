@@ -7,7 +7,7 @@ import { applyInviteTokens } from "@shared/inviteTokens";
 import { DEFAULT_INVITE_FONT_ID, resolveInviteAccentColor, getInviteHeadingStyle, getInviteBodyStyle } from "@/lib/inviteStyles";
 import { parseInviteDesignConcept, conceptHeadingStyle, conceptBodyStyle, conceptBorderStyle } from "@shared/inviteDesign";
 import { deriveThemeDna, isLinerPattern, isStampStyle, envelopeFinish, flapAnimationMs, ENVELOPE_LINGER_MS } from "@shared/themeDna";
-import { getPaletteVariant } from "@shared/themeCatalog";
+import { getPaletteVariant, getPostageStamp } from "@shared/themeCatalog";
 import { resolveThemeView } from "@/lib/themeInvite";
 import { ThemeInvitation } from "@/components/ThemeInvitation";
 import EnvelopeMockup from "@/components/EnvelopeMockup";
@@ -305,6 +305,11 @@ export default function Rsvp() {
               }
               stampStyle={stamp!}
               stampColor={stampColor}
+              postage={
+                themeView
+                  ? getPostageStamp(themeView.theme, themeView.selection.postageStampId)
+                  : undefined
+              }
               finish={envelopeFinish(concept?.styleLaneId)}
               addressee={guestFirstName ? `For ${guestFirstName}` : "You're invited"}
               opened={envelopeOpened}

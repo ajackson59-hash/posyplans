@@ -125,6 +125,17 @@ describe("POST /invite/apply-theme", () => {
     expect(stored.stampStyle).toBe(theme.envelope.seals[0].style);
   });
 
+  it("seeds the theme's default postage alongside the wax seal", async () => {
+    const app = await makeApp();
+    await request(app).post(`/api/events/owner/${OWNER}/invite/apply-theme`).send({ themeId: theme.id });
+
+    const selection = readThemeSelection(parseInviteDesignConcept(stored.inviteDesignConceptJson as string));
+    expect(selection!.postageStampId).toBe(theme.envelope.stamps[0].id);
+    // Postage is a separate object, not a rename of the seal: applying a theme
+    // still writes the seal into its own columns.
+    expect(stored.stampStyle).toBe(theme.envelope.seals[0].style);
+  });
+
   it("seeds copy from the host's real event details", async () => {
     const app = await makeApp();
     await request(app).post(`/api/events/owner/${OWNER}/invite/apply-theme`).send({ themeId: theme.id });
@@ -199,6 +210,21 @@ describe("PATCH /invite/theme", () => {
     expect(after.copy.locationLine).toBe(before.copy.locationLine);
   });
 
+  it("updates the postage stamp and leaves the wax seal untouched", async () => {
+    const app = await applied();
+    const choice = theme.envelope.stamps[2];
+    const sealBefore = stored.stampStyle;
+
+    const res = await request(app)
+      .patch(`/api/events/owner/${OWNER}/invite/theme`)
+      .send({ postageStampId: choice.id });
+
+    expect(res.status).toBe(200);
+    const selection = readThemeSelection(parseInviteDesignConcept(stored.inviteDesignConceptJson as string))!;
+    expect(selection.postageStampId).toBe(choice.id);
+    expect(stored.stampStyle).toBe(sealBefore);
+  });
+
   it("refuses options that do not belong to the applied theme", async () => {
     const app = await applied();
     const foreign = LAUNCH_THEMES[1];
@@ -206,12 +232,15 @@ describe("PATCH /invite/theme", () => {
     await request(app).patch(`/api/events/owner/${OWNER}/invite/theme`).send({
       paletteVariantId: foreign.palettes[0].id,
       fontPairingId: foreign.fontPairingIds[0],
+      postageStampId: foreign.envelope.stamps[0].id,
     });
 
     const concept = parseInviteDesignConcept(stored.inviteDesignConceptJson as string)!;
     // Falls back to the theme's own default rather than accepting a foreign id.
-    expect(theme.palettes.some((p) => p.id === readThemeSelection(concept)!.paletteVariantId)).toBe(true);
+    const selection = readThemeSelection(concept)!;
+    expect(theme.palettes.some((p) => p.id === selection.paletteVariantId)).toBe(true);
     expect(theme.fontPairingIds).toContain(concept.fontPairingId);
+    expect(theme.envelope.stamps.some((s) => s.id === selection.postageStampId)).toBe(true);
   });
 
   it("never calls the image generator while customising", async () => {

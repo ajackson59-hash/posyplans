@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
 import { Link } from "wouter";
@@ -62,15 +62,36 @@ export default function Intake() {
   const [estimatedGuestCount, setEstimatedGuestCount] = useState(15);
   const [budgetCeiling, setBudgetCeiling] = useState<string>("");
 
+  // Fields the host has typed into during this session. The resume fetch below
+  // lands asynchronously and must never overwrite them.
+  const editedRef = useRef(new Set<string>());
+  const markEdited = (field: string) => editedRef.current.add(field);
+
+  // True once this session has created the event itself. A brand-new event has
+  // nothing to resume, so the fetch is skipped entirely rather than racing the
+  // host's first keystrokes.
+  const createdHereRef = useRef(false);
+
   // ownerToken IS in the URL -> the host is resuming a wizard they already
   // started (bookmarked link, or simply a page refresh mid-wizard). Local
   // state always starts blank on mount, so without this fetch, everything
   // already saved via PATCH .../intake would silently disappear from the
   // screen -- including on the Review step -- even though it's safe on the
-  // server. Runs once per ownerToken and never overwrites fields the host
-  // is actively editing in this session.
+  // server.
+  //
+  // The form stays interactive while this request is in flight, and on the
+  // fresh-start path the create effect below navigates a token into the URL,
+  // which re-triggers this effect. Both mean the response can arrive after the
+  // host has already typed -- so a seed is only applied to fields they have not
+  // touched. Without that guard the response overwrites a typed event name with
+  // the "My Celebration" default and blanks the date and vibe, which is exactly
+  // what surfaces as "Not set yet" on Review.
   useEffect(() => {
     if (!params.ownerToken) return;
+    if (createdHereRef.current) {
+      setResuming(false);
+      return;
+    }
     (async () => {
       try {
         const data = await apiRequestJson<{ event: EventRecord }>(
@@ -78,12 +99,17 @@ export default function Intake() {
           `/api/events/owner/${params.ownerToken}`,
         );
         const event = data.event;
-        setEventName(event.eventName || "");
-        setEventType(event.eventType || "Birthday Party");
-        setEventDate(event.eventDate || "");
-        setVibeDescription(event.vibeDescription || "");
-        if (event.estimatedGuestCount != null) setEstimatedGuestCount(event.estimatedGuestCount);
-        if (event.budgetCeiling != null) setBudgetCeiling(String(event.budgetCeiling));
+        const edited = editedRef.current;
+        if (!edited.has("eventName")) setEventName(event.eventName || "");
+        if (!edited.has("eventType")) setEventType(event.eventType || "Birthday Party");
+        if (!edited.has("eventDate")) setEventDate(event.eventDate || "");
+        if (!edited.has("vibeDescription")) setVibeDescription(event.vibeDescription || "");
+        if (event.estimatedGuestCount != null && !edited.has("estimatedGuestCount")) {
+          setEstimatedGuestCount(event.estimatedGuestCount);
+        }
+        if (event.budgetCeiling != null && !edited.has("budgetCeiling")) {
+          setBudgetCeiling(String(event.budgetCeiling));
+        }
         touchRecentEvent(params.ownerToken || "");
       } catch {
         toast({
@@ -114,6 +140,7 @@ export default function Intake() {
           inviteMessage: "",
         });
         const event = (await res.json()) as EventRecord;
+        createdHereRef.current = true;
         setOwnerToken(event.ownerToken || "");
         setCreating(false);
         touchRecentEvent(event.ownerToken || "");
@@ -238,12 +265,21 @@ export default function Intake() {
                     data-testid="input-intake-event-name"
                     placeholder="e.g. Maren's Golf-Themed 1st Birthday"
                     value={eventName}
-                    onChange={(e) => setEventName(e.target.value)}
+                    onChange={(e) => {
+                      markEdited("eventName");
+                      setEventName(e.target.value);
+                    }}
                   />
                 </div>
                 <div>
                   <Label htmlFor="intakeEventType">Event type</Label>
-                  <Select value={eventType} onValueChange={setEventType}>
+                  <Select
+                    value={eventType}
+                    onValueChange={(v) => {
+                      markEdited("eventType");
+                      setEventType(v);
+                    }}
+                  >
                     <SelectTrigger id="intakeEventType" data-testid="select-intake-event-type">
                       <SelectValue />
                     </SelectTrigger>
@@ -262,7 +298,10 @@ export default function Intake() {
                     id="intakeEventDate"
                     testId="input-intake-event-date"
                     value={eventDate}
-                    onChange={setEventDate}
+                    onChange={(v) => {
+                      markEdited("eventDate");
+                      setEventDate(v);
+                    }}
                   />
                 </div>
                 <div className="flex justify-end pt-2">
@@ -304,7 +343,10 @@ export default function Intake() {
                   rows={4}
                   placeholder="e.g. A cozy backyard bonfire birthday with s'mores, string lights, and a flannel dress code"
                   value={vibeDescription}
-                  onChange={(e) => setVibeDescription(e.target.value)}
+                  onChange={(e) => {
+                    markEdited("vibeDescription");
+                    setVibeDescription(e.target.value);
+                  }}
                 />
                 <div className="flex justify-between pt-2">
                   <Button
@@ -344,7 +386,10 @@ export default function Intake() {
                   value={estimatedGuestCount}
                   min={1}
                   max={500}
-                  onChange={setEstimatedGuestCount}
+                  onChange={(v) => {
+                    markEdited("estimatedGuestCount");
+                    setEstimatedGuestCount(v);
+                  }}
                   testId="intake-guest-count"
                 />
                 <div>
@@ -356,7 +401,10 @@ export default function Intake() {
                     min={0}
                     placeholder="e.g. 500"
                     value={budgetCeiling}
-                    onChange={(e) => setBudgetCeiling(e.target.value)}
+                    onChange={(e) => {
+                      markEdited("budgetCeiling");
+                      setBudgetCeiling(e.target.value);
+                    }}
                   />
                 </div>
                 <div className="flex justify-between pt-2">

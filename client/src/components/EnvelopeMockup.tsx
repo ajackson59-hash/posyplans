@@ -24,6 +24,8 @@ import {
   type LinerPattern,
   type StampStyle,
 } from "@shared/themeDna";
+import type { EnvelopePostageOption } from "@shared/themeCatalog";
+import { useId } from "react";
 
 /** Subtle fibre texture so a solid hex fill reads as paper stock rather than plastic. */
 const PAPER_GRAIN =
@@ -35,15 +37,33 @@ interface StampProps {
   color: string;
   /** Paper colour behind the motif. */
   paperColor: string;
+  /** Face value, printed top-left with a cent mark. Omitted on the legacy path. */
+  denomination?: string;
+  /** Series line along the foot of the stamp. Omitted on the legacy path. */
+  caption?: string;
+  /** Accessible name override, e.g. the curated stamp's own label. */
+  label?: string;
 }
 
 /**
  * A postage stamp with genuinely punched perforations. The perforations are
  * masked out of the stamp body (rather than drawn as a dashed border) so the
  * envelope colour shows through the notches the way it does on real mail.
+ *
+ * Denomination and caption are what separate printed postage from a recoloured
+ * icon; both are optional so the pre-curated path renders unchanged.
  */
-export function PostageStamp({ style, color, paperColor }: StampProps) {
-  const { glyph, label } = stampGlyph(style);
+export function PostageStamp({
+  style,
+  color,
+  paperColor,
+  denomination,
+  caption,
+  label: labelOverride,
+}: StampProps) {
+  const { glyph, label: motifLabel } = stampGlyph(style);
+  const label = labelOverride ?? motifLabel;
+  const franked = Boolean(denomination || caption);
   // Perforation geometry. Radius and pitch are tuned so notches read at the
   // ~40px rendered size without dissolving the stamp's silhouette.
   const w = 44;
@@ -57,7 +77,9 @@ export function PostageStamp({ style, color, paperColor }: StampProps) {
   for (let y = pitch / 2; y < h; y += pitch) {
     notches.push({ cx: 0, cy: y }, { cx: w, cy: y });
   }
-  const maskId = `perf-${style}`;
+  // Unique per instance: the studio draws several stamps at once and a shared
+  // mask id would make every one of them resolve to the first stamp's mask.
+  const maskId = `perf-${useId()}`;
 
   return (
     <svg
@@ -91,14 +113,44 @@ export function PostageStamp({ style, color, paperColor }: StampProps) {
         />
         <text
           x={w / 2}
-          y={h / 2}
+          y={franked ? h / 2 - 1.5 : h / 2}
           textAnchor="middle"
           dominantBaseline="central"
-          fontSize={19}
+          fontSize={franked ? 16 : 19}
           fill={color}
         >
           {glyph}
         </text>
+        {denomination && (
+          <text
+            x={7}
+            y={11.5}
+            fontSize={7}
+            fontWeight={700}
+            letterSpacing={-0.2}
+            fill={color}
+            data-testid="text-stamp-denomination"
+          >
+            {denomination}
+            <tspan fontSize={4.6} dy={-1.6}>
+              ¢
+            </tspan>
+          </text>
+        )}
+        {caption && (
+          <text
+            x={w / 2}
+            y={h - 8}
+            textAnchor="middle"
+            fontSize={4}
+            letterSpacing={0.5}
+            fill={color}
+            opacity={0.9}
+            data-testid="text-stamp-caption"
+          >
+            {caption}
+          </text>
+        )}
       </g>
     </svg>
   );
@@ -135,6 +187,13 @@ export interface EnvelopeMockupProps {
   linerBaseColor: string;
   stampStyle: StampStyle;
   stampColor: string;
+  /**
+   * Curated postage, when the event is on a launch theme. Postage and the wax
+   * seal are separate objects on real mail — a franked corner and a sealed flap
+   * — so supplying this renders both. Without it the legacy behaviour stands,
+   * where a "wax-seal" stampStyle moves the motif onto the flap.
+   */
+  postage?: EnvelopePostageOption;
   finish: EnvelopeFinish;
   /** Text across the envelope front, e.g. "For Maya". */
   addressee: string;
@@ -152,6 +211,7 @@ export default function EnvelopeMockup({
   linerBaseColor,
   stampStyle,
   stampColor,
+  postage,
   finish,
   addressee,
   opened,
@@ -168,8 +228,11 @@ export default function EnvelopeMockup({
   const pocketTop = shadeHex(envelopeColor, 0.04);
   const stampPaper = shadeHex(envelopeColor, 0.82);
   const { glyph } = stampGlyph(stampStyle);
-  // A wax-seal stamp choice belongs on the fold as wax, not in the corner as postage.
-  const stampIsWax = stampStyle === "wax-seal";
+  // Without curated postage the single stamp control has to serve both jobs, so
+  // a "wax-seal" choice moves the motif onto the fold instead of the corner.
+  // With curated postage the two are independent and both are drawn.
+  const stampIsWax = !postage && stampStyle === "wax-seal";
+  const showPostage = Boolean(postage) || !stampIsWax;
 
   const body = (
     <div
@@ -243,7 +306,7 @@ export default function EnvelopeMockup({
       {/* Stamp sits on the front pocket in the top-right corner, where franking
           actually goes. Sized as a proportion of the envelope so it holds its
           scale from the 240px editor preview up to the full-width guest view. */}
-      {!stampIsWax && (
+      {showPostage && (
         <span
           className="absolute right-[6%] top-[52%] z-20 w-[15%]"
           style={{
@@ -252,7 +315,14 @@ export default function EnvelopeMockup({
             transform: premium ? "rotate(-1.5deg)" : "rotate(2.5deg)",
           }}
         >
-          <PostageStamp style={stampStyle} color={stampColor} paperColor={stampPaper} />
+          <PostageStamp
+            style={postage?.motif ?? stampStyle}
+            color={postage?.inkColor ?? stampColor}
+            paperColor={postage?.paperColor ?? stampPaper}
+            denomination={postage?.denomination}
+            caption={postage?.caption}
+            label={postage?.label}
+          />
         </span>
       )}
 
@@ -288,7 +358,13 @@ export default function EnvelopeMockup({
       />
 
       {/* Wax seal holding the flap shut. */}
-      <WaxSeal color={stampIsWax ? stampColor : shadeHex(envelopeColor, -0.3)} glyph={glyph} opened={opened} />
+      {/* Wax seal on the fold. Once postage is a control of its own, the seal
+          control owns stampStyle/stampColor outright and always uses them. */}
+      <WaxSeal
+        color={postage || stampIsWax ? stampColor : shadeHex(envelopeColor, -0.3)}
+        glyph={glyph}
+        opened={opened}
+      />
     </div>
   );
 

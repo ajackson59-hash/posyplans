@@ -27,7 +27,7 @@ import type { EventRecord } from "@/lib/types";
 import { previewCopyFor, resolveThemeView } from "@/lib/themeInvite";
 import { ThemeInvitation } from "./ThemeInvitation";
 import { useToast } from "@/hooks/use-toast";
-import { Check, Clock, Wand2 } from "lucide-react";
+import { ArrowRight, Check, Clock, Wand2 } from "lucide-react";
 
 interface ThemeChooserProps {
   ownerToken: string;
@@ -172,9 +172,13 @@ export default function ThemeChooser({ ownerToken, event, onCustomTheme, onTheme
                       decorative
                     />
 
+                    {/* Hover-capable pointers only. On touch there is no hover
+                        state to reveal it, and leaving it permanently on would
+                        darken the artwork of every card in the grid — the
+                        persistent action below the card serves those devices. */}
                     <span
                       aria-hidden
-                      className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center bg-gradient-to-t from-black/55 to-transparent pb-4 pt-10 text-[11px] font-medium uppercase tracking-[0.18em] text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none"
+                      className="pointer-events-none absolute inset-x-0 bottom-0 hidden items-center justify-center bg-gradient-to-t from-black/55 to-transparent pb-4 pt-10 text-[11px] font-medium uppercase tracking-[0.18em] text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none [@media(hover:hover)]:flex"
                     >
                       {isPending ? "Applying…" : "Customize this design"}
                     </span>
@@ -201,6 +205,18 @@ export default function ThemeChooser({ ownerToken, event, onCustomTheme, onTheme
                       ))}
                     </span>
                   </div>
+
+                  {/* Always rendered, so the action is discoverable without a
+                      hover state. The card itself is the button; this is its
+                      visible affordance, hence aria-hidden. */}
+                  <span
+                    aria-hidden
+                    data-testid={`cta-launch-theme-${theme.id}`}
+                    className="mt-2.5 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-[11px] font-medium text-foreground transition-colors group-hover:border-foreground group-hover:bg-foreground group-hover:text-background group-focus-visible:border-foreground group-focus-visible:bg-foreground group-focus-visible:text-background motion-reduce:transition-none"
+                  >
+                    {isPending ? "Applying…" : isApplied ? "Keep customizing" : "Customize this design"}
+                    <ArrowRight className="h-3 w-3" aria-hidden />
+                  </span>
                 </button>
               </li>
             );

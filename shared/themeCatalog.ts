@@ -128,11 +128,35 @@ export interface EnvelopeSealOption {
   color: string;
 }
 
+/**
+ * A curated piece of postage. Genuinely separate from the wax seal: the seal is
+ * pressed on the flap to hold the envelope shut, the stamp is franked onto the
+ * front corner. They coexist on a real piece of mail, so both are offered.
+ *
+ * A stamp carries more than a glyph — its own paper, ink, denomination and
+ * series caption are what make one read as printed postage rather than a
+ * recoloured icon.
+ */
+export interface EnvelopePostageOption {
+  id: string;
+  label: string;
+  motif: StampStyle;
+  /** Motif, frame, and lettering ink. */
+  inkColor: string;
+  /** The stamp's own paper, independent of the envelope stock. */
+  paperColor: string;
+  /** Face value, e.g. "45". Rendered with a small currency mark. */
+  denomination: string;
+  /** Series line along the foot of the stamp, e.g. "GARDEN". */
+  caption: string;
+}
+
 /** Everything the invitation arrives in, coordinated per theme. */
 export interface EnvelopeBundle {
   papers: EnvelopePaperOption[];
   liners: EnvelopeLinerOption[];
   seals: EnvelopeSealOption[];
+  stamps: EnvelopePostageOption[];
 }
 
 /** Realistic stationery copy shown in the gallery before a host edits a word. */
@@ -223,6 +247,11 @@ export const LAUNCH_THEMES: LaunchTheme[] = [
         { id: "monogram", label: "Monogram seal", style: "seal", color: "#6d3f52" },
         { id: "botanical", label: "Botanical stamp", style: "motif", color: "#7c8f6b" },
       ],
+      stamps: [
+        { id: "rose", label: "Painted rose", motif: "floral", inkColor: "#6d3f52", paperColor: "#f5ece0", denomination: "45", caption: "GARDEN" },
+        { id: "botanical", label: "Botanical study", motif: "motif", inkColor: "#4f5f49", paperColor: "#eef0e4", denomination: "60", caption: "IN BLOOM" },
+        { id: "monogram", label: "Engraved monogram", motif: "monogram", inkColor: "#7a552c", paperColor: "#f7f0e6", denomination: "85", caption: "POSY POST" },
+      ],
     },
     sample: {
       eyebrow: "You are warmly invited to",
@@ -279,6 +308,11 @@ export const LAUNCH_THEMES: LaunchTheme[] = [
         { id: "wax", label: "Gold wax seal", style: "wax-seal", color: "#c9a227" },
         { id: "crest", label: "Deco crest", style: "seal", color: "#c9a227" },
         { id: "star", label: "Starburst stamp", style: "star", color: "#d8b45f" },
+      ],
+      stamps: [
+        { id: "sunburst", label: "Gold sunburst", motif: "star", inkColor: "#c9a227", paperColor: "#132747", denomination: "50", caption: "MIDNIGHT" },
+        { id: "crest", label: "Deco crest", motif: "seal", inkColor: "#0f2140", paperColor: "#d8b45f", denomination: "75", caption: "SOCIETY" },
+        { id: "chevron", label: "Chevron postmark", motif: "postmark", inkColor: "#c9a227", paperColor: "#1b3358", denomination: "90", caption: "DECO" },
       ],
     },
     sample: {
@@ -337,6 +371,11 @@ export const LAUNCH_THEMES: LaunchTheme[] = [
         { id: "motif", label: "Circuit mark", style: "motif", color: "#ff4fa3" },
         { id: "seal", label: "Chrome seal", style: "seal", color: "#c9d4ff" },
       ],
+      stamps: [
+        { id: "arcade", label: "Arcade star", motif: "star", inkColor: "#22d3ee", paperColor: "#171a3a", denomination: "10", caption: "ARCADE" },
+        { id: "circuit", label: "Circuit mark", motif: "motif", inkColor: "#ff4fa3", paperColor: "#1d1140", denomination: "25", caption: "LEVEL UP" },
+        { id: "chrome", label: "Chrome postmark", motif: "postmark", inkColor: "#c9d4ff", paperColor: "#101436", denomination: "99", caption: "ARENA" },
+      ],
     },
     sample: {
       eyebrow: "Level up",
@@ -393,6 +432,11 @@ export const LAUNCH_THEMES: LaunchTheme[] = [
         { id: "motif", label: "Sun mark", style: "motif", color: "#f0603f" },
         { id: "seal", label: "Wave seal", style: "seal", color: "#0d5f86" },
         { id: "star", label: "Sunburst", style: "star", color: "#f2b134" },
+      ],
+      stamps: [
+        { id: "sun", label: "Sun disc", motif: "motif", inkColor: "#c2542c", paperColor: "#fdf4e8", denomination: "35", caption: "POOLSIDE" },
+        { id: "wave", label: "Wave postmark", motif: "postmark", inkColor: "#0d5f86", paperColor: "#e7f3f8", denomination: "50", caption: "HIGH SUMMER" },
+        { id: "citrus", label: "Citrus star", motif: "star", inkColor: "#8a6110", paperColor: "#fcf1dc", denomination: "80", caption: "SUNDECK" },
       ],
     },
     sample: {
@@ -451,6 +495,11 @@ export const LAUNCH_THEMES: LaunchTheme[] = [
         { id: "seal", label: "Wax seal", style: "seal", color: "#b8902f" },
         { id: "bow", label: "Ribbon", style: "bow", color: "#c9a68a" },
       ],
+      stamps: [
+        { id: "buttercup", label: "Buttercup", motif: "floral", inkColor: "#7a5f1e", paperColor: "#f7f4e7", denomination: "20", caption: "MEADOW" },
+        { id: "leaf", label: "Pressed leaf", motif: "motif", inkColor: "#4e5c43", paperColor: "#eef1e4", denomination: "40", caption: "WILDFLOWER" },
+        { id: "ribbon", label: "Ribbon mark", motif: "bow", inkColor: "#8a6647", paperColor: "#f6efe2", denomination: "65", caption: "STORYBOOK" },
+      ],
     },
     sample: {
       eyebrow: "A gentle morning for",
@@ -507,6 +556,11 @@ export const LAUNCH_THEMES: LaunchTheme[] = [
         { id: "wax", label: "Gold wax seal", style: "wax-seal", color: "#d9a441" },
         { id: "star", label: "Star stamp", style: "star", color: "#e2b455" },
         { id: "seal", label: "Crescent seal", style: "seal", color: "#c8dbff" },
+      ],
+      stamps: [
+        { id: "crescent", label: "Crescent moon", motif: "motif", inkColor: "#d9a441", paperColor: "#12294f", denomination: "45", caption: "CELESTIAL" },
+        { id: "constellation", label: "Constellation", motif: "star", inkColor: "#e2b455", paperColor: "#0f2244", denomination: "60", caption: "NIGHT SKY" },
+        { id: "observatory", label: "Observatory mark", motif: "postmark", inkColor: "#1a2f56", paperColor: "#e8dfc4", denomination: "95", caption: "HEIRLOOM" },
       ],
     },
     sample: {
@@ -565,6 +619,11 @@ export const LAUNCH_THEMES: LaunchTheme[] = [
         { id: "seal", label: "Museum seal", style: "seal", color: "#b95c38" },
         { id: "star", label: "Expedition star", style: "star", color: "#d29b3f" },
       ],
+      stamps: [
+        { id: "fossil", label: "Fossil study", motif: "motif", inkColor: "#34503f", paperColor: "#f3ecdc", denomination: "15", caption: "FIELD MUSEUM" },
+        { id: "expedition", label: "Expedition star", motif: "star", inkColor: "#8f4529", paperColor: "#f6efe0", denomination: "30", caption: "EXPEDITION" },
+        { id: "survey", label: "Survey postmark", motif: "postmark", inkColor: "#6a4e1f", paperColor: "#efe7d4", denomination: "55", caption: "NAT HISTORY" },
+      ],
     },
     sample: {
       eyebrow: "A prehistoric expedition for",
@@ -622,6 +681,11 @@ export const LAUNCH_THEMES: LaunchTheme[] = [
         { id: "motif", label: "Skate mark", style: "motif", color: "#7c2338" },
         { id: "seal", label: "Retro seal", style: "seal", color: "#2f5c8a" },
       ],
+      stamps: [
+        { id: "disco", label: "Disco star", motif: "star", inkColor: "#a83c19", paperColor: "#f7ecd2", denomination: "25", caption: "ROLLER DISCO" },
+        { id: "skate", label: "Skate mark", motif: "motif", inkColor: "#7c2338", paperColor: "#f4e7c8", denomination: "45", caption: "RINK NIGHT" },
+        { id: "retro", label: "Retro postmark", motif: "postmark", inkColor: "#2f5c8a", paperColor: "#eef0e0", denomination: "70", caption: "SKATE CLUB" },
+      ],
     },
     sample: {
       eyebrow: "Lace up for",
@@ -652,6 +716,10 @@ export function getPaletteVariant(theme: LaunchTheme, id: string | undefined): P
 
 export function getPlacement(theme: LaunchTheme, id: string | undefined): TextPlacement {
   return theme.placements.find((p) => p.id === id) ?? theme.placements[0];
+}
+
+export function getPostageStamp(theme: LaunchTheme, id: string | undefined): EnvelopePostageOption {
+  return theme.envelope.stamps.find((s) => s.id === id) ?? theme.envelope.stamps[0];
 }
 
 export function getOverlay(theme: LaunchTheme, value: unknown): OverlayTreatment {
@@ -693,6 +761,11 @@ export interface ThemeSelection {
   placementId: string;
   overlay: OverlayTreatment;
   copy: ThemeCopy;
+  /**
+   * Curated postage. Optional because invites saved before postage existed have
+   * no id stored; getPostageStamp resolves those to the theme's default.
+   */
+  postageStampId?: string;
 }
 
 /** An InviteDesignConcept that also carries a curated theme selection. */
@@ -755,6 +828,7 @@ export function readThemeSelection(concept: unknown): ThemeSelection | null {
     paletteVariantId: getPaletteVariant(theme, t.paletteVariantId as string | undefined).id,
     placementId: getPlacement(theme, t.placementId as string | undefined).id,
     overlay: getOverlay(theme, t.overlay),
+    postageStampId: getPostageStamp(theme, t.postageStampId as string | undefined).id,
     copy: isThemeCopy(t.copy) ? t.copy : defaultThemeCopy(theme),
   };
 }
@@ -771,10 +845,12 @@ export function buildThemedConcept(
     overlay?: OverlayTreatment;
     fontPairingId?: string;
     copy?: ThemeCopy;
+    postageStampId?: string;
   } = {},
 ): ThemedInviteConcept {
   const palette = getPaletteVariant(theme, options.paletteVariantId);
   const placement = getPlacement(theme, options.placementId);
+  const postage = getPostageStamp(theme, options.postageStampId);
   return {
     conceptName: theme.name,
     description: theme.tagline,
@@ -796,6 +872,7 @@ export function buildThemedConcept(
       placementId: placement.id,
       overlay: getOverlay(theme, options.overlay ?? theme.defaultOverlay),
       copy: options.copy ?? defaultThemeCopy(theme),
+      postageStampId: postage.id,
     },
   };
 }
