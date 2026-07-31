@@ -215,6 +215,34 @@ describe("postage stamp is its own control", () => {
   });
 });
 
+describe("horizontal bleed", () => {
+  // A 390px audit flagged 16px of protrusion on the dashboard's tab container.
+  // Measured in Chromium, the only child past its right edge was the tab nav's
+  // own intentional `-mx-4` full-bleed; the invitation section contributed
+  // nothing. These guard that it stays that way — a stray negative horizontal
+  // margin here would push real content off-screen on a phone, and unlike the
+  // tab nav there would be no matching padding to put it back.
+  function negativeMargins(root: HTMLElement) {
+    return Array.from(root.querySelectorAll<HTMLElement>("*"))
+      .map((el) => (typeof el.className === "string" ? el.className : ""))
+      .filter((cls) => /(^|\s)-m[xlr]-/.test(cls));
+  }
+
+  it("keeps the editor inside its column", () => {
+    const { container } = withQuery(
+      <InviteStudio ownerToken="tok" event={themedEvent()} onChangeDesign={() => {}} />,
+    );
+    expect(negativeMargins(container)).toEqual([]);
+  });
+
+  it("keeps the chooser inside its column", () => {
+    const { container } = withQuery(
+      <ThemeChooser ownerToken="tok" event={themedEvent()} onCustomTheme={() => {}} onThemeApplied={() => {}} />,
+    );
+    expect(negativeMargins(container)).toEqual([]);
+  });
+});
+
 describe("choose-a-design call to action", () => {
   it("shows a persistent action on every card rather than relying on hover", () => {
     withQuery(
