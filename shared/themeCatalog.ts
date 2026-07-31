@@ -13,7 +13,7 @@
 // Framework-agnostic (plain data, no React types) so the Express server, the
 // React client, and the test suite can all import it.
 
-import type { BorderStyle, InviteDesignConcept } from "./inviteDesign";
+import type { BorderStyle, InviteDesignConcept, LayoutStyle } from "./inviteDesign";
 import type { LinerPattern, StampStyle } from "./themeDna";
 
 /* ── Filters ─────────────────────────────────────────────────────────── */
@@ -85,6 +85,60 @@ export const OVERLAY_LABELS: Record<OverlayTreatment, string> = {
   plate: "Paper panel",
   gradient: "Gradient",
 };
+
+/**
+ * The decorative vector motif a theme draws over its artwork. Every motif is
+ * coloured from the live palette, so changing colourway repaints the art.
+ */
+export const THEME_ART_IDS = [
+  "rose-corner",
+  "botanical-sprig",
+  "art-deco-fan",
+  "confetti-scatter",
+  "terrazzo",
+  "sunburst-rays",
+  "bunting-garland",
+  "starry-night",
+] as const;
+export type ThemeArtId = (typeof THEME_ART_IDS)[number];
+
+/**
+ * How the motif is composed onto the card. This is the part that stops eight
+ * themes reading as one layout in eight colourways.
+ * - "corner-mirrored": the motif in all four corners, mirrored into each
+ * - "side-mirrored"  : flanking the type block left and right
+ * - "band"           : full-width bands across the top and foot
+ * - "asymmetric"     : a single motif weighted into one corner
+ * - "scatter"        : one large motif spread behind everything
+ */
+export const ART_PLACEMENTS = ["corner-mirrored", "side-mirrored", "band", "asymmetric", "scatter"] as const;
+export type ArtPlacement = (typeof ART_PLACEMENTS)[number];
+
+export interface ThemeArtDirection {
+  id: ThemeArtId;
+  placement: ArtPlacement;
+  /** Motif opacity over the artwork, 0-1. */
+  opacity: number;
+  /** Size multiplier on the placement's default footprint. */
+  scale: number;
+}
+
+/**
+ * Paper stock simulated behind the type. Deliberately per-theme: a lacquered
+ * deco card and a block-printed museum card should not share one grain.
+ */
+export const TEXTURE_STYLES = ["none", "cotton", "laid", "grain", "gloss"] as const;
+export type TextureStyle = (typeof TEXTURE_STYLES)[number];
+
+export interface PaperTexture {
+  style: TextureStyle;
+  /** Multiplier on the style's base opacity, 0-1. Kept low so type stays legible. */
+  intensity: number;
+}
+
+/** The rule between the headline and the details. */
+export const DIVIDER_STYLES = ["none", "rule", "diamond-rule", "dots"] as const;
+export type DividerStyle = (typeof DIVIDER_STYLES)[number];
 
 /**
  * A curated colourway for a theme. Semantic rather than positional, so the
@@ -185,6 +239,14 @@ export interface LaunchTheme {
   style: ThemeStyle;
   occasions: ThemeOccasion[];
   artwork: ThemeArtwork;
+  /** CSS object-position for the artwork, so cropped layouts keep the subject. */
+  artFocus: string;
+  /** Palette-driven vector motif drawn over the artwork. */
+  art: ThemeArtDirection;
+  /** Which existing layout archetype the composition is built on. */
+  layoutStyle: LayoutStyle;
+  texture: PaperTexture;
+  divider: DividerStyle;
   /** First entry is the default. */
   palettes: PaletteVariant[];
   /** Curated pairing ids from shared/inviteDesign.ts. First is the default. */
@@ -218,6 +280,14 @@ export const LAUNCH_THEMES: LaunchTheme[] = [
       width: 896,
       height: 1200,
     },
+    artFocus: "center",
+    art: { id: "rose-corner", placement: "corner-mirrored", opacity: 0.72, scale: 1 },
+    // The sheet is painted as a full floral frame with a clear centre — the
+    // composition the artist drew is the whole page, so cropping it to a band
+    // would throw away three of the four corners.
+    layoutStyle: "full-bleed",
+    texture: { style: "cotton", intensity: 0.9 },
+    divider: "diamond-rule",
     palettes: [
       { id: "plum-garden", label: "Plum Garden", ink: "#6d3f52", accent: "#8d6335", surface: "#f7f0e6", body: "#4a3b3f" },
       { id: "sage-linen", label: "Sage Linen", ink: "#4f5f49", accent: "#846747", surface: "#f6f2e8", body: "#43483f" },
@@ -261,7 +331,7 @@ export const LAUNCH_THEMES: LaunchTheme[] = [
       locationLine: "The Rosewood Terrace · Charleston",
       rsvpLine: "Kindly reply by the first of June",
     },
-    borderStyle: "none",
+    borderStyle: "thin-frame",
     styleLaneId: "editorial-premium",
   },
 
@@ -280,6 +350,11 @@ export const LAUNCH_THEMES: LaunchTheme[] = [
       width: 896,
       height: 1200,
     },
+    artFocus: "center",
+    art: { id: "art-deco-fan", placement: "corner-mirrored", opacity: 0.55, scale: 1.05 },
+    layoutStyle: "full-bleed",
+    texture: { style: "gloss", intensity: 0.35 },
+    divider: "diamond-rule",
     palettes: [
       { id: "gilt", label: "Gilt", ink: "#d8b45f", accent: "#c9a227", surface: "#16233d", body: "#e8ddc4" },
       { id: "ivory", label: "Ivory", ink: "#f2e6cc", accent: "#c9a227", surface: "#16233d", body: "#d7cdb6" },
@@ -323,7 +398,7 @@ export const LAUNCH_THEMES: LaunchTheme[] = [
       locationLine: "The Astor Room · 220 Fifth Avenue",
       rsvpLine: "Black tie · Kindly reply by October first",
     },
-    borderStyle: "none",
+    borderStyle: "double-frame",
     styleLaneId: "bold-graphic",
   },
 
@@ -342,6 +417,11 @@ export const LAUNCH_THEMES: LaunchTheme[] = [
       width: 896,
       height: 1200,
     },
+    artFocus: "center",
+    art: { id: "terrazzo", placement: "scatter", opacity: 0.3, scale: 1 },
+    layoutStyle: "full-bleed",
+    texture: { style: "gloss", intensity: 0.25 },
+    divider: "rule",
     palettes: [
       { id: "magenta", label: "Magenta", ink: "#ff4fa3", accent: "#22d3ee", surface: "#140a26", body: "#e9defb" },
       { id: "cyan", label: "Cyan", ink: "#3fe0f5", accent: "#ff4fa3", surface: "#120a24", body: "#dcecfb" },
@@ -385,7 +465,7 @@ export const LAUNCH_THEMES: LaunchTheme[] = [
       locationLine: "Voltage Arena · 44 Mill Street",
       rsvpLine: "Tap to RSVP by November 1",
     },
-    borderStyle: "none",
+    borderStyle: "dashed-frame",
     styleLaneId: "bold-graphic",
   },
 
@@ -404,6 +484,11 @@ export const LAUNCH_THEMES: LaunchTheme[] = [
       width: 896,
       height: 1200,
     },
+    artFocus: "center",
+    art: { id: "sunburst-rays", placement: "asymmetric", opacity: 0.34, scale: 0.92 },
+    layoutStyle: "banner",
+    texture: { style: "gloss", intensity: 0.2 },
+    divider: "rule",
     palettes: [
       { id: "chlorine", label: "Chlorine White", ink: "#ffffff", accent: "#ffd9c4", surface: "#0d5f86", body: "#eef7fb" },
       { id: "coral", label: "Coral", ink: "#ffe9dd", accent: "#f7a997", surface: "#0b5175", body: "#f4f9fc" },
@@ -447,7 +532,7 @@ export const LAUNCH_THEMES: LaunchTheme[] = [
       locationLine: "18 Alameda Drive",
       rsvpLine: "RSVP by July 10",
     },
-    borderStyle: "none",
+    borderStyle: "thin-frame",
     styleLaneId: "minimal-modern",
   },
 
@@ -466,6 +551,13 @@ export const LAUNCH_THEMES: LaunchTheme[] = [
       width: 896,
       height: 1200,
     },
+    artFocus: "center bottom",
+    art: { id: "botanical-sprig", placement: "side-mirrored", opacity: 0.5, scale: 1 },
+    // All the painting is in the bottom third, so an inset vignette of that
+    // band reads as a storybook plate with the type set beneath it.
+    layoutStyle: "centered",
+    texture: { style: "laid", intensity: 0.7 },
+    divider: "dots",
     palettes: [
       { id: "meadow-sage", label: "Meadow Sage", ink: "#4a5a42", accent: "#866922", surface: "#f4f1e6", body: "#4f5850" },
       { id: "buttercup", label: "Buttercup", ink: "#7a6320", accent: "#627354", surface: "#f6f3e8", body: "#54513f" },
@@ -509,7 +601,7 @@ export const LAUNCH_THEMES: LaunchTheme[] = [
       locationLine: "The Old Meadow House · Hillsdale",
       rsvpLine: "Kindly reply by the twenty-fifth of April",
     },
-    borderStyle: "none",
+    borderStyle: "corner-flourish",
     styleLaneId: "storybook-whimsical",
   },
 
@@ -528,6 +620,11 @@ export const LAUNCH_THEMES: LaunchTheme[] = [
       width: 896,
       height: 1200,
     },
+    artFocus: "center",
+    art: { id: "starry-night", placement: "scatter", opacity: 0.42, scale: 1 },
+    layoutStyle: "full-bleed",
+    texture: { style: "cotton", intensity: 0.55 },
+    divider: "diamond-rule",
     palettes: [
       { id: "gold-leaf", label: "Gold Leaf", ink: "#e2b455", accent: "#d9a441", surface: "#132a52", body: "#e7e3d5" },
       { id: "moonlight", label: "Moonlight", ink: "#f5efe1", accent: "#d9a441", surface: "#12294f", body: "#dcd8ca" },
@@ -571,7 +668,7 @@ export const LAUNCH_THEMES: LaunchTheme[] = [
       locationLine: "The Observatory · Hudson, New York",
       rsvpLine: "Kindly reply by the twentieth of November",
     },
-    borderStyle: "none",
+    borderStyle: "double-frame",
     styleLaneId: "editorial-premium",
   },
 
@@ -590,6 +687,14 @@ export const LAUNCH_THEMES: LaunchTheme[] = [
       width: 896,
       height: 1200,
     },
+    artFocus: "center bottom",
+    art: { id: "bunting-garland", placement: "band", opacity: 0.6, scale: 1 },
+    // The block print sits in the lower half of the sheet; lifting it into a
+    // banner puts the dinosaur at the top and gives the party details a clean
+    // cream panel of their own.
+    layoutStyle: "banner",
+    texture: { style: "grain", intensity: 1 },
+    divider: "dots",
     palettes: [
       { id: "field-green", label: "Field Green", ink: "#34503f", accent: "#a35131", surface: "#f2ebdc", body: "#4a5347" },
       { id: "terracotta", label: "Terracotta", ink: "#a4502f", accent: "#34503f", surface: "#f3ecdd", body: "#5b4a3d" },
@@ -633,7 +738,7 @@ export const LAUNCH_THEMES: LaunchTheme[] = [
       locationLine: "Natural History Museum · Hall of Fossils",
       rsvpLine: "RSVP to Dana by March 15",
     },
-    borderStyle: "none",
+    borderStyle: "dashed-frame",
     styleLaneId: "handcrafted-rustic",
   },
 
@@ -652,6 +757,11 @@ export const LAUNCH_THEMES: LaunchTheme[] = [
       width: 896,
       height: 1200,
     },
+    artFocus: "center",
+    art: { id: "confetti-scatter", placement: "scatter", opacity: 0.38, scale: 1 },
+    layoutStyle: "full-bleed",
+    texture: { style: "grain", intensity: 0.75 },
+    divider: "rule",
     palettes: [
       { id: "maroon", label: "Maroon", ink: "#7c2338", accent: "#ac4b22", surface: "#f4e7c8", body: "#5a3a30" },
       { id: "rust", label: "Rust", ink: "#b7431d", accent: "#2f5c8a", surface: "#f5e9cd", body: "#6a3b26" },
@@ -695,7 +805,7 @@ export const LAUNCH_THEMES: LaunchTheme[] = [
       locationLine: "The Starlight Rollerdrome",
       rsvpLine: "RSVP by August 30 · Skates provided",
     },
-    borderStyle: "none",
+    borderStyle: "corner-flourish",
     styleLaneId: "bold-graphic",
   },
 ];
@@ -857,11 +967,7 @@ export function buildThemedConcept(
     paletteColors: paletteVariantColors(palette),
     fontPairingId: getFontPairingIdFor(theme, options.fontPairingId),
     borderStyle: theme.borderStyle,
-    // Curated themes render through the composed portrait renderer. "full-bleed"
-    // is the closest legacy archetype, so any renderer that has not been taught
-    // about `theme` yet still shows the artwork behind the text rather than
-    // dropping it.
-    layoutStyle: "full-bleed",
+    layoutStyle: theme.layoutStyle,
     illustrationPrompt: theme.description,
     styleLaneId: theme.styleLaneId,
     theme: {

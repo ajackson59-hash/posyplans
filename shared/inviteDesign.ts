@@ -406,19 +406,28 @@ export function conceptBodyStyle(concept: InviteDesignConcept): Record<string, s
   return { fontFamily: font.bodyFontFamily };
 }
 
-/** Inline style object (border/radius) for the surface the concept is applied to. */
-export function conceptBorderStyle(concept: InviteDesignConcept): Record<string, string> {
-  const accent = concept.paletteColors?.[1] || concept.paletteColors?.[0] || "#94a3b8";
-  switch (concept.borderStyle) {
+/**
+ * Inline style object (border/radius) for a frame treatment in a given accent.
+ * `unit` scales the frame with its surface, so the same treatment reads
+ * correctly on a 180px gallery thumbnail and a 640px preview.
+ */
+export function borderStyleCss(style: BorderStyle, accent: string, unit = 1): Record<string, string> {
+  switch (style) {
     case "thin-frame":
-      return { border: `1.5px solid ${accent}` };
+      return { border: `${1.5 * unit}px solid ${accent}` };
     case "double-frame":
-      return { border: `4px double ${accent}` };
+      return { border: `${4 * unit}px double ${accent}` };
     case "dashed-frame":
-      return { border: `2px dashed ${accent}` };
+      return { border: `${2 * unit}px dashed ${accent}` };
     case "corner-flourish":
-      return { border: `1.5px solid ${accent}`, borderRadius: "20px" };
+      return { border: `${1.5 * unit}px solid ${accent}`, borderRadius: `${20 * unit}px` };
     default:
       return {};
   }
+}
+
+/** Inline style object (border/radius) for the surface the concept is applied to. */
+export function conceptBorderStyle(concept: InviteDesignConcept): Record<string, string> {
+  const accent = concept.paletteColors?.[1] || concept.paletteColors?.[0] || "#94a3b8";
+  return borderStyleCss(concept.borderStyle, accent);
 }
