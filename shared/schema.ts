@@ -509,3 +509,72 @@ export const analyticsEvents = pgTable("analytics_events", {
 });
 
 export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
+
+/* ============ AI-FIRST INVITATION PREVIEWS ============ */
+// Content-addressed durable storage for AI-first invitation artwork.
+//
+// Additive only: nothing in the existing invitation flow reads or writes
+// these tables, so an environment that has not run the migration keeps
+// working exactly as before with the feature flag off.
+//
+// The three identifiers do different jobs and none of them substitutes for
+// another:
+//   conceptFingerprint  sha256 of the art-direction fields that actually
+//                       change the pixels. Recolouring or re-typesetting a
+//                       concept keeps the fingerprint, so restyling never
+//                       re-bills an image.
+//   assetHash           sha256 of the PNG bytes. This is what "Use this
+//                       design" verifies server-side, so applying a preview
+//                       provably uses the approved bytes.
+//   previewId           event-scoped public handle. Event-scoped so one
+//                       host's preview id can never address another host's
+//                       asset even when the artwork is byte-identical.
+export const aiFirstPreviews = pgTable("ai_first_previews", {
+  id: serial("id").primaryKey(),
+  eventId: integer("event_id").notNull(),
+  previewId: text("preview_id").notNull().unique(),
+  conceptFingerprint: text("concept_fingerprint").notNull(),
+  assetHash: text("asset_hash").notNull(),
+  // Data URI or object-store URL for the approved artwork bytes.
+  assetUrl: text("asset_url").notNull(),
+  conceptJson: text("concept_json").notNull(),
+  source: text("source").notNull().default("ai-generated"), // ai-generated | adapted-studio-direction
+  // Promoted previews are the ones a host actually applied. They are never
+  // swept, which is why cleanup can be aggressive about everything else.
+  promoted: boolean("promoted").notNull().default(false),
+  promotedAt: bigint("promoted_at", { mode: "number" }),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  lastAccessedAt: bigint("last_accessed_at", { mode: "number" }).notNull(),
+});
+
+export type AiFirstPreview = typeof aiFirstPreviews.$inferSelect;
+
+/* ============ AI-FIRST IMAGE LEDGER (cost control) ============ */
+// One row per artwork *attempt*, billed or not. Kept separate from
+// masterPlannerGenerations because that ledger counts host-visible planning
+// drafts, whereas this one counts provider image spend — a quality retry is
+// real money but is not a host action, and reuse is a host action that is
+// not money. Collapsing the two would make both numbers wrong.
+export const AI_IMAGE_REASONS = ["initial", "quality-retry", "reuse", "apply"] as const;
+export type AiImageReason = (typeof AI_IMAGE_REASONS)[number];
+
+export const aiFirstImageLedger = pgTable("ai_first_image_ledger", {
+  id: serial("id").primaryKey(),
+  eventId: integer("event_id").notNull(),
+  email: text("email"), // nullable — normalized lowercase, for monthly caps
+  reason: text("reason").notNull(), // initial | quality-retry | reuse | apply
+  // False for reuse/apply and for anything the provider never charged for.
+  billed: boolean("billed").notNull().default(true),
+  // True when the attempt was an automatic quality retry: counts against
+  // spend, never against the host's visible action allowance.
+  automatic: boolean("automatic").notNull().default(false),
+  conceptFingerprint: text("concept_fingerprint"),
+  previewId: text("preview_id"),
+  // Set on reuse rows to the previewId whose bytes were served instead.
+  reuseOf: text("reuse_of"),
+  idempotencyKey: text("idempotency_key"),
+  costUsdMicros: integer("cost_usd_micros").notNull().default(0),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
+});
+
+export type AiFirstImageLedgerRow = typeof aiFirstImageLedger.$inferSelect;

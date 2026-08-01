@@ -354,6 +354,7 @@ export default function Rsvp() {
               placementId={themeView.selection.placementId}
               overlay={themeView.selection.overlay}
               fontPairingId={themeView.fontPairingId}
+              artworkOpacity={themeView.artworkOpacity}
             />
           </div>
         ) : (

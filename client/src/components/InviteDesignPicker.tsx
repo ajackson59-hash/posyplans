@@ -36,7 +36,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Sparkles, Wand2, RotateCcw, X, Check, ImagePlus, Heart, ThumbsDown, ArrowLeft } from "lucide-react";
 import ThemeChooser from "./ThemeChooser";
 import InviteStudio from "./InviteStudio";
+import AiFirstInvitations from "./AiFirstInvitations";
 import { resolveThemeView } from "@/lib/themeInvite";
+import { useFeatureFlags } from "@/lib/featureFlags";
+import { useAiFirstSession } from "@/lib/aiFirstSession";
 
 interface InviteDesignPickerProps {
   ownerToken: string;
@@ -53,6 +56,10 @@ const REFINE_OPTIONS = [
 
 export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPickerProps) {
   const { toast } = useToast();
+  const flags = useFeatureFlags();
+  // Owned here rather than inside AiFirstInvitations so switching to the
+  // collection and back does not discard generated directions or filters.
+  const aiFirst = useAiFirstSession(ownerToken);
   const [themePromptDraft, setThemePromptDraft] = useState(event.themeName || "");
   const [concepts, setConcepts] = useState<InviteDesignConcept[] | null>(null);
   const [browsing, setBrowsing] = useState(false);
@@ -650,21 +657,51 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
     );
   }
 
+  // ═══ Stage 1, flag on: the AI-first experience ════════════════════════
+  // Four generated directions, revealed as the gate approves them. The
+  // collection is one click away and keeps its place.
+  if (flags.aiFirstInvitations && !showCustomTheme && !aiFirst.browsingCollection) {
+    return (
+      <div data-testid="card-ai-first-invitations">
+        <AiFirstInvitations
+          ownerToken={ownerToken}
+          event={event}
+          session={aiFirst}
+          onBrowseCollection={() => aiFirst.setBrowsingCollection(true)}
+        />
+        {renderCustomDesignEntry()}
+      </div>
+    );
+  }
+
   // ═══ Stage 1: curated design catalogue ════════════════════════════════
   // The primary experience. Applying a design is instant — static artwork plus
   // design metadata, no image model. AI generation is a secondary path.
   if (!showCustomTheme) {
     return (
       <div data-testid="card-theme-gallery">
+        {aiFirst.browsingCollection && (
+          <button
+            type="button"
+            onClick={() => aiFirst.setBrowsingCollection(false)}
+            className="mb-4 flex items-center gap-1 text-xs font-medium text-primary underline underline-offset-2"
+            data-testid="button-back-to-directions"
+          >
+            <ArrowLeft className="h-3 w-3" aria-hidden /> Back to my invitation directions
+          </button>
+        )}
         <ThemeChooser
           ownerToken={ownerToken}
           event={event}
-          onCustomTheme={() => setShowCustomTheme(true)}
+          onCustomTheme={flags.aiFirstInvitations ? undefined : () => setShowCustomTheme(true)}
+          filters={aiFirst.filters}
+          onFiltersChange={aiFirst.setFilters}
           onThemeApplied={() => {
             // The event refetch resolves a theme view, which re-renders into
             // the studio automatically.
             setShowCustomTheme(false);
             setBrowsing(false);
+            aiFirst.setBrowsingCollection(false);
             setCameFromChooser(true);
           }}
         />

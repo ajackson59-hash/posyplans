@@ -931,13 +931,27 @@ function isThemeCopy(value: unknown): value is ThemeCopy {
   );
 }
 
-/** Reads a validated theme selection off a concept, or null if there isn't one. */
-export function readThemeSelection(concept: unknown): ThemeSelection | null {
+function curatedThemeById(themeId: string): LaunchTheme | undefined {
+  return isLaunchThemeId(themeId) ? getLaunchTheme(themeId) : undefined;
+}
+
+/**
+ * Reads a validated theme selection off a concept, or null if there isn't one.
+ *
+ * `resolveTheme` exists so a caller holding a theme that is not in the curated
+ * catalogue — a generated one, rebuilt from a stored snapshot — can still read
+ * its selection. Omitted, only the eight curated themes resolve, which is the
+ * behaviour every existing caller relies on.
+ */
+export function readThemeSelection(
+  concept: unknown,
+  resolveTheme: (themeId: string) => LaunchTheme | undefined = curatedThemeById,
+): ThemeSelection | null {
   if (!concept || typeof concept !== "object") return null;
   const raw = (concept as { theme?: unknown }).theme;
   if (!raw || typeof raw !== "object") return null;
   const t = raw as Record<string, unknown>;
-  const theme = isLaunchThemeId(t.themeId) ? getLaunchTheme(t.themeId as string) : undefined;
+  const theme = typeof t.themeId === "string" ? resolveTheme(t.themeId) : undefined;
   if (!theme) return null;
   return {
     themeId: theme.id,
