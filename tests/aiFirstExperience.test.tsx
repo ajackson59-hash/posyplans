@@ -109,11 +109,25 @@ describe("the flag itself", () => {
 });
 
 describe("what the host is told", () => {
-  it("opens with the sentence the specification requires", () => {
+  const CLAIM = "I created four invitation directions for your event.";
+
+  it("claims the four directions only once all four are on screen", () => {
+    renderExperience({ directions: [0, 1, 2, 3].map(direction), hasRun: true });
+    expect(screen.getByTestId("text-ai-first-heading").textContent).toBe(CLAIM);
+  });
+
+  it("makes no completion claim before a run has started", () => {
     renderExperience();
-    expect(screen.getByTestId("text-ai-first-heading").textContent).toBe(
-      "I created four invitation directions for your event.",
-    );
+    const heading = screen.getByTestId("text-ai-first-heading").textContent ?? "";
+    expect(heading).not.toBe(CLAIM);
+    // AI is the primary path, and it works from details the host already gave.
+    expect(document.body.textContent).toContain("event details you've already entered");
+    expect(screen.getAllByTestId("button-generate-directions")).toHaveLength(1);
+  });
+
+  it("makes no completion claim while the run is still in flight", () => {
+    renderExperience({ running: true, directions: [0, 1, 2].map(direction) });
+    expect(screen.getByTestId("text-ai-first-heading").textContent).not.toBe(CLAIM);
   });
 
   it("keeps the curated collection reachable under its own name", () => {

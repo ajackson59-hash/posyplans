@@ -9,6 +9,9 @@
 
 import type { AiFirstConcept, ConceptSource } from "./aiFirstInvite";
 
+/** How many directions a complete run delivers. The client's copy depends on it. */
+export const TARGET_DIRECTION_COUNT = 4;
+
 /** The exact host-facing progress strings. Each is emitted from a real transition. */
 export const PROGRESS_MESSAGES = {
   understanding: "Understanding the event's visual direction…",

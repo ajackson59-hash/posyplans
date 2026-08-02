@@ -22,6 +22,7 @@ import {
 } from "@shared/aiFirstInvite";
 import {
   PROGRESS_MESSAGES,
+  TARGET_DIRECTION_COUNT,
   type FinishedDirection,
   type PipelineEvent,
   type RunSummary,
@@ -32,7 +33,7 @@ import { ConceptStreamParser } from "./conceptStream";
 import { buildSystemPrompt, buildUserPrompt, buildRetryPrompt } from "./prompt";
 import { runTier1Checks, retryCodesFor, type Tier1Finding } from "./tier1";
 import { runVisionGate, visionCostUsd, type VisionVerdict } from "./visionGate";
-import { adaptStudioDirection } from "./fallback";
+import { adaptStudioDirection, loadStudioArtwork } from "./fallback";
 import { generateArtwork, type ArtworkGenerator } from "./artwork";
 import {
   lookupReusablePreview,
@@ -49,7 +50,7 @@ import {
 import type { EventBrief } from "./brief";
 
 export const CONCEPT_MODEL = "claude-sonnet-4-6";
-export const TARGET_CONCEPT_COUNT = 4;
+export const TARGET_CONCEPT_COUNT = TARGET_DIRECTION_COUNT;
 /** One retry maximum per direction, as specified. */
 export const MAX_ARTWORK_ATTEMPTS = 2;
 
@@ -432,19 +433,21 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
     message: `direction ${ctx.index + 1} fell back to an adapted studio direction (${adapted.reason})`,
   });
 
-  return {
-    index: ctx.index,
+  // A substituted direction is applied by the same route as a generated one,
+  // which verifies bytes by hash — so it needs a real preview record holding
+  // the artwork it actually displays. The bytes come off disk; no provider
+  // call is made here or on apply.
+  const studioBytes = await loadStudioArtwork(adapted.theme);
+  const savedStudio = await savePreview({
+    store: input.previewStore,
+    eventId: input.eventId,
     concept: adapted.concept,
+    bytes: studioBytes,
+    assetUrl: adapted.theme.artwork.fullUrl,
     source: "adapted-studio-direction",
-    previewId: `studio-${adapted.theme.id}`,
-    assetHash: "",
-    illustrationUrl: adapted.theme.artwork.fullUrl,
-    overlay: adapted.concept.minOverlay,
-    artworkOpacity: undefined,
-    attempts,
-    reusedPreview: false,
-    msFromStart: Date.now() - ctx.startedAt,
-  };
+  });
+
+  return finish(ctx, adapted.concept, savedStudio.record, "adapted-studio-direction", attempts, undefined, false);
 }
 
 function finish(

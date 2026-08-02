@@ -10,6 +10,8 @@
 // rather than hidden, because a silent swap would make the quality gate's
 // own numbers unreadable.
 
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { LAUNCH_THEMES, type LaunchTheme } from "@shared/themeCatalog";
 import { STYLE_LANES } from "@shared/inviteDesign";
 import { contrastRatio } from "@shared/aiFirstPalette";
@@ -102,4 +104,36 @@ export function adaptStudioDirection(input: AdaptFallbackInput): AdaptedDirectio
       minOverlay: theme.defaultOverlay,
     },
   };
+}
+
+/* ── The substituted artwork's own bytes ─────────────────────────────── */
+
+/**
+ * Roots a studio asset can live under: the built server serves `dist/public`,
+ * the dev server serves `client/public`.
+ */
+const STATIC_ROOTS = [
+  process.env.POSY_STATIC_ROOT,
+  path.resolve(process.cwd(), "dist", "public"),
+  path.resolve(process.cwd(), "client", "public"),
+].filter((root): root is string => Boolean(root));
+
+/**
+ * Reads the curated artwork a substituted direction actually displays.
+ *
+ * A fallback still has to be applicable, and apply verifies bytes by hash —
+ * so the substitution needs real bytes in the preview store, not a synthetic
+ * id. These are static assets that ship with the build, so this is a disk
+ * read and never an image-provider call.
+ */
+export async function loadStudioArtwork(theme: LaunchTheme): Promise<Buffer> {
+  const relative = theme.artwork.fullUrl.replace(/^\/+/, "");
+  for (const root of STATIC_ROOTS) {
+    try {
+      return await readFile(path.join(root, relative));
+    } catch {
+      continue;
+    }
+  }
+  throw new Error(`studio artwork missing for theme "${theme.id}" (${theme.artwork.fullUrl})`);
 }

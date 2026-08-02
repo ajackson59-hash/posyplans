@@ -14,7 +14,7 @@ import { apiRequestJson, queryClient } from "@/lib/queryClient";
 import { themeCopyForEvent } from "@shared/themeCatalog";
 import { themeForResolvedConcept } from "@shared/aiFirstTheme";
 import type { AskPosyAction } from "@shared/aiFirstAskPosy";
-import type { FinishedDirection } from "@shared/aiFirstStream";
+import { TARGET_DIRECTION_COUNT, type FinishedDirection } from "@shared/aiFirstStream";
 import type { EventRecord } from "@/lib/types";
 import type { AiFirstSession } from "@/lib/aiFirstSession";
 import { ThemeInvitation } from "@/components/ThemeInvitation";
@@ -79,16 +79,32 @@ export default function AiFirstInvitations({
   const latestProgress = session.progress[session.progress.length - 1] ?? "";
   const actions = status.data?.askPosyActions ?? [];
 
+  // The header states only what is true at the moment it renders. The
+  // completion sentence is claimed once the four directions are actually on
+  // screen — never while the run is still in flight.
+  const complete = !session.running && ordered.length >= TARGET_DIRECTION_COUNT;
+  const heading = complete
+    ? "I created four invitation directions for your event."
+    : session.running
+      ? "Posy is creating your invitation directions."
+      : ordered.length > 0
+        ? `${ordered.length} of ${TARGET_DIRECTION_COUNT} directions are ready.`
+        : "Posy designs your invitation.";
+  const subheading = complete
+    ? "Each one is designed around your event's details and checked before you see it. Pick the one you like and make it yours — nothing changes until you do."
+    : session.running
+      ? "Each direction appears as soon as it passes Posy's checks, so you can start looking before the set is finished."
+      : ordered.length > 0
+        ? "The run finished short of four. What's here is yours to use, or ask Posy for another set."
+        : `Posy reads the event details you've already entered and designs ${TARGET_DIRECTION_COUNT} invitation directions to choose from. Nothing on your invitation changes until you pick one.`;
+
   return (
     <div data-testid="ai-first-invitations">
       <header className="mb-6">
         <h2 className="font-serif text-2xl tracking-tight text-foreground sm:text-3xl" data-testid="text-ai-first-heading">
-          I created four invitation directions for your event.
+          {heading}
         </h2>
-        <p className="mt-1.5 max-w-xl text-sm text-muted-foreground">
-          Each one is designed around your event's details and checked before you see it. Pick the one you like and make
-          it yours — nothing changes until you do.
-        </p>
+        <p className="mt-1.5 max-w-xl text-sm text-muted-foreground">{subheading}</p>
       </header>
 
       {status.data?.killSwitch && (
