@@ -27,10 +27,36 @@ describe("claim()", () => {
     expect(store.all).toHaveLength(1);
   });
 
-  it("different runIds for the same event are independent", async () => {
+  it("a different runId for the SAME event while one is active is refused as active-elsewhere, not claimed", async () => {
+    // This is the constraint a prior pass of this repair was missing: two
+    // different run ids for one event must not both be claimable while one
+    // is still active, because that is exactly what two server instances
+    // racing with independently-minted run ids would produce.
     const store = new InMemoryRunStore();
     const a = await store.claim({ runId: "r1", eventId: 1, ownerToken: "tok" });
     const b = await store.claim({ runId: "r2", eventId: 1, ownerToken: "tok" });
+    expect(a.outcome).toBe("claimed");
+    expect(b.outcome).toBe("active-elsewhere");
+    if (b.outcome === "active-elsewhere") expect(b.record.runId).toBe("r1");
+    // No row was ever created for r2 — it was refused, not claimed-then-lost.
+    expect(store.all).toHaveLength(1);
+    expect(await store.get("r2")).toBeUndefined();
+  });
+
+  it("different runIds for the same event ARE independent once the first is terminal", async () => {
+    const store = new InMemoryRunStore();
+    const a = await store.claim({ runId: "r1", eventId: 1, ownerToken: "tok" });
+    expect(a.outcome).toBe("claimed");
+    await store.complete("r1");
+    const b = await store.claim({ runId: "r2", eventId: 1, ownerToken: "tok" });
+    expect(b.outcome).toBe("claimed");
+    expect(store.all).toHaveLength(2);
+  });
+
+  it("different runIds for DIFFERENT events are independent even while both are active", async () => {
+    const store = new InMemoryRunStore();
+    const a = await store.claim({ runId: "r1", eventId: 1, ownerToken: "tok" });
+    const b = await store.claim({ runId: "r2", eventId: 2, ownerToken: "tok" });
     expect(a.outcome).toBe("claimed");
     expect(b.outcome).toBe("claimed");
     expect(store.all).toHaveLength(2);

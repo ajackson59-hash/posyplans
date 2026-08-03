@@ -7,12 +7,24 @@
 import { createHash } from "node:crypto";
 import { and, eq, gte, lt, sql } from "drizzle-orm";
 import { db } from "../storage";
-import { aiFirstPreviews, aiFirstImageLedger, aiFirstGenerationRuns, aiFirstRejectedArtwork } from "@shared/schema";
+import { aiFirstPreviews, aiFirstImageLedger, aiFirstGenerationRuns, aiFirstArtworkAttempts } from "@shared/schema";
 import { aiFirstConceptSchema } from "@shared/aiFirstInvite";
 import type { AiFirstPreviewStore, PreviewRecord } from "./previewStore";
 import type { AiFirstUsageStore, LedgerEntry, UsageSnapshot } from "./usage";
 import type { AiFirstRunStore, ClaimResult, GenerationRunRecord, RunStatus } from "./runStore";
-import type { AiFirstRejectedArtworkStore, RejectedArtworkRecord } from "./rejectedArtworkStore";
+import type { AiFirstArtworkAttemptStore, ArtworkAttemptRecord } from "./artworkAttemptStore";
+
+/**
+ * postgres-js surfaces a Postgres unique-violation (SQLSTATE 23505) as a
+ * thrown error carrying the violated constraint's name. Used below to tell
+ * apart the runId unique index from the one-active-run-per-event partial
+ * unique index without a separate, race-prone SELECT.
+ */
+function uniqueViolationConstraint(err: unknown): string | undefined {
+  const anyErr = err as { code?: string; constraint_name?: string; constraint?: string } | undefined;
+  if (!anyErr || anyErr.code !== "23505") return undefined;
+  return anyErr.constraint_name ?? anyErr.constraint;
+}
 
 type PreviewRow = typeof aiFirstPreviews.$inferSelect;
 
@@ -204,36 +216,63 @@ function toRunRecord(row: RunRow): GenerationRunRecord {
 export class DbRunStore implements AiFirstRunStore {
   async claim(input: { runId: string; eventId: number; ownerToken: string; now?: number }): Promise<ClaimResult> {
     const now = input.now ?? Date.now();
-    // The unique index on runId makes this atomic across every server
-    // instance: only one INSERT can ever land for a given runId, so a
-    // duplicate click or a duplicate request that reaches a second instance
-    // both fall into the `.returning()` coming back empty below.
-    const inserted = await db
-      .insert(aiFirstGenerationRuns)
-      .values({
-        runId: input.runId,
-        eventId: input.eventId,
-        ownerToken: input.ownerToken,
-        status: "active",
-        progressMessage: "",
-        completedCount: 0,
-        fallbackCount: 0,
-        errorMessage: null,
-        terminal: false,
-        createdAt: now,
-        updatedAt: now,
-      })
-      .onConflictDoNothing({ target: aiFirstGenerationRuns.runId })
-      .returning();
+    // A plain INSERT, not onConflictDoNothing: this table carries TWO
+    // independent unique constraints (see shared/schema.ts), and which one
+    // fires tells the caller something different — "you already hold this
+    // exact run" versus "a different run already owns this event". Letting
+    // Postgres raise the 23505 and reading its constraint name is what makes
+    // that distinction atomic: there is no window between a SELECT and this
+    // INSERT for another instance to change the answer in.
+    try {
+      const inserted = await db
+        .insert(aiFirstGenerationRuns)
+        .values({
+          runId: input.runId,
+          eventId: input.eventId,
+          ownerToken: input.ownerToken,
+          status: "active",
+          progressMessage: "",
+          completedCount: 0,
+          fallbackCount: 0,
+          errorMessage: null,
+          terminal: false,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .returning();
+      return { outcome: "claimed", record: toRunRecord(inserted[0]) };
+    } catch (err) {
+      const constraint = uniqueViolationConstraint(err);
+      if (!constraint) throw err;
 
-    if (inserted[0]) return { outcome: "claimed", record: toRunRecord(inserted[0]) };
+      if (constraint === "ai_first_generation_runs_run_id_unique") {
+        const existing = await db
+          .select()
+          .from(aiFirstGenerationRuns)
+          .where(eq(aiFirstGenerationRuns.runId, input.runId));
+        return { outcome: "duplicate", record: toRunRecord(existing[0]) };
+      }
 
-    const existing = await db
-      .select()
-      .from(aiFirstGenerationRuns)
-      .where(eq(aiFirstGenerationRuns.runId, input.runId));
-    // existing[0] must be present: the insert only no-ops on a conflict.
-    return { outcome: "duplicate", record: toRunRecord(existing[0]) };
+      if (constraint === "ai_first_generation_runs_one_active_per_event_uq") {
+        const active = await db
+          .select()
+          .from(aiFirstGenerationRuns)
+          .where(
+            and(
+              eq(aiFirstGenerationRuns.eventId, input.eventId),
+              eq(aiFirstGenerationRuns.status, "active"),
+              eq(aiFirstGenerationRuns.terminal, false),
+            ),
+          );
+        if (active[0]) return { outcome: "active-elsewhere", record: toRunRecord(active[0]) };
+        // The other run completed in the instant between our failed INSERT
+        // and this read — the slot is free again. One retry, not an error:
+        // this is a race-of-a-race, not a caller mistake.
+        return this.claim(input);
+      }
+
+      throw err;
+    }
   }
 
   async get(runId: string): Promise<GenerationRunRecord | undefined> {
@@ -291,17 +330,22 @@ export class DbRunStore implements AiFirstRunStore {
   }
 }
 
-/* ── Rejected artwork (protected reviewer evidence) ─────────────────── */
-type RejectedRow = typeof aiFirstRejectedArtwork.$inferSelect;
+/* ── Artwork attempt evidence (protected reviewer, accepted AND rejected) ── */
+type ArtworkAttemptRow = typeof aiFirstArtworkAttempts.$inferSelect;
 
-function toRejectedRecord(row: RejectedRow): RejectedArtworkRecord {
+function toArtworkAttemptRecord(row: ArtworkAttemptRow): ArtworkAttemptRecord {
   return {
+    id: String(row.id),
     eventId: row.eventId,
     ownerToken: row.ownerToken,
+    runId: row.runId ?? null,
+    idempotencyKey: row.idempotencyKey ?? null,
     directionIndex: row.directionIndex,
     attempt: row.attempt,
+    status: row.status as ArtworkAttemptRecord["status"],
     assetHash: row.assetHash,
     assetBytesBase64: row.assetBytesBase64,
+    previewId: row.previewId ?? null,
     concept: JSON.parse(row.conceptJson),
     failureCodes: JSON.parse(row.failureCodesJson),
     tier1Findings: JSON.parse(row.tier1FindingsJson),
@@ -311,59 +355,56 @@ function toRejectedRecord(row: RejectedRow): RejectedArtworkRecord {
   };
 }
 
-export class DbRejectedArtworkStore implements AiFirstRejectedArtworkStore {
-  async record(input: Parameters<AiFirstRejectedArtworkStore["record"]>[0]): Promise<RejectedArtworkRecord> {
+export class DbArtworkAttemptStore implements AiFirstArtworkAttemptStore {
+  async record(input: Parameters<AiFirstArtworkAttemptStore["record"]>[0]): Promise<ArtworkAttemptRecord> {
     const assetHash = createHash("sha256").update(input.bytes).digest("hex");
     const now = input.now ?? Date.now();
-    await db.insert(aiFirstRejectedArtwork).values({
-      eventId: input.eventId,
-      ownerToken: input.ownerToken,
-      directionIndex: input.directionIndex,
-      attempt: input.attempt,
-      assetHash,
-      assetBytesBase64: input.bytes.toString("base64"),
-      conceptJson: JSON.stringify(input.concept),
-      failureCodesJson: JSON.stringify(input.failureCodes),
-      tier1FindingsJson: JSON.stringify(input.tier1Findings),
-      visionScoresJson: input.visionScores ? JSON.stringify(input.visionScores) : null,
-      costUsdMicros: input.costUsdMicros,
-      createdAt: now,
-    });
-    return {
-      eventId: input.eventId,
-      ownerToken: input.ownerToken,
-      directionIndex: input.directionIndex,
-      attempt: input.attempt,
-      assetHash,
-      assetBytesBase64: input.bytes.toString("base64"),
-      concept: input.concept,
-      failureCodes: input.failureCodes,
-      tier1Findings: input.tier1Findings,
-      visionScores: input.visionScores,
-      costUsdMicros: input.costUsdMicros,
-      createdAt: now,
-    };
+    const previewId = input.status === "accepted" ? input.previewId ?? null : null;
+    const inserted = await db
+      .insert(aiFirstArtworkAttempts)
+      .values({
+        eventId: input.eventId,
+        ownerToken: input.ownerToken,
+        runId: input.runId ?? null,
+        idempotencyKey: input.idempotencyKey ?? null,
+        directionIndex: input.directionIndex,
+        attempt: input.attempt,
+        status: input.status,
+        assetHash,
+        assetBytesBase64: input.bytes.toString("base64"),
+        previewId,
+        conceptJson: JSON.stringify(input.concept),
+        failureCodesJson: JSON.stringify(input.failureCodes),
+        tier1FindingsJson: JSON.stringify(input.tier1Findings),
+        visionScoresJson: input.visionScores ? JSON.stringify(input.visionScores) : null,
+        costUsdMicros: input.costUsdMicros,
+        createdAt: now,
+      })
+      .returning();
+    return toArtworkAttemptRecord(inserted[0]);
   }
 
-  async listForOwner(eventId: number, ownerToken: string): Promise<RejectedArtworkRecord[]> {
+  async listForOwner(eventId: number, ownerToken: string): Promise<ArtworkAttemptRecord[]> {
     const rows = await db
       .select()
-      .from(aiFirstRejectedArtwork)
-      .where(and(eq(aiFirstRejectedArtwork.eventId, eventId), eq(aiFirstRejectedArtwork.ownerToken, ownerToken)));
-    return rows.map(toRejectedRecord);
+      .from(aiFirstArtworkAttempts)
+      .where(and(eq(aiFirstArtworkAttempts.eventId, eventId), eq(aiFirstArtworkAttempts.ownerToken, ownerToken)));
+    return rows.map(toArtworkAttemptRecord);
   }
 
-  async findAsset(eventId: number, ownerToken: string, assetHash: string): Promise<RejectedArtworkRecord | undefined> {
+  async findById(eventId: number, ownerToken: string, id: string): Promise<ArtworkAttemptRecord | undefined> {
+    const numericId = Number(id);
+    if (!Number.isFinite(numericId)) return undefined;
     const rows = await db
       .select()
-      .from(aiFirstRejectedArtwork)
+      .from(aiFirstArtworkAttempts)
       .where(
         and(
-          eq(aiFirstRejectedArtwork.eventId, eventId),
-          eq(aiFirstRejectedArtwork.ownerToken, ownerToken),
-          eq(aiFirstRejectedArtwork.assetHash, assetHash),
+          eq(aiFirstArtworkAttempts.eventId, eventId),
+          eq(aiFirstArtworkAttempts.ownerToken, ownerToken),
+          eq(aiFirstArtworkAttempts.id, numericId),
         ),
       );
-    return rows[0] ? toRejectedRecord(rows[0]) : undefined;
+    return rows[0] ? toArtworkAttemptRecord(rows[0]) : undefined;
   }
 }

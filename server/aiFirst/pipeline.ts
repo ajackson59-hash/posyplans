@@ -49,7 +49,7 @@ import {
   type CircuitBreaker,
 } from "./usage";
 import type { EventBrief } from "./brief";
-import type { AiFirstRejectedArtworkStore } from "./rejectedArtworkStore";
+import type { AiFirstArtworkAttemptStore } from "./artworkAttemptStore";
 import type { AiFirstRunStore } from "./runStore";
 
 export const CONCEPT_MODEL = "claude-sonnet-4-6";
@@ -111,8 +111,8 @@ export interface PipelineInput {
    */
   runId?: string;
   ownerToken?: string;
-  /** Durable retention of billed-but-rejected artwork for protected review. */
-  rejectedArtworkStore?: AiFirstRejectedArtworkStore;
+  /** Durable retention of every billed provider result (accepted AND rejected) for protected review. */
+  artworkAttemptStore?: AiFirstArtworkAttemptStore;
   /** Durable run/idempotency state. See runStore.ts. */
   runStore?: AiFirstRunStore;
   /** The next-proof safety setting: caps every direction at one billed image call. */
@@ -471,6 +471,28 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
         assetUrl: dataUrl,
         source: "ai-generated",
       });
+      // Every billed provider result is retained for protected review —
+      // accepted and rejected alike — so a reviewer can audit an entire run,
+      // not just its failures. Never reachable from an ordinary user route;
+      // see artworkAttemptStore.ts and the owner-scoped review routes.
+      if (input.artworkAttemptStore && input.ownerToken) {
+        await input.artworkAttemptStore.record({
+          eventId: input.eventId,
+          ownerToken: input.ownerToken,
+          runId: input.runId ?? null,
+          idempotencyKey: idempotencyKey ?? null,
+          directionIndex: ctx.index,
+          attempt,
+          status: "accepted",
+          bytes,
+          previewId: saved.record.previewId,
+          concept,
+          failureCodes: [],
+          tier1Findings: tier1.findings,
+          visionScores: vision?.scores ?? null,
+          costUsdMicros: IMAGE_COST_USD_MICROS,
+        });
+      }
       if (input.runStore && input.runId) await input.runStore.incrementCompleted(input.runId);
       return finish(ctx, concept, saved.record, "ai-generated", attempts, artworkOpacity, false);
     }
@@ -478,17 +500,20 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
     // Rejected, but billed: durably retain it for protected reviewer
     // evidence. This is money spent on an image nobody will ever see, and
     // before this store existed that fact evaporated at the end of the
-    // request. Never reachable from an ordinary user route — see
-    // rejectedArtworkStore.ts and the owner-scoped review route.
-    if (input.rejectedArtworkStore && input.ownerToken) {
-      await input.rejectedArtworkStore.record({
+    // request.
+    if (input.artworkAttemptStore && input.ownerToken) {
+      await input.artworkAttemptStore.record({
         eventId: input.eventId,
         ownerToken: input.ownerToken,
+        runId: input.runId ?? null,
+        idempotencyKey: idempotencyKey ?? null,
         directionIndex: ctx.index,
         attempt,
+        status: "rejected",
         bytes,
+        previewId: null,
         concept,
-        failureCodes: passed ? [] : failureCodes,
+        failureCodes,
         tier1Findings: tier1.findings,
         visionScores: vision?.scores ?? null,
         costUsdMicros: IMAGE_COST_USD_MICROS,

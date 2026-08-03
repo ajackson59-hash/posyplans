@@ -17,7 +17,7 @@ import { registerAiFirstRoutes } from "../server/aiFirst/routes";
 import { InMemoryPreviewStore } from "../server/aiFirst/previewStore";
 import { InMemoryUsageStore } from "../server/aiFirst/usage";
 import { InMemoryRunStore } from "../server/aiFirst/runStore";
-import { InMemoryRejectedArtworkStore } from "../server/aiFirst/rejectedArtworkStore";
+import { InMemoryArtworkAttemptStore } from "../server/aiFirst/artworkAttemptStore";
 import type { EventBrief } from "../server/aiFirst/brief";
 import { concept, framedArtworkForAspect, artworkForAspect } from "./aiFirstFixtures";
 
@@ -107,7 +107,7 @@ function appFor(deps: {
   previewStore: InMemoryPreviewStore;
   usageStore: InMemoryUsageStore;
   runStore: InMemoryRunStore;
-  rejectedArtworkStore: InMemoryRejectedArtworkStore;
+  artworkAttemptStore: InMemoryArtworkAttemptStore;
   env?: Record<string, string | undefined>;
 }) {
   const app = express();
@@ -117,7 +117,7 @@ function appFor(deps: {
     previewStore: deps.previewStore,
     usageStore: deps.usageStore,
     runStore: deps.runStore,
-    rejectedArtworkStore: deps.rejectedArtworkStore,
+    artworkAttemptStore: deps.artworkAttemptStore,
     env: { [featureFlagEnvVar("aiFirstInvitations")]: "1", ...deps.env },
   });
   return app;
@@ -290,11 +290,11 @@ describe("stream events are bounded — no full image payload ever appears in on
     expect(direction.illustrationUrl).toBe(`/api/events/owner/${OWNER}/ai-first/preview/${direction.previewId}/asset`);
   });
 
-  it("serves the real bytes back from the preview asset route with safe headers", async () => {
+  it("serves the real bytes back from the preview asset route with safe, owner-private headers", async () => {
     const previewStore = new InMemoryPreviewStore();
     const usageStore = new InMemoryUsageStore();
     const runStore = new InMemoryRunStore();
-    const rejectedArtworkStore = new InMemoryRejectedArtworkStore();
+    const artworkAttemptStore = new InMemoryArtworkAttemptStore();
     const events: PipelineEvent[] = [];
 
     await runAiFirstPipeline({
@@ -317,7 +317,7 @@ describe("stream events are bounded — no full image payload ever appears in on
 
     const direction = events.find((e): e is Extract<PipelineEvent, { type: "direction" }> => e.type === "direction")!.direction;
     expect(direction.source).toBe("ai-generated");
-    const app = appFor({ previewStore, usageStore, runStore, rejectedArtworkStore });
+    const app = appFor({ previewStore, usageStore, runStore, artworkAttemptStore });
 
     const res = await request(app).get(
       `/api/events/owner/${OWNER}/ai-first/preview/${direction.previewId}/asset`,
@@ -325,7 +325,68 @@ describe("stream events are bounded — no full image payload ever appears in on
     expect(res.status).toBe(200);
     expect(res.headers["content-type"]).toContain("image/png");
     expect(res.headers["cache-control"]).toContain("immutable");
+    // Owner-private, not public: this URL embeds the event's ownerToken, so
+    // a shared/CDN cache must never be allowed to store and replay it.
+    expect(res.headers["cache-control"]).toContain("private");
+    expect(res.headers["cache-control"]).not.toContain("public");
     expect(Buffer.isBuffer(res.body) || typeof res.body === "object").toBeTruthy();
+  });
+
+  it("the protected reviewer LISTING never embeds image bytes, even for a multi-megabyte fixture", async () => {
+    const previewStore = new InMemoryPreviewStore();
+    const usageStore = new InMemoryUsageStore();
+    const runStore = new InMemoryRunStore();
+    const artworkAttemptStore = new InMemoryArtworkAttemptStore();
+
+    const bigBytes = Buffer.concat([framedArtworkForAspect("1:1"), Buffer.alloc(2 * 1024 * 1024, 7)]);
+
+    await runAiFirstPipeline({
+      eventId: EVENT_ID,
+      ownerToken: OWNER,
+      runId: "run-mb-reviewer",
+      email: "host@example.com",
+      brief,
+      previewStore,
+      usageStore,
+      artworkAttemptStore,
+      allowance: 40,
+      sink: () => {},
+      anthropic: singleConceptClient(),
+      ocr: false,
+      // A printed margin: Tier 1 rejects every attempt, so both attempts are
+      // billed-and-rejected rows with the multi-megabyte fixture as bytes.
+      generateImage: async () => ({
+        bytes: bigBytes,
+        dataUrl: `data:image/png;base64,${bigBytes.toString("base64")}`,
+        durationMs: 1,
+      }),
+    });
+
+    const app = appFor({ previewStore, usageStore, runStore, artworkAttemptStore });
+    const listing = await request(app).get(`/api/events/owner/${OWNER}/ai-first/review/attempts`);
+    expect(listing.status).toBe(200);
+    expect(listing.body.attempts.length).toBeGreaterThan(0);
+
+    const serializedListing = JSON.stringify(listing.body);
+    // The listing response as a whole stays small: nowhere near the
+    // multi-megabyte fixture, regardless of how many attempts it covers.
+    expect(Buffer.byteLength(serializedListing, "utf8")).toBeLessThan(20_000);
+    expect(serializedListing).not.toContain(bigBytes.toString("base64").slice(0, 500));
+    expect(serializedListing).not.toMatch(/data:image\//);
+    for (const attempt of listing.body.attempts) {
+      expect(attempt.assetDataUrl).toBeUndefined();
+      expect(attempt.assetBytesBase64).toBeUndefined();
+      expect(typeof attempt.assetUrl).toBe("string");
+      expect(attempt.assetUrl).toMatch(/\/review\/attempts\/.+\/asset$/);
+    }
+
+    // The binary route for one of those attempts returns the exact bytes.
+    const firstId = listing.body.attempts[0].id as string;
+    const asset = await request(app).get(`/api/events/owner/${OWNER}/ai-first/review/attempts/${firstId}/asset`);
+    expect(asset.status).toBe(200);
+    expect(Buffer.from(asset.body as Buffer).equals(bigBytes)).toBe(true);
+    expect(asset.headers["cache-control"]).toContain("private");
+    expect(asset.headers["cache-control"]).not.toContain("public");
   });
 });
 
@@ -338,8 +399,8 @@ describe("duplicate click with the same run id does not buy a second set of imag
     const previewStore = new InMemoryPreviewStore();
     const usageStore = new InMemoryUsageStore();
     const runStore = new InMemoryRunStore();
-    const rejectedArtworkStore = new InMemoryRejectedArtworkStore();
-    const app = appFor({ previewStore, usageStore, runStore, rejectedArtworkStore });
+    const artworkAttemptStore = new InMemoryArtworkAttemptStore();
+    const app = appFor({ previewStore, usageStore, runStore, artworkAttemptStore });
 
     const runId = "run-duplicate-click";
     // Claim the run directly, as the in-flight first request would have.
@@ -353,7 +414,7 @@ describe("duplicate click with the same run id does not buy a second set of imag
       .send({ runId });
 
     expect(res.status).toBe(409);
-    expect(res.body.denial).toBe("duplicate-run");
+    expect(res.body.denial).toBe("duplicate");
     expect(res.body.run.runId).toBe(runId);
   });
 
@@ -458,23 +519,23 @@ describe("duplicate click with the same run id does not buy a second set of imag
    ═══════════════════════════════════════════════════════════════════════ */
 
 describe("duplicate requests reaching separate simulated server instances", () => {
-  it("two Express apps sharing one durable run store treat a raced claim as one run", async () => {
+  it("two Express apps sharing one durable run store treat a raced claim (SAME run id) as one run", async () => {
     // Two "instances": distinct Express apps (so nothing but the durable
     // stores is shared between them), pointed at the exact same runStore/
-    // usageStore/previewStore \u2014 standing in for two Vercel invocations
+    // usageStore/previewStore — standing in for two Vercel invocations
     // talking to the same database.
     const previewStore = new InMemoryPreviewStore();
     const usageStore = new InMemoryUsageStore();
     const runStore = new InMemoryRunStore();
-    const rejectedArtworkStore = new InMemoryRejectedArtworkStore();
+    const artworkAttemptStore = new InMemoryArtworkAttemptStore();
 
-    const instanceA = appFor({ previewStore, usageStore, runStore, rejectedArtworkStore });
-    const instanceB = appFor({ previewStore, usageStore, runStore, rejectedArtworkStore });
+    const instanceA = appFor({ previewStore, usageStore, runStore, artworkAttemptStore });
+    const instanceB = appFor({ previewStore, usageStore, runStore, artworkAttemptStore });
 
     const runId = "run-cross-instance";
 
     // Both requests race for the same runId. Neither app has any private
-    // state about the other's request \u2014 only the shared runStore does.
+    // state about the other's request — only the shared runStore does.
     const [resA, resB] = await Promise.all([
       request(instanceA).post(`/api/events/owner/${OWNER}/ai-first/generate`).send({ runId }),
       request(instanceB).post(`/api/events/owner/${OWNER}/ai-first/generate`).send({ runId }),
@@ -487,21 +548,96 @@ describe("duplicate requests reaching separate simulated server instances", () =
     expect(runStore.all.filter((r) => r.runId === runId)).toHaveLength(1);
   });
 
+it("two instances racing with DIFFERENT run ids for the SAME event: only one pipeline can start", async () => {
+    // This is the gap a prior pass of this repair left open: a naive
+    // `hasActiveRun` check followed by an unconditional `claim` lets two
+    // instances both pass, because each request's OWN run id has never been
+    // seen before -- the collision is on the event, not on either run id.
+    // The fix is the partial unique index on eventId (see shared/schema.ts
+    // and runStore.ts's claim()), modeled here by the SAME InMemoryRunStore
+    // instance backing both simulated "servers".
+    //
+    // Instance A's claim is taken directly against the shared store first,
+    // standing in for "instance A's request won the race and is now mid
+    // pipeline" -- deterministic and immune to how fast a provider-less test
+    // pipeline happens to fail and go terminal, which a real two-HTTP-request
+    // race is not (a real request's pipeline can complete, and its row go
+    // terminal, before a promise-based test client even resolves). Instance
+    // B is then driven through the REAL HTTP route, so what is under test is
+    // still the actual route's claim-and-refuse behaviour, not a mock of it.
+    const previewStore = new InMemoryPreviewStore();
+    const usageStore = new InMemoryUsageStore();
+    const runStore = new InMemoryRunStore();
+    const artworkAttemptStore = new InMemoryArtworkAttemptStore();
+
+    const claimA = await runStore.claim({ runId: "run-diff-a", eventId: EVENT_ID, ownerToken: OWNER });
+    expect(claimA.outcome).toBe("claimed");
+
+    const instanceB = appFor({ previewStore, usageStore, runStore, artworkAttemptStore });
+    const resB = await request(instanceB)
+      .post(`/api/events/owner/${OWNER}/ai-first/generate`)
+      .send({ runId: "run-diff-b" });
+
+    // Instance B's DIFFERENT run id is refused as active-elsewhere, not
+    // claimed -- a 409, never a second pipeline starting for this event.
+    expect(resB.status).toBe(409);
+    expect(resB.body.denial).toBe("active-elsewhere");
+    expect(resB.body.run.runId).toBe("run-diff-a");
+
+    // Only ONE row exists for this event, ever -- run-diff-b was never even
+    // inserted, not created-then-abandoned.
+    const rowsForEvent = runStore.all.filter((r) => r.eventId === EVENT_ID);
+    expect(rowsForEvent).toHaveLength(1);
+    expect(rowsForEvent[0].runId).toBe("run-diff-a");
+    expect(await runStore.get("run-diff-b")).toBeUndefined();
+  });
+
+// A "real HTTP, both requests racing at the millisecond level" version of
+  // the test above was tried and removed: without an injectable fake
+  // provider client on the /generate route (out of this repair's scope to
+  // add), the real pipeline fails and calls runStore.fail() in a couple of
+  // milliseconds -- faster than a second real HTTP request's TCP handshake
+  // and Express routing can complete. Every observed trial showed the
+  // second claim() running against an already-TERMINAL first row, which is
+  // a correct but uninteresting outcome (the partial unique index's WHERE
+  // clause correctly excludes terminal rows -- see shared/schema.ts). The
+  // deterministic test above (pre-claim directly, then hit the real route)
+  // and the store-level stress test below both exercise the actual
+  // atomicity guarantee without depending on winning an unwinnable race
+  // against this environment's own pipeline-failure latency.
+
   it("a fresh runId on a second instance is unaffected by another event's active run", async () => {
     const previewStore = new InMemoryPreviewStore();
     const usageStore = new InMemoryUsageStore();
     const runStore = new InMemoryRunStore();
-    const rejectedArtworkStore = new InMemoryRejectedArtworkStore();
+    const artworkAttemptStore = new InMemoryArtworkAttemptStore();
     await runStore.claim({ runId: "run-other-event", eventId: 999, ownerToken: "someone-else" });
 
-    const instanceB = appFor({ previewStore, usageStore, runStore, rejectedArtworkStore });
+    const instanceB = appFor({ previewStore, usageStore, runStore, artworkAttemptStore });
     expect(await runStore.hasActiveRun(EVENT_ID)).toBe(false);
 
     const res = await request(instanceB)
       .post(`/api/events/owner/${OWNER}/ai-first/generate`)
       .send({ runId: "run-fresh-on-b" });
-    // Not a 409 \u2014 unrelated event, unrelated run id.
+    // Not a 409 — unrelated event, unrelated run id.
     expect(res.status).not.toBe(409);
+  });
+
+  it("the DbRunStore-equivalent invariant: claim() never returns claimed twice for one event without an intervening terminal state", async () => {
+    // A stress-style check directly against the store (no HTTP), running
+    // many concurrent claims with distinct run ids for one event: AT MOST
+    // ONE may succeed, no matter the interleaving, because the store models
+    // the same single-writer invariant the DB partial unique index enforces.
+    const runStore = new InMemoryRunStore();
+    const attempts = Array.from({ length: 12 }, (_, i) =>
+      runStore.claim({ runId: `run-stress-${i}`, eventId: EVENT_ID, ownerToken: OWNER }),
+    );
+    const results = await Promise.all(attempts);
+    const claimed = results.filter((r) => r.outcome === "claimed");
+    const refused = results.filter((r) => r.outcome === "active-elsewhere");
+    expect(claimed).toHaveLength(1);
+    expect(refused).toHaveLength(11);
+    expect(runStore.all.filter((r) => r.eventId === EVENT_ID)).toHaveLength(1);
   });
 });
 
@@ -513,7 +649,7 @@ describe("all four gates failing (tier1 x2 attempts, vision x2 attempts)", () =>
   it("rejects on every attempt and still falls back to a customer-safe direction", async () => {
     const previewStore = new InMemoryPreviewStore();
     const usageStore = new InMemoryUsageStore();
-    const rejectedArtworkStore = new InMemoryRejectedArtworkStore();
+    const artworkAttemptStore = new InMemoryArtworkAttemptStore();
     const events: PipelineEvent[] = [];
 
     const summary = await runAiFirstPipeline({
@@ -524,12 +660,12 @@ describe("all four gates failing (tier1 x2 attempts, vision x2 attempts)", () =>
       brief,
       previewStore,
       usageStore,
-      rejectedArtworkStore,
+      artworkAttemptStore,
       allowance: 40,
       sink: (event) => events.push(event),
       anthropic: singleConceptClient(),
       ocr: false,
-      // Tier 1 fails both attempts (a printed margin on every image) \u2014 the
+      // Tier 1 fails both attempts (a printed margin on every image) -- the
       // vision gate is therefore never reached, so all four "gates" that
       // could have run (tier1 attempt 1, tier1 attempt 2, and the vision
       // pass each of those would have unlocked) come back failed/never-pass.
@@ -547,12 +683,93 @@ describe("all four gates failing (tier1 x2 attempts, vision x2 attempts)", () =>
     expect(direction.attempts.every((a) => a.tier1.passed === false)).toBe(true);
     expect(direction.attempts).toHaveLength(2);
 
-    // Both billed, rejected attempts are durably retained.
-    const rejected = await rejectedArtworkStore.listForOwner(EVENT_ID, OWNER);
-    expect(rejected).toHaveLength(2);
-    expect(rejected.every((r) => r.failureCodes.length > 0)).toBe(true);
-    expect(rejected.every((r) => r.tier1Findings.length > 0)).toBe(true);
-    expect(rejected.every((r) => r.costUsdMicros > 0)).toBe(true);
+    // Both billed attempts are durably retained, and both happen to be
+    // rejected here (every attempt failed the gate) -- every billed result
+    // is retained, not only the failures, but in this scenario every
+    // retained row is a rejected one.
+    const attempts = await artworkAttemptStore.listForOwner(EVENT_ID, OWNER);
+    expect(attempts).toHaveLength(2);
+    expect(attempts.every((r) => r.status === "rejected")).toBe(true);
+    expect(attempts.every((r) => r.previewId === null)).toBe(true);
+    expect(attempts.every((r) => r.failureCodes.length > 0)).toBe(true);
+    expect(attempts.every((r) => r.tier1Findings.length > 0)).toBe(true);
+    expect(attempts.every((r) => r.costUsdMicros > 0)).toBe(true);
+    expect(attempts.every((r) => r.runId === "run-four-gates")).toBe(true);
+    expect(attempts.every((r) => typeof r.idempotencyKey === "string" && r.idempotencyKey!.length > 0)).toBe(true);
+  });
+
+  it("all four directions rejecting under the no-retry safety setting retains all four rejected attempts", async () => {
+    // The counterpart of "4 accepted retained on a clean run" below: with
+    // the next-proof safety setting on, each of the four directions gets
+    // exactly one billed attempt, and if all four fail the gate, all four
+    // must be durably retained -- not just the ones that happened to be
+    // billed under the old two-attempts-per-direction shape.
+    const previewStore = new InMemoryPreviewStore();
+    const usageStore = new InMemoryUsageStore();
+    const artworkAttemptStore = new InMemoryArtworkAttemptStore();
+
+    const themeIds = ["celestial-heirloom", "deco-midnight", "meadow-storybook", "neon-arena"];
+    // Each concept must have a genuinely distinct image fingerprint (see
+    // conceptImageFingerprintInput in shared/aiFirstInvite.ts, which keys off
+    // art.medium/composition/prompt + layoutStyle + styleLaneId -- NOT
+    // conceptName or baseThemeId) or the pipeline's pre-spend reuse lookup
+    // will correctly treat two "different" concepts as the same billed
+    // image and skip generating a second one, which would undercount the
+    // four rejected attempts this test exists to prove.
+    const fourFailingConcepts = [0, 1, 2, 3].map((i) =>
+      concept({
+        conceptName: `Failing Direction ${i}`,
+        baseThemeId: themeIds[i],
+        placementId: "centre",
+        layoutStyle: "full-bleed",
+        art: {
+          medium: "watercolor",
+          composition: `single off-centre focal subject, variant ${i}`,
+          prompt: `A distinct fixture prompt for failing direction ${i}, ink-dark with brass warmth.`,
+        },
+      }),
+    );
+    const fourConceptClient = {
+      messages: {
+        stream: async () =>
+          (async function* () {
+            for (const c of fourFailingConcepts) {
+              yield { type: "content_block_delta", delta: { type: "text_delta", text: `${JSON.stringify(c)}\n` } };
+            }
+          })(),
+      },
+    } as unknown as Anthropic;
+
+    const summary = await runAiFirstPipeline({
+      eventId: EVENT_ID,
+      ownerToken: OWNER,
+      runId: "run-four-directions-no-retry",
+      email: "host@example.com",
+      brief,
+      previewStore,
+      usageStore,
+      artworkAttemptStore,
+      allowance: 40,
+      sink: () => {},
+      anthropic: fourConceptClient,
+      ocr: false,
+      disableAutomaticRetry: true,
+      generateImage: async ({ aspectRatio }) => ({
+        bytes: framedArtworkForAspect(aspectRatio),
+        dataUrl: `data:image/png;base64,${framedArtworkForAspect(aspectRatio).toString("base64")}`,
+        durationMs: 1,
+      }),
+    });
+
+    expect(summary.directions).toBe(4);
+    expect(summary.adaptedDirections).toBe(4);
+    expect(summary.retries).toBe(0);
+    expect(summary.billedImages).toBe(4);
+
+    const attempts = await artworkAttemptStore.listForOwner(EVENT_ID, OWNER);
+    expect(attempts).toHaveLength(4);
+    expect(attempts.every((r) => r.status === "rejected")).toBe(true);
+    expect(new Set(attempts.map((r) => r.directionIndex)).size).toBe(4);
   });
 });
 
@@ -560,12 +777,12 @@ describe("all four gates failing (tier1 x2 attempts, vision x2 attempts)", () =>
    6. Rejected artwork retained for protected review, hidden from ordinary users
    ═══════════════════════════════════════════════════════════════════════ */
 
-describe("rejected paid artwork: retained for protected review, invisible to ordinary routes", () => {
+describe("every billed artwork result is retained for protected review; rejected ones stay invisible to ordinary routes", () => {
   async function seedRejectedRun() {
     const previewStore = new InMemoryPreviewStore();
     const usageStore = new InMemoryUsageStore();
     const runStore = new InMemoryRunStore();
-    const rejectedArtworkStore = new InMemoryRejectedArtworkStore();
+    const artworkAttemptStore = new InMemoryArtworkAttemptStore();
     const events: PipelineEvent[] = [];
 
     await runAiFirstPipeline({
@@ -576,7 +793,7 @@ describe("rejected paid artwork: retained for protected review, invisible to ord
       brief,
       previewStore,
       usageStore,
-      rejectedArtworkStore,
+      artworkAttemptStore,
       allowance: 40,
       sink: (event) => events.push(event),
       anthropic: singleConceptClient(),
@@ -588,33 +805,51 @@ describe("rejected paid artwork: retained for protected review, invisible to ord
       }),
     });
 
-    return { previewStore, usageStore, runStore, rejectedArtworkStore, events };
+    return { previewStore, usageStore, runStore, artworkAttemptStore, events };
   }
 
-  it("the owner-scoped review route returns the rejected evidence", async () => {
-    const { previewStore, usageStore, runStore, rejectedArtworkStore } = await seedRejectedRun();
-    const app = appFor({ previewStore, usageStore, runStore, rejectedArtworkStore });
+  it("the owner-scoped review listing returns the rejected evidence, without embedding bytes", async () => {
+    const { previewStore, usageStore, runStore, artworkAttemptStore } = await seedRejectedRun();
+    const app = appFor({ previewStore, usageStore, runStore, artworkAttemptStore });
 
-    const res = await request(app).get(`/api/events/owner/${OWNER}/ai-first/review/rejected`);
+    const res = await request(app).get(`/api/events/owner/${OWNER}/ai-first/review/attempts`);
     expect(res.status).toBe(200);
-    expect(res.body.rejected.length).toBeGreaterThan(0);
-    expect(res.body.rejected[0].assetDataUrl).toMatch(/^data:image\/png;base64,/);
-    expect(res.body.rejected[0].failureCodes.length).toBeGreaterThan(0);
+    expect(res.body.attempts.length).toBeGreaterThan(0);
+    expect(res.body.attempts.every((a: { status: string }) => a.status === "rejected")).toBe(true);
+    expect(res.body.attempts[0].assetDataUrl).toBeUndefined();
+    expect(res.body.attempts[0].assetUrl).toMatch(/\/review\/attempts\/.+\/asset$/);
+    expect(res.body.attempts[0].failureCodes.length).toBeGreaterThan(0);
+
+    // The binary route behind that assetUrl serves the real bytes.
+    const asset = await request(app).get(res.body.attempts[0].assetUrl);
+    expect(asset.status).toBe(200);
+    expect(asset.headers["content-type"]).toContain("image/png");
   });
 
   it("a different owner token for the same event sees nothing", async () => {
-    const { previewStore, usageStore, runStore, rejectedArtworkStore } = await seedRejectedRun();
-    const app = appFor({ previewStore, usageStore, runStore, rejectedArtworkStore });
+    const { previewStore, usageStore, runStore, artworkAttemptStore } = await seedRejectedRun();
+    const app = appFor({ previewStore, usageStore, runStore, artworkAttemptStore });
 
     // A wrong/unknown owner token doesn't resolve to an event at all, so the
     // route 404s rather than leaking anything.
-    const res = await request(app).get(`/api/events/owner/not-the-owner/ai-first/review/rejected`);
+    const res = await request(app).get(`/api/events/owner/not-the-owner/ai-first/review/attempts`);
+    expect(res.status).toBe(404);
+  });
+
+  it("a different owner token cannot fetch another event's attempt binary asset either", async () => {
+    const { previewStore, usageStore, runStore, artworkAttemptStore } = await seedRejectedRun();
+    const app = appFor({ previewStore, usageStore, runStore, artworkAttemptStore });
+
+    const listing = await request(app).get(`/api/events/owner/${OWNER}/ai-first/review/attempts`);
+    const id = listing.body.attempts[0].id as string;
+
+    const res = await request(app).get(`/api/events/owner/not-the-owner/ai-first/review/attempts/${id}/asset`);
     expect(res.status).toBe(404);
   });
 
   it("ordinary routes never surface a rejected image", async () => {
-    const { previewStore, usageStore, runStore, rejectedArtworkStore, events } = await seedRejectedRun();
-    const app = appFor({ previewStore, usageStore, runStore, rejectedArtworkStore });
+    const { previewStore, usageStore, runStore, artworkAttemptStore, events } = await seedRejectedRun();
+    const app = appFor({ previewStore, usageStore, runStore, artworkAttemptStore });
 
     // status: no mention of rejected artwork anywhere in the payload.
     const status = await request(app).get(`/api/events/owner/${OWNER}/ai-first/status`);
@@ -629,10 +864,99 @@ describe("rejected paid artwork: retained for protected review, invisible to ord
     expect(apply.status).toBe(200);
 
     // The rejected bytes are not addressable through the preview store at
-    // all \u2014 they were never saved there in the first place.
-    const rejected = (await rejectedArtworkStore.listForOwner(EVENT_ID, OWNER))[0];
+    // all -- they were never saved there in the first place.
+    const rejected = (await artworkAttemptStore.listForOwner(EVENT_ID, OWNER))[0];
     const viaPreviewStore = await previewStore.findByPreviewId(EVENT_ID, rejected.assetHash);
     expect(viaPreviewStore).toBeUndefined();
+  });
+});
+
+describe("every billed image result is retained, including a clean run's four accepted images", () => {
+  it("4 accepted results are retained with previewId set, on a clean run with no rejections", async () => {
+    const previewStore = new InMemoryPreviewStore();
+    const usageStore = new InMemoryUsageStore();
+    const artworkAttemptStore = new InMemoryArtworkAttemptStore();
+    const events: PipelineEvent[] = [];
+
+    const themeIds = ["celestial-heirloom", "deco-midnight", "meadow-storybook", "neon-arena"];
+    // See the note on the equivalent fixture above: distinct art.prompt per
+    // concept is required so the reuse-by-fingerprint path doesn't collapse
+    // two "different" concepts into one billed image.
+    const fourPassingConcepts = [0, 1, 2, 3].map((i) =>
+      concept({
+        conceptName: `Direction ${i}`,
+        baseThemeId: themeIds[i],
+        placementId: "centre",
+        layoutStyle: "full-bleed",
+        art: {
+          medium: "watercolor",
+          composition: `single off-centre focal subject, variant ${i}`,
+          prompt: `A distinct fixture prompt for accepted direction ${i}, ink-dark with brass warmth.`,
+        },
+      }),
+    );
+    const fourConceptClientWithPassingVision = {
+      messages: {
+        stream: async () =>
+          (async function* () {
+            for (const c of fourPassingConcepts) {
+              yield { type: "content_block_delta", delta: { type: "text_delta", text: `${JSON.stringify(c)}\n` } };
+            }
+          })(),
+        create: async () => ({
+          content: [{ type: "text", text: JSON.stringify(PASSING_VISION_BODY) }],
+          usage: { input_tokens: 1000, output_tokens: 150 },
+        }),
+      },
+    } as unknown as Anthropic;
+
+    const summary = await runAiFirstPipeline({
+      eventId: EVENT_ID,
+      ownerToken: OWNER,
+      runId: "run-four-accepted",
+      email: "host@example.com",
+      brief,
+      previewStore,
+      usageStore,
+      artworkAttemptStore,
+      allowance: 40,
+      sink: (event) => events.push(event),
+      anthropic: fourConceptClientWithPassingVision,
+      ocr: false,
+      generateImage: async ({ aspectRatio }) => ({
+        bytes: artworkForAspect(aspectRatio),
+        dataUrl: `data:image/png;base64,${artworkForAspect(aspectRatio).toString("base64")}`,
+        durationMs: 1,
+      }),
+    });
+
+    expect(summary.directions).toBe(4);
+    expect(summary.adaptedDirections).toBe(0);
+
+    const attempts = await artworkAttemptStore.listForOwner(EVENT_ID, OWNER);
+    expect(attempts).toHaveLength(4);
+    expect(attempts.every((r) => r.status === "accepted")).toBe(true);
+    expect(attempts.every((r) => typeof r.previewId === "string" && r.previewId!.length > 0)).toBe(true);
+    expect(attempts.every((r) => r.failureCodes.length === 0)).toBe(true);
+    expect(new Set(attempts.map((r) => r.directionIndex)).size).toBe(4);
+
+    // Every accepted attempt's previewId matches a real, ordinarily-servable
+    // preview -- accepted evidence points at the same artwork the host sees,
+    // not a separate private copy.
+    for (const row of attempts) {
+      const preview = await previewStore.findByPreviewId(EVENT_ID, row.previewId!);
+      expect(preview).toBeDefined();
+      expect(preview!.assetHash).toBe(row.assetHash);
+    }
+
+    // And the protected listing surfaces all four as accepted, still with no
+    // bytes embedded in the JSON.
+    const app = appFor({ previewStore, usageStore, runStore: new InMemoryRunStore(), artworkAttemptStore });
+    const listing = await request(app).get(`/api/events/owner/${OWNER}/ai-first/review/attempts`);
+    expect(listing.status).toBe(200);
+    expect(listing.body.attempts).toHaveLength(4);
+    expect(listing.body.attempts.every((a: { status: string }) => a.status === "accepted")).toBe(true);
+    expect(listing.body.attempts.every((a: { assetDataUrl?: string }) => a.assetDataUrl === undefined)).toBe(true);
   });
 });
 
@@ -670,7 +994,7 @@ describe("visible user failure", () => {
       previewStore: new InMemoryPreviewStore(),
       usageStore: new InMemoryUsageStore(),
       runStore: new InMemoryRunStore(),
-      rejectedArtworkStore: new InMemoryRejectedArtworkStore(),
+      artworkAttemptStore: new InMemoryArtworkAttemptStore(),
     });
     const res = await request(app).post(`/api/events/owner/${OWNER}/ai-first/generate`).send({});
     expect(res.status).toBe(400);
@@ -687,7 +1011,7 @@ describe("studio fallback Apply uses exact bytes and calls no image generator", 
     const previewStore = new InMemoryPreviewStore();
     const usageStore = new InMemoryUsageStore();
     const runStore = new InMemoryRunStore();
-    const rejectedArtworkStore = new InMemoryRejectedArtworkStore();
+    const artworkAttemptStore = new InMemoryArtworkAttemptStore();
     const events: PipelineEvent[] = [];
     let imageCalls = 0;
 
@@ -715,7 +1039,7 @@ describe("studio fallback Apply uses exact bytes and calls no image generator", 
     const stored = await previewStore.findByPreviewId(EVENT_ID, direction.previewId);
     expect(stored).toBeDefined();
 
-    const app = appFor({ previewStore, usageStore, runStore, rejectedArtworkStore });
+    const app = appFor({ previewStore, usageStore, runStore, artworkAttemptStore });
     const callsBeforeApply = imageCalls;
 
     const res = await request(app)
@@ -744,7 +1068,7 @@ describe("kill switch: zero provider functions invoked, clear paused response", 
       previewStore: new InMemoryPreviewStore(),
       usageStore: new InMemoryUsageStore(),
       runStore: new InMemoryRunStore(),
-      rejectedArtworkStore: new InMemoryRejectedArtworkStore(),
+      artworkAttemptStore: new InMemoryArtworkAttemptStore(),
       env: { [featureFlagEnvVar("invitationGenerationKillSwitch")]: "1" },
     });
 
@@ -764,7 +1088,7 @@ describe("kill switch: zero provider functions invoked, clear paused response", 
       previewStore: new InMemoryPreviewStore(),
       usageStore: new InMemoryUsageStore(),
       runStore,
-      rejectedArtworkStore: new InMemoryRejectedArtworkStore(),
+      artworkAttemptStore: new InMemoryArtworkAttemptStore(),
       env: { [featureFlagEnvVar("invitationGenerationKillSwitch")]: "1" },
     });
 
@@ -779,7 +1103,7 @@ describe("kill switch: zero provider functions invoked, clear paused response", 
       previewStore,
       usageStore,
       runStore: new InMemoryRunStore(),
-      rejectedArtworkStore: new InMemoryRejectedArtworkStore(),
+      artworkAttemptStore: new InMemoryArtworkAttemptStore(),
       env: { [featureFlagEnvVar("invitationGenerationKillSwitch")]: "1" },
     });
 

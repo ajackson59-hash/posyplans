@@ -9,21 +9,34 @@
 // instance, and false locally the moment a client retries after a dropped
 // connection.
 //
-// The fix is a row per run, written with a unique constraint on `runId`. The
-// client mints `runId` once per logical run (a fresh generate click, not a
-// fresh HTTP retry of the same click) and sends it on every request for that
-// run. "Duplicate click, same run id" and "duplicate request reaching a
-// second server instance" become the same code path: both are a second
-// attempt to claim a row that already exists, so the guard is a single
-// atomic write — `claim()` — rather than a check-then-act race that two
-// instances can both pass.
+// The fix is a row per run, claimed with TWO independent atomic constraints
+// (see shared/schema.ts and migrations/0001_reliability_repair_run_authority.sql
+// for the real DB DDL, not comments):
+//
+//   1. A unique index on runId. "Duplicate click, same run id" and
+//      "duplicate request reaching a second server instance, same run id"
+//      are the same code path: both are a second attempt to claim a row
+//      that already exists.
+//
+//   2. A PARTIAL unique index on (eventId) WHERE status = 'active' AND
+//      terminal = false. This is what closes the gap a prior pass of this
+//      repair left open: two instances racing with DIFFERENT run ids for
+//      the SAME event both pass a naive `hasActiveRun` check followed by an
+//      unconditional `claim`, because neither runId collides with the
+//      other's. Only a second, independent constraint on eventId — not on
+//      runId — makes "this event already has a non-terminal active run" a
+//      fact the store itself refuses to duplicate, regardless of which run
+//      id either request used. claim() reports that case as
+//      "active-elsewhere", distinct from "duplicate" (same run id).
 //
 // A run's lifecycle is: claim() (active) -> zero or more progress()/
 // fallback() calls -> exactly one of complete() or fail(), which sets
 // `terminal: true`. `terminal` is what the client-side EOF check in
 // aiFirstSession.ts is really asking the server to have recorded: if the
 // stream ends and the row is not terminal, the run did not finish and must
-// be reported as a failure, never treated as success by omission.
+// be reported as a failure, never treated as success by omission. It is
+// also what frees the per-event slot: once a run is terminal, the partial
+// index above no longer counts it, so a genuinely new run can be claimed.
 
 export type RunStatus = "active" | "completed" | "failed";
 
@@ -44,10 +57,17 @@ export interface GenerationRunRecord {
 export type ClaimResult =
   | { outcome: "claimed"; record: GenerationRunRecord }
   /** Another request already holds (or finished) this exact run id. */
-  | { outcome: "duplicate"; record: GenerationRunRecord };
+  | { outcome: "duplicate"; record: GenerationRunRecord }
+  /**
+   * This event already has a different, non-terminal run active. The
+   * requested runId was never created — there is no row for it, so callers
+   * must not treat `record` as "their" run, only as the reason they were
+   * refused.
+   */
+  | { outcome: "active-elsewhere"; record: GenerationRunRecord };
 
 export interface AiFirstRunStore {
-  /** Atomically creates the run row, or returns the existing one. */
+  /** Atomically creates the run row, or reports why it could not. */
   claim(input: { runId: string; eventId: number; ownerToken: string; now?: number }): Promise<ClaimResult>;
   get(runId: string): Promise<GenerationRunRecord | undefined>;
   updateProgress(runId: string, message: string, now?: number): Promise<void>;
@@ -60,19 +80,38 @@ export interface AiFirstRunStore {
 }
 
 /**
- * In-memory implementation. Used by tests, and it is deliberately built the
- * same way the DB-backed one is (claim-or-return, keyed by runId) so a test
- * against this store exercises the same race-closing logic the DB unique
- * constraint provides — a Map's `has`-then-`set` is atomic in a single
- * event-loop turn, which is the in-process analogue of a DB unique index.
+ * In-memory implementation. Used by tests, and it is deliberately built to
+ * model BOTH database constraints claim() depends on, not just the runId
+ * one: `claim()` here does a synchronous, single-turn scan for an existing
+ * row with the same runId (models the runId unique index) and, failing
+ * that, for any OTHER non-terminal active row on the same event (models the
+ * partial unique index on eventId). Because there is no `await` between
+ * those checks and the `Map.set` that follows, this is atomic within one
+ * process the same way the two real unique indexes are atomic across many —
+ * a test against this store exercises the identical decision the database
+ * makes, not a simplification of it.
  */
 export class InMemoryRunStore implements AiFirstRunStore {
   private rows = new Map<string, GenerationRunRecord>();
 
   async claim(input: { runId: string; eventId: number; ownerToken: string; now?: number }): Promise<ClaimResult> {
     const now = input.now ?? Date.now();
-    const existing = this.rows.get(input.runId);
-    if (existing) return { outcome: "duplicate", record: { ...existing } };
+
+    // Constraint 1: the runId unique index.
+    const existingSameRun = this.rows.get(input.runId);
+    if (existingSameRun) return { outcome: "duplicate", record: { ...existingSameRun } };
+
+    // Constraint 2: the partial unique index on eventId WHERE active AND
+    // not terminal. Checked before the write, in the same synchronous pass,
+    // so nothing can interleave between this check and the `rows.set` below
+    // — the in-memory analogue of both constraints being enforced by one
+    // database transaction's index checks.
+    for (const row of Array.from(this.rows.values())) {
+      if (row.eventId === input.eventId && row.status === "active" && !row.terminal) {
+        return { outcome: "active-elsewhere", record: { ...row } };
+      }
+    }
+
     const record: GenerationRunRecord = {
       runId: input.runId,
       eventId: input.eventId,
@@ -86,8 +125,6 @@ export class InMemoryRunStore implements AiFirstRunStore {
       createdAt: now,
       updatedAt: now,
     };
-    // The write itself: one Map.set, no await between the `has` check above
-    // and this, so no other call on this process can interleave.
     this.rows.set(input.runId, record);
     return { outcome: "claimed", record: { ...record } };
   }

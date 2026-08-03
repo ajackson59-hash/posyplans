@@ -30,7 +30,7 @@ import {
 } from "./usage";
 import { INVITATION_ASK_POSY_ACTIONS, resolveAskPosyAction } from "./askPosy";
 import type { AiFirstRunStore } from "./runStore";
-import type { AiFirstRejectedArtworkStore } from "./rejectedArtworkStore";
+import type { AiFirstArtworkAttemptStore } from "./artworkAttemptStore";
 
 /** One breaker and one limiter per process, shared by every event. */
 const breaker = new CircuitBreaker();
@@ -49,8 +49,8 @@ export interface AiFirstDeps {
   usageStore: AiFirstUsageStore & { beginRun?(id: number): void; endRun?(id: number): void };
   /** Durable run/idempotency state. Required for real spend to be safe across instances. */
   runStore: AiFirstRunStore;
-  /** Durable retention of billed-but-rejected artwork, for protected review. */
-  rejectedArtworkStore: AiFirstRejectedArtworkStore;
+  /** Durable retention of every billed provider result (accepted AND rejected), for protected review. */
+  artworkAttemptStore: AiFirstArtworkAttemptStore;
   env?: Record<string, string | undefined>;
 }
 
@@ -206,22 +206,30 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
         return;
       }
 
-      // Atomic claim. This single write is what makes "duplicate click, same
-      // run id" and "duplicate request reaching a separate server instance"
-      // the same code path: both are a second claim() for a runId that
-      // already has a row, so both take the `duplicate` branch below rather
-      // than either one buying a second set of images.
+      // Atomic claim, enforced by TWO independent DB constraints (see
+      // shared/schema.ts): a plain unique index on runId, and a PARTIAL
+      // unique index on eventId for non-terminal active rows. This is what
+      // makes "duplicate click, same run id", "duplicate request reaching a
+      // separate server instance with the same run id", AND "a separate
+      // server instance racing with a DIFFERENT run id for the same event"
+      // all fail here rather than any of them reaching the pipeline twice.
       const claim = await deps.runStore.claim({ runId, eventId: event.id, ownerToken });
-      if (claim.outcome === "duplicate") {
+      if (claim.outcome === "duplicate" || claim.outcome === "active-elsewhere") {
         // Not an error: replay the run's current durable state as a single
         // JSON response rather than starting a second SSE stream. The client
         // is expected to already be reading the first stream (or to poll
         // /run/:runId if it is not); this response exists so a genuinely
-        // duplicated request — the double-click or the second instance —
-        // gets a well-formed answer instead of a second billed run.
+        // duplicated request — the double-click, the second instance with the
+        // same run id, or a second instance racing with a different run id
+        // for the same event — gets a well-formed answer instead of a second
+        // billed run. `denial` distinguishes the two cases for callers that
+        // care (a different-run-id caller has no runId of its own to poll).
         res.status(409).json({
-          error: "This invitation run is already in progress.",
-          denial: "duplicate-run",
+          error:
+            claim.outcome === "duplicate"
+              ? "This invitation run is already in progress."
+              : "This event already has an invitation run in progress.",
+          denial: claim.outcome,
           run: {
             runId: claim.record.runId,
             status: claim.record.status,
@@ -284,7 +292,7 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
           runId,
           ownerToken,
           runStore: deps.runStore,
-          rejectedArtworkStore: deps.rejectedArtworkStore,
+          artworkAttemptStore: deps.artworkAttemptStore,
           disableAutomaticRetry: flags().aiFirstDisableAutomaticRetry,
         });
       } catch (err) {
@@ -374,6 +382,12 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
    * route ever has to carry a `data:` URL. Owner-scoped like every other
    * route here: the previewId alone is not treated as a public handle, it
    * is looked up within the event the ownerToken resolves to.
+   *
+   * Cache-Control is `private`, not `public`: this URL embeds the event's
+   * ownerToken, so a shared cache (a CDN, a corporate proxy) must never be
+   * allowed to store and replay this response to a different client. Only
+   * the requesting browser's own cache may keep it — `immutable` still
+   * applies there, since the bytes at a given previewId never change.
    */
   app.get(
     "/api/events/owner/:ownerToken/ai-first/preview/:previewId/asset",
@@ -395,10 +409,7 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
       }
       res.writeHead(200, {
         "Content-Type": asset.contentType,
-        // Content-addressed by previewId (itself derived from a content
-        // hash), so it is safe to cache aggressively — the bytes at this URL
-        // never change once written.
-        "Cache-Control": "public, max-age=31536000, immutable",
+        "Cache-Control": "private, max-age=31536000, immutable",
         "Content-Length": String(asset.bytes.length),
       });
       res.end(asset.bytes);
@@ -406,16 +417,18 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
   );
 
   /**
-   * Protected reviewer evidence: every billed image the quality gate
-   * rejected, for this event only. Gated the same way apply/status already
-   * are — by the event's own ownerToken — so this is not a new public
-   * diagnostic surface, it is the same owner-auth boundary the rest of the
-   * AI-first routes already enforce, applied to a new kind of record.
-   * Ordinary user routes (status, generate, apply) never reference this
-   * store, so a rejected image cannot reach a host or a guest through them.
+   * Protected reviewer evidence: every billed image result for this event,
+   * accepted and rejected alike, WITHOUT embedding any image bytes in the
+   * JSON — this listing stays small no matter how large or how many the
+   * underlying images are. Gated the same way apply/status already are —
+   * by the event's own ownerToken — so this is not a new public diagnostic
+   * surface, it is the same owner-auth boundary the rest of the AI-first
+   * routes already enforce, applied to a new kind of record. Ordinary user
+   * routes (status, generate, apply) never reference this store, so a
+   * rejected image cannot reach a host or a guest through them.
    */
   app.get(
-    "/api/events/owner/:ownerToken/ai-first/review/rejected",
+    "/api/events/owner/:ownerToken/ai-first/review/attempts",
     gated(async (req, res) => {
       const ownerToken = String(req.params.ownerToken);
       const event = await deps.storage.getEventByOwnerToken(ownerToken);
@@ -423,15 +436,20 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
         res.status(404).json({ error: "Event not found" });
         return;
       }
-      const rows = await deps.rejectedArtworkStore.listForOwner(event.id, ownerToken);
+      const rows = await deps.artworkAttemptStore.listForOwner(event.id, ownerToken);
       res.json({
-        rejected: rows.map((row) => ({
+        attempts: rows.map((row) => ({
+          id: row.id,
           directionIndex: row.directionIndex,
           attempt: row.attempt,
+          status: row.status,
+          runId: row.runId,
+          idempotencyKey: row.idempotencyKey,
           assetHash: row.assetHash,
-          // Base64 here is intentional and safe: this route is owner-scoped
-          // review evidence, not a stream event or an ordinary user route.
-          assetDataUrl: `data:image/png;base64,${row.assetBytesBase64}`,
+          // The binary route below serves the actual bytes; this listing
+          // never does, however small or large the underlying image is.
+          assetUrl: `/api/events/owner/${ownerToken}/ai-first/review/attempts/${row.id}/asset`,
+          previewId: row.previewId,
           conceptName: row.concept.conceptName,
           failureCodes: row.failureCodes,
           tier1Findings: row.tier1Findings,
@@ -440,6 +458,40 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
           createdAt: row.createdAt,
         })),
       });
+    }),
+  );
+
+  /**
+   * Binary asset for one protected review attempt (accepted or rejected).
+   * Owner-scoped exactly like the listing above and the ordinary preview
+   * asset route; never a public diagnostic endpoint. Cached `private`, not
+   * `public`: this URL is reachable only with the event's ownerToken, and a
+   * rejected image must never be able to end up in a shared/CDN cache.
+   */
+  app.get(
+    "/api/events/owner/:ownerToken/ai-first/review/attempts/:id/asset",
+    gated(async (req, res) => {
+      const ownerToken = String(req.params.ownerToken);
+      const event = await deps.storage.getEventByOwnerToken(ownerToken);
+      if (!event) {
+        res.status(404).json({ error: "Event not found" });
+        return;
+      }
+      const row = await deps.artworkAttemptStore.findById(event.id, ownerToken, String(req.params.id));
+      if (!row) {
+        res.status(404).json({ error: "That review attempt is no longer available." });
+        return;
+      }
+      const bytes = Buffer.from(row.assetBytesBase64, "base64");
+      res.writeHead(200, {
+        "Content-Type": "image/png",
+        // Owner-private: content-addressed by id, so long-lived caching is
+        // safe in the requesting browser's own cache, but never in a shared
+        // one — this is protected evidence, not a public asset.
+        "Cache-Control": "private, max-age=31536000, immutable",
+        "Content-Length": String(bytes.length),
+      });
+      res.end(bytes);
     }),
   );
 

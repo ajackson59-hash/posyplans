@@ -11,7 +11,7 @@ import { registerAiFirstRoutes } from "../server/aiFirst/routes";
 import { InMemoryPreviewStore } from "../server/aiFirst/previewStore";
 import { InMemoryUsageStore } from "../server/aiFirst/usage";
 import { InMemoryRunStore } from "../server/aiFirst/runStore";
-import { InMemoryRejectedArtworkStore } from "../server/aiFirst/rejectedArtworkStore";
+import { InMemoryArtworkAttemptStore } from "../server/aiFirst/artworkAttemptStore";
 
 const OWNER = "owner-token";
 
@@ -32,7 +32,7 @@ function appWith(env: Record<string, string | undefined>) {
     previewStore: new InMemoryPreviewStore(),
     usageStore: new InMemoryUsageStore(),
     runStore: new InMemoryRunStore(),
-    rejectedArtworkStore: new InMemoryRejectedArtworkStore(),
+    artworkAttemptStore: new InMemoryArtworkAttemptStore(),
     env,
   });
   return app;

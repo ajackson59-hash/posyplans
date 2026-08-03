@@ -1,4 +1,5 @@
-import { pgTable, text, integer, serial, boolean, bigint } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, serial, boolean, bigint, uniqueIndex, index } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -558,38 +559,43 @@ export type AiFirstPreview = typeof aiFirstPreviews.$inferSelect;
 export const AI_IMAGE_REASONS = ["initial", "quality-retry", "reuse", "apply"] as const;
 export type AiImageReason = (typeof AI_IMAGE_REASONS)[number];
 
-export const aiFirstImageLedger = pgTable("ai_first_image_ledger", {
-  id: serial("id").primaryKey(),
-  eventId: integer("event_id").notNull(),
-  email: text("email"), // nullable — normalized lowercase, for monthly caps
-  reason: text("reason").notNull(), // initial | quality-retry | reuse | apply
-  // False for reuse/apply and for anything the provider never charged for.
-  billed: boolean("billed").notNull().default(true),
-  // True when the attempt was an automatic quality retry: counts against
-  // spend, never against the host's visible action allowance.
-  automatic: boolean("automatic").notNull().default(false),
-  conceptFingerprint: text("concept_fingerprint"),
-  previewId: text("preview_id"),
-  // Set on reuse rows to the previewId whose bytes were served instead.
-  reuseOf: text("reuse_of"),
-  idempotencyKey: text("idempotency_key"),
-  costUsdMicros: integer("cost_usd_micros").notNull().default(0),
-  createdAt: bigint("created_at", { mode: "number" }).notNull(),
-});
+export const aiFirstImageLedger = pgTable(
+  "ai_first_image_ledger",
+  {
+    id: serial("id").primaryKey(),
+    eventId: integer("event_id").notNull(),
+    email: text("email"), // nullable — normalized lowercase, for monthly caps
+    reason: text("reason").notNull(), // initial | quality-retry | reuse | apply
+    // False for reuse/apply and for anything the provider never charged for.
+    billed: boolean("billed").notNull().default(true),
+    // True when the attempt was an automatic quality retry: counts against
+    // spend, never against the host's visible action allowance.
+    automatic: boolean("automatic").notNull().default(false),
+    conceptFingerprint: text("concept_fingerprint"),
+    previewId: text("preview_id"),
+    // Set on reuse rows to the previewId whose bytes were served instead.
+    reuseOf: text("reuse_of"),
+    idempotencyKey: text("idempotency_key"),
+    costUsdMicros: integer("cost_usd_micros").notNull().default(0),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  },
+  (table) => [
+    // A REAL partial unique index, part of the generated schema (see
+    // migrations/ for the SQL this produces via `drizzle-kit generate` —
+    // not a comment). Two concurrent requests inserting a ledger row for
+    // the same run+direction+attempt idempotency key now race at the
+    // database: the loser's INSERT fails with a unique-violation instead of
+    // both succeeding. `findByIdempotencyKey` followed by `record` in
+    // usage.ts is the read-then-write fast path for the common case; this
+    // index is what makes the outcome correct even when two application
+    // processes run that fast path at the same instant.
+    uniqueIndex("ai_first_image_ledger_idempotency_key_uq")
+      .on(table.idempotencyKey)
+      .where(sql`${table.idempotencyKey} is not null`),
+  ],
+);
 
 export type AiFirstImageLedgerRow = typeof aiFirstImageLedger.$inferSelect;
-
-// MIGRATION NOTE (not applied — code-documented only, per repair scope):
-// idempotencyKey above should carry a real unique index,
-//   CREATE UNIQUE INDEX ai_first_image_ledger_idempotency_key_uq
-//     ON ai_first_image_ledger (idempotency_key)
-//     WHERE idempotency_key IS NOT NULL;
-// so that two concurrent requests inserting the same per-direction spend
-// key race at the database rather than in application memory. The current
-// enforcement path is `findByIdempotencyKey` followed by `record`, which is
-// correct for the single-writer-per-run invariant enforced by
-// ai_first_generation_runs below, but a unique index is the belt to that
-// table's braces and should land in the next real migration.
 
 /* ============ AI-FIRST GENERATION RUNS (durable idempotency) ============ */
 // One row per attempted generation run, keyed by a client-generated runId.
@@ -599,99 +605,113 @@ export type AiFirstImageLedgerRow = typeof aiFirstImageLedger.$inferSelect;
 // silently wrong the moment two Vercel instances or a redeploy are in the
 // picture, because each instance has its own Map.
 //
-// The unique constraint on runId is what makes "duplicate click" and
-// "duplicate request to a second server instance" the same case: both are
-// a second INSERT attempt against a row that already exists, so the guard
-// is a single atomic write rather than a check-then-act race.
+// Two constraints, not one, make the atomicity real:
 //
-// MIGRATION NOTE (not applied — code-documented only, per repair scope):
-//   CREATE TABLE ai_first_generation_runs (
-//     id SERIAL PRIMARY KEY,
-//     run_id TEXT NOT NULL UNIQUE,
-//     event_id INTEGER NOT NULL,
-//     owner_token TEXT NOT NULL,
-//     status TEXT NOT NULL DEFAULT 'active', -- active | completed | failed
-//     progress_message TEXT NOT NULL DEFAULT '',
-//     completed_count INTEGER NOT NULL DEFAULT 0,
-//     fallback_count INTEGER NOT NULL DEFAULT 0,
-//     error_message TEXT,
-//     terminal BOOLEAN NOT NULL DEFAULT false,
-//     created_at BIGINT NOT NULL,
-//     updated_at BIGINT NOT NULL
-//   );
-//   CREATE INDEX ai_first_generation_runs_event_id_idx ON ai_first_generation_runs (event_id);
-// A real migration should also add a partial index on (event_id) WHERE
-// status = 'active' to make "does this event already have an active run"
-// a cheap indexed lookup instead of a table scan, mirroring the
-// MAX_CONCURRENT_GENERATIONS_PER_EVENT check in usage.ts.
-export const aiFirstGenerationRuns = pgTable("ai_first_generation_runs", {
-  id: serial("id").primaryKey(),
-  runId: text("run_id").notNull().unique(),
-  eventId: integer("event_id").notNull(),
-  ownerToken: text("owner_token").notNull(),
-  // active | completed | failed
-  status: text("status").notNull().default("active"),
-  progressMessage: text("progress_message").notNull().default(""),
-  completedCount: integer("completed_count").notNull().default(0),
-  fallbackCount: integer("fallback_count").notNull().default(0),
-  errorMessage: text("error_message"),
-  // True once the run has reached an explicit done/error/failed terminal
-  // state. A row that is merely "not active anymore" (e.g. the process
-  // died) but never reached this is exactly the unexpected-EOF case the
-  // client must treat as a failure, not a success.
-  terminal: boolean("terminal").notNull().default(false),
-  createdAt: bigint("created_at", { mode: "number" }).notNull(),
-  updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
-});
+// 1. A plain unique index on run_id. This is what makes "duplicate click,
+//    same run id" and "duplicate request to a second server instance, same
+//    run id" the same case: both are a second INSERT attempt against a row
+//    that already exists.
+//
+// 2. A PARTIAL unique index on (event_id) WHERE status = 'active' AND
+//    terminal = false. This is the fix for the gap a prior pass of this
+//    repair left open: two server instances racing with *different* run
+//    ids for the *same event* both pass a `hasActiveRun` check-then-`claim`
+//    sequence, because neither request's runId collides with the other's.
+//    Only a second, independent constraint on event_id — not on run_id —
+//    closes that race, by making "this event already has an active,
+//    non-terminal run" a fact the database itself refuses to duplicate,
+//    regardless of what run id either request used.
+//
+// Both indexes are part of the generated schema below (see migrations/ for
+// the SQL `drizzle-kit generate` produced from them), not comments.
+export const aiFirstGenerationRuns = pgTable(
+  "ai_first_generation_runs",
+  {
+    id: serial("id").primaryKey(),
+    runId: text("run_id").notNull().unique(),
+    eventId: integer("event_id").notNull(),
+    ownerToken: text("owner_token").notNull(),
+    // active | completed | failed
+    status: text("status").notNull().default("active"),
+    progressMessage: text("progress_message").notNull().default(""),
+    completedCount: integer("completed_count").notNull().default(0),
+    fallbackCount: integer("fallback_count").notNull().default(0),
+    errorMessage: text("error_message"),
+    // True once the run has reached an explicit done/error/failed terminal
+    // state. A row that is merely "not active anymore" (e.g. the process
+    // died) but never reached this is exactly the unexpected-EOF case the
+    // client must treat as a failure, not a success.
+    terminal: boolean("terminal").notNull().default(false),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+    updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
+  },
+  (table) => [
+    // "Only one non-terminal active run per event, ever, no matter which
+    // run id got there first." A second instance's INSERT for a *different*
+    // run id on the same event now fails at the database with a
+    // unique-violation on this index, the same way a duplicate run id
+    // fails on the run_id unique index above. claim() below turns that
+    // unique-violation into an "active-elsewhere" outcome distinct from a
+    // same-runId "duplicate" outcome, so callers can tell the two apart.
+    uniqueIndex("ai_first_generation_runs_one_active_per_event_uq")
+      .on(table.eventId)
+      .where(sql`${table.status} = 'active' and ${table.terminal} = false`),
+    index("ai_first_generation_runs_event_id_idx").on(table.eventId),
+  ],
+);
 
 export type AiFirstGenerationRunRow = typeof aiFirstGenerationRuns.$inferSelect;
 
-/* ============ AI-FIRST REJECTED ARTWORK (protected reviewer evidence) ===== */
-// Every billed image is money spent, including the ones the quality gate
-// rejected. Before this table, a rejected attempt's bytes only ever lived
-// in the SSE stream (as a data URL, now removed — see the preview asset
-// route) and in the pipeline's in-memory attempt log; nothing durable
-// survived the request. That made "why did we pay for four images this
-// event only shows one direction" unanswerable after the fact.
+/* ============ AI-FIRST ARTWORK ATTEMPTS (protected reviewer evidence) ==== */
+// Every billed image is money spent — accepted AND rejected — and the host
+// facing routes only ever show the accepted one per direction. Before this
+// table existed, a rejected attempt's bytes only lived in the SSE stream
+// (as a data URL, now removed — see the preview asset route) and in the
+// pipeline's in-memory attempt log; nothing durable survived the request,
+// for either outcome. That made "why did we pay for four images this event
+// only shows one direction" unanswerable after the fact, and gave no way to
+// audit an accepted image's gate scores after the fact either.
 //
-// This table is intentionally separate from ai_first_previews: ordinary
-// user-facing routes (status, generate, apply) must never be able to
-// surface a rejected image, so it is not a flag on the previews table but
-// a distinct store with its own access path, gated the same way apply/status
-// already are — by ownerToken, the event's existing secret. There is no new
-// public diagnostic endpoint.
+// This table therefore records every billed attempt, not only the rejected
+// ones: `status` distinguishes accepted from rejected, `previewId` is set
+// only on accepted rows (there is somewhere ordinary routes are allowed to
+// point a host to), and `assetBytesBase64` + gate findings are retained for
+// every row so a reviewer can audit the whole run, not just its failures.
 //
-// MIGRATION NOTE (not applied — code-documented only, per repair scope):
-//   CREATE TABLE ai_first_rejected_artwork (
-//     id SERIAL PRIMARY KEY,
-//     event_id INTEGER NOT NULL,
-//     owner_token TEXT NOT NULL,
-//     direction_index INTEGER NOT NULL,
-//     attempt INTEGER NOT NULL,
-//     asset_hash TEXT NOT NULL,
-//     asset_bytes_base64 TEXT NOT NULL,
-//     concept_json TEXT NOT NULL,
-//     failure_codes_json TEXT NOT NULL,
-//     tier1_findings_json TEXT NOT NULL,
-//     vision_scores_json TEXT,
-//     cost_usd_micros INTEGER NOT NULL DEFAULT 0,
-//     created_at BIGINT NOT NULL
-//   );
-//   CREATE INDEX ai_first_rejected_artwork_event_id_idx ON ai_first_rejected_artwork (event_id);
-export const aiFirstRejectedArtwork = pgTable("ai_first_rejected_artwork", {
-  id: serial("id").primaryKey(),
-  eventId: integer("event_id").notNull(),
-  ownerToken: text("owner_token").notNull(),
-  directionIndex: integer("direction_index").notNull(),
-  attempt: integer("attempt").notNull(),
-  assetHash: text("asset_hash").notNull(),
-  assetBytesBase64: text("asset_bytes_base64").notNull(),
-  conceptJson: text("concept_json").notNull(),
-  failureCodesJson: text("failure_codes_json").notNull(),
-  tier1FindingsJson: text("tier1_findings_json").notNull(),
-  visionScoresJson: text("vision_scores_json"),
-  costUsdMicros: integer("cost_usd_micros").notNull().default(0),
-  createdAt: bigint("created_at", { mode: "number" }).notNull(),
-});
+// It is intentionally separate from ai_first_previews: ordinary user-facing
+// routes (status, generate, apply) must never be able to surface a rejected
+// image, so "rejected" is not a flag on the previews table but a distinct
+// store with its own access path, gated the same way apply/status already
+// are — by ownerToken, the event's existing secret. There is no new public
+// diagnostic endpoint; see server/aiFirst/routes.ts for the owner-scoped
+// review routes (a listing route that never embeds bytes, and a per-attempt
+// binary asset route that does, served with owner-private cache headers).
+export const aiFirstArtworkAttempts = pgTable(
+  "ai_first_artwork_attempts",
+  {
+    id: serial("id").primaryKey(),
+    eventId: integer("event_id").notNull(),
+    ownerToken: text("owner_token").notNull(),
+    runId: text("run_id"),
+    idempotencyKey: text("idempotency_key"),
+    directionIndex: integer("direction_index").notNull(),
+    attempt: integer("attempt").notNull(),
+    // accepted | rejected — every billed provider result, either way.
+    status: text("status").notNull(),
+    assetHash: text("asset_hash").notNull(),
+    assetBytesBase64: text("asset_bytes_base64").notNull(),
+    // Set only when status = 'accepted': the previewId ordinary routes may
+    // reference. Rejected rows have no previewId — they are not reachable
+    // through the preview store at all.
+    previewId: text("preview_id"),
+    conceptJson: text("concept_json").notNull(),
+    failureCodesJson: text("failure_codes_json").notNull(),
+    tier1FindingsJson: text("tier1_findings_json").notNull(),
+    visionScoresJson: text("vision_scores_json"),
+    costUsdMicros: integer("cost_usd_micros").notNull().default(0),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  },
+  (table) => [index("ai_first_artwork_attempts_event_id_idx").on(table.eventId)],
+);
 
-export type AiFirstRejectedArtworkRow = typeof aiFirstRejectedArtwork.$inferSelect;
+export type AiFirstArtworkAttemptRow = typeof aiFirstArtworkAttempts.$inferSelect;
