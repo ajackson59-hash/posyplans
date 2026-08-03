@@ -17,7 +17,7 @@ import { buildThemedConcept } from "@shared/themeCatalog";
 import { deriveThemeDna } from "@shared/themeDna";
 import { computeEventDna } from "@shared/eventDna";
 import { buildEventBrief, briefIsSufficient, SINGLE_BRIEF_QUESTION } from "./brief";
-import { runAiFirstPipeline, type PipelineEvent } from "./pipeline";
+import { runAiFirstPipeline, type PipelineEvent, type PipelineInput, type RunSummary } from "./pipeline";
 import { applyPreview, cleanupPreviews, resolvePreviewAssetBytes, type AiFirstPreviewStore } from "./previewStore";
 import {
   CircuitBreaker,
@@ -31,6 +31,7 @@ import {
 import { INVITATION_ASK_POSY_ACTIONS, resolveAskPosyAction } from "./askPosy";
 import type { AiFirstRunStore } from "./runStore";
 import type { AiFirstArtworkAttemptStore } from "./artworkAttemptStore";
+import { readAiFirstArtworkModel, readAiFirstDirectionLimit } from "./config";
 
 /** One breaker and one limiter per process, shared by every event. */
 const breaker = new CircuitBreaker();
@@ -52,6 +53,15 @@ export interface AiFirstDeps {
   /** Durable retention of every billed provider result (accepted AND rejected), for protected review. */
   artworkAttemptStore: AiFirstArtworkAttemptStore;
   env?: Record<string, string | undefined>;
+  /** Test-only seam; Production omits it and uses the real pipeline. */
+  runPipeline?: (input: PipelineInput) => Promise<RunSummary>;
+}
+
+/** The response stream, not request-body completion, owns SSE lifetime. */
+export function abortOnUnexpectedResponseClose(res: Response, controller: AbortController): void {
+  res.on("close", () => {
+    if (!res.writableEnded) controller.abort(new Error("The invitation generation connection closed."));
+  });
 }
 
 export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
@@ -98,6 +108,7 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
         ceilings: ceilingsForTier(tier),
         usage: { ...usage, activeGenerations },
         killSwitch: flags().invitationGenerationKillSwitch,
+        directionLimit: readAiFirstDirectionLimit(env()),
         // The one question a thin brief is allowed to ask, and only then.
         briefQuestion: briefIsSufficient(event) ? null : SINGLE_BRIEF_QUESTION,
         askPosyActions: INVITATION_ASK_POSY_ACTIONS,
@@ -183,14 +194,25 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
       // and across every Vercel instance, not just this one.
       const hasActiveRun = await deps.runStore.hasActiveRun(event.id);
 
+      let artworkModel;
+      try {
+        artworkModel = readAiFirstArtworkModel(env());
+      } catch (err) {
+        // Configuration is validated before the run is claimed or any
+        // provider path can be reached. Never silently fall back and spend.
+        res.status(503).json({ error: (err as Error).message, denial: "invalid-provider-configuration" });
+        return;
+      }
+      const directionLimit = readAiFirstDirectionLimit(env());
+      const maxAttemptsPerDirection = flags().aiFirstDisableAutomaticRetry ? 1 : 2;
+
       const action = resolveAskPosyAction(req.body?.action, req.body);
       const guard = guardGeneration({
         eventId: event.id,
         email,
         tier,
         usage: { ...usage, activeGenerations: hasActiveRun ? Math.max(usage.activeGenerations, 1) : usage.activeGenerations },
-        // Four directions, each allowed one retry.
-        requested: 8,
+        requested: directionLimit * maxAttemptsPerDirection,
         killSwitch: false, // already handled above, unconditionally
         breaker,
         limiter,
@@ -264,6 +286,7 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
         "X-Accel-Buffering": "no",
       });
       const send = (event: PipelineEvent) => {
+        if (res.destroyed || res.writableEnded) return;
         res.write(`data: ${JSON.stringify(event)}\n\n`);
       };
       for (const warning of guard.warnings) {
@@ -271,11 +294,14 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
       }
 
       const controller = new AbortController();
-      req.on("close", () => controller.abort());
+      // Request "close" also fires during normal request-body completion in
+      // some Node/Express paths. The response is the SSE lifetime authority:
+      // abort only when it closes before an intentional res.end().
+      abortOnUnexpectedResponseClose(res, controller);
       deps.usageStore.beginRun?.(event.id);
 
       try {
-        await runAiFirstPipeline({
+        await (deps.runPipeline ?? runAiFirstPipeline)({
           eventId: event.id,
           email,
           brief,
@@ -294,13 +320,22 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
           runStore: deps.runStore,
           artworkAttemptStore: deps.artworkAttemptStore,
           disableAutomaticRetry: flags().aiFirstDisableAutomaticRetry,
+          directionLimit,
+          artworkModel,
         });
       } catch (err) {
-        send({ type: "error", message: (err as Error).message, at: Date.now() });
-        await deps.runStore.fail(runId, (err as Error).message);
+        const message = (err as Error).message;
+        try {
+          // Durable truth first. If this write fails, do not lie to the
+          // client with a terminal event the source of truth did not record.
+          await deps.runStore.fail(runId, message);
+          send({ type: "error", message, at: Date.now() });
+        } catch (persistenceError) {
+          console.error("Failed to persist AI-first run failure", persistenceError);
+        }
       } finally {
         deps.usageStore.endRun?.(event.id);
-        res.end();
+        if (!res.destroyed && !res.writableEnded) res.end();
       }
     }),
   );
@@ -454,7 +489,11 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
           failureCodes: row.failureCodes,
           tier1Findings: row.tier1Findings,
           visionScores: row.visionScores,
+          model: row.model,
+          quality: row.quality,
+          size: row.size,
           costUsdMicros: row.costUsdMicros,
+          costEstimateStatus: row.size ? "model-size-priced" : "legacy-unverified",
           createdAt: row.createdAt,
         })),
       });

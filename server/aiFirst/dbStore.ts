@@ -11,8 +11,16 @@ import { aiFirstPreviews, aiFirstImageLedger, aiFirstGenerationRuns, aiFirstArtw
 import { aiFirstConceptSchema } from "@shared/aiFirstInvite";
 import type { AiFirstPreviewStore, PreviewRecord } from "./previewStore";
 import type { AiFirstUsageStore, LedgerEntry, UsageSnapshot } from "./usage";
-import type { AiFirstRunStore, ClaimResult, GenerationRunRecord, RunStatus } from "./runStore";
+import {
+  RUN_LEASE_EXPIRED_ERROR,
+  RUN_LEASE_MS,
+  type AiFirstRunStore,
+  type ClaimResult,
+  type GenerationRunRecord,
+  type RunStatus,
+} from "./runStore";
 import type { AiFirstArtworkAttemptStore, ArtworkAttemptRecord } from "./artworkAttemptStore";
+import type { ArtworkModel, ArtworkQuality, ArtworkSize } from "./artwork";
 
 /**
  * postgres-js surfaces a Postgres unique-violation (SQLSTATE 23505) as a
@@ -214,8 +222,31 @@ function toRunRecord(row: RunRow): GenerationRunRecord {
 }
 
 export class DbRunStore implements AiFirstRunStore {
+  private async expireStaleForEvent(eventId: number, now: number): Promise<void> {
+    await db
+      .update(aiFirstGenerationRuns)
+      .set({
+        status: "failed",
+        terminal: true,
+        errorMessage: RUN_LEASE_EXPIRED_ERROR,
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(aiFirstGenerationRuns.eventId, eventId),
+          eq(aiFirstGenerationRuns.status, "active"),
+          eq(aiFirstGenerationRuns.terminal, false),
+          lt(aiFirstGenerationRuns.updatedAt, now - RUN_LEASE_MS),
+        ),
+      );
+  }
+
   async claim(input: { runId: string; eventId: number; ownerToken: string; now?: number }): Promise<ClaimResult> {
     const now = input.now ?? Date.now();
+    // A crashed/terminated Vercel invocation cannot hold this event forever.
+    // The conditional update is atomic; if two instances recover together,
+    // the existing one-active-run index still permits only one new claimant.
+    await this.expireStaleForEvent(input.eventId, now);
     // A plain INSERT, not onConflictDoNothing: this table carries TWO
     // independent unique constraints (see shared/schema.ts), and which one
     // fires tells the caller something different — "you already hold this
@@ -315,7 +346,8 @@ export class DbRunStore implements AiFirstRunStore {
       .where(eq(aiFirstGenerationRuns.runId, runId));
   }
 
-  async hasActiveRun(eventId: number): Promise<boolean> {
+  async hasActiveRun(eventId: number, now = Date.now()): Promise<boolean> {
+    await this.expireStaleForEvent(eventId, now);
     const rows = await db
       .select({ n: sql<number>`count(*)::int` })
       .from(aiFirstGenerationRuns)
@@ -350,6 +382,9 @@ function toArtworkAttemptRecord(row: ArtworkAttemptRow): ArtworkAttemptRecord {
     failureCodes: JSON.parse(row.failureCodesJson),
     tier1Findings: JSON.parse(row.tier1FindingsJson),
     visionScores: row.visionScoresJson ? JSON.parse(row.visionScoresJson) : null,
+    model: row.model as ArtworkModel,
+    quality: row.quality as ArtworkQuality,
+    size: (row.size as ArtworkSize | null) ?? null,
     costUsdMicros: row.costUsdMicros,
     createdAt: row.createdAt,
   };
@@ -377,6 +412,9 @@ export class DbArtworkAttemptStore implements AiFirstArtworkAttemptStore {
         failureCodesJson: JSON.stringify(input.failureCodes),
         tier1FindingsJson: JSON.stringify(input.tier1Findings),
         visionScoresJson: input.visionScores ? JSON.stringify(input.visionScores) : null,
+        model: input.model ?? "gpt-image-1",
+        quality: input.quality ?? "high",
+        size: input.size ?? null,
         costUsdMicros: input.costUsdMicros,
         createdAt: now,
       })

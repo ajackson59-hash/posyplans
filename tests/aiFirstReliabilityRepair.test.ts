@@ -210,9 +210,9 @@ describe("unexpected stream termination is a visible failure, not a silent succe
     }
   });
 
-  it("the pipeline itself always emits an explicit done, even on a short/degraded run", async () => {
-    // Regression pin for the server side of the same contract: whatever the
-    // client is trusting, the server actually sends it.
+  it("the pipeline rejects without emitting competing terminal events when concept generation fails", async () => {
+    // The route persists failure first and then emits the single `error`
+    // terminal. The pipeline must not emit `error` and then also `done`.
     const events: PipelineEvent[] = [];
     const broken = {
       messages: {
@@ -222,20 +222,22 @@ describe("unexpected stream termination is a visible failure, not a silent succe
       },
     } as unknown as Anthropic;
 
-    await runAiFirstPipeline({
-      eventId: 1,
-      brief,
-      previewStore: new InMemoryPreviewStore(),
-      usageStore: new InMemoryUsageStore(),
-      allowance: 40,
-      sink: (event) => events.push(event),
-      anthropic: broken,
-      ocr: false,
-      generateImage: async ({ aspectRatio }) => ({ bytes: artworkForAspect(aspectRatio), dataUrl: "x", durationMs: 1 }),
-    });
+    await expect(
+      runAiFirstPipeline({
+        eventId: 1,
+        brief,
+        previewStore: new InMemoryPreviewStore(),
+        usageStore: new InMemoryUsageStore(),
+        allowance: 40,
+        sink: (event) => events.push(event),
+        anthropic: broken,
+        ocr: false,
+        generateImage: async ({ aspectRatio }) => ({ bytes: artworkForAspect(aspectRatio), dataUrl: "x", durationMs: 1 }),
+      }),
+    ).rejects.toThrow("concept generation failed");
 
-    expect(events.some((e) => e.type === "error")).toBe(true);
-    expect(events.some((e) => e.type === "done")).toBe(true);
+    expect(events.some((e) => e.type === "error")).toBe(false);
+    expect(events.some((e) => e.type === "done")).toBe(false);
   });
 });
 
@@ -965,28 +967,30 @@ describe("every billed image result is retained, including a clean run's four ac
    ═══════════════════════════════════════════════════════════════════════ */
 
 describe("visible user failure", () => {
-  it("a run that hits a hard error still ends with an explicit, readable error event", async () => {
+  it("a hard pipeline error remains explicit for the route to persist and surface", async () => {
     const previewStore = new InMemoryPreviewStore();
     const usageStore = new InMemoryUsageStore();
     const events: PipelineEvent[] = [];
 
-    await runAiFirstPipeline({
-      eventId: EVENT_ID,
-      brief,
-      previewStore,
-      usageStore,
-      allowance: 40,
-      sink: (event) => events.push(event),
-      anthropic: {
-        messages: { stream: async () => { throw new Error("concept model unreachable"); } },
-      } as unknown as Anthropic,
-      ocr: false,
-      generateImage: async ({ aspectRatio }) => ({ bytes: artworkForAspect(aspectRatio), dataUrl: "x", durationMs: 1 }),
-    });
+    await expect(
+      runAiFirstPipeline({
+        eventId: EVENT_ID,
+        brief,
+        previewStore,
+        usageStore,
+        allowance: 40,
+        sink: (event) => events.push(event),
+        anthropic: {
+          messages: { stream: async () => { throw new Error("concept model unreachable"); } },
+        } as unknown as Anthropic,
+        ocr: false,
+        generateImage: async ({ aspectRatio }) => ({ bytes: artworkForAspect(aspectRatio), dataUrl: "x", durationMs: 1 }),
+      }),
+    ).rejects.toThrow("concept generation failed: concept model unreachable");
 
-    const error = events.find((e): e is Extract<PipelineEvent, { type: "error" }> => e.type === "error");
-    expect(error).toBeDefined();
-    expect(error!.message.toLowerCase()).toContain("concept generation failed");
+    // The route, not the pipeline, owns the one error terminal after its
+    // durable failure write. Competing terminals cannot be emitted here.
+    expect(events.some((event) => event.type === "error" || event.type === "done")).toBe(false);
   });
 
   it("missing runId on /generate is refused with a clear 400, not silently accepted", async () => {

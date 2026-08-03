@@ -32,6 +32,7 @@ import { createHash } from "node:crypto";
 import type { AiFirstConcept } from "@shared/aiFirstInvite";
 import type { Tier1Finding } from "./tier1";
 import type { VisionVerdict } from "./visionGate";
+import type { ArtworkModel, ArtworkQuality, ArtworkSize } from "./artwork";
 
 export type ArtworkAttemptStatus = "accepted" | "rejected";
 
@@ -53,6 +54,10 @@ export interface ArtworkAttemptRecord {
   failureCodes: string[];
   tier1Findings: Tier1Finding[];
   visionScores: VisionVerdict["scores"] | null;
+  model: ArtworkModel;
+  quality: ArtworkQuality;
+  /** Null only for evidence written before provider provenance was added. */
+  size: ArtworkSize | null;
   costUsdMicros: number;
   createdAt: number;
 }
@@ -71,6 +76,9 @@ export interface ArtworkAttemptInput {
   failureCodes: string[];
   tier1Findings: Tier1Finding[];
   visionScores: VisionVerdict["scores"] | null;
+  model?: ArtworkModel;
+  quality?: ArtworkQuality;
+  size?: ArtworkSize | null;
   costUsdMicros: number;
   now?: number;
 }
@@ -109,6 +117,9 @@ export class InMemoryArtworkAttemptStore implements AiFirstArtworkAttemptStore {
       failureCodes: input.failureCodes,
       tier1Findings: input.tier1Findings,
       visionScores: input.visionScores,
+      model: input.model ?? "gpt-image-1",
+      quality: input.quality ?? "high",
+      size: input.size ?? null,
       costUsdMicros: input.costUsdMicros,
       createdAt: input.now ?? Date.now(),
     };

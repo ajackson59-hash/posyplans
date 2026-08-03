@@ -28,6 +28,7 @@ interface AiFirstStatus {
   ceilings: { eventSoft: number; eventHard: number; monthlySoft: number; monthlyHard: number };
   usage: { eventBilled: number; monthlyBilled: number; activeGenerations: number };
   killSwitch: boolean;
+  directionLimit: number;
   briefQuestion: string | null;
   askPosyActions: AskPosyAction[];
 }
@@ -83,25 +84,37 @@ export default function AiFirstInvitations({
   // — not just while this component's local `running` state says so.
   const serverSaysActive = (status.data?.usage?.activeGenerations ?? 0) > 0;
   const generateDisabled = session.running || serverSaysActive || Boolean(status.data?.killSwitch);
+  const targetCount = status.data?.directionLimit ?? TARGET_DIRECTION_COUNT;
+  const isReviewCanary = targetCount === 1;
 
   // The header states only what is true at the moment it renders. The
   // completion sentence is claimed once the four directions are actually on
   // screen — never while the run is still in flight.
-  const complete = !session.running && ordered.length >= TARGET_DIRECTION_COUNT;
+  const complete = !session.running && ordered.length >= targetCount;
   const heading = complete
-    ? "I created four invitation directions for your event."
+    ? isReviewCanary
+      ? "Your review invitation direction is ready."
+      : targetCount === TARGET_DIRECTION_COUNT
+        ? "I created four invitation directions for your event."
+        : `I created ${targetCount} invitation directions for your event.`
     : session.running
-      ? "Posy is creating your invitation directions."
+      ? isReviewCanary
+        ? "Posy is creating one invitation direction for review."
+        : "Posy is creating your invitation directions."
       : ordered.length > 0
-        ? `${ordered.length} of ${TARGET_DIRECTION_COUNT} directions are ready.`
+        ? `${ordered.length} of ${targetCount} directions are ready.`
         : "Posy designs your invitation.";
   const subheading = complete
-    ? "Each one is designed around your event's details and checked before you see it. Pick the one you like and make it yours — nothing changes until you do."
+    ? isReviewCanary
+      ? "It is designed around your event's details and checked before you see it. Nothing changes until you choose it."
+      : "Each one is designed around your event's details and checked before you see it. Pick the one you like and make it yours — nothing changes until you do."
     : session.running
       ? "Each direction appears as soon as it passes Posy's checks, so you can start looking before the set is finished."
       : ordered.length > 0
-        ? "The run finished short of four. What's here is yours to use, or ask Posy for another set."
-        : `Posy reads the event details you've already entered and designs ${TARGET_DIRECTION_COUNT} invitation directions to choose from. Nothing on your invitation changes until you pick one.`;
+        ? `The run finished short of ${targetCount}. What's here is yours to use, or ask Posy for another set.`
+        : isReviewCanary
+          ? "This protected review creates one quality-gated direction so the full experience can be verified with one paid image call. Nothing on your invitation changes until you choose it."
+          : `Posy reads the event details you've already entered and designs ${targetCount} invitation directions to choose from. Nothing on your invitation changes until you pick one.`;
 
   return (
     <div data-testid="ai-first-invitations">
@@ -149,7 +162,13 @@ export default function AiFirstInvitations({
           ) : (
             <Sparkles className="mr-1.5 h-4 w-4" aria-hidden />
           )}
-          {session.hasRun ? "Create different directions" : "Create my invitation directions"}
+          {session.hasRun
+            ? isReviewCanary
+              ? "Create a different review direction"
+              : "Create different directions"
+            : isReviewCanary
+              ? "Create review direction"
+              : "Create my invitation directions"}
         </Button>
         <button
           type="button"
@@ -169,7 +188,7 @@ export default function AiFirstInvitations({
             {latestProgress}
           </p>
           <p className="text-xs text-muted-foreground" data-testid="text-progress-counts">
-            {session.completedCount} of {TARGET_DIRECTION_COUNT} directions ready
+            {session.completedCount} of {targetCount} {targetCount === 1 ? "direction" : "directions"} ready
             {session.fallbackCount > 0
               ? ` (${session.fallbackCount} from the Posy collection, adapted to your event)`
               : ""}

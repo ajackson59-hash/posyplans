@@ -374,20 +374,21 @@ describe("degradation", () => {
       },
     } as unknown as Anthropic;
 
-    const summary = await runAiFirstPipeline({
-      eventId: 1,
-      brief,
-      previewStore: new InMemoryPreviewStore(),
-      usageStore: new InMemoryUsageStore(),
-      allowance: 40,
-      sink: (event) => events.push(event),
-      anthropic: broken,
-      ocr: false,
-      generateImage: async ({ aspectRatio }) => ({ bytes: artworkForAspect(aspectRatio), dataUrl: "data:image/png;base64,x", durationMs: 1 }),
-    });
+    await expect(
+      runAiFirstPipeline({
+        eventId: 1,
+        brief,
+        previewStore: new InMemoryPreviewStore(),
+        usageStore: new InMemoryUsageStore(),
+        allowance: 40,
+        sink: (event) => events.push(event),
+        anthropic: broken,
+        ocr: false,
+        generateImage: async ({ aspectRatio }) => ({ bytes: artworkForAspect(aspectRatio), dataUrl: "data:image/png;base64,x", durationMs: 1 }),
+      }),
+    ).rejects.toThrow("concept generation failed: model unavailable");
 
-    expect(summary.directions).toBe(0);
-    expect(summary.degraded).toContain("concept-stream-failed");
-    expect(events.some((e) => e.type === "error")).toBe(true);
+    // The route persists the failed run, then emits the single error terminal.
+    expect(events.some((e) => e.type === "error" || e.type === "done")).toBe(false);
   });
 });

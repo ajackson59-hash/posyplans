@@ -34,7 +34,13 @@ import { buildSystemPrompt, buildUserPrompt, buildRetryPrompt } from "./prompt";
 import { runTier1Checks, retryCodesFor, type Tier1Finding } from "./tier1";
 import { runVisionGate, visionCostUsd, type VisionVerdict } from "./visionGate";
 import { adaptStudioDirection, loadStudioArtwork } from "./fallback";
-import { generateArtwork, type ArtworkGenerator } from "./artwork";
+import {
+  estimateImageCostUsdMicros,
+  generateArtwork,
+  sizeForAspect,
+  type ArtworkGenerator,
+  type ArtworkModel,
+} from "./artwork";
 import {
   lookupReusablePreview,
   previewAssetUrl,
@@ -42,12 +48,7 @@ import {
   type AiFirstPreviewStore,
   type PreviewRecord,
 } from "./previewStore";
-import {
-  IMAGE_COST_USD_MICROS,
-  MAX_ARTWORK_CONCURRENCY,
-  type AiFirstUsageStore,
-  type CircuitBreaker,
-} from "./usage";
+import { MAX_ARTWORK_CONCURRENCY, type AiFirstUsageStore, type CircuitBreaker } from "./usage";
 import type { EventBrief } from "./brief";
 import type { AiFirstArtworkAttemptStore } from "./artworkAttemptStore";
 import type { AiFirstRunStore } from "./runStore";
@@ -96,7 +97,7 @@ export interface PipelineInput {
   allowance: number;
   sink: EventSink;
   breaker?: CircuitBreaker;
-  /** Injectable for tests. Production uses gpt-image-1. */
+  /** Injectable for tests. Production uses the server-selected image model. */
   generateImage?: ArtworkGenerator;
   anthropic?: Anthropic;
   /** Off in unit tests; on in production. */
@@ -117,6 +118,10 @@ export interface PipelineInput {
   runStore?: AiFirstRunStore;
   /** The next-proof safety setting: caps every direction at one billed image call. */
   disableAutomaticRetry?: boolean;
+  /** Review-only cap. Product default remains four directions. */
+  directionLimit?: number;
+  /** Provider model selected by the server and recorded with every billed result. */
+  artworkModel?: ArtworkModel;
 }
 
 /* ── Bounded-concurrency helper ──────────────────────────────────────── */
@@ -184,6 +189,7 @@ export async function runAiFirstPipeline(input: PipelineInput): Promise<RunSumma
   const inFlight: Promise<void>[] = [];
   let startedDirections = 0;
   let budgetRemaining = input.allowance;
+  const directionLimit = Math.max(1, Math.min(TARGET_CONCEPT_COUNT, input.directionLimit ?? TARGET_CONCEPT_COUNT));
 
   const startDirection = (index: number, concept: AiFirstConcept) => {
     startedDirections += 1;
@@ -219,6 +225,7 @@ export async function runAiFirstPipeline(input: PipelineInput): Promise<RunSumma
           if (summary.msToFirstDirection === null) summary.msToFirstDirection = since();
           emit({ type: "direction", direction: finished });
         } catch (err) {
+          if (isAbortError(err) || input.signal?.aborted) throw err;
           emit({ type: "warning", message: `direction ${index + 1} could not be completed: ${(err as Error).message}` });
         } finally {
           release();
@@ -250,45 +257,51 @@ export async function runAiFirstPipeline(input: PipelineInput): Promise<RunSumma
     });
 
     for await (const chunk of stream) {
-      if (input.signal?.aborted) break;
+      throwIfAborted(input.signal);
       if (chunk.type !== "content_block_delta" || chunk.delta.type !== "text_delta") continue;
       for (const line of parser.push(chunk.delta.text)) {
         if (summary.msToFirstConcept === null) summary.msToFirstConcept = since();
         emit({ type: "concept", index: line.index, concept: line.concept });
-        if (line.index < TARGET_CONCEPT_COUNT) startDirection(line.index, line.concept);
+        if (line.index < directionLimit) startDirection(line.index, line.concept);
       }
     }
+    throwIfAborted(input.signal);
     for (const line of parser.flush()) {
       if (summary.msToFirstConcept === null) summary.msToFirstConcept = since();
       emit({ type: "concept", index: line.index, concept: line.concept });
-      if (line.index < TARGET_CONCEPT_COUNT) startDirection(line.index, line.concept);
+      if (line.index < directionLimit) startDirection(line.index, line.concept);
     }
   } catch (err) {
-    emit({ type: "error", message: `concept generation failed: ${(err as Error).message}` });
-    summary.degraded.push("concept-stream-failed");
+    await Promise.allSettled(inFlight);
+    if (isAbortError(err) || input.signal?.aborted) throw abortError(input.signal?.reason);
+    throw new Error(`concept generation failed: ${(err as Error).message}`);
   }
 
   summary.conceptRejections = parser.rejections.length;
 
   emit({ type: "progress", message: PROGRESS_MESSAGES.finishing });
   await Promise.all(inFlight);
+  throwIfAborted(input.signal);
 
   // The set is only short if the model itself under-delivered; the per-
   // direction fallback has already covered every artwork failure.
-  if (summary.directions < TARGET_CONCEPT_COUNT) {
-    summary.degraded.push(`only ${summary.directions} of ${TARGET_CONCEPT_COUNT} directions completed`);
+  if (summary.directions < directionLimit) {
+    summary.degraded.push(`only ${summary.directions} of ${directionLimit} directions completed`);
   } else {
-    emit({ type: "progress", message: PROGRESS_MESSAGES.ready });
+    emit({
+      type: "progress",
+      message: directionLimit === 1 ? "Your review direction is ready." : PROGRESS_MESSAGES.ready,
+    });
   }
 
   summary.msToAllDirections = since();
-  emit({ type: "done", summary });
   // Marks the run terminal in durable state. This is the write the client's
   // unexpected-EOF check ultimately depends on: if the HTTP response is cut
   // off before this line runs, the row stays non-terminal and a client that
   // asks the server "did that run finish" (or a fresh page load that resumes
   // it) is told the truth rather than inferring success from stream closure.
   if (input.runStore && input.runId) await input.runStore.complete(input.runId);
+  emit({ type: "done", summary });
   return summary;
 }
 
@@ -355,7 +368,7 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
   const maxAttempts = input.disableAutomaticRetry ? MAX_ARTWORK_ATTEMPTS_NO_RETRY : MAX_ARTWORK_ATTEMPTS;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    if (input.signal?.aborted) break;
+    throwIfAborted(input.signal);
     if (input.breaker && !input.breaker.allows()) {
       summary.degraded.push("provider circuit open");
       break;
@@ -382,6 +395,11 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
 
     const attemptStarted = Date.now();
     const prompt = attempt === 1 ? basePrompt : buildRetryPrompt(basePrompt, failureCodes);
+    const aspectRatio = aspectRatioForLayout(concept.layoutStyle);
+    const artworkModel = input.artworkModel ?? "gpt-image-1";
+    const artworkQuality = "high" as const;
+    const artworkSize = sizeForAspect(aspectRatio);
+    const imageCostUsdMicros = estimateImageCostUsdMicros(artworkModel, artworkQuality, artworkSize);
     if (attempt > 1) summary.retries += 1;
 
     let bytes: Buffer;
@@ -389,14 +407,16 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
     try {
       const art = await ctx.generateImage({
         prompt,
-        aspectRatio: aspectRatioForLayout(concept.layoutStyle),
-        quality: "high",
+        aspectRatio,
+        model: artworkModel,
+        quality: artworkQuality,
         signal: input.signal,
       });
       bytes = art.bytes;
       dataUrl = art.dataUrl;
       input.breaker?.recordSuccess();
     } catch (err) {
+      if (isAbortError(err) || input.signal?.aborted) throw abortError(input.signal?.reason);
       input.breaker?.recordFailure();
       attempts.push({
         attempt,
@@ -410,7 +430,7 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
     }
 
     summary.billedImages += 1;
-    summary.costUsd += IMAGE_COST_USD_MICROS / 1_000_000;
+    summary.costUsd += imageCostUsdMicros / 1_000_000;
     await input.usageStore.record({
       eventId: input.eventId,
       email: input.email,
@@ -420,7 +440,7 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
       automatic: attempt > 1,
       conceptFingerprint: undefined,
       idempotencyKey,
-      costUsdMicros: IMAGE_COST_USD_MICROS,
+      costUsdMicros: imageCostUsdMicros,
       createdAt: Date.now(),
     });
 
@@ -490,7 +510,10 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
           failureCodes: [],
           tier1Findings: tier1.findings,
           visionScores: vision?.scores ?? null,
-          costUsdMicros: IMAGE_COST_USD_MICROS,
+          model: artworkModel,
+          quality: artworkQuality,
+          size: artworkSize,
+          costUsdMicros: imageCostUsdMicros,
         });
       }
       if (input.runStore && input.runId) await input.runStore.incrementCompleted(input.runId);
@@ -516,10 +539,15 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
         failureCodes,
         tier1Findings: tier1.findings,
         visionScores: vision?.scores ?? null,
-        costUsdMicros: IMAGE_COST_USD_MICROS,
+        model: artworkModel,
+        quality: artworkQuality,
+        size: artworkSize,
+        costUsdMicros: imageCostUsdMicros,
       });
     }
   }
+
+  throwIfAborted(input.signal);
 
   // Every attempt failed (or the safety setting allowed only one). Substitute
   // a curated direction adapted to the brief rather than showing work the
@@ -556,6 +584,21 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
   // directions/adaptedDirections split.
   if (input.runStore && input.runId) await input.runStore.incrementCompleted(input.runId);
   return finish(ctx, adapted.concept, savedStudio.record, "adapted-studio-direction", attempts, undefined, false);
+}
+
+function abortError(reason?: unknown): Error {
+  if (reason instanceof Error) return reason;
+  const error = new Error(typeof reason === "string" ? reason : "Invitation generation was disconnected.");
+  error.name = "AbortError";
+  return error;
+}
+
+function isAbortError(err: unknown): boolean {
+  return err instanceof Error && err.name === "AbortError";
+}
+
+function throwIfAborted(signal?: AbortSignal): void {
+  if (signal?.aborted) throw abortError(signal.reason);
 }
 
 function finish(

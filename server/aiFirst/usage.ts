@@ -342,9 +342,6 @@ export interface AiFirstUsageStore {
   snapshot(eventId: number, email: string | undefined, monthStart: number): Promise<UsageSnapshot>;
 }
 
-/** gpt-image-1 list price for one 1024-side image, in USD micros. */
-export const IMAGE_COST_USD_MICROS = 40_000;
-
 export function monthStart(now = Date.now()): number {
   const d = new Date(now);
   return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1);

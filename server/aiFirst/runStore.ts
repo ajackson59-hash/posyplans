@@ -40,6 +40,10 @@
 
 export type RunStatus = "active" | "completed" | "failed";
 
+/** Safely exceeds Vercel's 120-second function ceiling without permanent locks. */
+export const RUN_LEASE_MS = 5 * 60 * 1000;
+export const RUN_LEASE_EXPIRED_ERROR = "lease-expired";
+
 export interface GenerationRunRecord {
   runId: string;
   eventId: number;
@@ -94,8 +98,25 @@ export interface AiFirstRunStore {
 export class InMemoryRunStore implements AiFirstRunStore {
   private rows = new Map<string, GenerationRunRecord>();
 
+  private expireStaleForEvent(eventId: number, now: number): void {
+    for (const row of Array.from(this.rows.values())) {
+      if (
+        row.eventId === eventId &&
+        row.status === "active" &&
+        !row.terminal &&
+        row.updatedAt < now - RUN_LEASE_MS
+      ) {
+        row.status = "failed";
+        row.terminal = true;
+        row.errorMessage = RUN_LEASE_EXPIRED_ERROR;
+        row.updatedAt = now;
+      }
+    }
+  }
+
   async claim(input: { runId: string; eventId: number; ownerToken: string; now?: number }): Promise<ClaimResult> {
     const now = input.now ?? Date.now();
+    this.expireStaleForEvent(input.eventId, now);
 
     // Constraint 1: the runId unique index.
     const existingSameRun = this.rows.get(input.runId);
@@ -173,10 +194,10 @@ export class InMemoryRunStore implements AiFirstRunStore {
   }
 
   async hasActiveRun(eventId: number, now = Date.now()): Promise<boolean> {
+    this.expireStaleForEvent(eventId, now);
     for (const row of Array.from(this.rows.values())) {
       if (row.eventId === eventId && row.status === "active" && !row.terminal) return true;
     }
-    void now;
     return false;
   }
 
