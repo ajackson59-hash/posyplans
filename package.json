@@ -11,8 +11,7 @@
     "start": "NODE_ENV=production node dist/index.cjs",
     "check": "tsc",
     "test": "vitest run",
-    "db:push": "drizzle-kit push",
-    "verify:preview": "tsx tools/preview-verify/run.ts"
+    "db:push": "drizzle-kit push"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.111.0",
