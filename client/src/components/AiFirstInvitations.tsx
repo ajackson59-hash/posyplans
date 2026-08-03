@@ -78,6 +78,11 @@ export default function AiFirstInvitations({
   const needsVibe = status.data?.briefQuestion && !session.vibeAnswer.trim() && !session.hasRun;
   const latestProgress = session.progress[session.progress.length - 1] ?? "";
   const actions = status.data?.askPosyActions ?? [];
+  // The server's own idea of "already active" (durable, not this tab's
+  // memory) keeps the button locked even after a reload or in a second tab
+  // — not just while this component's local `running` state says so.
+  const serverSaysActive = (status.data?.usage?.activeGenerations ?? 0) > 0;
+  const generateDisabled = session.running || serverSaysActive || Boolean(status.data?.killSwitch);
 
   // The header states only what is true at the moment it renders. The
   // completion sentence is claimed once the four directions are actually on
@@ -136,7 +141,7 @@ export default function AiFirstInvitations({
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <Button
           onClick={() => session.run()}
-          disabled={session.running || status.data?.killSwitch}
+          disabled={generateDisabled}
           data-testid="button-generate-directions"
         >
           {session.running ? (
@@ -158,9 +163,24 @@ export default function AiFirstInvitations({
 
       {/* Progress is the run's own events, never a timer. */}
       {session.running && (
-        <p className="mb-5 flex items-center gap-2 text-sm text-muted-foreground" aria-live="polite" data-testid="text-progress">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-          {latestProgress}
+        <div className="mb-5 space-y-1" data-testid="text-progress">
+          <p className="flex items-center gap-2 text-sm text-muted-foreground" aria-live="polite">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+            {latestProgress}
+          </p>
+          <p className="text-xs text-muted-foreground" data-testid="text-progress-counts">
+            {session.completedCount} of {TARGET_DIRECTION_COUNT} directions ready
+            {session.fallbackCount > 0
+              ? ` (${session.fallbackCount} from the Posy collection, adapted to your event)`
+              : ""}
+          </p>
+        </div>
+      )}
+
+      {!session.running && session.hasRun && !session.error && ordered.length > 0 && session.fallbackCount > 0 && (
+        <p className="mb-5 text-xs text-muted-foreground" data-testid="text-fallback-summary">
+          {session.fallbackCount} of {ordered.length} directions used an adapted Posy collection design because the
+          generated artwork didn't clear Posy's quality check.
         </p>
       )}
 

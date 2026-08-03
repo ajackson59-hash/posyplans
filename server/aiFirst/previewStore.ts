@@ -12,6 +12,8 @@
 // is unset, which is the normal state in unit tests.
 
 import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import type { AiFirstConcept, ConceptSource } from "@shared/aiFirstInvite";
 import { conceptImageFingerprintInput } from "@shared/aiFirstInvite";
 
@@ -153,6 +155,56 @@ export async function applyPreview(
   }
   const promoted = await store.promote(eventId, previewId, now);
   return { ok: true, record: promoted ?? record };
+}
+
+/* ── Serving stored bytes (never the raw data URL over the wire) ───────
+ *
+ * `assetUrl` on a PreviewRecord is either a `data:image/png;base64,...`
+ * string (an AI-generated image, embedded at save time) or a static asset
+ * path under the client's public root (an adapted studio direction, see
+ * fallback.ts). Neither is safe to hand to the browser directly in an SSE
+ * event or a JSON body: the first is a multi-megabyte payload duplicated
+ * into a stream event, and the second still shouldn't leak the server's
+ * static-file layout as the shipped contract. This resolves either shape to
+ * real bytes plus a content type, so a route can serve them with its own
+ * URL and its own cache headers instead. */
+
+const STATIC_ROOTS = [
+  process.env.POSY_STATIC_ROOT,
+  path.resolve(process.cwd(), "dist", "public"),
+  path.resolve(process.cwd(), "client", "public"),
+].filter((root): root is string => Boolean(root));
+
+export interface ResolvedAsset {
+  bytes: Buffer;
+  contentType: string;
+}
+
+export async function resolvePreviewAssetBytes(record: PreviewRecord): Promise<ResolvedAsset | undefined> {
+  const { assetUrl } = record;
+  const dataUrlMatch = /^data:([^;]+);base64,([\s\S]+)$/.exec(assetUrl);
+  if (dataUrlMatch) {
+    return { bytes: Buffer.from(dataUrlMatch[2], "base64"), contentType: dataUrlMatch[1] || "image/png" };
+  }
+  // Otherwise treat it as a static path shipped with the build (the adapted
+  // studio direction case) — a disk read, never a network or provider call.
+  const relative = assetUrl.replace(/^\/+/, "");
+  for (const root of STATIC_ROOTS) {
+    try {
+      const bytes = await readFile(path.join(root, relative));
+      const ext = path.extname(relative).toLowerCase();
+      const contentType = ext === ".webp" ? "image/webp" : ext === ".jpg" || ext === ".jpeg" ? "image/jpeg" : "image/png";
+      return { bytes, contentType };
+    } catch {
+      continue;
+    }
+  }
+  return undefined;
+}
+
+/** The event-scoped, owner-authenticated URL a client should be given instead of raw bytes. */
+export function previewAssetUrl(ownerToken: string, previewId: string): string {
+  return `/api/events/owner/${ownerToken}/ai-first/preview/${previewId}/asset`;
 }
 
 /* ── Cleanup ─────────────────────────────────────────────────────────── */

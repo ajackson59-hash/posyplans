@@ -6,6 +6,15 @@
 // the component, every switch would unmount it and silently discard four
 // generated directions, the host's typed steer and their filters. Holding it
 // one level up makes a conditional unmount lossless.
+//
+// Reliability repair: a run is only ever "successful" because the server
+// said `done`, or "failed" because the server said `error`. Before this
+// fix, an SSE/NDJSON body that simply ended — a dropped connection, a proxy
+// timeout, a crashed process — fell through the reader loop with `running`
+// set back to false and no error, no summary and nothing on screen but
+// whatever partial directions had already arrived. A host could not tell
+// that from success. Any stream end that is not one of those two explicit
+// terminal events is now itself surfaced as a clear failure.
 
 import { useCallback, useRef, useState } from "react";
 import {
@@ -29,6 +38,14 @@ export interface AiFirstRunOptions {
   avoidConceptNames?: string[];
 }
 
+/** A fresh id per logical run (a generate click), not per HTTP retry of one. */
+function newRunId(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
+  // A jsdom / very old browser fallback. Collision odds are irrelevant here:
+  // the id only has to be unique among this tab's own runs.
+  return `run-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 export interface AiFirstSession {
   /** Directions the gate approved, in the order they were revealed. */
   directions: FinishedDirection[];
@@ -40,6 +57,12 @@ export interface AiFirstSession {
   error: string | null;
   running: boolean;
   hasRun: boolean;
+  /** Directions actually on screen so far, generated or adapted-fallback. */
+  completedCount: number;
+  /** Of those, how many are an adapted studio direction rather than generated art. */
+  fallbackCount: number;
+  /** The id of the run currently in flight (or most recently run). */
+  currentRunId: string | null;
 
   typedDirection: string;
   setTypedDirection: (value: string) => void;
@@ -61,6 +84,10 @@ export interface AiFirstSession {
   cancel: () => void;
 }
 
+/** Host-visible copy for the case an SSE body ends with no terminal event. */
+export const UNEXPECTED_STREAM_END_MESSAGE =
+  "Posy lost the connection before finishing your invitation directions. Please try again.";
+
 export function useAiFirstSession(ownerToken: string): AiFirstSession {
   const [directions, setDirections] = useState<FinishedDirection[]>([]);
   const [concepts, setConcepts] = useState<AiFirstConcept[]>([]);
@@ -70,6 +97,7 @@ export function useAiFirstSession(ownerToken: string): AiFirstSession {
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [hasRun, setHasRun] = useState(false);
+  const [currentRunId, setCurrentRunId] = useState<string | null>(null);
 
   const [typedDirection, setTypedDirection] = useState("");
   const [inspirationNotes, setInspirationNotes] = useState("");
@@ -79,6 +107,8 @@ export function useAiFirstSession(ownerToken: string): AiFirstSession {
   const [filters, setFilters] = useState<AiFirstFilters>({ style: "all", occasion: "all" });
 
   const abort = useRef<AbortController | null>(null);
+  /** Set the instant a `done` or `error` event is applied, for this run only. */
+  const reachedTerminal = useRef(false);
 
   const apply = useCallback((event: PipelineEvent) => {
     if (event.type === "progress") {
@@ -98,8 +128,10 @@ export function useAiFirstSession(ownerToken: string): AiFirstSession {
     } else if (event.type === "warning") {
       setWarnings((prev) => [...prev, event.message]);
     } else if (event.type === "done") {
+      reachedTerminal.current = true;
       setSummary(event.summary);
     } else if (event.type === "error") {
+      reachedTerminal.current = true;
       setError(event.message);
     }
   }, []);
@@ -109,6 +141,10 @@ export function useAiFirstSession(ownerToken: string): AiFirstSession {
       abort.current?.abort();
       const controller = new AbortController();
       abort.current = controller;
+      reachedTerminal.current = false;
+
+      const runId = newRunId();
+      setCurrentRunId(runId);
 
       setRunning(true);
       setHasRun(true);
@@ -125,6 +161,7 @@ export function useAiFirstSession(ownerToken: string): AiFirstSession {
           headers: { "Content-Type": "application/json" },
           signal: controller.signal,
           body: JSON.stringify({
+            runId,
             action: options.action,
             concept: options.concept,
             direction: options.direction ?? (typedDirection.trim() || undefined),
@@ -136,6 +173,7 @@ export function useAiFirstSession(ownerToken: string): AiFirstSession {
 
         if (!response.ok || !response.body) {
           const body = await response.json().catch(() => ({}));
+          reachedTerminal.current = true;
           setError(body?.error ?? "Posy couldn't start that. Please try again.");
           return;
         }
@@ -148,8 +186,21 @@ export function useAiFirstSession(ownerToken: string): AiFirstSession {
           if (done) break;
           for (const event of parser.push(decoder.decode(value, { stream: true }))) apply(event);
         }
+
+        // The defect this closes: reaching here only means the body ended,
+        // not that the run succeeded. `done` and `error` are the only two
+        // events that mean anything about the run's outcome; anything else
+        // — including a clean-looking EOF with partial directions already
+        // on screen — is reported as a failure rather than silently
+        // treated as success by omission.
+        if (!reachedTerminal.current) {
+          setError(UNEXPECTED_STREAM_END_MESSAGE);
+        }
       } catch (err) {
-        if ((err as Error).name !== "AbortError") setError((err as Error).message);
+        if ((err as Error).name !== "AbortError") {
+          reachedTerminal.current = true;
+          setError((err as Error).message);
+        }
       } finally {
         setRunning(false);
       }
@@ -162,6 +213,9 @@ export function useAiFirstSession(ownerToken: string): AiFirstSession {
     setRunning(false);
   }, []);
 
+  const completedCount = directions.length;
+  const fallbackCount = directions.filter((d) => d.source === "adapted-studio-direction").length;
+
   return {
     directions,
     concepts,
@@ -171,6 +225,9 @@ export function useAiFirstSession(ownerToken: string): AiFirstSession {
     error,
     running,
     hasRun,
+    completedCount,
+    fallbackCount,
+    currentRunId,
     typedDirection,
     setTypedDirection,
     inspirationNotes,

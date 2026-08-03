@@ -53,7 +53,7 @@ import { parseCookies, serializeConsentCookie } from "./cookies";
 import { getStripe, getPriceId, getSparkPriceId, isStripeConfigured, getWebhookSecret, planTierFromSubscriptionStatus, plusPriceValue, CHECKOUT_PRICES, type BillingInterval } from "./stripe";
 import { sendMetaPurchaseEvent } from "./metaCapi";
 import { registerAiFirstRoutes } from "./aiFirst/routes";
-import { DbPreviewStore, DbUsageStore } from "./aiFirst/dbStore";
+import { DbPreviewStore, DbUsageStore, DbRunStore, DbRejectedArtworkStore } from "./aiFirst/dbStore";
 
 function publicEventView(event: Event) {
   // Never expose ownerToken (the host's secret edit key) on public routes.
@@ -94,6 +94,8 @@ export async function registerRoutes(
     storage,
     previewStore: new DbPreviewStore(),
     usageStore: new DbUsageStore(),
+    runStore: new DbRunStore(),
+    rejectedArtworkStore: new DbRejectedArtworkStore(),
   });
 
   /* ============ EVENT: CREATE / OWNER ACCESS ============ */

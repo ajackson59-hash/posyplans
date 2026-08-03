@@ -10,6 +10,8 @@ import { DEFAULT_FEATURE_FLAGS, readFeatureFlags, featureFlagEnvVar } from "@sha
 import { registerAiFirstRoutes } from "../server/aiFirst/routes";
 import { InMemoryPreviewStore } from "../server/aiFirst/previewStore";
 import { InMemoryUsageStore } from "../server/aiFirst/usage";
+import { InMemoryRunStore } from "../server/aiFirst/runStore";
+import { InMemoryRejectedArtworkStore } from "../server/aiFirst/rejectedArtworkStore";
 
 const OWNER = "owner-token";
 
@@ -29,6 +31,8 @@ function appWith(env: Record<string, string | undefined>) {
     storage,
     previewStore: new InMemoryPreviewStore(),
     usageStore: new InMemoryUsageStore(),
+    runStore: new InMemoryRunStore(),
+    rejectedArtworkStore: new InMemoryRejectedArtworkStore(),
     env,
   });
   return app;
@@ -39,6 +43,7 @@ describe("feature flags", () => {
     expect(DEFAULT_FEATURE_FLAGS).toEqual({
       aiFirstInvitations: false,
       invitationGenerationKillSwitch: false,
+      aiFirstDisableAutomaticRetry: false,
     });
     expect(readFeatureFlags({})).toEqual(DEFAULT_FEATURE_FLAGS);
   });
@@ -102,9 +107,10 @@ describe("route gating", () => {
     const cleanup = await request(app).post("/api/ai-first/cleanup-previews").send({});
     expect(cleanup.status).toBe(200);
 
-    const generate = await request(app).post(`/api/events/owner/${OWNER}/ai-first/generate`).send({});
+    const generate = await request(app).post(`/api/events/owner/${OWNER}/ai-first/generate`).send({ runId: "run-1" });
     expect(generate.status).toBe(403);
     expect(generate.body.denial).toBe("kill-switch");
+    expect(generate.body.paused).toBe(true);
   });
 
   it("reads the flag per request, so a kill switch needs no redeploy", async () => {

@@ -4,12 +4,15 @@
 // without a database — server/storage.ts throws at import when DATABASE_URL
 // is unset, which is the normal state in unit tests.
 
+import { createHash } from "node:crypto";
 import { and, eq, gte, lt, sql } from "drizzle-orm";
 import { db } from "../storage";
-import { aiFirstPreviews, aiFirstImageLedger } from "@shared/schema";
+import { aiFirstPreviews, aiFirstImageLedger, aiFirstGenerationRuns, aiFirstRejectedArtwork } from "@shared/schema";
 import { aiFirstConceptSchema } from "@shared/aiFirstInvite";
 import type { AiFirstPreviewStore, PreviewRecord } from "./previewStore";
 import type { AiFirstUsageStore, LedgerEntry, UsageSnapshot } from "./usage";
+import type { AiFirstRunStore, ClaimResult, GenerationRunRecord, RunStatus } from "./runStore";
+import type { AiFirstRejectedArtworkStore, RejectedArtworkRecord } from "./rejectedArtworkStore";
 
 type PreviewRow = typeof aiFirstPreviews.$inferSelect;
 
@@ -172,5 +175,195 @@ export class DbUsageStore implements AiFirstUsageStore {
 
   endRun(eventId: number): void {
     this.active.set(eventId, Math.max(0, (this.active.get(eventId) ?? 0) - 1));
+  }
+}
+
+/* ── Durable generation runs ────────────────────────────────────────────
+ * See shared/schema.ts for why this table exists: `beginRun`/`endRun`
+ * above are process-memory counters and are wrong the instant there is more
+ * than one server instance. This is the durable replacement they defer to.
+ */
+type RunRow = typeof aiFirstGenerationRuns.$inferSelect;
+
+function toRunRecord(row: RunRow): GenerationRunRecord {
+  return {
+    runId: row.runId,
+    eventId: row.eventId,
+    ownerToken: row.ownerToken,
+    status: row.status as RunStatus,
+    progressMessage: row.progressMessage,
+    completedCount: row.completedCount,
+    fallbackCount: row.fallbackCount,
+    errorMessage: row.errorMessage,
+    terminal: row.terminal,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export class DbRunStore implements AiFirstRunStore {
+  async claim(input: { runId: string; eventId: number; ownerToken: string; now?: number }): Promise<ClaimResult> {
+    const now = input.now ?? Date.now();
+    // The unique index on runId makes this atomic across every server
+    // instance: only one INSERT can ever land for a given runId, so a
+    // duplicate click or a duplicate request that reaches a second instance
+    // both fall into the `.returning()` coming back empty below.
+    const inserted = await db
+      .insert(aiFirstGenerationRuns)
+      .values({
+        runId: input.runId,
+        eventId: input.eventId,
+        ownerToken: input.ownerToken,
+        status: "active",
+        progressMessage: "",
+        completedCount: 0,
+        fallbackCount: 0,
+        errorMessage: null,
+        terminal: false,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .onConflictDoNothing({ target: aiFirstGenerationRuns.runId })
+      .returning();
+
+    if (inserted[0]) return { outcome: "claimed", record: toRunRecord(inserted[0]) };
+
+    const existing = await db
+      .select()
+      .from(aiFirstGenerationRuns)
+      .where(eq(aiFirstGenerationRuns.runId, input.runId));
+    // existing[0] must be present: the insert only no-ops on a conflict.
+    return { outcome: "duplicate", record: toRunRecord(existing[0]) };
+  }
+
+  async get(runId: string): Promise<GenerationRunRecord | undefined> {
+    const rows = await db.select().from(aiFirstGenerationRuns).where(eq(aiFirstGenerationRuns.runId, runId));
+    return rows[0] ? toRunRecord(rows[0]) : undefined;
+  }
+
+  async updateProgress(runId: string, message: string, now = Date.now()): Promise<void> {
+    await db
+      .update(aiFirstGenerationRuns)
+      .set({ progressMessage: message, updatedAt: now })
+      .where(eq(aiFirstGenerationRuns.runId, runId));
+  }
+
+  async incrementCompleted(runId: string, by = 1, now = Date.now()): Promise<void> {
+    await db
+      .update(aiFirstGenerationRuns)
+      .set({ completedCount: sql`${aiFirstGenerationRuns.completedCount} + ${by}`, updatedAt: now })
+      .where(eq(aiFirstGenerationRuns.runId, runId));
+  }
+
+  async incrementFallback(runId: string, by = 1, now = Date.now()): Promise<void> {
+    await db
+      .update(aiFirstGenerationRuns)
+      .set({ fallbackCount: sql`${aiFirstGenerationRuns.fallbackCount} + ${by}`, updatedAt: now })
+      .where(eq(aiFirstGenerationRuns.runId, runId));
+  }
+
+  async complete(runId: string, now = Date.now()): Promise<void> {
+    await db
+      .update(aiFirstGenerationRuns)
+      .set({ status: "completed", terminal: true, updatedAt: now })
+      .where(eq(aiFirstGenerationRuns.runId, runId));
+  }
+
+  async fail(runId: string, errorMessage: string, now = Date.now()): Promise<void> {
+    await db
+      .update(aiFirstGenerationRuns)
+      .set({ status: "failed", errorMessage, terminal: true, updatedAt: now })
+      .where(eq(aiFirstGenerationRuns.runId, runId));
+  }
+
+  async hasActiveRun(eventId: number): Promise<boolean> {
+    const rows = await db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(aiFirstGenerationRuns)
+      .where(
+        and(
+          eq(aiFirstGenerationRuns.eventId, eventId),
+          eq(aiFirstGenerationRuns.status, "active"),
+          eq(aiFirstGenerationRuns.terminal, false),
+        ),
+      );
+    return (rows[0]?.n ?? 0) > 0;
+  }
+}
+
+/* ── Rejected artwork (protected reviewer evidence) ─────────────────── */
+type RejectedRow = typeof aiFirstRejectedArtwork.$inferSelect;
+
+function toRejectedRecord(row: RejectedRow): RejectedArtworkRecord {
+  return {
+    eventId: row.eventId,
+    ownerToken: row.ownerToken,
+    directionIndex: row.directionIndex,
+    attempt: row.attempt,
+    assetHash: row.assetHash,
+    assetBytesBase64: row.assetBytesBase64,
+    concept: JSON.parse(row.conceptJson),
+    failureCodes: JSON.parse(row.failureCodesJson),
+    tier1Findings: JSON.parse(row.tier1FindingsJson),
+    visionScores: row.visionScoresJson ? JSON.parse(row.visionScoresJson) : null,
+    costUsdMicros: row.costUsdMicros,
+    createdAt: row.createdAt,
+  };
+}
+
+export class DbRejectedArtworkStore implements AiFirstRejectedArtworkStore {
+  async record(input: Parameters<AiFirstRejectedArtworkStore["record"]>[0]): Promise<RejectedArtworkRecord> {
+    const assetHash = createHash("sha256").update(input.bytes).digest("hex");
+    const now = input.now ?? Date.now();
+    await db.insert(aiFirstRejectedArtwork).values({
+      eventId: input.eventId,
+      ownerToken: input.ownerToken,
+      directionIndex: input.directionIndex,
+      attempt: input.attempt,
+      assetHash,
+      assetBytesBase64: input.bytes.toString("base64"),
+      conceptJson: JSON.stringify(input.concept),
+      failureCodesJson: JSON.stringify(input.failureCodes),
+      tier1FindingsJson: JSON.stringify(input.tier1Findings),
+      visionScoresJson: input.visionScores ? JSON.stringify(input.visionScores) : null,
+      costUsdMicros: input.costUsdMicros,
+      createdAt: now,
+    });
+    return {
+      eventId: input.eventId,
+      ownerToken: input.ownerToken,
+      directionIndex: input.directionIndex,
+      attempt: input.attempt,
+      assetHash,
+      assetBytesBase64: input.bytes.toString("base64"),
+      concept: input.concept,
+      failureCodes: input.failureCodes,
+      tier1Findings: input.tier1Findings,
+      visionScores: input.visionScores,
+      costUsdMicros: input.costUsdMicros,
+      createdAt: now,
+    };
+  }
+
+  async listForOwner(eventId: number, ownerToken: string): Promise<RejectedArtworkRecord[]> {
+    const rows = await db
+      .select()
+      .from(aiFirstRejectedArtwork)
+      .where(and(eq(aiFirstRejectedArtwork.eventId, eventId), eq(aiFirstRejectedArtwork.ownerToken, ownerToken)));
+    return rows.map(toRejectedRecord);
+  }
+
+  async findAsset(eventId: number, ownerToken: string, assetHash: string): Promise<RejectedArtworkRecord | undefined> {
+    const rows = await db
+      .select()
+      .from(aiFirstRejectedArtwork)
+      .where(
+        and(
+          eq(aiFirstRejectedArtwork.eventId, eventId),
+          eq(aiFirstRejectedArtwork.ownerToken, ownerToken),
+          eq(aiFirstRejectedArtwork.assetHash, assetHash),
+        ),
+      );
+    return rows[0] ? toRejectedRecord(rows[0]) : undefined;
   }
 }

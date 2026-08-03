@@ -37,6 +37,7 @@ import { adaptStudioDirection, loadStudioArtwork } from "./fallback";
 import { generateArtwork, type ArtworkGenerator } from "./artwork";
 import {
   lookupReusablePreview,
+  previewAssetUrl,
   savePreview,
   type AiFirstPreviewStore,
   type PreviewRecord,
@@ -48,11 +49,15 @@ import {
   type CircuitBreaker,
 } from "./usage";
 import type { EventBrief } from "./brief";
+import type { AiFirstRejectedArtworkStore } from "./rejectedArtworkStore";
+import type { AiFirstRunStore } from "./runStore";
 
 export const CONCEPT_MODEL = "claude-sonnet-4-6";
 export const TARGET_CONCEPT_COUNT = TARGET_DIRECTION_COUNT;
-/** One retry maximum per direction, as specified. */
+/** One retry maximum per direction, when the automatic retry is enabled. */
 export const MAX_ARTWORK_ATTEMPTS = 2;
+/** The next-proof safety setting: one billed image call, no automatic retry. */
+export const MAX_ARTWORK_ATTEMPTS_NO_RETRY = 1;
 
 /* ── Progress events ─────────────────────────────────────────────────── */
 
@@ -97,6 +102,21 @@ export interface PipelineInput {
   /** Off in unit tests; on in production. */
   ocr?: boolean;
   signal?: AbortSignal;
+  /**
+   * Identifies this run for idempotency. Required so a duplicate click or a
+   * duplicate request landing on a second server instance can be recognized
+   * as the same run rather than a second one — see server/aiFirst/runStore.ts.
+   * Optional only so existing direct-pipeline tests/tools that predate this
+   * repair keep compiling; the route always supplies one.
+   */
+  runId?: string;
+  ownerToken?: string;
+  /** Durable retention of billed-but-rejected artwork for protected review. */
+  rejectedArtworkStore?: AiFirstRejectedArtworkStore;
+  /** Durable run/idempotency state. See runStore.ts. */
+  runStore?: AiFirstRunStore;
+  /** The next-proof safety setting: caps every direction at one billed image call. */
+  disableAutomaticRetry?: boolean;
 }
 
 /* ── Bounded-concurrency helper ──────────────────────────────────────── */
@@ -130,7 +150,16 @@ class Semaphore {
 export async function runAiFirstPipeline(input: PipelineInput): Promise<RunSummary> {
   const started = Date.now();
   const sink = input.sink;
-  const emit = (event: PipelineEventInput) => sink({ ...event, at: Date.now() } as PipelineEvent);
+  const emit = (event: PipelineEventInput) => {
+    sink({ ...event, at: Date.now() } as PipelineEvent);
+    // Mirrored into durable run state so the server's own record of "where
+    // is this run" survives past this one HTTP response — the UI's progress
+    // text and the recovery path after an unexpected disconnect both read
+    // this instead of trusting only the stream that may have just dropped.
+    if (input.runStore && input.runId && event.type === "progress") {
+      void input.runStore.updateProgress(input.runId, event.message);
+    }
+  };
   const since = () => Date.now() - started;
 
   const generateImage = input.generateImage ?? generateArtwork;
@@ -254,6 +283,12 @@ export async function runAiFirstPipeline(input: PipelineInput): Promise<RunSumma
 
   summary.msToAllDirections = since();
   emit({ type: "done", summary });
+  // Marks the run terminal in durable state. This is the write the client's
+  // unexpected-EOF check ultimately depends on: if the HTTP response is cut
+  // off before this line runs, the row stays non-terminal and a client that
+  // asks the server "did that run finish" (or a fresh page load that resumes
+  // it) is told the truth rather than inferring success from stream closure.
+  if (input.runStore && input.runId) await input.runStore.complete(input.runId);
   return summary;
 }
 
@@ -315,12 +350,31 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
   const basePrompt = buildArtworkPrompt(concept);
   let failureCodes: string[] = [];
 
-  for (let attempt = 1; attempt <= MAX_ARTWORK_ATTEMPTS; attempt += 1) {
+  // The next-proof safety setting: when set, a direction gets exactly one
+  // billed image call. Preserves the existing one-retry behaviour when unset.
+  const maxAttempts = input.disableAutomaticRetry ? MAX_ARTWORK_ATTEMPTS_NO_RETRY : MAX_ARTWORK_ATTEMPTS;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     if (input.signal?.aborted) break;
     if (input.breaker && !input.breaker.allows()) {
       summary.degraded.push("provider circuit open");
       break;
     }
+
+    // Idempotency at each artwork direction key, enforced BEFORE spend. The
+    // key is stable for (run, direction, attempt); if a prior execution of
+    // this exact run already paid for this exact attempt — the case a
+    // process crash-and-resume or a replayed request produces — that spend
+    // is on the ledger already and this attempt must not buy a second image.
+    // The run-level claim in runStore is the primary defence against a
+    // duplicate *request* ever reaching this loop twice; this is the
+    // belt-and-braces check inside the loop itself.
+    const idempotencyKey = input.runId ? `${input.runId}:direction-${ctx.index}:attempt-${attempt}` : undefined;
+    if (idempotencyKey && (await input.usageStore.findByIdempotencyKey(idempotencyKey))) {
+      summary.degraded.push(`direction ${ctx.index + 1} attempt ${attempt} already billed under this run — skipped rather than spent twice`);
+      break;
+    }
+
     if (!ctx.spend.take()) {
       summary.degraded.push("billed-image allowance exhausted");
       break;
@@ -365,6 +419,7 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
       // An automatic retry is spend, never a host-visible action.
       automatic: attempt > 1,
       conceptFingerprint: undefined,
+      idempotencyKey,
       costUsdMicros: IMAGE_COST_USD_MICROS,
       createdAt: Date.now(),
     });
@@ -416,12 +471,35 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
         assetUrl: dataUrl,
         source: "ai-generated",
       });
+      if (input.runStore && input.runId) await input.runStore.incrementCompleted(input.runId);
       return finish(ctx, concept, saved.record, "ai-generated", attempts, artworkOpacity, false);
+    }
+
+    // Rejected, but billed: durably retain it for protected reviewer
+    // evidence. This is money spent on an image nobody will ever see, and
+    // before this store existed that fact evaporated at the end of the
+    // request. Never reachable from an ordinary user route — see
+    // rejectedArtworkStore.ts and the owner-scoped review route.
+    if (input.rejectedArtworkStore && input.ownerToken) {
+      await input.rejectedArtworkStore.record({
+        eventId: input.eventId,
+        ownerToken: input.ownerToken,
+        directionIndex: ctx.index,
+        attempt,
+        bytes,
+        concept,
+        failureCodes: passed ? [] : failureCodes,
+        tier1Findings: tier1.findings,
+        visionScores: vision?.scores ?? null,
+        costUsdMicros: IMAGE_COST_USD_MICROS,
+      });
     }
   }
 
-  // Both attempts failed. Substitute a curated direction adapted to the
-  // brief rather than showing work the gate rejected.
+  // Every attempt failed (or the safety setting allowed only one). Substitute
+  // a curated direction adapted to the brief rather than showing work the
+  // gate rejected.
+  if (input.runStore && input.runId) await input.runStore.incrementFallback(input.runId);
   const adapted = adaptStudioDirection({
     concept,
     brief: input.brief,
@@ -447,6 +525,11 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
     source: "adapted-studio-direction",
   });
 
+  // The fallback still delivers a customer-safe direction for this slot, so
+  // it counts as completed — the UI's "completed" and "fallback" counts are
+  // not mutually exclusive, matching the summary's own
+  // directions/adaptedDirections split.
+  if (input.runStore && input.runId) await input.runStore.incrementCompleted(input.runId);
   return finish(ctx, adapted.concept, savedStudio.record, "adapted-studio-direction", attempts, undefined, false);
 }
 
@@ -459,13 +542,20 @@ function finish(
   artworkOpacity: number | undefined,
   reusedPreview: boolean,
 ): FinishedDirection {
+  // The wire value is a small, owner-scoped route — never the raw stored
+  // bytes. Callers that do not carry an ownerToken (older direct-pipeline
+  // tests and tools) fall back to the stored value so they keep compiling,
+  // but every caller that goes through the real HTTP route supplies one.
+  const illustrationUrl = ctx.input.ownerToken
+    ? previewAssetUrl(ctx.input.ownerToken, record.previewId)
+    : record.assetUrl;
   return {
     index: ctx.index,
     concept,
     source,
     previewId: record.previewId,
     assetHash: record.assetHash,
-    illustrationUrl: record.assetUrl,
+    illustrationUrl,
     overlay: concept.minOverlay,
     artworkOpacity,
     attempts,

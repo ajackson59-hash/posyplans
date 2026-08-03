@@ -578,3 +578,120 @@ export const aiFirstImageLedger = pgTable("ai_first_image_ledger", {
 });
 
 export type AiFirstImageLedgerRow = typeof aiFirstImageLedger.$inferSelect;
+
+// MIGRATION NOTE (not applied — code-documented only, per repair scope):
+// idempotencyKey above should carry a real unique index,
+//   CREATE UNIQUE INDEX ai_first_image_ledger_idempotency_key_uq
+//     ON ai_first_image_ledger (idempotency_key)
+//     WHERE idempotency_key IS NOT NULL;
+// so that two concurrent requests inserting the same per-direction spend
+// key race at the database rather than in application memory. The current
+// enforcement path is `findByIdempotencyKey` followed by `record`, which is
+// correct for the single-writer-per-run invariant enforced by
+// ai_first_generation_runs below, but a unique index is the belt to that
+// table's braces and should land in the next real migration.
+
+/* ============ AI-FIRST GENERATION RUNS (durable idempotency) ============ */
+// One row per attempted generation run, keyed by a client-generated runId.
+// This is the fix for the defect where "active generation" and "has this
+// run already spent" lived only in server process memory (a Map on
+// DbUsageStore / InMemoryUsageStore): correct on one long-lived process,
+// silently wrong the moment two Vercel instances or a redeploy are in the
+// picture, because each instance has its own Map.
+//
+// The unique constraint on runId is what makes "duplicate click" and
+// "duplicate request to a second server instance" the same case: both are
+// a second INSERT attempt against a row that already exists, so the guard
+// is a single atomic write rather than a check-then-act race.
+//
+// MIGRATION NOTE (not applied — code-documented only, per repair scope):
+//   CREATE TABLE ai_first_generation_runs (
+//     id SERIAL PRIMARY KEY,
+//     run_id TEXT NOT NULL UNIQUE,
+//     event_id INTEGER NOT NULL,
+//     owner_token TEXT NOT NULL,
+//     status TEXT NOT NULL DEFAULT 'active', -- active | completed | failed
+//     progress_message TEXT NOT NULL DEFAULT '',
+//     completed_count INTEGER NOT NULL DEFAULT 0,
+//     fallback_count INTEGER NOT NULL DEFAULT 0,
+//     error_message TEXT,
+//     terminal BOOLEAN NOT NULL DEFAULT false,
+//     created_at BIGINT NOT NULL,
+//     updated_at BIGINT NOT NULL
+//   );
+//   CREATE INDEX ai_first_generation_runs_event_id_idx ON ai_first_generation_runs (event_id);
+// A real migration should also add a partial index on (event_id) WHERE
+// status = 'active' to make "does this event already have an active run"
+// a cheap indexed lookup instead of a table scan, mirroring the
+// MAX_CONCURRENT_GENERATIONS_PER_EVENT check in usage.ts.
+export const aiFirstGenerationRuns = pgTable("ai_first_generation_runs", {
+  id: serial("id").primaryKey(),
+  runId: text("run_id").notNull().unique(),
+  eventId: integer("event_id").notNull(),
+  ownerToken: text("owner_token").notNull(),
+  // active | completed | failed
+  status: text("status").notNull().default("active"),
+  progressMessage: text("progress_message").notNull().default(""),
+  completedCount: integer("completed_count").notNull().default(0),
+  fallbackCount: integer("fallback_count").notNull().default(0),
+  errorMessage: text("error_message"),
+  // True once the run has reached an explicit done/error/failed terminal
+  // state. A row that is merely "not active anymore" (e.g. the process
+  // died) but never reached this is exactly the unexpected-EOF case the
+  // client must treat as a failure, not a success.
+  terminal: boolean("terminal").notNull().default(false),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
+});
+
+export type AiFirstGenerationRunRow = typeof aiFirstGenerationRuns.$inferSelect;
+
+/* ============ AI-FIRST REJECTED ARTWORK (protected reviewer evidence) ===== */
+// Every billed image is money spent, including the ones the quality gate
+// rejected. Before this table, a rejected attempt's bytes only ever lived
+// in the SSE stream (as a data URL, now removed — see the preview asset
+// route) and in the pipeline's in-memory attempt log; nothing durable
+// survived the request. That made "why did we pay for four images this
+// event only shows one direction" unanswerable after the fact.
+//
+// This table is intentionally separate from ai_first_previews: ordinary
+// user-facing routes (status, generate, apply) must never be able to
+// surface a rejected image, so it is not a flag on the previews table but
+// a distinct store with its own access path, gated the same way apply/status
+// already are — by ownerToken, the event's existing secret. There is no new
+// public diagnostic endpoint.
+//
+// MIGRATION NOTE (not applied — code-documented only, per repair scope):
+//   CREATE TABLE ai_first_rejected_artwork (
+//     id SERIAL PRIMARY KEY,
+//     event_id INTEGER NOT NULL,
+//     owner_token TEXT NOT NULL,
+//     direction_index INTEGER NOT NULL,
+//     attempt INTEGER NOT NULL,
+//     asset_hash TEXT NOT NULL,
+//     asset_bytes_base64 TEXT NOT NULL,
+//     concept_json TEXT NOT NULL,
+//     failure_codes_json TEXT NOT NULL,
+//     tier1_findings_json TEXT NOT NULL,
+//     vision_scores_json TEXT,
+//     cost_usd_micros INTEGER NOT NULL DEFAULT 0,
+//     created_at BIGINT NOT NULL
+//   );
+//   CREATE INDEX ai_first_rejected_artwork_event_id_idx ON ai_first_rejected_artwork (event_id);
+export const aiFirstRejectedArtwork = pgTable("ai_first_rejected_artwork", {
+  id: serial("id").primaryKey(),
+  eventId: integer("event_id").notNull(),
+  ownerToken: text("owner_token").notNull(),
+  directionIndex: integer("direction_index").notNull(),
+  attempt: integer("attempt").notNull(),
+  assetHash: text("asset_hash").notNull(),
+  assetBytesBase64: text("asset_bytes_base64").notNull(),
+  conceptJson: text("concept_json").notNull(),
+  failureCodesJson: text("failure_codes_json").notNull(),
+  tier1FindingsJson: text("tier1_findings_json").notNull(),
+  visionScoresJson: text("vision_scores_json"),
+  costUsdMicros: integer("cost_usd_micros").notNull().default(0),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
+});
+
+export type AiFirstRejectedArtworkRow = typeof aiFirstRejectedArtwork.$inferSelect;

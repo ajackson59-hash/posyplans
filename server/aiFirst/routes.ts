@@ -18,7 +18,7 @@ import { deriveThemeDna } from "@shared/themeDna";
 import { computeEventDna } from "@shared/eventDna";
 import { buildEventBrief, briefIsSufficient, SINGLE_BRIEF_QUESTION } from "./brief";
 import { runAiFirstPipeline, type PipelineEvent } from "./pipeline";
-import { applyPreview, cleanupPreviews, type AiFirstPreviewStore } from "./previewStore";
+import { applyPreview, cleanupPreviews, resolvePreviewAssetBytes, type AiFirstPreviewStore } from "./previewStore";
 import {
   CircuitBreaker,
   RateLimiter,
@@ -29,6 +29,8 @@ import {
   type AiFirstUsageStore,
 } from "./usage";
 import { INVITATION_ASK_POSY_ACTIONS, resolveAskPosyAction } from "./askPosy";
+import type { AiFirstRunStore } from "./runStore";
+import type { AiFirstRejectedArtworkStore } from "./rejectedArtworkStore";
 
 /** One breaker and one limiter per process, shared by every event. */
 const breaker = new CircuitBreaker();
@@ -45,6 +47,10 @@ export interface AiFirstDeps {
   };
   previewStore: AiFirstPreviewStore;
   usageStore: AiFirstUsageStore & { beginRun?(id: number): void; endRun?(id: number): void };
+  /** Durable run/idempotency state. Required for real spend to be safe across instances. */
+  runStore: AiFirstRunStore;
+  /** Durable retention of billed-but-rejected artwork, for protected review. */
+  rejectedArtworkStore: AiFirstRejectedArtworkStore;
   env?: Record<string, string | undefined>;
 }
 
@@ -83,14 +89,50 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
       const entitlement = email ? await deps.storage.getEmailEntitlement(email) : undefined;
       const tier = entitlement?.planTier as never;
       const usage = await deps.usageStore.snapshot(event.id, email, monthStart());
+      // The durable run row, not the process-memory counter, decides whether
+      // this event already has an active generation — correct even when this
+      // request lands on a different instance than the one running it.
+      const activeGenerations = (await deps.runStore.hasActiveRun(event.id)) ? 1 : usage.activeGenerations;
       res.json({
         plan: tierLabel(tier),
         ceilings: ceilingsForTier(tier),
-        usage,
+        usage: { ...usage, activeGenerations },
         killSwitch: flags().invitationGenerationKillSwitch,
         // The one question a thin brief is allowed to ask, and only then.
         briefQuestion: briefIsSufficient(event) ? null : SINGLE_BRIEF_QUESTION,
         askPosyActions: INVITATION_ASK_POSY_ACTIONS,
+      });
+    }),
+  );
+
+  /**
+   * Durable run status, for recovery after an unexpected stream termination.
+   * The client's EOF-without-terminal-event case reports failure immediately
+   * (see aiFirstSession.ts), but this route lets a reload or a support tool
+   * ask "what actually happened to that run" from the source of truth rather
+   * than the dropped connection.
+   */
+  app.get(
+    "/api/events/owner/:ownerToken/ai-first/run/:runId",
+    gated(async (req, res) => {
+      const event = await deps.storage.getEventByOwnerToken(String(req.params.ownerToken));
+      if (!event) {
+        res.status(404).json({ error: "Event not found" });
+        return;
+      }
+      const run = await deps.runStore.get(String(req.params.runId));
+      if (!run || run.eventId !== event.id || run.ownerToken !== req.params.ownerToken) {
+        res.status(404).json({ error: "Run not found" });
+        return;
+      }
+      res.json({
+        runId: run.runId,
+        status: run.status,
+        progressMessage: run.progressMessage,
+        completedCount: run.completedCount,
+        fallbackCount: run.fallbackCount,
+        errorMessage: run.errorMessage,
+        terminal: run.terminal,
       });
     }),
   );
@@ -102,9 +144,33 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
   app.post(
     "/api/events/owner/:ownerToken/ai-first/generate",
     gated(async (req, res) => {
-      const event = await deps.storage.getEventByOwnerToken(String(req.params.ownerToken));
+      const ownerToken = String(req.params.ownerToken);
+      const event = await deps.storage.getEventByOwnerToken(ownerToken);
       if (!event) {
         res.status(404).json({ error: "Event not found" });
+        return;
+      }
+
+      // The kill switch is checked first and unconditionally, before the run
+      // is even claimed: when it is on, this route must invoke zero provider
+      // functions and return a clear paused response, with nothing durable
+      // written for this attempt.
+      if (flags().invitationGenerationKillSwitch) {
+        res.status(403).json({
+          error: "New invitation artwork is paused right now. The Posy collection and your saved designs are still available.",
+          denial: "kill-switch",
+          paused: true,
+        });
+        return;
+      }
+
+      // Idempotency, enforced before provider spend: the client mints one
+      // runId per logical run and resends it on every request for that run.
+      // A missing runId is a client bug, not a request this route can safely
+      // treat as a fresh run — there would be nothing to de-duplicate against.
+      const runId = typeof req.body?.runId === "string" ? req.body.runId.trim() : "";
+      if (!runId) {
+        res.status(400).json({ error: "A runId is required to start invitation generation." });
         return;
       }
 
@@ -112,19 +178,23 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
       const entitlement = email ? await deps.storage.getEmailEntitlement(email) : undefined;
       const tier = entitlement?.planTier as never;
       const usage = await deps.usageStore.snapshot(event.id, email, monthStart());
+      // The durable row is the authority on "is a generation already active
+      // for this event", not the in-process counter — correct across restarts
+      // and across every Vercel instance, not just this one.
+      const hasActiveRun = await deps.runStore.hasActiveRun(event.id);
 
       const action = resolveAskPosyAction(req.body?.action, req.body);
       const guard = guardGeneration({
         eventId: event.id,
         email,
         tier,
-        usage,
+        usage: { ...usage, activeGenerations: hasActiveRun ? Math.max(usage.activeGenerations, 1) : usage.activeGenerations },
         // Four directions, each allowed one retry.
         requested: 8,
-        killSwitch: flags().invitationGenerationKillSwitch,
+        killSwitch: false, // already handled above, unconditionally
         breaker,
         limiter,
-        ownerToken: String(req.params.ownerToken),
+        ownerToken,
         ip: req.ip,
       });
       if (!guard.allowed) {
@@ -132,6 +202,34 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
           error: guard.message,
           denial: guard.denial,
           plan: tierLabel(tier),
+        });
+        return;
+      }
+
+      // Atomic claim. This single write is what makes "duplicate click, same
+      // run id" and "duplicate request reaching a separate server instance"
+      // the same code path: both are a second claim() for a runId that
+      // already has a row, so both take the `duplicate` branch below rather
+      // than either one buying a second set of images.
+      const claim = await deps.runStore.claim({ runId, eventId: event.id, ownerToken });
+      if (claim.outcome === "duplicate") {
+        // Not an error: replay the run's current durable state as a single
+        // JSON response rather than starting a second SSE stream. The client
+        // is expected to already be reading the first stream (or to poll
+        // /run/:runId if it is not); this response exists so a genuinely
+        // duplicated request — the double-click or the second instance —
+        // gets a well-formed answer instead of a second billed run.
+        res.status(409).json({
+          error: "This invitation run is already in progress.",
+          denial: "duplicate-run",
+          run: {
+            runId: claim.record.runId,
+            status: claim.record.status,
+            progressMessage: claim.record.progressMessage,
+            completedCount: claim.record.completedCount,
+            fallbackCount: claim.record.fallbackCount,
+            terminal: claim.record.terminal,
+          },
         });
         return;
       }
@@ -183,9 +281,15 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
           breaker,
           ocr: true,
           signal: controller.signal,
+          runId,
+          ownerToken,
+          runStore: deps.runStore,
+          rejectedArtworkStore: deps.rejectedArtworkStore,
+          disableAutomaticRetry: flags().aiFirstDisableAutomaticRetry,
         });
       } catch (err) {
         send({ type: "error", message: (err as Error).message, at: Date.now() });
+        await deps.runStore.fail(runId, (err as Error).message);
       } finally {
         deps.usageStore.endRun?.(event.id);
         res.end();
@@ -262,6 +366,80 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
       });
 
       res.json({ event: updated, previewId: record.previewId, assetHash: record.assetHash });
+    }),
+  );
+
+  /**
+   * Serves a preview's stored bytes directly, so nothing upstream of this
+   * route ever has to carry a `data:` URL. Owner-scoped like every other
+   * route here: the previewId alone is not treated as a public handle, it
+   * is looked up within the event the ownerToken resolves to.
+   */
+  app.get(
+    "/api/events/owner/:ownerToken/ai-first/preview/:previewId/asset",
+    gated(async (req, res) => {
+      const event = await deps.storage.getEventByOwnerToken(String(req.params.ownerToken));
+      if (!event) {
+        res.status(404).json({ error: "Event not found" });
+        return;
+      }
+      const record = await deps.previewStore.findByPreviewId(event.id, String(req.params.previewId));
+      if (!record) {
+        res.status(404).json({ error: "That preview is no longer available." });
+        return;
+      }
+      const asset = await resolvePreviewAssetBytes(record);
+      if (!asset) {
+        res.status(404).json({ error: "That preview's artwork could not be found." });
+        return;
+      }
+      res.writeHead(200, {
+        "Content-Type": asset.contentType,
+        // Content-addressed by previewId (itself derived from a content
+        // hash), so it is safe to cache aggressively — the bytes at this URL
+        // never change once written.
+        "Cache-Control": "public, max-age=31536000, immutable",
+        "Content-Length": String(asset.bytes.length),
+      });
+      res.end(asset.bytes);
+    }),
+  );
+
+  /**
+   * Protected reviewer evidence: every billed image the quality gate
+   * rejected, for this event only. Gated the same way apply/status already
+   * are — by the event's own ownerToken — so this is not a new public
+   * diagnostic surface, it is the same owner-auth boundary the rest of the
+   * AI-first routes already enforce, applied to a new kind of record.
+   * Ordinary user routes (status, generate, apply) never reference this
+   * store, so a rejected image cannot reach a host or a guest through them.
+   */
+  app.get(
+    "/api/events/owner/:ownerToken/ai-first/review/rejected",
+    gated(async (req, res) => {
+      const ownerToken = String(req.params.ownerToken);
+      const event = await deps.storage.getEventByOwnerToken(ownerToken);
+      if (!event) {
+        res.status(404).json({ error: "Event not found" });
+        return;
+      }
+      const rows = await deps.rejectedArtworkStore.listForOwner(event.id, ownerToken);
+      res.json({
+        rejected: rows.map((row) => ({
+          directionIndex: row.directionIndex,
+          attempt: row.attempt,
+          assetHash: row.assetHash,
+          // Base64 here is intentional and safe: this route is owner-scoped
+          // review evidence, not a stream event or an ordinary user route.
+          assetDataUrl: `data:image/png;base64,${row.assetBytesBase64}`,
+          conceptName: row.concept.conceptName,
+          failureCodes: row.failureCodes,
+          tier1Findings: row.tier1Findings,
+          visionScores: row.visionScores,
+          costUsdMicros: row.costUsdMicros,
+          createdAt: row.createdAt,
+        })),
+      });
     }),
   );
 

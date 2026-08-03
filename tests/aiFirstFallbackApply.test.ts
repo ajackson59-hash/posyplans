@@ -21,6 +21,8 @@ import { runAiFirstPipeline } from "../server/aiFirst/pipeline";
 import { registerAiFirstRoutes } from "../server/aiFirst/routes";
 import { InMemoryPreviewStore } from "../server/aiFirst/previewStore";
 import { InMemoryUsageStore } from "../server/aiFirst/usage";
+import { InMemoryRunStore } from "../server/aiFirst/runStore";
+import { InMemoryRejectedArtworkStore } from "../server/aiFirst/rejectedArtworkStore";
 import type { EventBrief } from "../server/aiFirst/brief";
 import { concept, framedArtworkForAspect } from "./aiFirstFixtures";
 
@@ -124,6 +126,8 @@ function appFor(previewStore: InMemoryPreviewStore, usageStore: InMemoryUsageSto
     },
     previewStore,
     usageStore,
+    runStore: new InMemoryRunStore(),
+    rejectedArtworkStore: new InMemoryRejectedArtworkStore(),
     env: { [featureFlagEnvVar("aiFirstInvitations")]: "1" },
   });
   return { app, updates };
