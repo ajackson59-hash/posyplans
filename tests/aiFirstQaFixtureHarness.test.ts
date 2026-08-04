@@ -24,7 +24,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { execFileSync } from "node:child_process";
 import { render, cleanup, waitFor, act } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createElement } from "react";
@@ -362,7 +361,6 @@ describe("FIXTURE / NON-PROVIDER QA harness — desktop and 390px mobile", () =>
     const script = path.resolve(import.meta.dirname, "..", "tools", "qa", "renderFixtureSchematics.py");
     const dataPath = path.join(EVIDENCE_DIR, "captured-text.json");
     writeFileSync(dataPath, JSON.stringify(capturedText, null, 2), "utf8");
-    execFileSync("python3", [script, dataPath, EVIDENCE_DIR], { stdio: "inherit" });
 
     expect(savedPaths.length).toBeGreaterThan(0);
     expect(Object.keys(capturedText).length).toBe(4);
