@@ -87,6 +87,8 @@ export interface AiFirstSession {
 /** Host-visible copy for the case an SSE body ends with no terminal event. */
 export const UNEXPECTED_STREAM_END_MESSAGE =
   "Posy lost the connection before finishing your invitation directions. Please try again.";
+export const EMPTY_COMPLETION_MESSAGE =
+  "Posy couldn't finish a usable invitation direction. You were not shown a completed design.";
 
 export function useAiFirstSession(ownerToken: string): AiFirstSession {
   const [directions, setDirections] = useState<FinishedDirection[]>([]);
@@ -107,6 +109,8 @@ export function useAiFirstSession(ownerToken: string): AiFirstSession {
   const [filters, setFilters] = useState<AiFirstFilters>({ style: "all", occasion: "all" });
 
   const abort = useRef<AbortController | null>(null);
+  /** Synchronous guard: closes the gap before React paints `running=true`. */
+  const runInFlight = useRef(false);
   /** Set the instant a `done` or `error` event is applied, for this run only. */
   const reachedTerminal = useRef(false);
 
@@ -129,7 +133,12 @@ export function useAiFirstSession(ownerToken: string): AiFirstSession {
       setWarnings((prev) => [...prev, event.message]);
     } else if (event.type === "done") {
       reachedTerminal.current = true;
-      setSummary(event.summary);
+      if (event.summary.directions < 1) {
+        setSummary(null);
+        setError(EMPTY_COMPLETION_MESSAGE);
+      } else {
+        setSummary(event.summary);
+      }
     } else if (event.type === "error") {
       reachedTerminal.current = true;
       setError(event.message);
@@ -138,7 +147,11 @@ export function useAiFirstSession(ownerToken: string): AiFirstSession {
 
   const run = useCallback(
     async (options: AiFirstRunOptions = {}) => {
-      abort.current?.abort();
+      // A double click must remain one logical run even before React has had
+      // time to disable the button. Do not abort the paid request and replace
+      // it with a second run id.
+      if (runInFlight.current) return;
+      runInFlight.current = true;
       const controller = new AbortController();
       abort.current = controller;
       reachedTerminal.current = false;
@@ -202,6 +215,7 @@ export function useAiFirstSession(ownerToken: string): AiFirstSession {
           setError((err as Error).message);
         }
       } finally {
+        runInFlight.current = false;
         setRunning(false);
       }
     },

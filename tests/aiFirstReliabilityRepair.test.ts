@@ -128,6 +128,64 @@ function appFor(deps: {
    ═══════════════════════════════════════════════════════════════════════ */
 
 describe("unexpected stream termination is a visible failure, not a silent success", () => {
+  it("collapses two immediate clicks into one request and one run id", async () => {
+    const { useAiFirstSession } = await import("../client/src/lib/aiFirstSession");
+    const { renderHook, act } = await import("@testing-library/react");
+    let fetchCalls = 0;
+    let releaseFirstRead!: () => void;
+    const firstReadMayFinish = new Promise<void>((resolve) => {
+      releaseFirstRead = resolve;
+    });
+    const summary = {
+      directions: 1,
+      adaptedDirections: 0,
+      billedImages: 1,
+      reusedImages: 0,
+      retries: 0,
+      costUsd: 0.25,
+      msToFirstConcept: 1,
+      msToFirstDirection: 2,
+      msToAllDirections: 3,
+      conceptRejections: 0,
+      degraded: [],
+    };
+    const body = `data: ${JSON.stringify({ type: "done", summary, at: Date.now() })}\n\n`;
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async () => {
+      fetchCalls += 1;
+      let sent = false;
+      return {
+        ok: true,
+        body: {
+          getReader: () => ({
+            read: async () => {
+              if (sent) return { done: true, value: undefined };
+              sent = true;
+              await firstReadMayFinish;
+              return { done: false, value: new TextEncoder().encode(body) };
+            },
+          }),
+        },
+      };
+    }) as unknown as typeof fetch;
+
+    try {
+      const { result } = renderHook(() => useAiFirstSession("token"));
+      await act(async () => {
+        const first = result.current.run();
+        const second = result.current.run();
+        await Promise.resolve();
+        expect(fetchCalls).toBe(1);
+        releaseFirstRead();
+        await Promise.all([first, second]);
+      });
+      expect(result.current.summary?.directions).toBe(1);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it("reports failure when the SSE body ends with no done or error event", async () => {
     const { useAiFirstSession, UNEXPECTED_STREAM_END_MESSAGE } = await import("../client/src/lib/aiFirstSession");
     const { renderHook, act, waitFor } = await import("@testing-library/react");
@@ -165,8 +223,8 @@ describe("unexpected stream termination is a visible failure, not a silent succe
     }
   });
 
-  it("does NOT report failure when the stream ends right after an explicit done event", async () => {
-    const { useAiFirstSession } = await import("../client/src/lib/aiFirstSession");
+  it("rejects an explicit done event that delivered zero directions", async () => {
+    const { useAiFirstSession, EMPTY_COMPLETION_MESSAGE } = await import("../client/src/lib/aiFirstSession");
     const { renderHook, act, waitFor } = await import("@testing-library/react");
 
     const summary = {
@@ -203,8 +261,8 @@ describe("unexpected stream termination is a visible failure, not a silent succe
     try {
       const { result } = renderHook(() => useAiFirstSession("token"));
       await act(() => result.current.run());
-      await waitFor(() => expect(result.current.summary).not.toBeNull());
-      expect(result.current.error).toBeNull();
+      await waitFor(() => expect(result.current.error).toBe(EMPTY_COMPLETION_MESSAGE));
+      expect(result.current.summary).toBeNull();
     } finally {
       globalThis.fetch = originalFetch;
     }

@@ -171,6 +171,7 @@ export async function applyPreview(
 
 const STATIC_ROOTS = [
   process.env.POSY_STATIC_ROOT,
+  path.resolve(process.cwd(), "public"),
   path.resolve(process.cwd(), "dist", "public"),
   path.resolve(process.cwd(), "client", "public"),
 ].filter((root): root is string => Boolean(root));

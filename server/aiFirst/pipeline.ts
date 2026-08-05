@@ -283,9 +283,17 @@ export async function runAiFirstPipeline(input: PipelineInput): Promise<RunSumma
   await Promise.all(inFlight);
   throwIfAborted(input.signal);
 
-  // The set is only short if the model itself under-delivered; the per-
-  // direction fallback has already covered every artwork failure.
-  if (summary.directions < directionLimit) {
+  // A run cannot be complete when it produced no applicable preview. A
+  // direction task can fail after a paid image attempt (for example while
+  // loading or persisting its curated fallback). Treating zero delivered
+  // cards as success is both misleading and a spend risk: the host sees
+  // nothing and reasonably clicks again. Throw before the durable complete
+  // write so the route records one visible failed terminal instead.
+  if (summary.directions === 0) {
+    throw new Error(
+      `invitation generation delivered ${summary.directions} of ${directionLimit} promised directions`,
+    );
+  } else if (summary.directions < directionLimit) {
     summary.degraded.push(`only ${summary.directions} of ${directionLimit} directions completed`);
   } else {
     emit({
@@ -552,7 +560,6 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
   // Every attempt failed (or the safety setting allowed only one). Substitute
   // a curated direction adapted to the brief rather than showing work the
   // gate rejected.
-  if (input.runStore && input.runId) await input.runStore.incrementFallback(input.runId);
   const adapted = adaptStudioDirection({
     concept,
     brief: input.brief,
@@ -582,7 +589,12 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
   // it counts as completed — the UI's "completed" and "fallback" counts are
   // not mutually exclusive, matching the summary's own
   // directions/adaptedDirections split.
-  if (input.runStore && input.runId) await input.runStore.incrementCompleted(input.runId);
+  if (input.runStore && input.runId) {
+    // Count a fallback only after its bytes and preview record are usable.
+    // An attempted fallback that throws must not be reported as delivered.
+    await input.runStore.incrementFallback(input.runId);
+    await input.runStore.incrementCompleted(input.runId);
+  }
   return finish(ctx, adapted.concept, savedStudio.record, "adapted-studio-direction", attempts, undefined, false);
 }
 

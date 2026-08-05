@@ -190,6 +190,51 @@ describe("stale run recovery", () => {
 });
 
 describe("terminal event ordering", () => {
+  it("fails instead of emitting done when a rejected image's fallback cannot be persisted", async () => {
+    const events: PipelineEvent[] = [];
+    const runStore = new InMemoryRunStore();
+    await runStore.claim({ runId: "fallback-save-failure", eventId: 1, ownerToken: "owner" });
+    const previewStore = new (class extends InMemoryPreviewStore {
+      override async put(): Promise<never> {
+        throw new Error("preview store unavailable");
+      }
+    })();
+
+    await expect(
+      runAiFirstPipeline({
+        eventId: 1,
+        ownerToken: "owner",
+        runId: "fallback-save-failure",
+        runStore,
+        brief,
+        previewStore,
+        usageStore: new InMemoryUsageStore(),
+        allowance: 1,
+        directionLimit: 1,
+        disableAutomaticRetry: true,
+        sink: (event) => events.push(event),
+        anthropic: oneConceptClient(),
+        ocr: false,
+        // A deliberately crop-unsafe image forces the curated fallback.
+        generateImage: async ({ aspectRatio }) => {
+          const bytes = artworkForAspect(aspectRatio);
+          return { bytes, dataUrl: "x", durationMs: 1 };
+        },
+        visionGate: async () => ({
+          ...passingVision,
+          ageAppropriate: 2,
+          passed: false,
+          failureCodes: ["age-appropriate"],
+          unavailable: false,
+        }),
+      }),
+    ).rejects.toThrow("delivered 0 of 1 promised directions");
+
+    expect(events.some((event) => event.type === "done")).toBe(false);
+    expect((await runStore.get("fallback-save-failure"))?.completedCount).toBe(0);
+    expect((await runStore.get("fallback-save-failure"))?.fallbackCount).toBe(0);
+  });
+
   it("persists completed before emitting the one done event", async () => {
     let persisted = false;
     const store = new (class extends InMemoryRunStore {

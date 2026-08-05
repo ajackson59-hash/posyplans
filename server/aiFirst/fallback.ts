@@ -114,6 +114,10 @@ export function adaptStudioDirection(input: AdaptFallbackInput): AdaptedDirectio
  */
 const STATIC_ROOTS = [
   process.env.POSY_STATIC_ROOT,
+  // Vercel's build copies the Vite output to the root `public` directory
+  // before packaging the function. Keep this ahead of the source-tree
+  // fallback so the production function reads the exact shipped asset.
+  path.resolve(process.cwd(), "public"),
   path.resolve(process.cwd(), "dist", "public"),
   path.resolve(process.cwd(), "client", "public"),
 ].filter((root): root is string => Boolean(root));
