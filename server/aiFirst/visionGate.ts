@@ -10,6 +10,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { EventBrief } from "./brief";
 import type { AiFirstConcept } from "@shared/aiFirstInvite";
 import { MIN_DIMENSION_SCORE, type VisionScores } from "@shared/aiFirstStream";
+import { concreteSubjectRequirementsForBrief } from "./conceptPreflight";
 
 export const VISION_MODEL = "claude-sonnet-4-6";
 
@@ -97,6 +98,10 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
 
   const client = input.client ?? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const { brief, concept } = input;
+  const reviewRequirements = [
+    ...brief.requirements.required,
+    ...concreteSubjectRequirementsForBrief(brief),
+  ];
 
   const userText = [
     `Celebration: ${brief.eventName || brief.eventType || "a celebration"}${brief.milestone ? ` · ${brief.milestone}` : ""}`,
@@ -104,7 +109,7 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
     `Direction: ${concept.conceptName} — ${concept.description}`,
     "",
     "REQUIRED:",
-    ...brief.requirements.required.map((r) => `- ${r}`),
+    ...reviewRequirements.map((r) => `- ${r}`),
     "",
     "EXCLUDED:",
     ...brief.requirements.excluded.map((r) => `- ${r}`),
@@ -175,12 +180,22 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
     ageAppropriate: clampScore(parsed.ageAppropriate),
   };
 
-  const requiredPresent = Array.isArray(parsed.requiredPresent)
+  const reportedRequired = Array.isArray(parsed.requiredPresent)
     ? parsed.requiredPresent.map((r: { requirement?: unknown; present?: unknown }) => ({
         requirement: String(r?.requirement ?? ""),
         present: r?.present === true,
       }))
     : [];
+  // The critic is instructed to report every item in order. Rebuild the
+  // result from the server-owned list so omitting three difficult
+  // requirements and returning one easy true can never become a pass.
+  const requiredPresent = reviewRequirements.map((requirement, index) => {
+    const exact = reportedRequired.find(
+      (reported) => reported.requirement.trim().toLowerCase() === requirement.trim().toLowerCase(),
+    );
+    const reported = exact ?? reportedRequired[index];
+    return { requirement, present: reported?.present === true };
+  });
   const excludedFound = Array.isArray(parsed.excludedFound)
     ? parsed.excludedFound.filter((e: unknown): e is string => typeof e === "string" && e.trim().length > 0)
     : [];
@@ -193,7 +208,7 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
   const missingRequired = requiredPresent.filter((r) => !r.present);
   if (missingRequired.length > 0) failureCodes.push("brief-fidelity");
   // The critic returning nothing for a non-empty REQUIRED list is not a pass.
-  if (brief.requirements.required.length > 0 && requiredPresent.length === 0) {
+  if (reviewRequirements.length > 0 && requiredPresent.length === 0) {
     failureCodes.push("brief-fidelity");
   }
   if (excludedFound.length > 0) failureCodes.push("excluded-present");

@@ -32,6 +32,7 @@ import { INVITATION_ASK_POSY_ACTIONS, resolveAskPosyAction } from "./askPosy";
 import type { AiFirstRunStore } from "./runStore";
 import type { AiFirstArtworkAttemptStore } from "./artworkAttemptStore";
 import { readAiFirstArtworkModel, readAiFirstDirectionLimit } from "./config";
+import { hostFacingGenerationError } from "@shared/aiFirstStream";
 
 /** One breaker and one limiter per process, shared by every event. */
 const breaker = new CircuitBreaker();
@@ -324,7 +325,11 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
           artworkModel,
         });
       } catch (err) {
-        const message = (err as Error).message;
+        const rawMessage = (err as Error).message;
+        const message = hostFacingGenerationError(rawMessage);
+        if (message !== rawMessage) {
+          console.warn(`AI-first run ${runId} rejected its artwork: ${rawMessage}`);
+        }
         try {
           // Durable truth first. If this write fails, do not lie to the
           // client with a terminal event the source of truth did not record.

@@ -28,7 +28,7 @@ import { render, cleanup, waitFor, act } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createElement } from "react";
 import type { EventRecord } from "@/lib/types";
-import { useAiFirstSession } from "@/lib/aiFirstSession";
+import { UNEXPECTED_STREAM_END_MESSAGE, useAiFirstSession } from "@/lib/aiFirstSession";
 import { concept } from "./aiFirstFixtures";
 
 const EVIDENCE_DIR = path.resolve(import.meta.dirname, "..", "tools", "qa", "evidence");
@@ -237,7 +237,7 @@ describe("FIXTURE / NON-PROVIDER QA harness — desktop and 390px mobile", () =>
       await act(async () => {
         await latestSession!.run();
       });
-      await waitFor(() => expect(wrapper.textContent).toContain("Posy lost the connection"));
+      await waitFor(() => expect(wrapper.textContent).toContain(UNEXPECTED_STREAM_END_MESSAGE));
 
       const p = writeSnapshot("2-failure", width, wrapper);
       savedPaths.push(p);
@@ -264,7 +264,7 @@ describe("FIXTURE / NON-PROVIDER QA harness — desktop and 390px mobile", () =>
       await act(async () => {
         await latestSession!.run();
       });
-      await waitFor(() => expect(wrapper.textContent).toContain("Posy lost the connection"));
+      await waitFor(() => expect(wrapper.textContent).toContain(UNEXPECTED_STREAM_END_MESSAGE));
 
       // Then: the host presses Generate again, and this time it completes.
       const summary = {

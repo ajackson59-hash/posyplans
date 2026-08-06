@@ -227,6 +227,39 @@ describe("unexpected stream termination is a visible failure, not a silent succe
     }
   });
 
+  it("recovers a quality rejection from durable run state instead of showing Network error", async () => {
+    const { useAiFirstSession } = await import("../client/src/lib/aiFirstSession");
+    const { QUALITY_REJECTION_MESSAGE } = await import("@shared/aiFirstStream");
+    const { renderHook, act, waitFor } = await import("@testing-library/react");
+
+    const originalFetch = globalThis.fetch;
+    let calls = 0;
+    globalThis.fetch = (async () => {
+      calls += 1;
+      if (calls === 1) throw new TypeError("Network error");
+      return {
+        ok: true,
+        json: async () => ({
+          status: "failed",
+          terminal: true,
+          completedCount: 0,
+          errorMessage:
+            "generated artwork did not meet Posy's quality standard and no theme-safe studio fallback matches this event",
+        }),
+      };
+    }) as unknown as typeof fetch;
+
+    try {
+      const { result } = renderHook(() => useAiFirstSession("token"));
+      await act(() => result.current.run());
+      await waitFor(() => expect(result.current.error).toBe(QUALITY_REJECTION_MESSAGE));
+      expect(calls).toBe(2);
+      expect(result.current.error).not.toContain("Network");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it("rejects an explicit done event that delivered zero directions", async () => {
     const { useAiFirstSession, EMPTY_COMPLETION_MESSAGE } = await import("../client/src/lib/aiFirstSession");
     const { renderHook, act, waitFor } = await import("@testing-library/react");

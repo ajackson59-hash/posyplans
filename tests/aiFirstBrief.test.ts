@@ -26,7 +26,11 @@ import {
 } from "../server/aiFirst/prompt";
 import { ConceptStreamParser } from "../server/aiFirst/conceptStream";
 import { adaptStudioDirection } from "../server/aiFirst/fallback";
-import { curatedThemeMatchesBrief, preflightConceptForBrief } from "../server/aiFirst/conceptPreflight";
+import {
+  concreteSubjectRequirementsForBrief,
+  curatedThemeMatchesBrief,
+  preflightConceptForBrief,
+} from "../server/aiFirst/conceptPreflight";
 import { INVITATION_ASK_POSY_ACTIONS } from "@shared/aiFirstAskPosy";
 import { constraintsFor, resolveAskPosyAction } from "../server/aiFirst/askPosy";
 import { LAUNCH_THEMES } from "@shared/themeCatalog";
@@ -67,7 +71,22 @@ describe("brief — derived from what the product already knows", () => {
   it("reads a milestone written as digits or as a word", () => {
     expect(milestoneFrom("Ada's 4th Birthday", "birthday", "")).toBe("4th");
     expect(milestoneFrom("Fortieth Birthday Dinner", "birthday", "")).toBe("40th");
+    expect(milestoneFrom("I'm 3 & Digging It", "Birthday Party", "construction-themed backyard BBQ")).toBe("3rd");
     expect(milestoneFrom("Summer Party", "party", "")).toBe("");
+  });
+
+  it("derives the real review event's age and construction contract without re-entry", () => {
+    const result = brief({
+      eventName: "I'm 3 & Digging It",
+      eventType: "Birthday Party",
+      themeName: "",
+      vibeDescription:
+        "A backyard BBQ construction themed for our favorite little builder. Theme heavily centered around construction and building.",
+      paletteColors: "[]",
+    });
+    expect(result.milestone).toBe("3rd");
+    expect(result.requirements.required).toContain("age-appropriate celebratory character for a 3rd birthday");
+    expect(concreteSubjectRequirementsForBrief(result).join(" ")).toContain("construction machine");
   });
 
   it("turns a milestone back into an age for the age-appropriateness rules", () => {
@@ -209,6 +228,22 @@ describe("prompt — streamlined, and specific where it matters", () => {
     const constraints = buildArtworkConstraints(brief());
     expect(constraints).toContain("REQUIRED — the space cowgirl visual identity");
     expect(constraints).toContain("EXCLUDED —");
+  });
+
+  it("copies a concrete construction contract into both model stages", () => {
+    const constructionBrief = brief({
+      eventName: "I'm 3 & Digging It",
+      eventType: "Birthday Party",
+      themeName: "",
+      vibeDescription: "A backyard BBQ construction themed for our favorite little builder.",
+    });
+    const conceptPrompt = buildUserPrompt({ brief: constructionBrief });
+    const imagePrompt = buildArtworkConstraints(constructionBrief);
+    for (const prompt of [conceptPrompt, imagePrompt]) {
+      expect(prompt).toContain("excavator");
+      expect(prompt).toContain("dominant first-read focal subject");
+      expect(prompt).toContain("do not satisfy or replace the construction subject");
+    }
   });
 
   it("renders the brief compactly", () => {
@@ -354,6 +389,8 @@ describe("zero-cost subject preflight", () => {
   it("blocks an attractive but generic blueprint before an image call", () => {
     const result = preflightConceptForBrief(
       concept({
+        conceptName: "Little Builder",
+        description: "A modern jobsite scene for a favorite little builder.",
         art: {
           medium: "architectural gouache",
           composition: "asymmetric blueprint geometry",
@@ -366,9 +403,28 @@ describe("zero-cost subject preflight", () => {
     expect(result.message).toContain("construction");
   });
 
+  it("blocks Blueprint & Bloom when a hard hat is only an incidental cue", () => {
+    const result = preflightConceptForBrief(
+      concept({
+        conceptName: "Blueprint & Bloom",
+        description: "A refined botanical blueprint in amber and navy.",
+        art: {
+          medium: "editorial gouache",
+          composition: "botanical cluster surrounding an open central field",
+          prompt: "Painterly flowers, blueprint lines and a tiny hard hat tucked into one corner.",
+        },
+      }),
+      construction,
+    );
+    expect(result.passed).toBe(false);
+    expect(result.message).toContain("construction");
+  });
+
   it("allows a concept whose actual art brief depicts the required subject", () => {
     const result = preflightConceptForBrief(
       concept({
+        conceptName: "Little Builder",
+        description: "A modern jobsite scene for a favorite little builder.",
         art: {
           medium: "cut-paper collage",
           composition: "one excavator crossing the lower third",

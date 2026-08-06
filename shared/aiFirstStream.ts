@@ -30,6 +30,25 @@ export interface StreamTier1Finding {
 /** Every scored dimension must clear this. There is deliberately no overall. */
 export const MIN_DIMENSION_SCORE = 4;
 
+/**
+ * Host-facing terminal for a paid artwork that Posy correctly refused to
+ * show. It is shared by server and browser so a dropped SSE connection can
+ * recover the same truth from the durable run row without falling back to a
+ * misleading browser "Network error".
+ */
+export const QUALITY_REJECTION_MESSAGE =
+  "Posy rejected this artwork because it didn't clearly deliver your theme at the required quality. Nothing was applied, and no automatic retry was made.";
+
+export function hostFacingGenerationError(message: string): string {
+  if (
+    /generated artwork did not meet Posy's quality standard/i.test(message) ||
+    /invitation generation delivered 0 of \d+ promised directions/i.test(message)
+  ) {
+    return QUALITY_REJECTION_MESSAGE;
+  }
+  return message;
+}
+
 export interface VisionScores {
   textLogoWatermarkFree: number;
   artifactFree: number;

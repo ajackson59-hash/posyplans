@@ -77,6 +77,21 @@ export function milestoneFrom(eventName: string, eventType: string, vibe: string
   for (const [word, value] of Object.entries(words)) {
     if (new RegExp(`\\b${word}\\b`, "i").test(haystack)) return value;
   }
+
+  // Conversational children's party names commonly use a bare age rather
+  // than an ordinal: "I'm 3 & Digging It", "Mara is 4", "turning 7".
+  // Only interpret that number when the event is explicitly a birthday, so
+  // years, room numbers and theme names in unrelated events are not ages.
+  if (/\bbirthday\b/i.test(`${eventType} ${vibe}`)) {
+    const agePhrase = /\b(?:i['’]?m|turning|turns?|is)\s+(\d{1,3})\b/i.exec(`${eventName} ${vibe}`);
+    const themedLeadingAge = /^\s*(\d{1,3})\s*(?:&|and)\b/i.exec(eventName);
+    const age = Number(agePhrase?.[1] ?? themedLeadingAge?.[1]);
+    if (Number.isInteger(age) && age > 0 && age <= 120) {
+      const mod100 = age % 100;
+      const suffix = mod100 >= 11 && mod100 <= 13 ? "th" : age % 10 === 1 ? "st" : age % 10 === 2 ? "nd" : age % 10 === 3 ? "rd" : "th";
+      return `${age}${suffix}`;
+    }
+  }
   return "";
 }
 

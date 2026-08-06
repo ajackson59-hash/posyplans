@@ -21,6 +21,7 @@ import type { PipelineEvent } from "@shared/aiFirstStream";
 import type { EventBrief } from "../server/aiFirst/brief";
 import type { ArtworkRequest } from "../server/aiFirst/artwork";
 import { artworkForAspect, concept, framedArtworkForAspect } from "./aiFirstFixtures";
+import { concreteSubjectRequirementsForBrief } from "../server/aiFirst/conceptPreflight";
 
 const brief: EventBrief = {
   eventName: "Ada's 4th Birthday",
@@ -269,7 +270,16 @@ describe("zero-cost concept preflight", () => {
             };
           })(),
         create: async () => ({
-          content: [{ type: "text", text: JSON.stringify(visionBody(true)) }],
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              ...visionBody(true),
+              requiredPresent: [
+                ...constructionBrief.requirements.required,
+                ...concreteSubjectRequirementsForBrief(constructionBrief),
+              ].map((requirement) => ({ requirement, present: true })),
+            }),
+          }],
           usage: { input_tokens: 10, output_tokens: 10 },
         }),
       },
@@ -301,6 +311,72 @@ describe("zero-cost concept preflight", () => {
     expect(
       events.some((event) => event.type === "warning" && event.message.includes("blocked before artwork spend")),
     ).toBe(true);
+  });
+
+  it("spends zero image calls when all four directions only gesture at construction", async () => {
+    const constructionBrief: EventBrief = {
+      ...brief,
+      eventName: "I'm 3 & Digging It",
+      eventType: "Birthday Party",
+      milestone: "3rd",
+      themeName: "",
+      vibe: "A backyard BBQ construction themed for our favorite little builder. Theme heavily centered around construction and building.",
+      requirements: {
+        required: [
+          "the backyard BBQ construction themed for our favorite little builder visual identity, unmistakably present",
+          "age-appropriate celebratory character for a 3rd birthday",
+        ],
+        preferred: [],
+        excluded: ["generic abstract geometry"],
+      },
+    };
+    const weakConcepts = ["Blueprint & Bloom", "Blueprint Morning", "Amber Plans", "Builder's Paper"].map(
+      (conceptName) =>
+        concept({
+          conceptName,
+          description: "An editorial blueprint for a little builder.",
+          art: {
+            medium: "editorial gouache",
+            composition: "botanical forms around an open central field",
+            prompt: "Blueprint lines, amber paper, flowers and a tiny hard hat in one corner.",
+          },
+        }),
+    );
+    const events: PipelineEvent[] = [];
+    let imageCalls = 0;
+    const client = {
+      messages: {
+        stream: async () =>
+          (async function* () {
+            yield {
+              type: "content_block_delta",
+              delta: { type: "text_delta", text: `${weakConcepts.map((item) => JSON.stringify(item)).join("\n")}\n` },
+            };
+          })(),
+      },
+    } as unknown as Anthropic;
+
+    await expect(
+      runAiFirstPipeline({
+        eventId: 1,
+        brief: constructionBrief,
+        previewStore: new InMemoryPreviewStore(),
+        usageStore: new InMemoryUsageStore(),
+        allowance: 1,
+        directionLimit: 1,
+        disableAutomaticRetry: true,
+        sink: (event) => events.push(event),
+        anthropic: client,
+        ocr: false,
+        generateImage: async ({ aspectRatio }) => {
+          imageCalls += 1;
+          return { bytes: artworkForAspect(aspectRatio), dataUrl: "data:image/png;base64,x", durationMs: 1 };
+        },
+      }),
+    ).rejects.toThrow("delivered 0 of 1 promised directions");
+
+    expect(imageCalls).toBe(0);
+    expect(events.filter((event) => event.type === "warning" && event.message.includes("blocked before artwork spend"))).toHaveLength(4);
   });
 });
 

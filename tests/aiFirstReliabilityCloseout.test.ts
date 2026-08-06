@@ -407,6 +407,47 @@ describe("terminal event ordering", () => {
     });
   });
 
+  it("surfaces a theme-quality rejection in host language rather than an internal pipeline error", async () => {
+    const app = express();
+    app.use(express.json());
+    const runStore = new InMemoryRunStore();
+    registerAiFirstRoutes(app, {
+      storage: {
+        getEventByOwnerToken: async () => ({ id: 1, capturedEmail: "host@example.com", eventType: "birthday" }),
+        updateEventByOwnerToken: async () => undefined,
+        getEmailEntitlement: async () => undefined,
+        listMenuItems: async () => [],
+        listBudgetItems: async () => [],
+        listGuests: async () => [],
+      },
+      previewStore: new InMemoryPreviewStore(),
+      usageStore: new InMemoryUsageStore(),
+      runStore,
+      artworkAttemptStore: new InMemoryArtworkAttemptStore(),
+      env: {
+        [featureFlagEnvVar("aiFirstInvitations")]: "1",
+        [featureFlagEnvVar("aiFirstDisableAutomaticRetry")]: "1",
+        [AI_FIRST_DIRECTION_LIMIT_ENV]: "1",
+      },
+      runPipeline: async () => {
+        throw new Error(
+          "generated artwork did not meet Posy's quality standard and no theme-safe studio fallback matches this event",
+        );
+      },
+    });
+
+    const result = await request(app)
+      .post("/api/events/owner/owner/ai-first/generate")
+      .send({ runId: "quality-rejection" });
+    expect(result.text).toContain("Posy rejected this artwork");
+    expect(result.text).not.toContain("no theme-safe studio fallback");
+    expect(await runStore.get("quality-rejection")).toMatchObject({
+      status: "failed",
+      terminal: true,
+      errorMessage: expect.stringContaining("Posy rejected this artwork"),
+    });
+  });
+
   it("rejects unsupported model configuration before claiming a run", async () => {
     const app = express();
     app.use(express.json());

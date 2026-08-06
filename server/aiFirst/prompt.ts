@@ -27,6 +27,7 @@ import { BORDER_STYLES, FONT_PAIRINGS, LAYOUT_STYLES, STYLE_LANES } from "@share
 import { SAFE_TYPOGRAPHY_REGIONS } from "@shared/aiFirstInvite";
 import { DNA_AXES } from "@shared/eventDna";
 import { briefToPromptBlock, type EventBrief } from "./brief";
+import { concreteSubjectRequirementsForBrief } from "./conceptPreflight";
 
 const list = (values: readonly string[]): string => values.join(" | ");
 
@@ -98,6 +99,17 @@ export interface UserPromptInput {
 
 export function buildUserPrompt(input: UserPromptInput): string {
   const parts = [briefToPromptBlock(input.brief)];
+  const concreteRequirements = concreteSubjectRequirementsForBrief(input.brief);
+
+  if (concreteRequirements.length > 0) {
+    parts.push(
+      "",
+      "CONCRETE SUBJECT CONTRACT (every concept must satisfy every line):",
+      ...concreteRequirements.map((requirement) => `- ${requirement}.`),
+      "- Name the concrete focal subject in art.composition as well as art.prompt.",
+      "- conceptName and description must identify the host's subject, not merely a colour, texture or material.",
+    );
+  }
 
   if (input.keepConstraints?.length) {
     parts.push("", "KEEP UNCHANGED (the host locked these):", ...input.keepConstraints.map((c) => `- ${c}`));
@@ -119,9 +131,11 @@ export function buildUserPrompt(input: UserPromptInput): string {
  * away a must-have subject or an exclusion before gpt-image sees the brief.
  */
 export function buildArtworkConstraints(brief: EventBrief): string {
+  const concreteRequirements = concreteSubjectRequirementsForBrief(brief);
   const lines = [
     "BINDING EVENT-BRIEF CONSTRAINTS:",
     ...brief.requirements.required.map((item) => `REQUIRED — ${item}.`),
+    ...concreteRequirements.map((item) => `REQUIRED — ${item}.`),
     ...brief.requirements.excluded.map((item) => `EXCLUDED — ${item}.`),
   ];
   if (brief.requirements.preferred.length > 0) {

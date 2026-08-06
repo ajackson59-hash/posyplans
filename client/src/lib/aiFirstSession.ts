@@ -18,6 +18,8 @@
 
 import { useCallback, useRef, useState } from "react";
 import {
+  hostFacingGenerationError,
+  QUALITY_REJECTION_MESSAGE,
   SseParser,
   type FinishedDirection,
   type PipelineEvent,
@@ -86,9 +88,35 @@ export interface AiFirstSession {
 
 /** Host-visible copy for the case an SSE body ends with no terminal event. */
 export const UNEXPECTED_STREAM_END_MESSAGE =
-  "Posy lost the connection before finishing your invitation directions. Please try again.";
+  "Posy lost the display connection before confirming the result. Do not click again yet—refresh the page before starting another direction.";
 export const EMPTY_COMPLETION_MESSAGE =
   "Posy couldn't finish a usable invitation direction. You were not shown a completed design.";
+export const RUN_STILL_PROCESSING_MESSAGE =
+  "Posy lost the display connection, but this invitation may still be processing. Do not click again—refresh the page first.";
+
+interface DurableRunStatus {
+  status?: string;
+  completedCount?: number;
+  errorMessage?: string | null;
+  terminal?: boolean;
+}
+
+/** Recover the server's durable truth when the streaming response disappears. */
+async function recoverRunMessage(ownerToken: string, runId: string): Promise<string | null> {
+  try {
+    const response = await fetch(`${API_BASE}/api/events/owner/${ownerToken}/ai-first/run/${runId}`);
+    if (!response.ok || typeof response.json !== "function") return null;
+    const run = (await response.json()) as DurableRunStatus;
+    if (run.terminal && run.status === "failed") {
+      return hostFacingGenerationError(run.errorMessage || QUALITY_REJECTION_MESSAGE);
+    }
+    if (run.terminal && run.completedCount === 0) return QUALITY_REJECTION_MESSAGE;
+    if (!run.terminal) return RUN_STILL_PROCESSING_MESSAGE;
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 export function useAiFirstSession(ownerToken: string): AiFirstSession {
   const [directions, setDirections] = useState<FinishedDirection[]>([]);
@@ -141,7 +169,7 @@ export function useAiFirstSession(ownerToken: string): AiFirstSession {
       }
     } else if (event.type === "error") {
       reachedTerminal.current = true;
-      setError(event.message);
+      setError(hostFacingGenerationError(event.message));
     }
   }, []);
 
@@ -207,12 +235,12 @@ export function useAiFirstSession(ownerToken: string): AiFirstSession {
         // on screen — is reported as a failure rather than silently
         // treated as success by omission.
         if (!reachedTerminal.current) {
-          setError(UNEXPECTED_STREAM_END_MESSAGE);
+          setError((await recoverRunMessage(ownerToken, runId)) ?? UNEXPECTED_STREAM_END_MESSAGE);
         }
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
           reachedTerminal.current = true;
-          setError((err as Error).message);
+          setError((await recoverRunMessage(ownerToken, runId)) ?? UNEXPECTED_STREAM_END_MESSAGE);
         }
       } finally {
         runInFlight.current = false;
