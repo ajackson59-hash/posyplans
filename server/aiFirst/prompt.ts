@@ -74,6 +74,8 @@ Aim for headline 3:1, body and accent 4.5:1 against textSurface. Do not report r
 
 Artwork. Write \`art.prompt\` as a real art brief: subject, treatment, palette behaviour, mood. Be specific — "chrome lariat loop catching cool rim light against deep navy, fine grain" not "western elements". Do NOT add no-text or full-bleed instructions; the server appends those verbatim to every prompt. Do not describe frames, mats or paper margins — the renderer draws the card's frame, so artwork that draws its own produces a doubled border.
 
+Subject-driven themes are literal requirements, not optional mood words. If the brief names construction, dinosaurs, space, western, princesses, superheroes, unicorns, mermaids, pirates, vehicles, safari, farm, skating, pool or another concrete subject, EVERY art.prompt must name and visibly depict that subject. Generic geometry, botanicals, colour or texture never substitute for the stated subject. For a compound theme, visibly carry every part of the identity. The host must recognise the theme before reading invitation copy.
+
 Match layout to composition. \`backdrop\` renders artwork at 30% opacity, so never put a single focal subject there. \`split\` renders into a tall 40%-wide panel. \`full-bleed\` and \`banner\` are centre-cropped, so keep anything that matters away from the edges. \`safeTypographyRegion\` is where you promise the artwork stays quiet enough to set type.
 
 Per line, emit exactly:
@@ -109,6 +111,23 @@ export function buildUserPrompt(input: UserPromptInput): string {
 
   parts.push("", "Emit the four NDJSON lines now.");
   return parts.join("\n");
+}
+
+/**
+ * Binding requirements copied directly into the paid image request. The
+ * concept model is useful art direction, but it is not allowed to paraphrase
+ * away a must-have subject or an exclusion before gpt-image sees the brief.
+ */
+export function buildArtworkConstraints(brief: EventBrief): string {
+  const lines = [
+    "BINDING EVENT-BRIEF CONSTRAINTS:",
+    ...brief.requirements.required.map((item) => `REQUIRED — ${item}.`),
+    ...brief.requirements.excluded.map((item) => `EXCLUDED — ${item}.`),
+  ];
+  if (brief.requirements.preferred.length > 0) {
+    lines.push(...brief.requirements.preferred.map((item) => `PREFERRED — ${item}.`));
+  }
+  return lines.join("\n");
 }
 
 /**

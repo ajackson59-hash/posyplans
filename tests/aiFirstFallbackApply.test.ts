@@ -33,8 +33,8 @@ const brief: EventBrief = {
   eventName: "Ada's 4th Birthday",
   eventType: "birthday",
   milestone: "4th",
-  vibe: "modern space cowgirl",
-  themeName: "space cowgirl",
+  vibe: "modern editorial celebration",
+  themeName: "modern editorial",
   colors: ["dusty rose"],
   formality: "playful",
   dateLine: "12 September 2026",
@@ -43,7 +43,7 @@ const brief: EventBrief = {
   guestCount: 18,
   dna: {},
   inspirationNotes: "",
-  requirements: { required: ["the space cowgirl visual identity"], preferred: [], excluded: [] },
+  requirements: { required: ["age-appropriate modern editorial artwork"], preferred: [], excluded: [] },
 };
 
 /** One concept, so the run produces exactly one direction to reason about. */

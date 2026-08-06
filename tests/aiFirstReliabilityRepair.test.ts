@@ -28,8 +28,12 @@ const brief: EventBrief = {
   eventName: "Ada's 4th Birthday",
   eventType: "birthday",
   milestone: "4th",
-  vibe: "modern space cowgirl",
-  themeName: "space cowgirl",
+  // Keep this suite semantically neutral. These tests isolate transport,
+  // locking, evidence retention and retry behavior; concrete-theme
+  // enforcement has its own focused coverage in aiFirstBrief.test.ts and
+  // aiFirstPipeline.test.ts.
+  vibe: "modern editorial",
+  themeName: "modern celebration",
   colors: ["dusty rose"],
   formality: "playful",
   dateLine: "12 September 2026",
@@ -38,7 +42,7 @@ const brief: EventBrief = {
   guestCount: 18,
   dna: {},
   inspirationNotes: "",
-  requirements: { required: ["the space cowgirl visual identity"], preferred: [], excluded: [] },
+  requirements: { required: ["a polished editorial invitation"], preferred: [], excluded: [] },
 };
 
 const FAILING_CONCEPT = concept({
@@ -66,7 +70,7 @@ const PASSING_VISION_BODY = {
   briefFidelity: 5,
   compositionQuality: 5,
   ageAppropriate: 5,
-  requiredPresent: [{ requirement: "the space cowgirl visual identity", present: true }],
+  requiredPresent: [{ requirement: "a polished editorial invitation", present: true }],
   excludedFound: [],
   notes: "",
 };

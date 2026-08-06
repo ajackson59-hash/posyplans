@@ -1,10 +1,9 @@
-// The fourth-card guarantee.
+// Semantic-safe studio fallback.
 //
-// A direction that fails its retry cannot be shown and cannot be dropped —
-// the host was promised four. So it is replaced by a curated studio theme
-// adapted to the brief: real artwork that already passed a human art
-// director, restyled with the failed concept's palette and typography so it
-// still reads as part of the set rather than an obvious patch.
+// A direction that fails its retry cannot be shown. It may be replaced by a
+// curated studio theme only when that theme's shipped artwork genuinely
+// depicts the host's concrete subject. When no such asset exists, returning
+// no direction is more honest than relabelling unrelated artwork.
 //
 // The substitution is recorded as `source: "adapted-studio-direction"`
 // rather than hidden, because a silent swap would make the quality gate's
@@ -16,18 +15,23 @@ import { LAUNCH_THEMES, type LaunchTheme } from "@shared/themeCatalog";
 import { STYLE_LANES } from "@shared/inviteDesign";
 import { contrastRatio } from "@shared/aiFirstPalette";
 import type { AiFirstConcept } from "@shared/aiFirstInvite";
-import type { EventBrief } from "./brief";
+import { ageFromMilestone, type EventBrief } from "./brief";
+import { curatedThemeMatchesBrief } from "./conceptPreflight";
 
 /** Occasion words that map a brief onto the themes' own occasion tags. */
 function occasionsFor(brief: EventBrief): string[] {
   const text = `${brief.eventType} ${brief.eventName} ${brief.milestone}`.toLowerCase();
   const out: string[] = [];
-  if (/birthday/.test(text)) out.push("birthday");
-  if (/wedding|engage|shower|bridal/.test(text)) out.push("wedding", "shower");
-  if (/baby/.test(text)) out.push("baby");
-  if (/graduat/.test(text)) out.push("graduation");
-  if (/holiday|christmas|new year/.test(text)) out.push("holiday");
-  if (/dinner|anniversary|retirement|corporate/.test(text)) out.push("dinner", "milestone");
+  if (/birthday/.test(text)) {
+    const age = ageFromMilestone(brief.milestone);
+    if (age !== null && age <= 12) out.push("kids-birthday");
+    else if (age !== null && age <= 19) out.push("teen-birthday");
+    else out.push("milestone-birthday");
+  }
+  if (/wedding|engage|shower|bridal|baby/.test(text)) out.push("shower");
+  if (/holiday|christmas|new year/.test(text)) out.push("holiday-party");
+  if (/dinner|anniversary|retirement|corporate/.test(text)) out.push("dinner-party", "milestone-birthday");
+  out.push("celebration");
   return out;
 }
 
@@ -52,7 +56,7 @@ function paletteDistance(theme: LaunchTheme, concept: AiFirstConcept): number {
 
 export interface AdaptedDirection {
   theme: LaunchTheme;
-  /** The failed concept restyled onto the curated theme's artwork. */
+  /** An honest concept rebuilt around the curated theme's actual artwork. */
   concept: AiFirstConcept;
   reason: string;
 }
@@ -66,15 +70,16 @@ export interface AdaptFallbackInput {
 }
 
 /**
- * Picks the curated theme nearest the failed concept and rebuilds the concept
- * around it. The theme's own layout, artwork and placement win — that is the
- * part that is known good. The concept keeps its name, description, palette
- * and font pairing so the card still answers the brief.
+ * Picks the semantically compatible curated theme nearest the failed concept
+ * and rebuilds the concept around what that artwork actually contains.
  */
-export function adaptStudioDirection(input: AdaptFallbackInput): AdaptedDirection {
+export function adaptStudioDirection(input: AdaptFallbackInput): AdaptedDirection | null {
   const occasions = occasionsFor(input.brief);
-  const candidates = LAUNCH_THEMES.filter((t) => !input.usedThemeIds.includes(t.id));
-  const pool = candidates.length > 0 ? candidates : LAUNCH_THEMES;
+  const semanticallySafe = LAUNCH_THEMES.filter((theme) => curatedThemeMatchesBrief(theme.id, input.brief));
+  if (semanticallySafe.length === 0) return null;
+
+  const candidates = semanticallySafe.filter((t) => !input.usedThemeIds.includes(t.id));
+  const pool = candidates.length > 0 ? candidates : semanticallySafe;
 
   const scored = pool
     .map((theme) => ({
@@ -87,20 +92,42 @@ export function adaptStudioDirection(input: AdaptFallbackInput): AdaptedDirectio
     .sort((a, b) => a.score - b.score || a.theme.id.localeCompare(b.theme.id));
 
   const theme = scored[0].theme;
+  const palette = theme.palettes[0];
+  const safeTypographyRegion: AiFirstConcept["safeTypographyRegion"] =
+    theme.layoutStyle === "split"
+      ? "right-panel"
+      : theme.layoutStyle === "banner" || theme.layoutStyle === "centered"
+        ? "lower-third"
+        : "center";
 
   return {
     theme,
     reason: input.reason,
     concept: {
       ...input.concept,
+      conceptName: theme.name,
+      description: theme.description,
       baseThemeId: theme.id,
       placementId: theme.placements[0].id,
       layoutStyle: theme.layoutStyle,
       borderStyle: theme.borderStyle,
       styleLaneId: theme.styleLaneId,
+      fontPairingId: theme.fontPairingIds[0],
       dividerStyle: theme.divider,
       texture: { style: theme.texture.style, intensity: theme.texture.intensity },
       motif: { id: theme.art.id, placement: theme.art.placement },
+      semanticPalette: {
+        textSurface: palette.surface,
+        headlineColor: palette.ink,
+        bodyColor: palette.body,
+        accentColor: palette.accent,
+      },
+      art: {
+        medium: "curated studio illustration",
+        composition: `${theme.layoutStyle} composition with ${theme.art.placement} artwork`,
+        prompt: `${theme.artwork.alt}. This is curated studio artwork matched to the event brief.`,
+      },
+      safeTypographyRegion,
       minOverlay: theme.defaultOverlay,
     },
   };

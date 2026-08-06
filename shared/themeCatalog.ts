@@ -15,6 +15,7 @@
 
 import type { BorderStyle, InviteDesignConcept, LayoutStyle } from "./inviteDesign";
 import type { LinerPattern, StampStyle } from "./themeDna";
+import { parseEventDate, suggestRsvpDeadline } from "./rsvpDeadline";
 
 /* ── Filters ─────────────────────────────────────────────────────────── */
 
@@ -902,20 +903,27 @@ export function defaultThemeCopy(theme: LaunchTheme): ThemeCopy {
 
 /**
  * Copy seeded from the host's real event so a freshly applied theme reads as
- * their invitation immediately, falling back to the theme's sample lines for
- * anything the event does not know yet.
+ * their invitation immediately. Sample dates, venues, times and RSVP
+ * deadlines are never allowed onto a real event — missing facts stay blank.
  */
 export function themeCopyForEvent(
   theme: LaunchTheme,
-  event: { eventDate?: string; location?: string; hostNames?: string; rsvpDeadline?: string },
+  event: { eventDate?: string; eventTime?: string; location?: string; hostNames?: string; rsvpDeadline?: string },
 ): ThemeCopy {
-  const base = defaultThemeCopy(theme);
+  const eventDate = event.eventDate?.trim() ?? "";
+  const requestedDeadline = event.rsvpDeadline?.trim() ?? "";
+  const parsedEvent = parseEventDate(eventDate);
+  const parsedDeadline = parseEventDate(requestedDeadline);
+  const manualDeadlineIsSafe =
+    requestedDeadline.length > 0 && (!parsedEvent || !parsedDeadline || parsedDeadline.getTime() < parsedEvent.getTime());
+  const rsvpDeadline = manualDeadlineIsSafe ? requestedDeadline : suggestRsvpDeadline(eventDate) ?? "";
+
   return {
-    eyebrow: event.hostNames ? `Hosted by ${event.hostNames}` : base.eyebrow,
-    dateLine: event.eventDate || base.dateLine,
-    timeLine: base.timeLine,
-    locationLine: event.location || base.locationLine,
-    rsvpLine: event.rsvpDeadline ? `Kindly reply by ${event.rsvpDeadline}` : base.rsvpLine,
+    eyebrow: event.hostNames?.trim() ? `Hosted by ${event.hostNames.trim()}` : "Please join us",
+    dateLine: eventDate,
+    timeLine: event.eventTime?.trim() ?? "",
+    locationLine: event.location?.trim() ?? "",
+    rsvpLine: rsvpDeadline ? `Kindly reply by ${rsvpDeadline}` : "",
   };
 }
 

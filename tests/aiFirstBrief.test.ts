@@ -17,9 +17,16 @@ import {
   seasonFromDate,
   venueTypeFrom,
 } from "../server/aiFirst/brief";
-import { RETRY_REMEDIES, buildRetryPrompt, buildSystemPrompt, buildUserPrompt } from "../server/aiFirst/prompt";
+import {
+  RETRY_REMEDIES,
+  buildArtworkConstraints,
+  buildRetryPrompt,
+  buildSystemPrompt,
+  buildUserPrompt,
+} from "../server/aiFirst/prompt";
 import { ConceptStreamParser } from "../server/aiFirst/conceptStream";
 import { adaptStudioDirection } from "../server/aiFirst/fallback";
+import { curatedThemeMatchesBrief, preflightConceptForBrief } from "../server/aiFirst/conceptPreflight";
 import { INVITATION_ASK_POSY_ACTIONS } from "@shared/aiFirstAskPosy";
 import { constraintsFor, resolveAskPosyAction } from "../server/aiFirst/askPosy";
 import { LAUNCH_THEMES } from "@shared/themeCatalog";
@@ -198,6 +205,12 @@ describe("prompt — streamlined, and specific where it matters", () => {
     expect(user).toContain("Midnight Bloom");
   });
 
+  it("copies required and excluded brief rules into the paid artwork request", () => {
+    const constraints = buildArtworkConstraints(brief());
+    expect(constraints).toContain("REQUIRED — the space cowgirl visual identity");
+    expect(constraints).toContain("EXCLUDED —");
+  });
+
   it("renders the brief compactly", () => {
     const block = briefToPromptBlock(brief());
     expect(block).toContain("Ada's 4th Birthday");
@@ -331,8 +344,49 @@ describe("concept schema — drift the model actually produces", () => {
   });
 });
 
-describe("fallback — the fourth-card guarantee", () => {
-  const briefFor = brief();
+describe("zero-cost subject preflight", () => {
+  const construction = brief({
+    eventName: "Theo is Three",
+    themeName: "construction",
+    vibeDescription: "modern elevated construction theme",
+  });
+
+  it("blocks an attractive but generic blueprint before an image call", () => {
+    const result = preflightConceptForBrief(
+      concept({
+        art: {
+          medium: "architectural gouache",
+          composition: "asymmetric blueprint geometry",
+          prompt: "Inky blueprint lines, amber blocks and restrained paper grain.",
+        },
+      }),
+      construction,
+    );
+    expect(result.passed).toBe(false);
+    expect(result.message).toContain("construction");
+  });
+
+  it("allows a concept whose actual art brief depicts the required subject", () => {
+    const result = preflightConceptForBrief(
+      concept({
+        art: {
+          medium: "cut-paper collage",
+          composition: "one excavator crossing the lower third",
+          prompt: "A clearly recognisable excavator and hard hat in refined cut paper, with warm amber and navy.",
+        },
+      }),
+      construction,
+    );
+    expect(result.passed).toBe(true);
+  });
+
+  it("requires every half of a compound identity", () => {
+    expect(curatedThemeMatchesBrief("celestial-heirloom", brief())).toBe(false);
+  });
+});
+
+describe("fallback — semantic safety", () => {
+  const briefFor = brief({ themeName: "space", vibeDescription: "modern celestial space" });
 
   it("substitutes a curated direction rather than showing rejected work", () => {
     const adapted = adaptStudioDirection({
@@ -341,33 +395,49 @@ describe("fallback — the fourth-card guarantee", () => {
       usedThemeIds: [],
       reason: "premium-feel",
     });
-    expect(LAUNCH_THEMES.map((t) => t.id)).toContain(adapted.theme.id);
-    expect(adapted.concept.baseThemeId).toBe(adapted.theme.id);
+    expect(adapted).not.toBeNull();
+    expect(LAUNCH_THEMES.map((t) => t.id)).toContain(adapted!.theme.id);
+    expect(adapted!.concept.baseThemeId).toBe(adapted!.theme.id);
   });
 
   it("never reuses a theme another direction in the run already took", () => {
     const used = LAUNCH_THEMES.slice(0, 3).map((t) => t.id);
     const adapted = adaptStudioDirection({ concept: concept(), brief: briefFor, usedThemeIds: used, reason: "x" });
-    expect(used).not.toContain(adapted.theme.id);
+    expect(adapted).not.toBeNull();
+    expect(used).not.toContain(adapted!.theme.id);
   });
 
-  it("keeps the concept's own voice so the card still answers the brief", () => {
+  it("describes the curated artwork honestly instead of relabelling it", () => {
     const original = concept({ conceptName: "Lariat & Starlight" });
     const adapted = adaptStudioDirection({ concept: original, brief: briefFor, usedThemeIds: [], reason: "x" });
-    expect(adapted.concept.conceptName).toBe("Lariat & Starlight");
-    expect(adapted.concept.semanticPalette).toEqual(original.semanticPalette);
-    expect(adapted.concept.fontPairingId).toBe(original.fontPairingId);
+    expect(adapted).not.toBeNull();
+    expect(adapted!.concept.conceptName).toBe(adapted!.theme.name);
+    expect(adapted!.concept.description).toBe(adapted!.theme.description);
+    expect(adapted!.concept.conceptName).not.toBe("Lariat & Starlight");
   });
 
   it("takes the curated theme's own layout and placement, which are known good", () => {
     const adapted = adaptStudioDirection({ concept: concept(), brief: briefFor, usedThemeIds: [], reason: "x" });
-    expect(adapted.concept.layoutStyle).toBe(adapted.theme.layoutStyle);
-    expect(adapted.theme.placements.map((p) => p.id)).toContain(adapted.concept.placementId);
+    expect(adapted).not.toBeNull();
+    expect(adapted!.concept.layoutStyle).toBe(adapted!.theme.layoutStyle);
+    expect(adapted!.theme.placements.map((p) => p.id)).toContain(adapted!.concept.placementId);
   });
 
   it("records the reason instead of hiding the swap", () => {
     const adapted = adaptStudioDirection({ concept: concept(), brief: briefFor, usedThemeIds: [], reason: "premium-feel" });
-    expect(adapted.reason).toBe("premium-feel");
+    expect(adapted).not.toBeNull();
+    expect(adapted!.reason).toBe("premium-feel");
+  });
+
+  it("returns no fallback when the collection has no matching subject artwork", () => {
+    const constructionBrief = brief({
+      eventName: "Theo is Three",
+      themeName: "construction",
+      vibeDescription: "modern elevated construction theme",
+    });
+    expect(
+      adaptStudioDirection({ concept: concept(), brief: constructionBrief, usedThemeIds: [], reason: "brief-fidelity" }),
+    ).toBeNull();
   });
 });
 

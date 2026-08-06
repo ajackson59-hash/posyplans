@@ -12,6 +12,7 @@ import {
   MAX_ARTWORK_ATTEMPTS,
   PROGRESS_MESSAGES,
   TARGET_CONCEPT_COUNT,
+  cropRescueLayouts,
   runAiFirstPipeline,
 } from "../server/aiFirst/pipeline";
 import { MAX_ARTWORK_CONCURRENCY, InMemoryUsageStore } from "../server/aiFirst/usage";
@@ -25,8 +26,8 @@ const brief: EventBrief = {
   eventName: "Ada's 4th Birthday",
   eventType: "birthday",
   milestone: "4th",
-  vibe: "modern space cowgirl",
-  themeName: "space cowgirl",
+  vibe: "modern editorial celebration",
+  themeName: "modern editorial",
   colors: ["dusty rose"],
   formality: "playful",
   dateLine: "12 September 2026",
@@ -35,7 +36,7 @@ const brief: EventBrief = {
   guestCount: 18,
   dna: {},
   inspirationNotes: "",
-  requirements: { required: ["the space cowgirl visual identity"], preferred: [], excluded: ["photographic realism"] },
+  requirements: { required: ["age-appropriate modern editorial artwork"], preferred: [], excluded: ["photographic realism"] },
 };
 
 /** Four structurally distinct concepts, as the real model is asked to emit. */
@@ -55,7 +56,7 @@ const visionBody = (pass: boolean) => ({
   briefFidelity: 5,
   compositionQuality: 5,
   ageAppropriate: 5,
-  requiredPresent: [{ requirement: "the space cowgirl visual identity", present: true }],
+  requiredPresent: [{ requirement: "age-appropriate modern editorial artwork", present: true }],
   excludedFound: [],
   notes: "",
 });
@@ -224,6 +225,85 @@ describe("a clean run", () => {
   });
 });
 
+describe("zero-cost concept preflight", () => {
+  it("skips an unthemed concept and spends only on the next direction that depicts the brief", async () => {
+    const constructionBrief: EventBrief = {
+      ...brief,
+      eventName: "Theo is Three",
+      themeName: "construction",
+      vibe: "modern elevated construction theme",
+      requirements: {
+        required: ["an unmistakable construction / little-builder visual identity"],
+        preferred: [],
+        excluded: ["generic abstract geometry"],
+      },
+    };
+    const genericBlueprint = concept({
+      conceptName: "Blueprint Morning",
+      art: {
+        medium: "architectural gouache",
+        composition: "asymmetric blueprint geometry",
+        prompt: "Inky blueprint lines and amber blocks on softly textured paper.",
+      },
+    });
+    const realConstruction = concept({
+      conceptName: "Little Builder",
+      art: {
+        medium: "cut-paper collage",
+        composition: "one excavator crossing the lower third",
+        prompt: "A clearly recognisable excavator and hard hat in refined cut paper, warm amber and navy.",
+      },
+    });
+    let imageCalls = 0;
+    const events: PipelineEvent[] = [];
+    const client = {
+      messages: {
+        stream: async () =>
+          (async function* () {
+            yield {
+              type: "content_block_delta",
+              delta: {
+                type: "text_delta",
+                text: `${JSON.stringify(genericBlueprint)}\n${JSON.stringify(realConstruction)}\n`,
+              },
+            };
+          })(),
+        create: async () => ({
+          content: [{ type: "text", text: JSON.stringify(visionBody(true)) }],
+          usage: { input_tokens: 10, output_tokens: 10 },
+        }),
+      },
+    } as unknown as Anthropic;
+
+    const summary = await runAiFirstPipeline({
+      eventId: 1,
+      brief: constructionBrief,
+      previewStore: new InMemoryPreviewStore(),
+      usageStore: new InMemoryUsageStore(),
+      allowance: 1,
+      directionLimit: 1,
+      disableAutomaticRetry: true,
+      sink: (event) => events.push(event),
+      anthropic: client,
+      ocr: false,
+      generateImage: async ({ aspectRatio, prompt }) => {
+        imageCalls += 1;
+        expect(prompt).toContain("excavator");
+        expect(prompt).toContain("BINDING EVENT-BRIEF CONSTRAINTS");
+        return { bytes: artworkForAspect(aspectRatio), dataUrl: "data:image/png;base64,x", durationMs: 1 };
+      },
+    });
+
+    expect(imageCalls).toBe(1);
+    expect(summary.billedImages).toBe(1);
+    expect(summary.conceptRejections).toBe(1);
+    expect(directionsOf(events)[0].direction.concept.conceptName).toBe("Little Builder");
+    expect(
+      events.some((event) => event.type === "warning" && event.message.includes("blocked before artwork spend")),
+    ).toBe(true);
+  });
+});
+
 describe("concurrency", () => {
   it("never has more than two images in flight", async () => {
     const { peakInFlight } = await run({ artworkDelayMs: 40 });
@@ -238,6 +318,12 @@ describe("concurrency", () => {
 });
 
 describe("retry and fallback", () => {
+  it("reuses portrait artwork only for the compatible split-layout crop rescue", () => {
+    expect(cropRescueLayouts("split")).toEqual(["full-bleed", "backdrop"]);
+    expect(cropRescueLayouts("full-bleed")).toEqual([]);
+    expect(cropRescueLayouts("banner")).toEqual([]);
+  });
+
   it("retries a failed direction exactly once", async () => {
     // Every vision call fails, so every direction exhausts its attempts.
     const { summary, imageCalls } = await run({ visionPasses: () => false });

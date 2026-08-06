@@ -30,7 +30,7 @@ import {
 import { OVERLAY_COVERAGE, validateLayoutBeforeGeneration } from "@shared/aiFirstLayout";
 import { normalizeSemanticPalette } from "@shared/aiFirstPalette";
 import { ConceptStreamParser } from "./conceptStream";
-import { buildSystemPrompt, buildUserPrompt, buildRetryPrompt } from "./prompt";
+import { buildArtworkConstraints, buildSystemPrompt, buildUserPrompt, buildRetryPrompt } from "./prompt";
 import { runTier1Checks, retryCodesFor, type Tier1Finding } from "./tier1";
 import { runVisionGate, visionCostUsd, type VisionVerdict } from "./visionGate";
 import { adaptStudioDirection, loadStudioArtwork } from "./fallback";
@@ -52,6 +52,7 @@ import { MAX_ARTWORK_CONCURRENCY, type AiFirstUsageStore, type CircuitBreaker } 
 import type { EventBrief } from "./brief";
 import type { AiFirstArtworkAttemptStore } from "./artworkAttemptStore";
 import type { AiFirstRunStore } from "./runStore";
+import { preflightConceptForBrief } from "./conceptPreflight";
 
 export const CONCEPT_MODEL = "claude-sonnet-4-6";
 export const TARGET_CONCEPT_COUNT = TARGET_DIRECTION_COUNT;
@@ -188,6 +189,7 @@ export async function runAiFirstPipeline(input: PipelineInput): Promise<RunSumma
   const usedThemeIds: string[] = [];
   const inFlight: Promise<void>[] = [];
   let startedDirections = 0;
+  let preflightRejections = 0;
   let budgetRemaining = input.allowance;
   const directionLimit = Math.max(1, Math.min(TARGET_CONCEPT_COUNT, input.directionLimit ?? TARGET_CONCEPT_COUNT));
 
@@ -262,14 +264,34 @@ export async function runAiFirstPipeline(input: PipelineInput): Promise<RunSumma
       for (const line of parser.push(chunk.delta.text)) {
         if (summary.msToFirstConcept === null) summary.msToFirstConcept = since();
         emit({ type: "concept", index: line.index, concept: line.concept });
-        if (line.index < directionLimit) startDirection(line.index, line.concept);
+        if (startedDirections >= directionLimit) continue;
+        const preflight = preflightConceptForBrief(line.concept, input.brief);
+        if (!preflight.passed) {
+          preflightRejections += 1;
+          emit({
+            type: "warning",
+            message: `concept ${line.index + 1} was blocked before artwork spend: ${preflight.message}`,
+          });
+          continue;
+        }
+        startDirection(startedDirections, line.concept);
       }
     }
     throwIfAborted(input.signal);
     for (const line of parser.flush()) {
       if (summary.msToFirstConcept === null) summary.msToFirstConcept = since();
       emit({ type: "concept", index: line.index, concept: line.concept });
-      if (line.index < directionLimit) startDirection(line.index, line.concept);
+      if (startedDirections >= directionLimit) continue;
+      const preflight = preflightConceptForBrief(line.concept, input.brief);
+      if (!preflight.passed) {
+        preflightRejections += 1;
+        emit({
+          type: "warning",
+          message: `concept ${line.index + 1} was blocked before artwork spend: ${preflight.message}`,
+        });
+        continue;
+      }
+      startDirection(startedDirections, line.concept);
     }
   } catch (err) {
     await Promise.allSettled(inFlight);
@@ -277,7 +299,7 @@ export async function runAiFirstPipeline(input: PipelineInput): Promise<RunSumma
     throw new Error(`concept generation failed: ${(err as Error).message}`);
   }
 
-  summary.conceptRejections = parser.rejections.length;
+  summary.conceptRejections = parser.rejections.length + preflightRejections;
 
   emit({ type: "progress", message: PROGRESS_MESSAGES.finishing });
   await Promise.all(inFlight);
@@ -333,7 +355,7 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
 
   // Layout compatibility is checked BEFORE generation, so an incompatible
   // pairing is repaired rather than paid for and then rejected.
-  const repair = validateLayoutBeforeGeneration(ctx.concept);
+  let repair = validateLayoutBeforeGeneration(ctx.concept);
   let concept: AiFirstConcept = { ...ctx.concept, layoutStyle: repair.layoutStyle, minOverlay: repair.overlay };
   const normalized = normalizeSemanticPalette(concept.semanticPalette);
   if (normalized.fixes.some((f) => f.changed)) {
@@ -347,7 +369,7 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
       },
     };
   }
-  const artworkOpacity = repair.artworkOpacity;
+  let artworkOpacity = repair.artworkOpacity;
 
   // Reuse before spend. This is what makes restyling free.
   const reusable = await lookupReusablePreview(input.previewStore, input.eventId, concept);
@@ -368,7 +390,7 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
     return finish(ctx, concept, reusable, "ai-generated", attempts, artworkOpacity, true);
   }
 
-  const basePrompt = buildArtworkPrompt(concept);
+  const basePrompt = `${buildArtworkPrompt(concept)}\n\n${buildArtworkConstraints(input.brief)}`;
   let failureCodes: string[] = [];
 
   // The next-proof safety setting: when set, a direction gets exactly one
@@ -453,13 +475,45 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
     });
 
     // Tier 1 first: it is free, and it catches most of what actually breaks.
-    const tier1 = runTier1Checks({
+    let tier1 = runTier1Checks({
       bytes,
       concept,
       overlayCoverage: OVERLAY_COVERAGE[repair.overlay],
       artworkOpacity: artworkOpacity ?? 1,
       ocr: input.ocr,
     });
+
+    // A split layout crops a portrait image down to a very narrow panel. If
+    // that is the image's only critical defect, try the exact same paid bytes
+    // in a compatible existing portrait layout before discarding them. This
+    // is composition repair, not a retry: no image provider is called.
+    if (onlyCriticalFailureIs(tier1.findings, "crop-unsafe")) {
+      for (const layoutStyle of cropRescueLayouts(concept.layoutStyle)) {
+        const candidateRepair = validateLayoutBeforeGeneration({ ...concept, layoutStyle });
+        const candidateConcept: AiFirstConcept = {
+          ...concept,
+          layoutStyle: candidateRepair.layoutStyle,
+          minOverlay: candidateRepair.overlay,
+        };
+        if (aspectRatioForLayout(candidateConcept.layoutStyle) !== aspectRatio) continue;
+        const candidateTier1 = runTier1Checks({
+          bytes,
+          concept: candidateConcept,
+          overlayCoverage: OVERLAY_COVERAGE[candidateRepair.overlay],
+          artworkOpacity: candidateRepair.artworkOpacity ?? 1,
+          ocr: input.ocr,
+        });
+        if (!candidateTier1.passed) continue;
+        concept = candidateConcept;
+        repair = candidateRepair;
+        artworkOpacity = candidateRepair.artworkOpacity;
+        tier1 = candidateTier1;
+        summary.degraded.push(
+          `direction ${ctx.index + 1} reused its paid artwork in ${candidateConcept.layoutStyle} after a crop-only layout failure`,
+        );
+        break;
+      }
+    }
 
     let vision: VisionVerdict | undefined;
     if (tier1.passed) {
@@ -566,6 +620,11 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
     usedThemeIds: ctx.usedThemeIds,
     reason: failureCodes.length > 0 ? failureCodes.join(", ") : "artwork unavailable",
   });
+  if (!adapted) {
+    throw new Error(
+      `generated artwork did not meet Posy's quality standard and no theme-safe studio fallback matches this event`,
+    );
+  }
   ctx.emit({
     type: "warning",
     message: `direction ${ctx.index + 1} fell back to an adapted studio direction (${adapted.reason})`,
@@ -596,6 +655,16 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
     await input.runStore.incrementCompleted(input.runId);
   }
   return finish(ctx, adapted.concept, savedStudio.record, "adapted-studio-direction", attempts, undefined, false);
+}
+
+function onlyCriticalFailureIs(findings: Tier1Finding[], code: Tier1Finding["code"]): boolean {
+  const critical = findings.filter((finding) => finding.critical);
+  return critical.length === 1 && critical[0].code === code;
+}
+
+/** Layouts that can reuse the same provider aspect ratio without regeneration. */
+export function cropRescueLayouts(layoutStyle: AiFirstConcept["layoutStyle"]): AiFirstConcept["layoutStyle"][] {
+  return layoutStyle === "split" ? ["full-bleed", "backdrop"] : [];
 }
 
 function abortError(reason?: unknown): Error {
