@@ -32,10 +32,21 @@ import { ArrowRight, Check, Clock, Wand2 } from "lucide-react";
 interface ThemeChooserProps {
   ownerToken: string;
   event: EventRecord;
-  /** Secondary, slower AI artwork path. */
-  onCustomTheme: () => void;
+  /**
+   * Secondary, slower AI artwork path. Omitted inside the AI-first
+   * experience, where generation is the primary flow and the "Advanced /
+   * Slower / not studio-finished" framing no longer describes it.
+   */
+  onCustomTheme?: () => void;
   /** Advance to stage 2 once a theme is applied. */
   onThemeApplied: () => void;
+  /**
+   * Lifted filters. Passed only when the chooser sits inside a flow that can
+   * unmount it — the host's filtering is exploration state, not a transient
+   * view detail. Omitted, the chooser keeps its own, as it always has.
+   */
+  filters?: { style: string; occasion: string };
+  onFiltersChange?: (filters: { style: string; occasion: string }) => void;
 }
 
 type StyleFilter = ThemeStyle | "all";
@@ -69,10 +80,22 @@ function FilterChip({
   );
 }
 
-export default function ThemeChooser({ ownerToken, event, onCustomTheme, onThemeApplied }: ThemeChooserProps) {
+export default function ThemeChooser({
+  ownerToken,
+  event,
+  onCustomTheme,
+  onThemeApplied,
+  filters,
+  onFiltersChange,
+}: ThemeChooserProps) {
   const { toast } = useToast();
-  const [style, setStyle] = useState<StyleFilter>("all");
-  const [occasion, setOccasion] = useState<OccasionFilter>("all");
+  const [ownFilters, setOwnFilters] = useState({ style: "all", occasion: "all" });
+  const active = filters ?? ownFilters;
+  const style = active.style as StyleFilter;
+  const occasion = active.occasion as OccasionFilter;
+  const update = onFiltersChange ?? setOwnFilters;
+  const setStyle = (next: StyleFilter) => update({ style: next, occasion });
+  const setOccasion = (next: OccasionFilter) => update({ style, occasion: next });
 
   const appliedThemeId = resolveThemeView(event)?.theme.id ?? null;
 
@@ -224,6 +247,7 @@ export default function ThemeChooser({ ownerToken, event, onCustomTheme, onTheme
         </ul>
       )}
 
+      {onCustomTheme && (
       <div className="mt-12 border-t border-border pt-6">
         <button
           type="button"
@@ -246,6 +270,7 @@ export default function ThemeChooser({ ownerToken, event, onCustomTheme, onTheme
           </div>
         </button>
       </div>
+      )}
     </div>
   );
 }

@@ -52,6 +52,8 @@ import type Stripe from "stripe";
 import { parseCookies, serializeConsentCookie } from "./cookies";
 import { getStripe, getPriceId, getSparkPriceId, isStripeConfigured, getWebhookSecret, planTierFromSubscriptionStatus, plusPriceValue, CHECKOUT_PRICES, type BillingInterval } from "./stripe";
 import { sendMetaPurchaseEvent } from "./metaCapi";
+import { registerAiFirstRoutes } from "./aiFirst/routes";
+import { DbPreviewStore, DbUsageStore, DbRunStore, DbArtworkAttemptStore } from "./aiFirst/dbStore";
 
 function publicEventView(event: Event) {
   // Never expose ownerToken (the host's secret edit key) on public routes.
@@ -85,6 +87,17 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // Mounted unconditionally; every route inside is gated per request on the
+  // feature flag, which is off by default. With the flag off they 404 and the
+  // routes below are the entire invitation surface, exactly as before.
+  registerAiFirstRoutes(app, {
+    storage,
+    previewStore: new DbPreviewStore(),
+    usageStore: new DbUsageStore(),
+    runStore: new DbRunStore(),
+    artworkAttemptStore: new DbArtworkAttemptStore(),
+  });
+
   /* ============ EVENT: CREATE / OWNER ACCESS ============ */
   app.post("/api/events", async (req, res) => {
     const parsed = insertEventSchema.safeParse(req.body);

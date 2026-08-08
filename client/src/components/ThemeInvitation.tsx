@@ -28,7 +28,13 @@ import {
   type TextureStyle,
   type ThemeCopy,
 } from "@shared/themeCatalog";
-import { borderStyleCss, getFontPairing, type LayoutStyle } from "@shared/inviteDesign";
+import { borderStyleCss, getFontPairing } from "@shared/inviteDesign";
+import {
+  LAYOUT_FRAMES,
+  projectPlacement,
+  withinSafeArea,
+  type Frame,
+} from "@shared/inviteLayout";
 import { cn } from "@/lib/utils";
 import { ThemeArt } from "./ThemeArt";
 
@@ -37,80 +43,6 @@ function rgba(hex: string, alpha: number): string {
   if (!m) return `rgba(255,255,255,${alpha})`;
   const int = parseInt(m[1], 16);
   return `rgba(${(int >> 16) & 255}, ${(int >> 8) & 255}, ${int & 255}, ${alpha})`;
-}
-
-/** A rectangle on the 3:4 canvas, in percentages of the card. */
-interface Frame {
-  top: number;
-  left: number;
-  width: number;
-  height: number;
-}
-
-/**
- * The existing layout archetypes, expressed as the region the artwork occupies
- * and the region the type sits in. These are the same five compositions the
- * live editor draws for AI concepts — banner puts art across the top, split
- * runs it down one side, centered insets it as a vignette, backdrop drops it
- * behind the words, full-bleed fills the card.
- */
-const LAYOUT_FRAMES: Record<LayoutStyle, { art: Frame; type: Frame; artOpacity: number }> = {
-  "full-bleed": {
-    art: { top: 0, left: 0, width: 100, height: 100 },
-    type: { top: 0, left: 0, width: 100, height: 100 },
-    artOpacity: 1,
-  },
-  backdrop: {
-    art: { top: 0, left: 0, width: 100, height: 100 },
-    type: { top: 0, left: 0, width: 100, height: 100 },
-    artOpacity: 0.3,
-  },
-  banner: {
-    art: { top: 0, left: 0, width: 100, height: 44 },
-    type: { top: 46, left: 6, width: 88, height: 50 },
-    artOpacity: 1,
-  },
-  split: {
-    art: { top: 0, left: 0, width: 40, height: 100 },
-    type: { top: 4, left: 44, width: 52, height: 92 },
-    artOpacity: 1,
-  },
-  centered: {
-    art: { top: 6, left: 12, width: 76, height: 34 },
-    type: { top: 44, left: 8, width: 84, height: 52 },
-    artOpacity: 1,
-  },
-};
-
-/**
- * Maps a theme's curated placement — authored against the full canvas — into
- * whichever region the layout archetype reserves for type. A "left column"
- * placement stays a left column inside a split panel; a "raised" placement
- * stays raised inside a banner's lower half.
- */
-function projectPlacement(box: Frame, frame: Frame): Frame {
-  return {
-    top: frame.top + (box.top * frame.height) / 100,
-    left: frame.left + (box.left * frame.width) / 100,
-    width: (box.width * frame.width) / 100,
-    height: (box.height * frame.height) / 100,
-  };
-}
-
-/**
- * No text ever crosses this margin. Cropped layouts (banner, split) can push a
- * curated placement past the edge of the card, and long copy can grow past the
- * bottom of its box — both clip the RSVP line. Every type region is intersected
- * with this inset first, and the rendered block is then kept inside it.
- */
-const SAFE_INSET = { x: 8, y: 7 };
-
-function withinSafeArea(frame: Frame): Frame {
-  const top = Math.max(frame.top, SAFE_INSET.y);
-  const left = Math.max(frame.left, SAFE_INSET.x);
-  const bottom = Math.min(frame.top + frame.height, 100 - SAFE_INSET.y);
-  const right = Math.min(frame.left + frame.width, 100 - SAFE_INSET.x);
-  return { top, left, width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
 }
 
 /** Grey paper grain, tuned per stock. Kept low so type contrast is untouched. */
@@ -203,6 +135,13 @@ export interface ThemeInvitationProps {
   thumbnail?: boolean;
   /** Suppresses the alt text when a caption already names the theme. */
   decorative?: boolean;
+  /**
+   * Overrides the layout archetype's artwork opacity. Only the AI-first
+   * pipeline sets this, and only to rescue a focal subject that `backdrop`'s
+   * 30% wash would erase. Left undefined — as every curated theme leaves it —
+   * the layout's own opacity is used, so studio compositions are untouched.
+   */
+  artworkOpacity?: number;
   className?: string;
 }
 
@@ -217,6 +156,7 @@ export function ThemeInvitation({
   message,
   thumbnail = false,
   decorative = false,
+  artworkOpacity,
   className,
 }: ThemeInvitationProps) {
   const { ref, width } = useCardWidth();
@@ -402,7 +342,7 @@ export function ThemeInvitation({
           left: `${layout.art.left}%`,
           width: `${layout.art.width}%`,
           height: `${layout.art.height}%`,
-          opacity: layout.artOpacity,
+          opacity: artworkOpacity ?? layout.artOpacity,
         }}
       >
         <img

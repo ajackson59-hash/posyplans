@@ -1,6 +1,6 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
-const API_BASE = "__PORT_5050__".startsWith("__") ? "" : "__PORT_5050__";
+export const API_BASE = "__PORT_5050__".startsWith("__") ? "" : "__PORT_5050__";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {

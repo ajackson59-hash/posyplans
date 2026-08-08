@@ -1,0 +1,24 @@
+{
+  "label": "FIXTURE / NON-PROVIDER QA HARNESS",
+  "note": "Every scenario drives the real production AiFirstInvitations component and useAiFirstSession hook. fetch() is stubbed with scripted SSE bodies; no model or image provider is called anywhere in this file.",
+  "widths": {
+    "desktop": 1024,
+    "mobile": 390
+  },
+  "scenarios": [
+    "1-progress",
+    "2-failure",
+    "3-recovery",
+    "4-duplicate-click-locked"
+  ],
+  "htmlSnapshots": [
+    "1-progress-1024.html",
+    "1-progress-390.html",
+    "2-failure-1024.html",
+    "2-failure-390.html",
+    "3-recovery-1024.html",
+    "3-recovery-390.html",
+    "4-duplicate-click-locked-1024.html",
+    "4-duplicate-click-locked-390.html"
+  ]
+}

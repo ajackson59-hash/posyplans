@@ -274,6 +274,7 @@ export default function InviteStudio({
                 placementId={draft.placementId}
                 overlay={draft.overlay}
                 fontPairingId={draft.fontPairingId}
+                artworkOpacity={view?.artworkOpacity}
               />
             </div>
 
