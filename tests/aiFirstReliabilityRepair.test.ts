@@ -113,6 +113,7 @@ function appFor(deps: {
   runStore: InMemoryRunStore;
   artworkAttemptStore: InMemoryArtworkAttemptStore;
   env?: Record<string, string | undefined>;
+  runPipeline?: (input: Parameters<typeof runAiFirstPipeline>[0]) => Promise<Awaited<ReturnType<typeof runAiFirstPipeline>>>;
 }) {
   const app = express();
   app.use(express.json());
@@ -123,6 +124,7 @@ function appFor(deps: {
     runStore: deps.runStore,
     artworkAttemptStore: deps.artworkAttemptStore,
     env: { [featureFlagEnvVar("aiFirstInvitations")]: "1", ...deps.env },
+    runPipeline: deps.runPipeline,
   });
   return app;
 }
@@ -608,6 +610,100 @@ describe("duplicate click with the same run id does not buy a second set of imag
     });
 
     expect(imageCalls).toBe(1);
+  });
+});
+
+/* ═══════════════════════════════════════════════════════════════════════
+   3b. A later, separately minted run requires explicit confirmation
+   ═══════════════════════════════════════════════════════════════════════ */
+
+describe("additional generation confirmation is enforced before spend", () => {
+  const completedSummary = {
+    directions: 1,
+    adaptedDirections: 0,
+    billedImages: 0,
+    reusedImages: 0,
+    retries: 0,
+    costUsd: 0,
+    msToFirstConcept: 1,
+    msToFirstDirection: 1,
+    msToAllDirections: 1,
+    conceptRejections: 0,
+    degraded: [],
+  };
+
+  it("refuses a new run id after prior billed artwork unless the host confirmed", async () => {
+    const previewStore = new InMemoryPreviewStore();
+    const usageStore = new InMemoryUsageStore();
+    const runStore = new InMemoryRunStore();
+    const artworkAttemptStore = new InMemoryArtworkAttemptStore();
+    await usageStore.record({
+      eventId: EVENT_ID,
+      email: "host@example.com",
+      reason: "initial",
+      billed: true,
+      automatic: false,
+      idempotencyKey: "older-run:direction-0:attempt-1",
+      costUsdMicros: 250_000,
+      createdAt: Date.now(),
+    });
+    let pipelineCalls = 0;
+    const app = appFor({
+      previewStore,
+      usageStore,
+      runStore,
+      artworkAttemptStore,
+      env: { [featureFlagEnvVar("aiFirstDisableAutomaticRetry")]: "1" },
+      runPipeline: async () => {
+        pipelineCalls += 1;
+        return completedSummary;
+      },
+    });
+
+    const denied = await request(app)
+      .post(`/api/events/owner/${OWNER}/ai-first/generate`)
+      .send({ runId: "new-unconfirmed-run" });
+
+    expect(denied.status).toBe(409);
+    expect(denied.body.denial).toBe("additional-generation-confirmation-required");
+    expect(denied.body.error).toContain("No image call was made");
+    expect(pipelineCalls).toBe(0);
+    expect(await runStore.get("new-unconfirmed-run")).toBeUndefined();
+
+    const confirmed = await request(app)
+      .post(`/api/events/owner/${OWNER}/ai-first/generate`)
+      .send({ runId: "new-confirmed-run", confirmAdditionalGeneration: true });
+
+    expect(confirmed.status).toBe(200);
+    expect(pipelineCalls).toBe(1);
+  });
+
+  it("returns durable state for a replayed run id without demanding new-spend confirmation", async () => {
+    const previewStore = new InMemoryPreviewStore();
+    const usageStore = new InMemoryUsageStore();
+    const runStore = new InMemoryRunStore();
+    const artworkAttemptStore = new InMemoryArtworkAttemptStore();
+    await usageStore.record({
+      eventId: EVENT_ID,
+      email: "host@example.com",
+      reason: "initial",
+      billed: true,
+      automatic: false,
+      idempotencyKey: "existing-run:direction-0:attempt-1",
+      costUsdMicros: 250_000,
+      createdAt: Date.now(),
+    });
+    await runStore.claim({ runId: "existing-run", eventId: EVENT_ID, ownerToken: OWNER });
+    await runStore.fail("existing-run", "quality rejected");
+    const app = appFor({ previewStore, usageStore, runStore, artworkAttemptStore });
+
+    const replay = await request(app)
+      .post(`/api/events/owner/${OWNER}/ai-first/generate`)
+      .send({ runId: "existing-run" });
+
+    expect(replay.status).toBe(409);
+    expect(replay.body.denial).toBe("duplicate");
+    expect(replay.body.run).toMatchObject({ runId: "existing-run", terminal: true, status: "failed" });
   });
 });
 

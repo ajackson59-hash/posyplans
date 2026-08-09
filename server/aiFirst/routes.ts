@@ -110,6 +110,11 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
         usage: { ...usage, activeGenerations },
         killSwitch: flags().invitationGenerationKillSwitch,
         directionLimit: readAiFirstDirectionLimit(env()),
+        automaticRetryDisabled: flags().aiFirstDisableAutomaticRetry,
+        // A reload or return visit must not turn a later cost-bearing run
+        // back into an unqualified one-click action. The server enforces the
+        // same fact on POST; this field lets the UI explain it beforehand.
+        additionalGenerationConfirmationRequired: usage.eventBilled > 0,
         // The one question a thin brief is allowed to ask, and only then.
         briefQuestion: briefIsSufficient(event) ? null : SINGLE_BRIEF_QUESTION,
         askPosyActions: INVITATION_ASK_POSY_ACTIONS,
@@ -167,7 +172,12 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
       // is even claimed: when it is on, this route must invoke zero provider
       // functions and return a clear paused response, with nothing durable
       // written for this attempt.
-      if (flags().invitationGenerationKillSwitch) {
+      // Capture the request's configuration once. Reading the same flags at
+      // multiple points made the audit harder and allowed no proof that the
+      // allowance calculation and pipeline used one coherent snapshot.
+      const requestFlags = flags();
+
+      if (requestFlags.invitationGenerationKillSwitch) {
         res.status(403).json({
           error: "New invitation artwork is paused right now. The Posy collection and your saved designs are still available.",
           denial: "kill-switch",
@@ -186,6 +196,31 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
         return;
       }
 
+      // A replay of an existing logical run is idempotent and never needs a
+      // new-spend confirmation. Return its durable truth before evaluating
+      // whether a genuinely NEW run would require confirmation.
+      const existingRun = await deps.runStore.get(runId);
+      if (existingRun) {
+        const sameEvent = existingRun.eventId === event.id && existingRun.ownerToken === ownerToken;
+        res.status(409).json({
+          error: sameEvent ? "This invitation run already exists." : "That run id is unavailable.",
+          denial: "duplicate",
+          ...(sameEvent
+            ? {
+                run: {
+                  runId: existingRun.runId,
+                  status: existingRun.status,
+                  progressMessage: existingRun.progressMessage,
+                  completedCount: existingRun.completedCount,
+                  fallbackCount: existingRun.fallbackCount,
+                  terminal: existingRun.terminal,
+                },
+              }
+            : {}),
+        });
+        return;
+      }
+
       const email = event.capturedEmail ?? undefined;
       const entitlement = email ? await deps.storage.getEmailEntitlement(email) : undefined;
       const tier = entitlement?.planTier as never;
@@ -194,6 +229,21 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
       // for this event", not the in-process counter — correct across restarts
       // and across every Vercel instance, not just this one.
       const hasActiveRun = await deps.runStore.hasActiveRun(event.id);
+
+      // A terminal run releases the active-run lock, so a later click can
+      // otherwise mint a separate run id and incur separate provider spend.
+      // Once an event has bought any artwork, every later run is refused
+      // unless the host made the explicit, two-step confirmation the client
+      // sends here. This check happens before model validation, run claim or
+      // provider access and is therefore a zero-call denial.
+      if (usage.eventBilled > 0 && req.body?.confirmAdditionalGeneration !== true) {
+        res.status(409).json({
+          error: "Confirm before starting another invitation generation. No image call was made.",
+          denial: "additional-generation-confirmation-required",
+          confirmationRequired: true,
+        });
+        return;
+      }
 
       let artworkModel;
       try {
@@ -205,7 +255,7 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
         return;
       }
       const directionLimit = readAiFirstDirectionLimit(env());
-      const maxAttemptsPerDirection = flags().aiFirstDisableAutomaticRetry ? 1 : 2;
+      const maxAttemptsPerDirection = requestFlags.aiFirstDisableAutomaticRetry ? 1 : 2;
 
       const action = resolveAskPosyAction(req.body?.action, req.body);
       const guard = guardGeneration({
@@ -320,7 +370,7 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
           ownerToken,
           runStore: deps.runStore,
           artworkAttemptStore: deps.artworkAttemptStore,
-          disableAutomaticRetry: flags().aiFirstDisableAutomaticRetry,
+          disableAutomaticRetry: requestFlags.aiFirstDisableAutomaticRetry,
           directionLimit,
           artworkModel,
         });

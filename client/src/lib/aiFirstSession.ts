@@ -38,6 +38,13 @@ export interface AiFirstRunOptions {
   concept?: AiFirstConcept;
   direction?: string;
   avoidConceptNames?: string[];
+  /**
+   * The first generation for an event is the primary experience. Every
+   * later provider-backed generation is a separate cost-bearing decision,
+   * so the UI must obtain an explicit confirmation and the server must see
+   * it before a new run id can be claimed.
+   */
+  confirmAdditionalGeneration?: boolean;
 }
 
 /** A fresh id per logical run (a generate click), not per HTTP retry of one. */
@@ -209,6 +216,7 @@ export function useAiFirstSession(ownerToken: string): AiFirstSession {
             avoidConceptNames: options.avoidConceptNames,
             inspirationNotes: inspirationNotes.trim() || undefined,
             feeling: vibeAnswer.trim() || undefined,
+            confirmAdditionalGeneration: options.confirmAdditionalGeneration === true,
           }),
         });
 

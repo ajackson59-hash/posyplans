@@ -8,7 +8,7 @@
 // feel broken. And a card on screen is a preview only — the live invitation
 // changes when the host presses "Use this design" and not before.
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequestJson, queryClient } from "@/lib/queryClient";
 import { themeCopyForEvent } from "@shared/themeCatalog";
@@ -16,7 +16,7 @@ import { themeForResolvedConcept } from "@shared/aiFirstTheme";
 import type { AskPosyAction } from "@shared/aiFirstAskPosy";
 import { TARGET_DIRECTION_COUNT, type FinishedDirection } from "@shared/aiFirstStream";
 import type { EventRecord } from "@/lib/types";
-import type { AiFirstSession } from "@/lib/aiFirstSession";
+import type { AiFirstRunOptions, AiFirstSession } from "@/lib/aiFirstSession";
 import { ThemeInvitation } from "@/components/ThemeInvitation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,8 @@ interface AiFirstStatus {
   usage: { eventBilled: number; monthlyBilled: number; activeGenerations: number };
   killSwitch: boolean;
   directionLimit: number;
+  automaticRetryDisabled: boolean;
+  additionalGenerationConfirmationRequired: boolean;
   briefQuestion: string | null;
   askPosyActions: AskPosyAction[];
 }
@@ -48,6 +50,7 @@ export default function AiFirstInvitations({
   onBrowseCollection,
 }: AiFirstInvitationsProps) {
   const { toast } = useToast();
+  const [pendingAdditionalRun, setPendingAdditionalRun] = useState<AiFirstRunOptions | null>(null);
 
   const status = useQuery<AiFirstStatus>({
     queryKey: [`/api/events/owner/${ownerToken}/ai-first/status`],
@@ -83,9 +86,33 @@ export default function AiFirstInvitations({
   // memory) keeps the button locked even after a reload or in a second tab
   // — not just while this component's local `running` state says so.
   const serverSaysActive = (status.data?.usage?.activeGenerations ?? 0) > 0;
-  const generateDisabled = session.running || serverSaysActive || Boolean(status.data?.killSwitch);
+  // Do not let a click race the spend status query. The server would still
+  // refuse an unconfirmed later run, but waiting for this read means the
+  // host sees the confirmation instead of a preventable 409 error.
+  const generateDisabled = status.isLoading || session.running || serverSaysActive || Boolean(status.data?.killSwitch);
   const targetCount = status.data?.directionLimit ?? TARGET_DIRECTION_COUNT;
   const isReviewCanary = targetCount === 1;
+  const confirmationRequired =
+    Boolean(status.data?.additionalGenerationConfirmationRequired) || session.hasRun;
+
+  const requestRun = (options: AiFirstRunOptions = {}) => {
+    if (!status.data) return;
+    if (confirmationRequired) {
+      // This first press is deliberately non-provider. It only opens the
+      // confirmation below; the second, labeled press is the one that may
+      // start another paid run.
+      setPendingAdditionalRun(options);
+      return;
+    }
+    void session.run(options);
+  };
+
+  const confirmAdditionalRun = () => {
+    if (!pendingAdditionalRun || generateDisabled) return;
+    const options = pendingAdditionalRun;
+    setPendingAdditionalRun(null);
+    void session.run({ ...options, confirmAdditionalGeneration: true });
+  };
 
   // The header states only what is true at the moment it renders. The
   // completion sentence is claimed once the four directions are actually on
@@ -153,7 +180,7 @@ export default function AiFirstInvitations({
 
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <Button
-          onClick={() => session.run()}
+          onClick={() => requestRun()}
           disabled={generateDisabled}
           data-testid="button-generate-directions"
         >
@@ -179,6 +206,46 @@ export default function AiFirstInvitations({
           Browse the Posy collection
         </button>
       </div>
+
+      {pendingAdditionalRun && (
+        <div
+          className="mb-6 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-foreground"
+          data-testid="card-confirm-additional-generation"
+          role="alert"
+        >
+          <p className="font-semibold">
+            {isReviewCanary ? "Create one more review direction?" : "Create another set of directions?"}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            This is a separate generation request. Nothing starts until you confirm
+            {isReviewCanary && status.data?.automaticRetryDisabled
+              ? ", and Posy will make exactly one image call with no automatic retry."
+              : "."}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              onClick={confirmAdditionalRun}
+              disabled={generateDisabled}
+              data-testid="button-confirm-additional-generation"
+            >
+              {isReviewCanary && status.data?.automaticRetryDisabled
+                ? "Confirm one image call"
+                : "Confirm new generation"}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setPendingAdditionalRun(null)}
+              data-testid="button-cancel-additional-generation"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Progress is the run's own events, never a timer. */}
       {session.running && (
@@ -239,7 +306,7 @@ export default function AiFirstInvitations({
                 disabled={session.running}
                 onClick={() => {
                   const selected = ordered.find((d) => d.previewId === session.selectedPreviewId) ?? ordered[0];
-                  session.run({
+                  requestRun({
                     action: action.id,
                     concept: selected?.concept,
                     avoidConceptNames: ordered.map((d) => d.concept.conceptName),

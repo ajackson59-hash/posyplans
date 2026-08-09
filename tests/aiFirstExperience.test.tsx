@@ -83,14 +83,19 @@ const status = {
   ceilings: { eventSoft: 12, eventHard: 12, monthlySoft: 48, monthlyHard: 80 },
   usage: { eventBilled: 0, monthlyBilled: 0, activeGenerations: 0 },
   killSwitch: false,
+  automaticRetryDisabled: true,
+  additionalGenerationConfirmationRequired: false,
   briefQuestion: null,
   askPosyActions: INVITATION_ASK_POSY_ACTIONS,
 };
 
-function renderExperience(over: Partial<ReturnType<typeof useAiFirstSession>> = {}) {
+function renderExperience(
+  over: Partial<ReturnType<typeof useAiFirstSession>> = {},
+  statusBody: typeof status = status,
+) {
   const onBrowseCollection = vi.fn();
   const client = new QueryClient({
-    defaultOptions: { queries: { retry: false, queryFn: async () => status } },
+    defaultOptions: { queries: { retry: false, queryFn: async () => statusBody } },
   });
   render(
     <QueryClientProvider client={client}>
@@ -154,6 +159,60 @@ describe("what the host is told", () => {
     expect(screen.getByTestId("text-progress").textContent).toContain(
       "Creating the first invitation direction…",
     );
+  });
+
+  it("makes the first event generation one click", async () => {
+    const run = vi.fn();
+    renderExperience({ run });
+    await waitFor(() =>
+      expect((screen.getByTestId("button-generate-directions") as HTMLButtonElement).disabled).toBe(false),
+    );
+    fireEvent.click(screen.getByTestId("button-generate-directions"));
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(run).toHaveBeenCalledWith({});
+    expect(screen.queryByTestId("card-confirm-additional-generation")).toBeNull();
+  });
+
+  it("requires a separate confirmation before any later paid generation", async () => {
+    const run = vi.fn();
+    renderExperience(
+      { run },
+      {
+        ...status,
+        usage: { ...status.usage, eventBilled: 1 },
+        additionalGenerationConfirmationRequired: true,
+        directionLimit: 1,
+      },
+    );
+
+    // First press is intentionally free: it only opens the warning.
+    await waitFor(() =>
+      expect((screen.getByTestId("button-generate-directions") as HTMLButtonElement).disabled).toBe(false),
+    );
+    fireEvent.click(screen.getByTestId("button-generate-directions"));
+    expect(run).not.toHaveBeenCalled();
+    expect(screen.getByTestId("card-confirm-additional-generation").textContent).toContain(
+      "separate generation request",
+    );
+    expect(screen.getByTestId("button-confirm-additional-generation").textContent).toContain(
+      "one image call",
+    );
+
+    // Only the explicitly labeled second press may mint another run.
+    fireEvent.click(screen.getByTestId("button-confirm-additional-generation"));
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(run).toHaveBeenCalledWith({ confirmAdditionalGeneration: true });
+  });
+
+  it("also protects a second generation in the same mounted session", async () => {
+    const run = vi.fn();
+    renderExperience({ run, hasRun: true });
+    await waitFor(() =>
+      expect((screen.getByTestId("button-generate-directions") as HTMLButtonElement).disabled).toBe(false),
+    );
+    fireEvent.click(screen.getByTestId("button-generate-directions"));
+    expect(run).not.toHaveBeenCalled();
+    expect(screen.getByTestId("card-confirm-additional-generation")).toBeTruthy();
   });
 });
 
