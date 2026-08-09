@@ -10,7 +10,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { EventBrief } from "./brief";
 import type { AiFirstConcept } from "@shared/aiFirstInvite";
 import { MIN_DIMENSION_SCORE, type VisionScores } from "@shared/aiFirstStream";
-import { concreteSubjectRequirementsForBrief } from "./conceptPreflight";
+import { concreteSubjectReviewRequirementsForBrief } from "./conceptPreflight";
 
 export const VISION_MODEL = "claude-sonnet-4-6";
 
@@ -43,7 +43,9 @@ Score each 1-5. 4 means "a professional stationery studio would ship this". 3 me
 - compositionQuality: 5 = clear, balanced, intentional composition that will survive a centre crop.
 - ageAppropriate: 5 = correctly pitched for the celebrant's age. Babyish work for an adult, or content too mature for a child, scores 1.
 
-Also report, per REQUIRED item, whether it is visibly present; and list any EXCLUDED item you can actually see.
+Judge BRIEF REQUIREMENTS holistically through briefFidelity and ageAppropriate. Do not repeat them in requiredPresent.
+
+For each VISIBLE MUST-HAVE, report whether that concrete subject is visibly present. These are binary positive visual facts only. Return an empty requiredPresent array when there are no VISIBLE MUST-HAVES. Also list any EXCLUDED item you can actually see.
 
 Reply with JSON only:
 {"textLogoWatermarkFree":0,"artifactFree":0,"premiumFinish":0,"briefFidelity":0,"compositionQuality":0,"ageAppropriate":0,"requiredPresent":[{"requirement":"","present":true}],"excludedFound":[],"notes":""}`;
@@ -98,17 +100,17 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
 
   const client = input.client ?? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const { brief, concept } = input;
-  const reviewRequirements = [
-    ...brief.requirements.required,
-    ...concreteSubjectRequirementsForBrief(brief),
-  ];
+  const reviewRequirements = concreteSubjectReviewRequirementsForBrief(brief);
 
   const userText = [
     `Celebration: ${brief.eventName || brief.eventType || "a celebration"}${brief.milestone ? ` · ${brief.milestone}` : ""}`,
     brief.vibe ? `Intended feeling: ${brief.vibe}` : "",
     `Direction: ${concept.conceptName} — ${concept.description}`,
     "",
-    "REQUIRED:",
+    "BRIEF REQUIREMENTS (judge holistically in briefFidelity and ageAppropriate):",
+    ...brief.requirements.required.map((r) => `- ${r}`),
+    "",
+    "VISIBLE MUST-HAVES (report each in requiredPresent):",
     ...reviewRequirements.map((r) => `- ${r}`),
     "",
     "EXCLUDED:",
@@ -204,7 +206,10 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
   for (const key of Object.keys(scores) as (keyof VisionScores)[]) {
     if (scores[key] < MIN_DIMENSION_SCORE) failureCodes.push(CODE_FOR_DIMENSION[key]);
   }
-  // A missing REQUIRED item is a failure even if every dimension scored well.
+  // A missing concrete VISIBLE MUST-HAVE is a failure even if every
+  // dimension scored well. Holistic theme/age requirements stay governed by
+  // their 4/5 score floors, so they cannot contradict a passing score by
+  // being duplicated as vague checklist rows.
   const missingRequired = requiredPresent.filter((r) => !r.present);
   if (missingRequired.length > 0) failureCodes.push("brief-fidelity");
   // The critic returning nothing for a non-empty REQUIRED list is not a pass.

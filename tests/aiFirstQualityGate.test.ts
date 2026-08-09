@@ -25,6 +25,7 @@ import {
 } from "@shared/aiFirstInvite";
 import { artworkPng, concept, framedArtworkPng, solidPng } from "./aiFirstFixtures";
 import type { EventBrief } from "../server/aiFirst/brief";
+import { concreteSubjectReviewRequirementsForBrief } from "../server/aiFirst/conceptPreflight";
 
 const tier1 = (bytes: Buffer, over: Partial<Parameters<typeof runTier1Checks>[0]> = {}) =>
   runTier1Checks({ bytes, concept: concept(), overlayCoverage: 0.3, artworkOpacity: 1, ocr: false, ...over });
@@ -246,7 +247,7 @@ const runVision = (body: Record<string, unknown>, over: Partial<EventBrief> = {}
     brief: brief(over),
     client: critic({
       ...allFive,
-      requiredPresent: [{ requirement: "the space cowgirl visual identity, unmistakably present", present: true }],
+      requiredPresent: [],
       excludedFound: [],
       notes: "",
       ...body,
@@ -284,9 +285,25 @@ describe("tier 2 — acceptance", () => {
   });
 
   it("fails when a REQUIRED item is missing even though every score is 5", async () => {
-    const verdict = await runVision({
-      requiredPresent: [{ requirement: "the space cowgirl visual identity, unmistakably present", present: false }],
+    const construction = brief({
+      eventName: "I'm 3 & Digging It",
+      milestone: "3rd",
+      vibe: "backyard BBQ construction themed for our favorite little builder",
+      themeName: "construction",
+      requirements: {
+        required: [
+          "the construction visual identity, unmistakably present",
+          "age-appropriate celebratory character for a 3rd birthday",
+        ],
+        preferred: [],
+        excluded: ["photographic realism"],
+      },
     });
+    const visible = concreteSubjectReviewRequirementsForBrief(construction);
+    const verdict = await runVision(
+      { requiredPresent: visible.map((requirement, index) => ({ requirement, present: index !== 0 })) },
+      construction,
+    );
     expect(verdict.passed).toBe(false);
     expect(verdict.failureCodes).toContain("brief-fidelity");
   });
@@ -297,10 +314,74 @@ describe("tier 2 — acceptance", () => {
     expect(verdict.failureCodes).toContain("excluded-present");
   });
 
-  it("does not accept a critic that ignored a non-empty REQUIRED list", async () => {
-    const verdict = await runVision({ requiredPresent: [] });
+  it("does not accept a critic that ignored a non-empty visible must-have list", async () => {
+    const construction = brief({
+      vibe: "construction birthday",
+      themeName: "construction",
+      requirements: { required: ["construction identity"], preferred: [], excluded: [] },
+    });
+    const verdict = await runVision({ requiredPresent: [] }, construction);
     expect(verdict.passed).toBe(false);
     expect(verdict.failureCodes).toContain("brief-fidelity");
+  });
+
+  it("does not turn framing and negative prompt rules into visible checklist items", async () => {
+    const construction = brief({
+      eventName: "I'm 3 & Digging It",
+      milestone: "3rd",
+      vibe: "backyard BBQ construction themed for our favorite little builder",
+      themeName: "construction",
+      requirements: {
+        required: [
+          "the construction visual identity, unmistakably present",
+          "age-appropriate celebratory character for a 3rd birthday",
+        ],
+        preferred: [],
+        excluded: ["photographic realism"],
+      },
+    });
+    const visible = concreteSubjectReviewRequirementsForBrief(construction);
+    expect(visible).toHaveLength(2);
+
+    let reviewText = "";
+    const capturingCritic = {
+      messages: {
+        create: async (request: any) => {
+          reviewText = request.messages[0].content.find((part: any) => part.type === "text")?.text ?? "";
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify({
+                  ...allFive,
+                  requiredPresent: visible.map((requirement) => ({ requirement, present: true })),
+                  excludedFound: [],
+                  notes: "",
+                }),
+              },
+            ],
+            usage: { input_tokens: 1200, output_tokens: 180 },
+          };
+        },
+      },
+    } as unknown as Anthropic;
+
+    const verdict = await runVisionGate({
+      bytes: artworkPng(),
+      concept: concept(),
+      brief: construction,
+      client: capturingCritic,
+    });
+
+    expect(verdict.passed).toBe(true);
+    expect(verdict.requiredPresent).toEqual(visible.map((requirement) => ({ requirement, present: true })));
+    const checklist = reviewText.split("VISIBLE MUST-HAVES")[1]?.split("EXCLUDED:")[0] ?? "";
+    expect(checklist).toContain("construction machine");
+    expect(checklist).toContain("jobsite cue");
+    expect(checklist).not.toContain("central 70%");
+    expect(checklist).not.toContain("do not satisfy or replace");
+    expect(reviewText).toContain("the construction visual identity, unmistakably present");
+    expect(reviewText).toContain("age-appropriate celebratory character for a 3rd birthday");
   });
 
   it("is never a silent pass when the critic is unreachable", async () => {

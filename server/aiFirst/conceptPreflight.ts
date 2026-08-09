@@ -22,6 +22,8 @@ export interface SubjectFamily {
   identityCue?: RegExp;
   /** Verbatim contracts copied into both the paid image request and Tier 2 review. */
   bindingRequirements?: readonly string[];
+  /** Concrete positive subjects Tier 2 can answer present/absent from pixels. */
+  reviewRequirements?: readonly string[];
   /** Curated themes whose shipped artwork genuinely depicts this subject. */
   compatibleThemeIds: readonly string[];
 }
@@ -50,6 +52,14 @@ const SUBJECT_FAMILIES: readonly SubjectFamily[] = [
       "At least one separate jobsite cue — a hard hat, safety vest, traffic cone, scaffolding, lumber, shovel, tool belt or caution stripe — must also be unmistakably visible",
       "Keep the construction machine and jobsite cue fully visible within the central 70% of the frame so the invitation layout cannot crop them away",
       "Blueprint lines, flowers, botanicals, abstract geometry, paper texture and colour alone do not satisfy or replace the construction subject",
+    ],
+    // Only positive, binary visual facts belong in the critic's
+    // requiredPresent checklist. Framing instructions and negative prompt
+    // rules remain binding on generation, but they are not objects a critic
+    // can truthfully mark "visibly present" in the finished pixels.
+    reviewRequirements: [
+      "At least one clearly recognisable construction machine — an excavator, bulldozer, dump truck, backhoe, front loader, crane or cement mixer — must be the dominant first-read focal subject",
+      "At least one separate jobsite cue — a hard hat, safety vest, traffic cone, scaffolding, lumber, shovel, tool belt or caution stripe — must also be unmistakably visible",
     ],
     compatibleThemeIds: [],
   },
@@ -175,6 +185,16 @@ export interface ConceptPreflightResult {
  */
 export function concreteSubjectRequirementsForBrief(brief: EventBrief): string[] {
   return subjectFamiliesForBrief(brief).flatMap((family) => family.bindingRequirements ?? []);
+}
+
+/**
+ * Binary visual must-haves for Tier 2. This is deliberately narrower than
+ * the paid-generation contract: composition instructions, exclusions and
+ * holistic identity requirements are audited by their dedicated score or
+ * exclusion checks instead of being duplicated as impossible checklist rows.
+ */
+export function concreteSubjectReviewRequirementsForBrief(brief: EventBrief): string[] {
+  return subjectFamiliesForBrief(brief).flatMap((family) => family.reviewRequirements ?? []);
 }
 
 export function preflightConceptForBrief(concept: AiFirstConcept, brief: EventBrief): ConceptPreflightResult {
