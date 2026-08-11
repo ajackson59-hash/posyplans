@@ -186,6 +186,18 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
         return;
       }
 
+      // "Help me choose" is advice, not artwork generation. The client
+      // handles it locally, but this server-side stop makes that zero-spend
+      // promise true even if a stale or hand-crafted client posts the action.
+      const requestedAction = INVITATION_ASK_POSY_ACTIONS.find((action) => action.id === req.body?.action);
+      if (requestedAction?.advisory) {
+        res.status(400).json({
+          error: "Help me choose gives on-screen guidance and does not create new artwork.",
+          denial: "advisory-only",
+        });
+        return;
+      }
+
       // Idempotency, enforced before provider spend: the client mints one
       // runId per logical run and resends it on every request for that run.
       // A missing runId is a client bug, not a request this route can safely
@@ -254,7 +266,11 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
         res.status(503).json({ error: (err as Error).message, denial: "invalid-provider-configuration" });
         return;
       }
-      const directionLimit = readAiFirstDirectionLimit(env());
+      const configuredDirectionLimit = readAiFirstDirectionLimit(env());
+      const requestedDirectionCount = Number(req.body?.directionCount);
+      const directionLimit = Number.isInteger(requestedDirectionCount) && requestedDirectionCount > 0
+        ? Math.min(configuredDirectionLimit, requestedDirectionCount)
+        : configuredDirectionLimit;
       const maxAttemptsPerDirection = requestFlags.aiFirstDisableAutomaticRetry ? 1 : 2;
 
       const action = resolveAskPosyAction(req.body?.action, req.body);

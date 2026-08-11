@@ -203,14 +203,14 @@ describe("FIXTURE / NON-PROVIDER QA harness — desktop and 390px mobile", () =>
       await act(async () => {
         void latestSession!.run();
       });
-      await waitFor(() => expect(wrapper.textContent).toContain("2 of 4 directions ready"));
+      await waitFor(() => expect(wrapper.textContent).toContain("2 of 4 ideas ready"));
 
       const p = writeSnapshot("1-progress", width, wrapper);
       savedPaths.push(p);
       capturedText["1-progress"] = capturedText["1-progress"] ?? { desktop: "", mobile: "" };
       capturedText["1-progress"][label] = wrapper.textContent ?? "";
 
-      expect(wrapper.textContent).toContain("2 of 4 directions ready");
+      expect(wrapper.textContent).toContain("2 of 4 ideas ready");
       expect(wrapper.textContent).toContain("1 from the Posy collection");
 
       resolveHold();
@@ -298,7 +298,7 @@ describe("FIXTURE / NON-PROVIDER QA harness — desktop and 390px mobile", () =>
       await act(async () => {
         await latestSession!.run();
       });
-      await waitFor(() => expect(wrapper.textContent).toContain("I created four invitation directions"));
+      await waitFor(() => expect(wrapper.textContent).toContain("Your four invitation ideas are ready"));
 
       const p = writeSnapshot("3-recovery", width, wrapper);
       savedPaths.push(p);

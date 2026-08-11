@@ -44,6 +44,7 @@ import { useAiFirstSession } from "@/lib/aiFirstSession";
 interface InviteDesignPickerProps {
   ownerToken: string;
   event: EventRecord;
+  onReviewEventStyle?: () => void;
 }
 
 // Contextual refinement options — plain language a non-designer would use.
@@ -54,7 +55,7 @@ const REFINE_OPTIONS = [
   "Show me completely different designs",
 ] as const;
 
-export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPickerProps) {
+export default function InviteDesignPicker({ ownerToken, event, onReviewEventStyle }: InviteDesignPickerProps) {
   const { toast } = useToast();
   const flags = useFeatureFlags();
   // Owned here rather than inside AiFirstInvitations so switching to the
@@ -668,6 +669,7 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
           event={event}
           session={aiFirst}
           onBrowseCollection={() => aiFirst.setBrowsingCollection(true)}
+          onReviewEventStyle={onReviewEventStyle}
         />
         {renderCustomDesignEntry()}
       </div>
@@ -687,7 +689,7 @@ export default function InviteDesignPicker({ ownerToken, event }: InviteDesignPi
             className="mb-4 flex items-center gap-1 text-xs font-medium text-primary underline underline-offset-2"
             data-testid="button-back-to-directions"
           >
-            <ArrowLeft className="h-3 w-3" aria-hidden /> Back to my invitation directions
+            <ArrowLeft className="h-3 w-3" aria-hidden /> Back to my custom invitation ideas
           </button>
         )}
         <ThemeChooser

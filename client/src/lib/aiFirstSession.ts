@@ -38,6 +38,8 @@ export interface AiFirstRunOptions {
   concept?: AiFirstConcept;
   direction?: string;
   avoidConceptNames?: string[];
+  /** Desired number of directions for this action; the server caps it. */
+  directionCount?: number;
   /**
    * The first generation for an event is the primary experience. Every
    * later provider-backed generation is a separate cost-bearing decision,
@@ -58,6 +60,8 @@ function newRunId(): string {
 export interface AiFirstSession {
   /** Directions the gate approved, in the order they were revealed. */
   directions: FinishedDirection[];
+  /** Earlier approved directions remain available while a revision runs. */
+  savedDirections: FinishedDirection[];
   /** Concepts parsed so far — a card can show its idea before its artwork. */
   concepts: AiFirstConcept[];
   progress: string[];
@@ -127,6 +131,8 @@ async function recoverRunMessage(ownerToken: string, runId: string): Promise<str
 
 export function useAiFirstSession(ownerToken: string): AiFirstSession {
   const [directions, setDirections] = useState<FinishedDirection[]>([]);
+  const [savedDirections, setSavedDirections] = useState<FinishedDirection[]>([]);
+  const directionsRef = useRef<FinishedDirection[]>([]);
   const [concepts, setConcepts] = useState<AiFirstConcept[]>([]);
   const [progress, setProgress] = useState<string[]>([]);
   const [warnings, setWarnings] = useState<string[]>([]);
@@ -160,10 +166,11 @@ export function useAiFirstSession(ownerToken: string): AiFirstSession {
       });
     } else if (event.type === "direction") {
       // Replace rather than append: a re-run of the same index supersedes it.
-      setDirections((prev) => [
-        ...prev.filter((d) => d.index !== event.direction.index),
-        event.direction,
-      ]);
+      setDirections((prev) => {
+        const next = [...prev.filter((d) => d.index !== event.direction.index), event.direction];
+        directionsRef.current = next;
+        return next;
+      });
     } else if (event.type === "warning") {
       setWarnings((prev) => [...prev, event.message]);
     } else if (event.type === "done") {
@@ -200,6 +207,15 @@ export function useAiFirstSession(ownerToken: string): AiFirstSession {
       setWarnings([]);
       setProgress([]);
       setSummary(null);
+      const currentDirections = directionsRef.current;
+      if (currentDirections.length > 0) {
+        setSavedDirections((previous) => {
+          const byPreviewId = new Map(previous.map((direction) => [direction.previewId, direction]));
+          for (const direction of currentDirections) byPreviewId.set(direction.previewId, direction);
+          return Array.from(byPreviewId.values());
+        });
+      }
+      directionsRef.current = [];
       setDirections([]);
       setConcepts([]);
 
@@ -214,6 +230,7 @@ export function useAiFirstSession(ownerToken: string): AiFirstSession {
             concept: options.concept,
             direction: options.direction ?? (typedDirection.trim() || undefined),
             avoidConceptNames: options.avoidConceptNames,
+            directionCount: options.directionCount,
             inspirationNotes: inspirationNotes.trim() || undefined,
             feeling: vibeAnswer.trim() || undefined,
             confirmAdditionalGeneration: options.confirmAdditionalGeneration === true,
@@ -268,6 +285,7 @@ export function useAiFirstSession(ownerToken: string): AiFirstSession {
 
   return {
     directions,
+    savedDirections,
     concepts,
     progress,
     warnings,

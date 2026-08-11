@@ -50,6 +50,7 @@ const direction = (index: number): FinishedDirection => ({
 function session(over: Partial<ReturnType<typeof useAiFirstSession>> = {}) {
   return {
     directions: [],
+    savedDirections: [],
     concepts: [],
     progress: [],
     warnings: [],
@@ -117,7 +118,7 @@ describe("the flag itself", () => {
 });
 
 describe("what the host is told", () => {
-  const CLAIM = "I created four invitation directions for your event.";
+  const CLAIM = "Your four invitation ideas are ready.";
 
   it("claims the four directions only once all four are on screen", () => {
     renderExperience({ directions: [0, 1, 2, 3].map(direction), hasRun: true });
@@ -129,7 +130,8 @@ describe("what the host is told", () => {
     const heading = screen.getByTestId("text-ai-first-heading").textContent ?? "";
     expect(heading).not.toBe(CLAIM);
     // AI is the primary path, and it works from details the host already gave.
-    expect(document.body.textContent).toContain("event details you've already entered");
+    expect(document.body.textContent).toContain("event details you've already shared");
+    expect(document.body.textContent).toContain("You do not need to type your theme again");
     expect(screen.getAllByTestId("button-generate-directions")).toHaveLength(1);
   });
 
@@ -141,7 +143,7 @@ describe("what the host is told", () => {
   it("keeps the curated collection reachable under its own name", () => {
     const { onBrowseCollection } = renderExperience();
     const browse = screen.getByTestId("button-browse-collection");
-    expect(browse.textContent).toBe("Browse the Posy collection");
+    expect(browse.textContent).toBe("Choose from ready-made designs");
     fireEvent.click(browse);
     expect(onBrowseCollection).toHaveBeenCalled();
   });
@@ -192,10 +194,13 @@ describe("what the host is told", () => {
     fireEvent.click(screen.getByTestId("button-generate-directions"));
     expect(run).not.toHaveBeenCalled();
     expect(screen.getByTestId("card-confirm-additional-generation").textContent).toContain(
-      "separate generation request",
+      "another generation from your plan",
+    );
+    expect(screen.getByTestId("card-confirm-additional-generation").textContent).toContain(
+      "current ideas will remain available",
     );
     expect(screen.getByTestId("button-confirm-additional-generation").textContent).toContain(
-      "one image call",
+      "Confirm and create",
     );
 
     // Only the explicitly labeled second press may mint another run.
@@ -242,6 +247,41 @@ describe("cards appear as they are approved", () => {
     for (const action of INVITATION_ASK_POSY_ACTIONS) {
       expect(screen.getByTestId(`button-ask-posy-${action.id}`).textContent).toBe(action.label);
     }
+  });
+
+  it("makes Help me choose advisory and never starts generation", async () => {
+    const run = vi.fn();
+    renderExperience({ directions: [direction(0), direction(1)], hasRun: true, run });
+    await waitFor(() => expect(screen.getByTestId("button-ask-posy-help-choose")).toBeTruthy());
+
+    fireEvent.click(screen.getByTestId("button-ask-posy-help-choose"));
+
+    expect(run).not.toHaveBeenCalled();
+    expect(screen.getByTestId("text-help-choose").textContent).toContain(
+      "Choose based on the overall feeling and composition first",
+    );
+    expect(screen.queryByTestId("card-confirm-additional-generation")).toBeNull();
+  });
+
+  it("requests two focused variations and preserves the current ideas until confirmation", async () => {
+    const run = vi.fn();
+    renderExperience({ directions: [direction(0)], hasRun: true, run });
+    await waitFor(() => expect(screen.getByTestId("button-ask-posy-more-modern")).toBeTruthy());
+
+    fireEvent.click(screen.getByTestId("button-ask-posy-more-modern"));
+    expect(run).not.toHaveBeenCalled();
+    expect(screen.getByTestId("card-confirm-additional-generation").textContent).toContain(
+      "Create 2 new variations",
+    );
+
+    fireEvent.click(screen.getByTestId("button-confirm-additional-generation"));
+    expect(run).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "more-modern",
+        directionCount: 2,
+        confirmAdditionalGeneration: true,
+      }),
+    );
   });
 
   it("says artwork is paused without hiding the designs already made", async () => {

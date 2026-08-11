@@ -1031,7 +1031,11 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <InviteDesignPicker ownerToken={ownerToken} event={event} />
+            <InviteDesignPicker
+              ownerToken={ownerToken}
+              event={event}
+              onReviewEventStyle={() => setActiveTab("theme")}
+            />
 
             {editingInvite ? (
               <div className="space-y-4">

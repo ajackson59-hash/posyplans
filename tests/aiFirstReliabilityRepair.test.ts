@@ -707,6 +707,32 @@ describe("additional generation confirmation is enforced before spend", () => {
   });
 });
 
+describe("advisory invitation help never reaches generation", () => {
+  it("refuses Help me choose before a run is claimed or the pipeline is called", async () => {
+    const runStore = new InMemoryRunStore();
+    let pipelineCalls = 0;
+    const app = appFor({
+      previewStore: new InMemoryPreviewStore(),
+      usageStore: new InMemoryUsageStore(),
+      runStore,
+      artworkAttemptStore: new InMemoryArtworkAttemptStore(),
+      runPipeline: async () => {
+        pipelineCalls += 1;
+        throw new Error("must not be reached");
+      },
+    });
+
+    const response = await request(app)
+      .post(`/api/events/owner/${OWNER}/ai-first/generate`)
+      .send({ runId: "advisory-only-run", action: "help-choose" });
+
+    expect(response.status).toBe(400);
+    expect(response.body.denial).toBe("advisory-only");
+    expect(pipelineCalls).toBe(0);
+    expect(await runStore.get("advisory-only-run")).toBeUndefined();
+  });
+});
+
 /* ═══════════════════════════════════════════════════════════════════════
    4. Duplicate requests reaching separate simulated server instances
    ═══════════════════════════════════════════════════════════════════════ */

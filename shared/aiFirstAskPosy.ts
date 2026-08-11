@@ -31,6 +31,8 @@ export interface AskPosyAction {
   direction: string;
   /** Which facets of the current concept to pin, if one is selected. */
   pins: AskPosyPin[];
+  /** Number of fresh invitation directions this action should request. */
+  resultCount?: number;
   /** Advisory only — produces guidance, never a generation. */
   advisory?: boolean;
 }
@@ -41,12 +43,14 @@ export const INVITATION_ASK_POSY_ACTIONS: AskPosyAction[] = [
     label: "Refine this invitation",
     direction: "Refine the selected direction. Keep its identity; sharpen the craft.",
     pins: ["layout", "palette"],
+    resultCount: 2,
   },
   {
     id: "different-directions",
     label: "Create different directions",
     direction: "Go somewhere genuinely different from what the host has already seen.",
     pins: [],
+    resultCount: 4,
   },
   {
     id: "keep-layout-change-art",
@@ -54,42 +58,49 @@ export const INVITATION_ASK_POSY_ACTIONS: AskPosyAction[] = [
     direction:
       "Keep the composition exactly as it is and replace the illustration with a different subject and treatment.",
     pins: ["layout", "typography"],
+    resultCount: 2,
   },
   {
     id: "keep-art-change-typography",
     label: "Keep the artwork, change the typography",
     direction: "Keep the illustration brief identical and reset the type: different pairing, different hierarchy.",
     pins: ["artwork", "palette"],
+    resultCount: 2,
   },
   {
     id: "more-elegant",
     label: "More elegant",
     direction: "More elegant: restrained palette, finer detail, more negative space, quieter type.",
     pins: [],
+    resultCount: 2,
   },
   {
     id: "more-playful",
     label: "More playful",
     direction: "More playful: livelier colour, looser mark-making, more energy — without becoming childish.",
     pins: [],
+    resultCount: 2,
   },
   {
     id: "more-modern",
     label: "More modern",
     direction: "More modern: contemporary shapes, cleaner geometry, current editorial typography.",
     pins: [],
+    resultCount: 2,
   },
   {
     id: "less-literal",
     label: "Reduce literal elements",
     direction: "Say the theme through colour, material and mood rather than depicting its objects literally.",
     pins: [],
+    resultCount: 2,
   },
   {
     id: "stronger-theme",
     label: "Strengthen the theme",
     direction: "Make the theme unmistakable at a glance — the guest should know what this celebrates before reading a word.",
     pins: [],
+    resultCount: 2,
   },
   {
     id: "help-choose",

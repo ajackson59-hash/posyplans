@@ -41,6 +41,8 @@ interface AiFirstInvitationsProps {
   session: AiFirstSession;
   /** Hands the host to the curated collection without losing this state. */
   onBrowseCollection: () => void;
+  /** Opens the event-style controls that feed this invitation brief. */
+  onReviewEventStyle?: () => void;
 }
 
 export default function AiFirstInvitations({
@@ -48,9 +50,12 @@ export default function AiFirstInvitations({
   event,
   session,
   onBrowseCollection,
+  onReviewEventStyle,
 }: AiFirstInvitationsProps) {
   const { toast } = useToast();
   const [pendingAdditionalRun, setPendingAdditionalRun] = useState<AiFirstRunOptions | null>(null);
+  const [requestedTargetCount, setRequestedTargetCount] = useState<number | null>(null);
+  const [choiceAdvice, setChoiceAdvice] = useState<string | null>(null);
 
   const status = useQuery<AiFirstStatus>({
     queryKey: [`/api/events/owner/${ownerToken}/ai-first/status`],
@@ -90,10 +95,17 @@ export default function AiFirstInvitations({
   // refuse an unconfirmed later run, but waiting for this read means the
   // host sees the confirmation instead of a preventable 409 error.
   const generateDisabled = status.isLoading || session.running || serverSaysActive || Boolean(status.data?.killSwitch);
-  const targetCount = status.data?.directionLimit ?? TARGET_DIRECTION_COUNT;
-  const isReviewCanary = targetCount === 1;
+  const configuredTargetCount = status.data?.directionLimit ?? TARGET_DIRECTION_COUNT;
+  const targetCount = Math.min(configuredTargetCount, requestedTargetCount ?? configuredTargetCount);
+  const isSingleIdea = targetCount === 1;
   const confirmationRequired =
     Boolean(status.data?.additionalGenerationConfirmationRequired) || session.hasRun;
+
+  const startRun = (options: AiFirstRunOptions = {}) => {
+    setRequestedTargetCount(Math.min(configuredTargetCount, options.directionCount ?? configuredTargetCount));
+    setChoiceAdvice(null);
+    void session.run(options);
+  };
 
   const requestRun = (options: AiFirstRunOptions = {}) => {
     if (!status.data) return;
@@ -104,14 +116,14 @@ export default function AiFirstInvitations({
       setPendingAdditionalRun(options);
       return;
     }
-    void session.run(options);
+    startRun(options);
   };
 
   const confirmAdditionalRun = () => {
     if (!pendingAdditionalRun || generateDisabled) return;
     const options = pendingAdditionalRun;
     setPendingAdditionalRun(null);
-    void session.run({ ...options, confirmAdditionalGeneration: true });
+    startRun({ ...options, confirmAdditionalGeneration: true });
   };
 
   // The header states only what is true at the moment it renders. The
@@ -119,29 +131,34 @@ export default function AiFirstInvitations({
   // screen — never while the run is still in flight.
   const complete = !session.running && ordered.length >= targetCount;
   const heading = complete
-    ? isReviewCanary
-      ? "Your review invitation direction is ready."
+    ? isSingleIdea
+      ? "Your invitation idea is ready."
       : targetCount === TARGET_DIRECTION_COUNT
-        ? "I created four invitation directions for your event."
-        : `I created ${targetCount} invitation directions for your event.`
+        ? "Your four invitation ideas are ready."
+        : `Your ${targetCount} invitation ideas are ready.`
     : session.running
-      ? isReviewCanary
-        ? "Posy is creating one invitation direction for review."
-        : "Posy is creating your invitation directions."
+      ? isSingleIdea
+        ? "Posy is creating your invitation idea."
+        : "Posy is creating your invitation ideas."
       : ordered.length > 0
-        ? `${ordered.length} of ${targetCount} directions are ready.`
+        ? `${ordered.length} of ${targetCount} ideas are ready.`
         : "Posy designs your invitation.";
   const subheading = complete
-    ? isReviewCanary
+    ? isSingleIdea
       ? "It is designed around your event's details and checked before you see it. Nothing changes until you choose it."
       : "Each one is designed around your event's details and checked before you see it. Pick the one you like and make it yours — nothing changes until you do."
     : session.running
       ? "Each direction appears as soon as it passes Posy's checks, so you can start looking before the set is finished."
       : ordered.length > 0
-        ? `The run finished short of ${targetCount}. What's here is yours to use, or ask Posy for another set.`
-        : isReviewCanary
-          ? "This protected review creates one quality-gated direction so the full experience can be verified with one paid image call. Nothing on your invitation changes until you choose it."
-          : `Posy reads the event details you've already entered and designs ${targetCount} invitation directions to choose from. Nothing on your invitation changes until you pick one.`;
+        ? `Posy finished ${ordered.length} of ${targetCount} ideas. You can use what is here or ask for a different approach.`
+        : isSingleIdea
+          ? "Posy uses the event details you've already shared to create a finished invitation idea. Nothing changes until you choose it."
+          : `Posy uses the event details you've already shared to create ${targetCount} finished invitation ideas. Nothing changes until you choose one.`;
+
+  const creativeBrief = [event.themeName?.trim(), event.vibeDescription?.trim()].filter(Boolean).join(" — ");
+  const pendingCount = pendingAdditionalRun
+    ? Math.min(configuredTargetCount, pendingAdditionalRun.directionCount ?? configuredTargetCount)
+    : configuredTargetCount;
 
   return (
     <div data-testid="ai-first-invitations">
@@ -161,6 +178,25 @@ export default function AiFirstInvitations({
           open below.
         </p>
       )}
+
+      <section className="mb-5 rounded-md border border-border bg-muted/30 p-4" data-testid="card-invitation-brief">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary">Designing from your event</p>
+            <p className="mt-1 text-sm font-medium text-foreground">
+              {creativeBrief || `${event.eventType} for ${event.eventName}`}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Posy uses this automatically. You do not need to type your theme again.
+            </p>
+          </div>
+          {onReviewEventStyle && (
+            <Button type="button" size="sm" variant="outline" onClick={onReviewEventStyle} data-testid="button-review-event-style">
+              Review event style
+            </Button>
+          )}
+        </div>
+      </section>
 
       {needsVibe && (
         <div className="mb-5 rounded-md border border-border bg-background p-4" data-testid="card-brief-question">
@@ -190,12 +226,12 @@ export default function AiFirstInvitations({
             <Sparkles className="mr-1.5 h-4 w-4" aria-hidden />
           )}
           {session.hasRun
-            ? isReviewCanary
-              ? "Create a different review direction"
-              : "Create different directions"
-            : isReviewCanary
-              ? "Create review direction"
-              : "Create my invitation directions"}
+            ? isSingleIdea
+              ? "Create a different idea"
+              : "Create different ideas"
+            : isSingleIdea
+              ? "Create my invitation idea"
+              : `Show me ${targetCount} invitation ideas`}
         </Button>
         <button
           type="button"
@@ -203,7 +239,7 @@ export default function AiFirstInvitations({
           className="text-xs font-medium text-primary underline underline-offset-2"
           data-testid="button-browse-collection"
         >
-          Browse the Posy collection
+          Choose from ready-made designs
         </button>
       </div>
 
@@ -214,13 +250,14 @@ export default function AiFirstInvitations({
           role="alert"
         >
           <p className="font-semibold">
-            {isReviewCanary ? "Create one more review direction?" : "Create another set of directions?"}
+            {pendingCount === 1
+              ? "Create another invitation idea?"
+              : pendingCount === TARGET_DIRECTION_COUNT
+                ? "Create four new invitation ideas?"
+                : `Create ${pendingCount} new variations?`}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            This is a separate generation request. Nothing starts until you confirm
-            {isReviewCanary && status.data?.automaticRetryDisabled
-              ? ", and Posy will make exactly one image call with no automatic retry."
-              : "."}
+            This uses another generation from your plan. Your current ideas will remain available, and nothing starts until you confirm.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <Button
@@ -230,9 +267,7 @@ export default function AiFirstInvitations({
               disabled={generateDisabled}
               data-testid="button-confirm-additional-generation"
             >
-              {isReviewCanary && status.data?.automaticRetryDisabled
-                ? "Confirm one image call"
-                : "Confirm new generation"}
+              Confirm and create
             </Button>
             <Button
               type="button"
@@ -255,7 +290,7 @@ export default function AiFirstInvitations({
             {latestProgress}
           </p>
           <p className="text-xs text-muted-foreground" data-testid="text-progress-counts">
-            {session.completedCount} of {targetCount} {targetCount === 1 ? "direction" : "directions"} ready
+            {session.completedCount} of {targetCount} {targetCount === 1 ? "idea" : "ideas"} ready
             {session.fallbackCount > 0
               ? ` (${session.fallbackCount} from the Posy collection, adapted to your event)`
               : ""}
@@ -292,12 +327,36 @@ export default function AiFirstInvitations({
         </div>
       )}
 
+      {session.savedDirections.length > 0 && (
+        <details className="mt-6 rounded-md border border-border bg-background p-4" data-testid="details-previous-directions">
+          <summary className="cursor-pointer text-sm font-semibold text-foreground">
+            Compare with my previous ideas ({session.savedDirections.length})
+          </summary>
+          <div className="mt-4 grid gap-6 sm:grid-cols-2">
+            {session.savedDirections.map((direction) => (
+              <DirectionCard
+                key={`saved-${direction.previewId || direction.index}`}
+                direction={direction}
+                event={event}
+                selected={session.selectedPreviewId === direction.previewId}
+                applying={apply.isPending}
+                onSelect={() => session.setSelectedPreviewId(direction.previewId)}
+                onApply={() => apply.mutate(direction)}
+              />
+            ))}
+          </div>
+        </details>
+      )}
+
       {/* Ask Posy — invitation-specific, and only once there is something to
           act on, since every action but "different directions" refers to a
           card the host is looking at. */}
       {ordered.length > 0 && actions.length > 0 && (
         <section className="mt-8 rounded-md border border-border bg-muted/30 p-4" data-testid="section-ask-posy">
-          <p className="text-sm font-semibold text-foreground">Ask Posy</p>
+          <p className="text-sm font-semibold text-foreground">Make it feel more like you</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Select an idea, then tell Posy what should stay and what should change.
+          </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {actions.map((action) => (
               <button
@@ -306,10 +365,19 @@ export default function AiFirstInvitations({
                 disabled={session.running}
                 onClick={() => {
                   const selected = ordered.find((d) => d.previewId === session.selectedPreviewId) ?? ordered[0];
+                  if (action.advisory) {
+                    setChoiceAdvice(
+                      ordered.length === 1
+                        ? `Start with ${selected.concept.conceptName} if its overall composition feels right. Artwork, color and typography can all be adjusted without losing the idea.`
+                        : `You selected ${selected.concept.conceptName}. Choose based on the overall feeling and composition first — artwork, colors and typography are easier to adjust afterward.`,
+                    );
+                    return;
+                  }
                   requestRun({
                     action: action.id,
                     concept: selected?.concept,
                     avoidConceptNames: ordered.map((d) => d.concept.conceptName),
+                    directionCount: action.resultCount,
                   });
                 }}
                 className="rounded-full border border-border bg-background px-3.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-60"
@@ -326,6 +394,21 @@ export default function AiFirstInvitations({
             className="mt-3"
             data-testid="input-ask-posy-direction"
           />
+          <Button
+            type="button"
+            size="sm"
+            className="mt-2"
+            disabled={session.running || !session.typedDirection.trim()}
+            onClick={() => requestRun({ direction: session.typedDirection.trim(), directionCount: 2 })}
+            data-testid="button-submit-ask-posy-direction"
+          >
+            Update my ideas
+          </Button>
+          {choiceAdvice && (
+            <p className="mt-3 rounded-md border border-border bg-background px-3 py-2 text-xs text-foreground" data-testid="text-help-choose">
+              {choiceAdvice}
+            </p>
+          )}
         </section>
       )}
 
