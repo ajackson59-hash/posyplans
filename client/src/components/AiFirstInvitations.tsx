@@ -16,6 +16,7 @@ import { themeForResolvedConcept } from "@shared/aiFirstTheme";
 import type { AskPosyAction } from "@shared/aiFirstAskPosy";
 import { TARGET_DIRECTION_COUNT, type FinishedDirection } from "@shared/aiFirstStream";
 import type { EventRecord } from "@/lib/types";
+import { eventStyleSummary } from "@shared/eventStyle";
 import type { AiFirstRunOptions, AiFirstSession } from "@/lib/aiFirstSession";
 import { ThemeInvitation } from "@/components/ThemeInvitation";
 import { Button } from "@/components/ui/button";
@@ -155,7 +156,7 @@ export default function AiFirstInvitations({
           ? "Posy uses the event details you've already shared to create a finished invitation idea. Nothing changes until you choose it."
           : `Posy uses the event details you've already shared to create ${targetCount} finished invitation ideas. Nothing changes until you choose one.`;
 
-  const creativeBrief = [event.themeName?.trim(), event.vibeDescription?.trim()].filter(Boolean).join(" — ");
+  const creativeBrief = eventStyleSummary(event);
   const pendingCount = pendingAdditionalRun
     ? Math.min(configuredTargetCount, pendingAdditionalRun.directionCount ?? configuredTargetCount)
     : configuredTargetCount;
@@ -184,7 +185,7 @@ export default function AiFirstInvitations({
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-primary">Designing from your event</p>
             <p className="mt-1 text-sm font-medium text-foreground">
-              {creativeBrief || `${event.eventType} for ${event.eventName}`}
+              {creativeBrief}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               Posy uses this automatically. You do not need to type your theme again.

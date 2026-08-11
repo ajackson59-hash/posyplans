@@ -25,6 +25,7 @@ import {
 } from "@shared/themeDna";
 import type { EventDnaProfile } from "@shared/eventDna";
 import type { EventRecord } from "@/lib/types";
+import { eventStyleSummary } from "@shared/eventStyle";
 import { applyInviteTokens } from "@shared/inviteTokens";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,7 +62,7 @@ export default function InviteDesignPicker({ ownerToken, event, onReviewEventSty
   // Owned here rather than inside AiFirstInvitations so switching to the
   // collection and back does not discard generated directions or filters.
   const aiFirst = useAiFirstSession(ownerToken);
-  const [themePromptDraft, setThemePromptDraft] = useState(event.themeName || "");
+  const [themePromptDraft, setThemePromptDraft] = useState(eventStyleSummary(event));
   const [concepts, setConcepts] = useState<InviteDesignConcept[] | null>(null);
   const [browsing, setBrowsing] = useState(false);
   const [appliedConceptIndex, setAppliedConceptIndex] = useState<number | null>(null);
