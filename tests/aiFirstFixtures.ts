@@ -7,6 +7,8 @@ export function concept(overrides: Partial<AiFirstConcept> = {}): AiFirstConcept
   return {
     conceptName: "Midnight Bloom",
     description: "A candlelit garden at dusk, ink-dark with brass warmth.",
+    focalStrategy: "narrative-scene",
+    visualMood: "cinematic-narrative",
     styleLaneId: "editorial-premium",
     layoutStyle: "full-bleed",
     borderStyle: "thin-frame",
@@ -32,6 +34,85 @@ export function concept(overrides: Partial<AiFirstConcept> = {}): AiFirstConcept
     minOverlay: "veil",
     ...overrides,
   };
+}
+
+/**
+ * Four structurally different text concepts for pipeline tests. Even a
+ * one-image canary must compare a complete quartet before the fake image
+ * generator may be reached, mirroring the production contract.
+ */
+export function conceptQuartet(
+  primary: AiFirstConcept = concept(),
+  milestone = "4th",
+): AiFirstConcept[] {
+  const subject = primary.art.prompt.replace(/\s+$/, "");
+  const birthdayDescription = (ending: string) =>
+    `A polished ${milestone}-birthday celebration interpreted through ${ending}.`;
+
+  return [
+    {
+      ...primary,
+      description: birthdayDescription("a cinematic narrative scene"),
+      focalStrategy: "narrative-scene",
+      visualMood: "cinematic-narrative",
+      styleLaneId: "editorial-premium",
+      fontPairingId: "editorial-serif",
+      layoutStyle: "full-bleed",
+      art: {
+        medium: "watercolor",
+        composition: `wide narrative celebration scene, subject offset below a quiet upper third`,
+        prompt: `${subject} Place the theme inside a refined birthday celebration with festive bunting and candlelight.`,
+      },
+    },
+    concept({
+      conceptName: `${primary.conceptName} Detail`,
+      description: birthdayDescription("one sculptural editorial detail"),
+      focalStrategy: "iconic-detail",
+      visualMood: "sculptural-editorial",
+      styleLaneId: "bold-graphic",
+      fontPairingId: "deco-luxe",
+      baseThemeId: "deco-midnight",
+      placementId: "high",
+      layoutStyle: "banner",
+      art: {
+        medium: "editorial gouache",
+        composition: "one close sculptural detail with a calm lower field",
+        prompt: `${subject} Reframe one distinctive theme detail as elevated gouache for a modern birthday party, with a restrained festive garland.`,
+      },
+    }),
+    concept({
+      conceptName: `${primary.conceptName} System`,
+      description: birthdayDescription("a modern graphic visual system"),
+      focalStrategy: "graphic-world",
+      visualMood: "graphic-modernist",
+      styleLaneId: "minimal-modern",
+      fontPairingId: "minimal-geometric",
+      baseThemeId: "meadow-storybook",
+      placementId: "left-column",
+      layoutStyle: "split",
+      art: {
+        medium: "cut-paper collage",
+        composition: "tall graphic field of theme marks beside a quiet text panel",
+        prompt: `${subject} Translate the theme into an intelligent cut-paper system with celebratory confetti marks and generous negative space.`,
+      },
+    }),
+    concept({
+      conceptName: `${primary.conceptName} Materials`,
+      description: birthdayDescription("a tactile artisanal still life"),
+      focalStrategy: "tactile-still-life",
+      visualMood: "tactile-artisanal",
+      styleLaneId: "handcrafted-rustic",
+      fontPairingId: "rustic-handwritten",
+      baseThemeId: "garden-editorial",
+      placementId: "centre",
+      layoutStyle: "centered",
+      art: {
+        medium: "linocut",
+        composition: "small tactile still life centred within generous breathing room",
+        prompt: `${subject} Arrange tactile theme materials with one refined birthday candle and subtle party ribbon as artisanal linocut stationery.`,
+      },
+    }),
+  ];
 }
 
 /** Deterministic pseudo-random in [0,1). Same bytes on every machine. */

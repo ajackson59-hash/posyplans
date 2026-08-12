@@ -16,6 +16,7 @@ import {
   savePreview,
 } from "../server/aiFirst/previewStore";
 import { concept } from "./aiFirstFixtures";
+import { conceptImageFingerprintInput } from "@shared/aiFirstInvite";
 
 const bytes = Buffer.from("pretend-png-bytes");
 
@@ -34,6 +35,20 @@ describe("content addressing", () => {
     const a = conceptFingerprint(concept());
     const b = conceptFingerprint(concept({ art: { ...concept().art, prompt: concept().art.prompt + " Now with brass lanterns lining the path." } }));
     expect(b).not.toBe(a);
+  });
+
+  it("preserves the pre-quartet fingerprint shape for legacy stored concepts", () => {
+    const current = concept();
+    const legacy = { ...current, focalStrategy: undefined, visualMood: undefined };
+    expect(conceptImageFingerprintInput(legacy)).toBe(
+      JSON.stringify([
+        current.art.medium.trim().toLowerCase(),
+        current.art.composition.trim().toLowerCase(),
+        current.art.prompt.trim(),
+        current.layoutStyle,
+        current.styleLaneId,
+      ]),
+    );
   });
 
   it("scopes a preview id to its event", () => {

@@ -29,7 +29,7 @@ import { InMemoryUsageStore } from "../server/aiFirst/usage";
 import { InMemoryArtworkAttemptStore } from "../server/aiFirst/artworkAttemptStore";
 import { abortOnUnexpectedResponseClose, registerAiFirstRoutes } from "../server/aiFirst/routes";
 import type { EventBrief } from "../server/aiFirst/brief";
-import { artworkForAspect, concept } from "./aiFirstFixtures";
+import { artworkForAspect, concept, conceptQuartet } from "./aiFirstFixtures";
 
 const brief: EventBrief = {
   eventName: "Ada's 4th Birthday",
@@ -53,7 +53,7 @@ const direction = concept({
   art: {
     medium: "gouache",
     composition: "three chrome lariat orbits around a focal planet",
-    prompt: "A premium modern space-cowgirl gouache composition with chrome lariat orbits.",
+    prompt: "A premium modern space-cowgirl gouache composition with a focal planet and chrome lariat orbit.",
   },
 });
 
@@ -74,7 +74,10 @@ function oneConceptClient(): Anthropic {
     messages: {
       stream: async () =>
         (async function* () {
-          yield { type: "content_block_delta", delta: { type: "text_delta", text: `${JSON.stringify(direction)}\n` } };
+          yield {
+            type: "content_block_delta",
+            delta: { type: "text_delta", text: `${conceptQuartet(direction).map((item) => JSON.stringify(item)).join("\n")}\n` },
+          };
         })(),
       create: async () => ({
         content: [{ type: "text", text: JSON.stringify(passingVision) }],

@@ -24,7 +24,7 @@ import { InMemoryUsageStore } from "../server/aiFirst/usage";
 import { InMemoryRunStore } from "../server/aiFirst/runStore";
 import { InMemoryArtworkAttemptStore } from "../server/aiFirst/artworkAttemptStore";
 import type { EventBrief } from "../server/aiFirst/brief";
-import { concept, framedArtworkForAspect } from "./aiFirstFixtures";
+import { concept, conceptQuartet, framedArtworkForAspect } from "./aiFirstFixtures";
 
 const OWNER = "owner-token";
 const EVENT_ID = 1;
@@ -61,7 +61,10 @@ function singleConceptClient(): Anthropic {
         (async function* () {
           yield {
             type: "content_block_delta",
-            delta: { type: "text_delta", text: `${JSON.stringify(FAILING_CONCEPT)}\n` },
+            delta: {
+              type: "text_delta",
+              text: `${conceptQuartet(FAILING_CONCEPT).map((item) => JSON.stringify(item)).join("\n")}\n`,
+            },
           };
         })(),
     },
@@ -86,6 +89,7 @@ async function runToFallback() {
     previewStore,
     usageStore,
     allowance: 40,
+    directionLimit: 1,
     sink: (event) => events.push(event),
     anthropic: singleConceptClient(),
     ocr: false,

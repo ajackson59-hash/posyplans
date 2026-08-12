@@ -5,10 +5,10 @@
 // requested, then generated four images in lockstep and revealed nothing
 // until the slowest finished. Nobody waits for that.
 //
-// So: concepts stream in as NDJSON and each one starts its artwork the moment
-// it parses; at most two images are in flight at once; each direction is gated
-// and revealed on its own. A direction that fails twice is replaced by an
-// adapted studio direction rather than delaying or shortening the set.
+// So: concepts stream in as NDJSON, but no artwork starts until all four have
+// been compared as one creative set. Only a complete, full-event, structurally
+// diverse quartet may reach the image generator. Once it passes, at most two
+// images are in flight and each approved direction is revealed on its own.
 //
 // Every progress event corresponds to something that actually happened. There
 // are no timers pretending to be work.
@@ -52,7 +52,7 @@ import { MAX_ARTWORK_CONCURRENCY, type AiFirstUsageStore, type CircuitBreaker } 
 import type { EventBrief } from "./brief";
 import type { AiFirstArtworkAttemptStore } from "./artworkAttemptStore";
 import type { AiFirstRunStore } from "./runStore";
-import { preflightConceptForBrief } from "./conceptPreflight";
+import { preflightConceptQuartet } from "./conceptQuartet";
 
 export const CONCEPT_MODEL = "claude-sonnet-4-6";
 export const TARGET_CONCEPT_COUNT = TARGET_DIRECTION_COUNT;
@@ -189,7 +189,6 @@ export async function runAiFirstPipeline(input: PipelineInput): Promise<RunSumma
   const usedThemeIds: string[] = [];
   const inFlight: Promise<void>[] = [];
   let startedDirections = 0;
-  let preflightRejections = 0;
   let budgetRemaining = input.allowance;
   const directionLimit = Math.max(1, Math.min(TARGET_CONCEPT_COUNT, input.directionLimit ?? TARGET_CONCEPT_COUNT));
 
@@ -236,9 +235,10 @@ export async function runAiFirstPipeline(input: PipelineInput): Promise<RunSumma
     );
   };
 
-  /* Concepts — streamed, so artwork starts before the model has finished. */
+  /* Concepts — streamed for latency, compared as a complete set before spend. */
   const client = input.anthropic ?? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const parser = new ConceptStreamParser();
+  const conceptCandidates: AiFirstConcept[] = [];
 
   try {
     const stream = await client.messages.stream({
@@ -263,43 +263,32 @@ export async function runAiFirstPipeline(input: PipelineInput): Promise<RunSumma
       if (chunk.type !== "content_block_delta" || chunk.delta.type !== "text_delta") continue;
       for (const line of parser.push(chunk.delta.text)) {
         if (summary.msToFirstConcept === null) summary.msToFirstConcept = since();
-        emit({ type: "concept", index: line.index, concept: line.concept });
-        if (startedDirections >= directionLimit) continue;
-        const preflight = preflightConceptForBrief(line.concept, input.brief);
-        if (!preflight.passed) {
-          preflightRejections += 1;
-          emit({
-            type: "warning",
-            message: `concept ${line.index + 1} was blocked before artwork spend: ${preflight.message}`,
-          });
-          continue;
-        }
-        startDirection(startedDirections, line.concept);
+        conceptCandidates.push(line.concept);
       }
     }
     throwIfAborted(input.signal);
     for (const line of parser.flush()) {
       if (summary.msToFirstConcept === null) summary.msToFirstConcept = since();
-      emit({ type: "concept", index: line.index, concept: line.concept });
-      if (startedDirections >= directionLimit) continue;
-      const preflight = preflightConceptForBrief(line.concept, input.brief);
-      if (!preflight.passed) {
-        preflightRejections += 1;
-        emit({
-          type: "warning",
-          message: `concept ${line.index + 1} was blocked before artwork spend: ${preflight.message}`,
-        });
-        continue;
-      }
-      startDirection(startedDirections, line.concept);
+      conceptCandidates.push(line.concept);
     }
+
+    emit({ type: "progress", message: PROGRESS_MESSAGES.reviewingConcepts });
+    const quartet = preflightConceptQuartet(conceptCandidates, input.brief);
+    summary.conceptRejections = parser.rejections.length + quartet.errors.length;
+    if (!quartet.passed) {
+      for (const error of quartet.errors) {
+        emit({ type: "warning", message: `creative set blocked before artwork spend: ${error}` });
+      }
+      throw new Error(`creative quartet failed zero-image preflight: ${quartet.errors.join("; ")}`);
+    }
+
+    quartet.concepts.forEach((concept, index) => emit({ type: "concept", index, concept }));
+    quartet.concepts.slice(0, directionLimit).forEach((concept, index) => startDirection(index, concept));
   } catch (err) {
     await Promise.allSettled(inFlight);
     if (isAbortError(err) || input.signal?.aborted) throw abortError(input.signal?.reason);
     throw new Error(`concept generation failed: ${(err as Error).message}`);
   }
-
-  summary.conceptRejections = parser.rejections.length + preflightRejections;
 
   emit({ type: "progress", message: PROGRESS_MESSAGES.finishing });
   await Promise.all(inFlight);

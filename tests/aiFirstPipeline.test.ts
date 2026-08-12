@@ -20,8 +20,7 @@ import { InMemoryPreviewStore } from "../server/aiFirst/previewStore";
 import type { PipelineEvent } from "@shared/aiFirstStream";
 import type { EventBrief } from "../server/aiFirst/brief";
 import type { ArtworkRequest } from "../server/aiFirst/artwork";
-import { artworkForAspect, concept, framedArtworkForAspect } from "./aiFirstFixtures";
-import { concreteSubjectRequirementsForBrief } from "../server/aiFirst/conceptPreflight";
+import { artworkForAspect, concept, conceptQuartet, framedArtworkForAspect } from "./aiFirstFixtures";
 
 const brief: EventBrief = {
   eventName: "Ada's 4th Birthday",
@@ -41,12 +40,9 @@ const brief: EventBrief = {
 };
 
 /** Four structurally distinct concepts, as the real model is asked to emit. */
-const CONCEPTS = [
-  concept({ conceptName: "Lariat & Starlight", baseThemeId: "celestial-heirloom", placementId: "centre", layoutStyle: "full-bleed" }),
-  concept({ conceptName: "Dust & Chrome", baseThemeId: "deco-midnight", placementId: "high", layoutStyle: "banner", fontPairingId: "deco-luxe" }),
-  concept({ conceptName: "Prairie Orbit", baseThemeId: "meadow-storybook", placementId: "left-column", layoutStyle: "split", fontPairingId: "storybook-garamond" }),
-  concept({ conceptName: "Rocket Rodeo", baseThemeId: "neon-arena", placementId: "stacked", layoutStyle: "centered", fontPairingId: "neon-display" }),
-];
+const CONCEPTS = conceptQuartet(
+  concept({ conceptName: "Lariat & Starlight", baseThemeId: "celestial-heirloom", placementId: "centre" }),
+);
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -162,14 +158,17 @@ describe("a clean run", () => {
     expect(summary.retries).toBe(0);
   });
 
-  it("reveals each direction as it is approved, not in one batch at the end", async () => {
+  it("validates all concepts before revealing each approved artwork direction", async () => {
     const { events } = await run({ conceptGapMs: 4 });
     const doneAt = events.findIndex((e) => e.type === "done");
     const directionIndexes = events.map((e, i) => (e.type === "direction" ? i : -1)).filter((i) => i >= 0);
+    const conceptIndexes = events.map((e, i) => (e.type === "concept" ? i : -1)).filter((i) => i >= 0);
     expect(directionIndexes).toHaveLength(4);
-    // Every card lands before the run closes, and they are not all adjacent.
+    expect(conceptIndexes).toHaveLength(4);
+    // The complete text quartet is visible before the first paid result, and
+    // every approved card still lands before the run closes.
+    expect(Math.max(...conceptIndexes)).toBeLessThan(Math.min(...directionIndexes));
     expect(Math.max(...directionIndexes)).toBeLessThan(doneAt);
-    expect(directionIndexes[3] - directionIndexes[0]).toBeGreaterThan(3);
   });
 
   it("does not make a later direction wait for an earlier slow one", async () => {
@@ -207,9 +206,10 @@ describe("a clean run", () => {
     expect(messages[messages.length - 1]).toBe(PROGRESS_MESSAGES.ready);
   });
 
-  it("uses exactly the five host-facing progress strings", () => {
+  it("uses exactly the six host-facing progress strings", () => {
     expect(Object.values(PROGRESS_MESSAGES)).toEqual([
       "Understanding the event's visual direction…",
+      "Comparing four creative directions before artwork…",
       "Creating the first invitation direction…",
       "Building another interpretation…",
       "Checking the finishing details…",
@@ -223,160 +223,6 @@ describe("a clean run", () => {
     expect(summary.msToFirstDirection).not.toBeNull();
     expect(summary.msToFirstConcept!).toBeLessThanOrEqual(summary.msToFirstDirection!);
     expect(summary.msToFirstDirection!).toBeLessThanOrEqual(summary.msToAllDirections!);
-  });
-});
-
-describe("zero-cost concept preflight", () => {
-  it("skips an unthemed concept and spends only on the next direction that depicts the brief", async () => {
-    const constructionBrief: EventBrief = {
-      ...brief,
-      eventName: "Theo is Three",
-      themeName: "construction",
-      vibe: "modern elevated construction theme",
-      requirements: {
-        required: ["an unmistakable construction / little-builder visual identity"],
-        preferred: [],
-        excluded: ["generic abstract geometry"],
-      },
-    };
-    const genericBlueprint = concept({
-      conceptName: "Blueprint Morning",
-      art: {
-        medium: "architectural gouache",
-        composition: "asymmetric blueprint geometry",
-        prompt: "Inky blueprint lines and amber blocks on softly textured paper.",
-      },
-    });
-    const realConstruction = concept({
-      conceptName: "Little Builder",
-      art: {
-        medium: "cut-paper collage",
-        composition: "one excavator crossing the lower third",
-        prompt: "A clearly recognisable excavator and hard hat in refined cut paper, warm amber and navy.",
-      },
-    });
-    let imageCalls = 0;
-    const events: PipelineEvent[] = [];
-    const client = {
-      messages: {
-        stream: async () =>
-          (async function* () {
-            yield {
-              type: "content_block_delta",
-              delta: {
-                type: "text_delta",
-                text: `${JSON.stringify(genericBlueprint)}\n${JSON.stringify(realConstruction)}\n`,
-              },
-            };
-          })(),
-        create: async () => ({
-          content: [{
-            type: "text",
-            text: JSON.stringify({
-              ...visionBody(true),
-              requiredPresent: [
-                ...constructionBrief.requirements.required,
-                ...concreteSubjectRequirementsForBrief(constructionBrief),
-              ].map((requirement) => ({ requirement, present: true })),
-            }),
-          }],
-          usage: { input_tokens: 10, output_tokens: 10 },
-        }),
-      },
-    } as unknown as Anthropic;
-
-    const summary = await runAiFirstPipeline({
-      eventId: 1,
-      brief: constructionBrief,
-      previewStore: new InMemoryPreviewStore(),
-      usageStore: new InMemoryUsageStore(),
-      allowance: 1,
-      directionLimit: 1,
-      disableAutomaticRetry: true,
-      sink: (event) => events.push(event),
-      anthropic: client,
-      ocr: false,
-      generateImage: async ({ aspectRatio, prompt }) => {
-        imageCalls += 1;
-        expect(prompt).toContain("excavator");
-        expect(prompt).toContain("BINDING EVENT-BRIEF CONSTRAINTS");
-        return { bytes: artworkForAspect(aspectRatio), dataUrl: "data:image/png;base64,x", durationMs: 1 };
-      },
-    });
-
-    expect(imageCalls).toBe(1);
-    expect(summary.billedImages).toBe(1);
-    expect(summary.conceptRejections).toBe(1);
-    expect(directionsOf(events)[0].direction.concept.conceptName).toBe("Little Builder");
-    expect(
-      events.some((event) => event.type === "warning" && event.message.includes("blocked before artwork spend")),
-    ).toBe(true);
-  });
-
-  it("spends zero image calls when all four directions only gesture at construction", async () => {
-    const constructionBrief: EventBrief = {
-      ...brief,
-      eventName: "I'm 3 & Digging It",
-      eventType: "Birthday Party",
-      milestone: "3rd",
-      themeName: "",
-      vibe: "A backyard BBQ construction themed for our favorite little builder. Theme heavily centered around construction and building.",
-      requirements: {
-        required: [
-          "the backyard BBQ construction themed for our favorite little builder visual identity, unmistakably present",
-          "age-appropriate celebratory character for a 3rd birthday",
-        ],
-        preferred: [],
-        excluded: ["generic abstract geometry"],
-      },
-    };
-    const weakConcepts = ["Blueprint & Bloom", "Blueprint Morning", "Amber Plans", "Builder's Paper"].map(
-      (conceptName) =>
-        concept({
-          conceptName,
-          description: "An editorial blueprint for a little builder.",
-          art: {
-            medium: "editorial gouache",
-            composition: "botanical forms around an open central field",
-            prompt: "Blueprint lines, amber paper, flowers and a tiny hard hat in one corner.",
-          },
-        }),
-    );
-    const events: PipelineEvent[] = [];
-    let imageCalls = 0;
-    const client = {
-      messages: {
-        stream: async () =>
-          (async function* () {
-            yield {
-              type: "content_block_delta",
-              delta: { type: "text_delta", text: `${weakConcepts.map((item) => JSON.stringify(item)).join("\n")}\n` },
-            };
-          })(),
-      },
-    } as unknown as Anthropic;
-
-    await expect(
-      runAiFirstPipeline({
-        eventId: 1,
-        brief: constructionBrief,
-        previewStore: new InMemoryPreviewStore(),
-        usageStore: new InMemoryUsageStore(),
-        allowance: 1,
-        directionLimit: 1,
-        disableAutomaticRetry: true,
-        sink: (event) => events.push(event),
-        anthropic: client,
-        ocr: false,
-        generateImage: async ({ aspectRatio }) => {
-          imageCalls += 1;
-          return { bytes: artworkForAspect(aspectRatio), dataUrl: "data:image/png;base64,x", durationMs: 1 };
-        },
-      }),
-    ).rejects.toThrow("delivered 0 of 1 promised directions");
-
-    expect(imageCalls).toBe(0);
-    expect(events.filter((event) => event.type === "warning" && event.message.includes("blocked before artwork spend"))).toHaveLength(4);
   });
 });
 
@@ -494,8 +340,9 @@ describe("the ledger the run writes", () => {
 });
 
 describe("degradation", () => {
-  it("reports a short set rather than pretending it delivered four", async () => {
+  it("blocks an incomplete concept set instead of spending on a short set", async () => {
     const events: PipelineEvent[] = [];
+    let imageCalls = 0;
     const partial = {
       messages: {
         stream: async () =>
@@ -509,20 +356,24 @@ describe("degradation", () => {
       },
     } as unknown as Anthropic;
 
-    const summary = await runAiFirstPipeline({
-      eventId: 1,
-      brief,
-      previewStore: new InMemoryPreviewStore(),
-      usageStore: new InMemoryUsageStore(),
-      allowance: 40,
-      sink: (event) => events.push(event),
-      anthropic: partial,
-      ocr: false,
-      generateImage: async ({ aspectRatio }) => ({ bytes: artworkForAspect(aspectRatio), dataUrl: "data:image/png;base64,x", durationMs: 1 }),
-    });
+    await expect(
+      runAiFirstPipeline({
+        eventId: 1,
+        brief,
+        previewStore: new InMemoryPreviewStore(),
+        usageStore: new InMemoryUsageStore(),
+        allowance: 40,
+        sink: (event) => events.push(event),
+        anthropic: partial,
+        ocr: false,
+        generateImage: async ({ aspectRatio }) => {
+          imageCalls += 1;
+          return { bytes: artworkForAspect(aspectRatio), dataUrl: "data:image/png;base64,x", durationMs: 1 };
+        },
+      }),
+    ).rejects.toThrow("concept provider returned 1; exactly 4 are required before artwork spend");
 
-    expect(summary.directions).toBe(1);
-    expect(summary.degraded.join(" ")).toContain("only 1 of 4");
+    expect(imageCalls).toBe(0);
     expect(messagesOf(events)).not.toContain(PROGRESS_MESSAGES.ready);
   });
 

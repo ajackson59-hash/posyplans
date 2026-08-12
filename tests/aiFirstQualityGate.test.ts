@@ -341,7 +341,7 @@ describe("tier 2 — acceptance", () => {
       },
     });
     const visible = concreteSubjectReviewRequirementsForBrief(construction);
-    expect(visible).toHaveLength(2);
+    expect(visible).toHaveLength(1);
 
     let reviewText = "";
     const capturingCritic = {
@@ -376,8 +376,8 @@ describe("tier 2 — acceptance", () => {
     expect(verdict.passed).toBe(true);
     expect(verdict.requiredPresent).toEqual(visible.map((requirement) => ({ requirement, present: true })));
     const checklist = reviewText.split("VISIBLE MUST-HAVES")[1]?.split("EXCLUDED:")[0] ?? "";
-    expect(checklist).toContain("construction machine");
-    expect(checklist).toContain("jobsite cue");
+    expect(checklist).toContain("construction / little-builder identity");
+    expect(checklist).toContain("at least two coherent builder or jobsite cues");
     expect(checklist).not.toContain("central 70%");
     expect(checklist).not.toContain("do not satisfy or replace");
     expect(reviewText).toContain("the construction visual identity, unmistakably present");

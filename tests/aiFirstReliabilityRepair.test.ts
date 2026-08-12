@@ -19,7 +19,7 @@ import { InMemoryUsageStore } from "../server/aiFirst/usage";
 import { InMemoryRunStore } from "../server/aiFirst/runStore";
 import { InMemoryArtworkAttemptStore } from "../server/aiFirst/artworkAttemptStore";
 import type { EventBrief } from "../server/aiFirst/brief";
-import { concept, framedArtworkForAspect, artworkForAspect } from "./aiFirstFixtures";
+import { concept, conceptQuartet, framedArtworkForAspect, artworkForAspect } from "./aiFirstFixtures";
 
 const OWNER = "owner-token";
 const EVENT_ID = 1;
@@ -57,7 +57,10 @@ function singleConceptClient(): Anthropic {
     messages: {
       stream: async () =>
         (async function* () {
-          yield { type: "content_block_delta", delta: { type: "text_delta", text: `${JSON.stringify(FAILING_CONCEPT)}\n` } };
+          yield {
+            type: "content_block_delta",
+            delta: { type: "text_delta", text: `${conceptQuartet(FAILING_CONCEPT).map((item) => JSON.stringify(item)).join("\n")}\n` },
+          };
         })(),
     },
   } as unknown as Anthropic;
@@ -82,7 +85,10 @@ function singleConceptClientWithPassingVision(): Anthropic {
     messages: {
       stream: async () =>
         (async function* () {
-          yield { type: "content_block_delta", delta: { type: "text_delta", text: `${JSON.stringify(FAILING_CONCEPT)}\n` } };
+          yield {
+            type: "content_block_delta",
+            delta: { type: "text_delta", text: `${conceptQuartet(FAILING_CONCEPT).map((item) => JSON.stringify(item)).join("\n")}\n` },
+          };
         })(),
       create: async () => ({
         content: [{ type: "text", text: JSON.stringify(PASSING_VISION_BODY) }],
@@ -362,6 +368,7 @@ describe("stream events are bounded — no full image payload ever appears in on
       previewStore,
       usageStore,
       allowance: 40,
+      directionLimit: 1,
       sink: (event) => events.push(event),
       anthropic: singleConceptClient(),
       ocr: false,
@@ -560,6 +567,7 @@ describe("duplicate click with the same run id does not buy a second set of imag
       previewStore,
       usageStore,
       allowance: 40,
+      directionLimit: 1,
       sink: () => {},
       anthropic: singleConceptClientWithPassingVision(),
       ocr: false,
@@ -600,6 +608,7 @@ describe("duplicate click with the same run id does not buy a second set of imag
       previewStore,
       usageStore,
       allowance: 40,
+      directionLimit: 1,
       sink: () => {},
       anthropic: singleConceptClientWithPassingVision(),
       ocr: false,
@@ -881,6 +890,7 @@ describe("all four gates failing (tier1 x2 attempts, vision x2 attempts)", () =>
       usageStore,
       artworkAttemptStore,
       allowance: 40,
+      directionLimit: 1,
       sink: (event) => events.push(event),
       anthropic: singleConceptClient(),
       ocr: false,
@@ -927,7 +937,6 @@ describe("all four gates failing (tier1 x2 attempts, vision x2 attempts)", () =>
     const usageStore = new InMemoryUsageStore();
     const artworkAttemptStore = new InMemoryArtworkAttemptStore();
 
-    const themeIds = ["celestial-heirloom", "deco-midnight", "meadow-storybook", "neon-arena"];
     // Each concept must have a genuinely distinct image fingerprint (see
     // conceptImageFingerprintInput in shared/aiFirstInvite.ts, which keys off
     // art.medium/composition/prompt + layoutStyle + styleLaneId -- NOT
@@ -935,19 +944,10 @@ describe("all four gates failing (tier1 x2 attempts, vision x2 attempts)", () =>
     // will correctly treat two "different" concepts as the same billed
     // image and skip generating a second one, which would undercount the
     // four rejected attempts this test exists to prove.
-    const fourFailingConcepts = [0, 1, 2, 3].map((i) =>
-      concept({
-        conceptName: `Failing Direction ${i}`,
-        baseThemeId: themeIds[i],
-        placementId: "centre",
-        layoutStyle: "full-bleed",
-        art: {
-          medium: "watercolor",
-          composition: `single off-centre focal subject, variant ${i}`,
-          prompt: `A distinct fixture prompt for failing direction ${i}, ink-dark with brass warmth.`,
-        },
-      }),
-    );
+    const fourFailingConcepts = conceptQuartet(FAILING_CONCEPT).map((item, i) => ({
+      ...item,
+      conceptName: `Failing Direction ${i}`,
+    }));
     const fourConceptClient = {
       messages: {
         stream: async () =>
@@ -1097,23 +1097,13 @@ describe("every billed image result is retained, including a clean run's four ac
     const artworkAttemptStore = new InMemoryArtworkAttemptStore();
     const events: PipelineEvent[] = [];
 
-    const themeIds = ["celestial-heirloom", "deco-midnight", "meadow-storybook", "neon-arena"];
     // See the note on the equivalent fixture above: distinct art.prompt per
     // concept is required so the reuse-by-fingerprint path doesn't collapse
     // two "different" concepts into one billed image.
-    const fourPassingConcepts = [0, 1, 2, 3].map((i) =>
-      concept({
-        conceptName: `Direction ${i}`,
-        baseThemeId: themeIds[i],
-        placementId: "centre",
-        layoutStyle: "full-bleed",
-        art: {
-          medium: "watercolor",
-          composition: `single off-centre focal subject, variant ${i}`,
-          prompt: `A distinct fixture prompt for accepted direction ${i}, ink-dark with brass warmth.`,
-        },
-      }),
-    );
+    const fourPassingConcepts = conceptQuartet(FAILING_CONCEPT).map((item, i) => ({
+      ...item,
+      conceptName: `Direction ${i}`,
+    }));
     const fourConceptClientWithPassingVision = {
       messages: {
         stream: async () =>
@@ -1244,6 +1234,7 @@ describe("studio fallback Apply uses exact bytes and calls no image generator", 
       previewStore,
       usageStore,
       allowance: 40,
+      directionLimit: 1,
       sink: (event) => events.push(event),
       anthropic: singleConceptClient(),
       ocr: false,
@@ -1352,6 +1343,7 @@ describe("next-proof safety setting: disables the automatic paid retry", () => {
       previewStore,
       usageStore,
       allowance: 40,
+      directionLimit: 1,
       sink: (event) => events.push(event),
       anthropic: singleConceptClient(),
       ocr: false,
@@ -1384,6 +1376,7 @@ describe("next-proof safety setting: disables the automatic paid retry", () => {
       previewStore,
       usageStore,
       allowance: 40,
+      directionLimit: 1,
       sink: () => {},
       anthropic: singleConceptClient(),
       ocr: false,

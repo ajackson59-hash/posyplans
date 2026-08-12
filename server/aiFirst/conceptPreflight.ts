@@ -14,10 +14,6 @@ export interface SubjectFamily {
   label: string;
   trigger: RegExp;
   artworkCue: RegExp;
-  /** A concrete focal subject that must be named in both prompt and composition. */
-  focalArtworkCue?: RegExp;
-  /** A second, independent scene cue that prevents one-word theme laundering. */
-  supportingArtworkCue?: RegExp;
   /** Host-facing direction copy must identify the subject, not merely a material. */
   identityCue?: RegExp;
   /** Verbatim contracts copied into both the paid image request and Tier 2 review. */
@@ -33,33 +29,25 @@ const SUBJECT_FAMILIES: readonly SubjectFamily[] = [
     id: "construction",
     label: "construction / little-builder",
     trigger: /\b(construction|builder|building site|job ?site|digging|digger|excavat|bulldoz|dump truck|hard hat)\b/i,
-    // "Blueprint" by itself is deliberately not enough. It produced three
-    // attractive-but-generic paid failures for a three-year-old's party.
-    artworkCue: /\b(excavator|bulldozer|dump truck|digger|crane|hard hat|construction vehicle|building site|job ?site|cement mixer|concrete mixer|scaffold|shovel|tool belt)\b/i,
-    // Attempt five proved that one incidental cue is not enough: a direction
-    // called "Blueprint & Bloom" passed because its prose mentioned a
-    // construction-adjacent detail while the picture still read as generic
-    // editorial artwork. The machine must be the stated composition, and a
-    // separate jobsite cue must support it.
-    focalArtworkCue:
-      /\b(excavator|bulldozer|dump truck|backhoe|front loader|wheel loader|digger|construction vehicle|tower crane|mobile crane|cement mixer|concrete mixer)\b/i,
-    supportingArtworkCue:
-      /\b(building site|job ?site|hard hat|safety vest|traffic cone|scaffold|shovel|tool belt|lumber|concrete blocks?|caution stripe|construction barrier)\b/i,
+    // "Blueprint" by itself is deliberately not enough. It is a legitimate
+    // graphic-world cue, but the whole-quartet gate still requires a second
+    // coherent construction cue plus the full celebration identity.
+    artworkCue:
+      /\b(excavator|bulldozer|dump truck|backhoe|front loader|digger|crane|hard hat|safety vest|traffic cone|construction vehicle|building site|job ?site|cement mixer|concrete mixer|scaffold|shovel|tool belt|lumber|concrete blocks?|caution stripe|site plan|blueprint|survey grid|builder tools?)\b/i,
     identityCue:
       /\b(construction|builder|building site|job ?site|digging|digger|excavator|bulldozer|dump truck|backhoe|front loader|cement mixer|crane|hard hat)\b/i,
     bindingRequirements: [
-      "At least one clearly recognisable construction machine — an excavator, bulldozer, dump truck, backhoe, front loader, crane or cement mixer — must be the dominant first-read focal subject",
-      "At least one separate jobsite cue — a hard hat, safety vest, traffic cone, scaffolding, lumber, shovel, tool belt or caution stripe — must also be unmistakably visible",
-      "Keep the construction machine and jobsite cue fully visible within the central 70% of the frame so the invitation layout cannot crop them away",
-      "Blueprint lines, flowers, botanicals, abstract geometry, paper texture and colour alone do not satisfy or replace the construction subject",
+      "The construction / little-builder identity must be unmistakable through at least two coherent builder cues suited to the direction — machinery, machine details, jobsite materials, tools, safety gear, or blueprint/site-plan language",
+      "Do not make a full construction machine mandatory unless the direction's focal strategy is narrative-scene or iconic-detail",
+      "Keep every important builder and celebration cue fully visible within the central 70% of the frame so the invitation layout cannot crop it away",
+      "Flowers, botanicals, abstract geometry, paper texture and colour alone do not satisfy or replace the construction identity",
     ],
     // Only positive, binary visual facts belong in the critic's
     // requiredPresent checklist. Framing instructions and negative prompt
     // rules remain binding on generation, but they are not objects a critic
     // can truthfully mark "visibly present" in the finished pixels.
     reviewRequirements: [
-      "At least one clearly recognisable construction machine — an excavator, bulldozer, dump truck, backhoe, front loader, crane or cement mixer — must be the dominant first-read focal subject",
-      "At least one separate jobsite cue — a hard hat, safety vest, traffic cone, scaffolding, lumber, shovel, tool belt or caution stripe — must also be unmistakably visible",
+      "The construction / little-builder identity is unmistakably visible through at least two coherent builder or jobsite cues",
     ],
     compatibleThemeIds: [],
   },
@@ -208,13 +196,6 @@ export function preflightConceptForBrief(concept: AiFirstConcept, brief: EventBr
   const missingSubjects = families
     .filter((family) => {
       if (!family.artworkCue.test(artBrief)) return true;
-      if (family.focalArtworkCue) {
-        // Requiring the concrete subject in BOTH fields prevents a prompt
-        // from hiding it in a trailing list while composition stays generic.
-        if (!family.focalArtworkCue.test(concept.art.prompt)) return true;
-        if (!family.focalArtworkCue.test(concept.art.composition)) return true;
-      }
-      if (family.supportingArtworkCue && !family.supportingArtworkCue.test(artBrief)) return true;
       if (family.identityCue && !family.identityCue.test(directionIdentity)) return true;
       return false;
     })

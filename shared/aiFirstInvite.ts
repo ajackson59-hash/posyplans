@@ -44,6 +44,28 @@ export const SAFE_TYPOGRAPHY_REGIONS = [
 ] as const;
 export type SafeTypographyRegion = (typeof SAFE_TYPOGRAPHY_REGIONS)[number];
 
+/* ── Whole-set creative direction ───────────────────────────────────── */
+
+// These are intentionally broad art-direction strategies rather than event-
+// specific subjects. A construction party, garden dinner, or space birthday
+// can each be interpreted through all four without turning the set into four
+// treatments of the same hero object.
+export const FOCAL_STRATEGIES = [
+  "narrative-scene",
+  "iconic-detail",
+  "graphic-world",
+  "tactile-still-life",
+] as const;
+export type FocalStrategy = (typeof FOCAL_STRATEGIES)[number];
+
+export const VISUAL_MOODS = [
+  "cinematic-narrative",
+  "sculptural-editorial",
+  "graphic-modernist",
+  "tactile-artisanal",
+] as const;
+export type VisualMood = (typeof VISUAL_MOODS)[number];
+
 /* ── The schema ──────────────────────────────────────────────────────── */
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -95,6 +117,14 @@ export const aiFirstConceptSchema = z.object({
   conceptName: z.string().min(2).max(60),
   /** One sentence a host reads on the card. Not a design rationale. */
   description: z.string().min(10).max(220),
+
+  /**
+   * Required for newly generated quartets and audited before artwork spend.
+   * Optional at the storage boundary so previews saved before this field was
+   * introduced remain readable and applicable.
+   */
+  focalStrategy: z.enum(FOCAL_STRATEGIES).optional(),
+  visualMood: z.enum(VISUAL_MOODS).optional(),
 
   styleLaneId: z.string().refine((v) => STYLE_LANES.some((l) => l.id === v), "unknown styleLaneId"),
   layoutStyle: z.enum(LAYOUT_STYLES),
@@ -251,13 +281,21 @@ export interface ResolvedAiConcept {
  * pixel of the artwork, so they must not invalidate a paid image.
  */
 export function conceptImageFingerprintInput(concept: AiFirstConcept): string {
-  return JSON.stringify([
+  const imageFields = [
     concept.art.medium.trim().toLowerCase(),
     concept.art.composition.trim().toLowerCase(),
     concept.art.prompt.trim(),
     concept.layoutStyle,
     concept.styleLaneId,
-  ]);
+  ];
+  // Preserve the exact pre-quartet fingerprint shape for previews already in
+  // storage. Otherwise an old approved image would miss the reuse lookup and
+  // could be purchased again merely because this release added metadata.
+  return JSON.stringify(
+    concept.focalStrategy && concept.visualMood
+      ? [concept.focalStrategy, concept.visualMood, ...imageFields]
+      : imageFields,
+  );
 }
 
 /** Aspect ratio the artwork is generated at, from the layout it composes into. */

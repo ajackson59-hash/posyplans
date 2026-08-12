@@ -163,7 +163,7 @@ describe("brief — the one question", () => {
 });
 
 describe("prompt — streamlined, and specific where it matters", () => {
-  it("asks for one standalone JSON object per line so artwork can start early", () => {
+  it("asks for one standalone JSON object per line so quartet comparison can start promptly", () => {
     const system = buildSystemPrompt();
     expect(system).toContain("NDJSON");
     expect(system).toContain("no array wrapper");
@@ -173,6 +173,8 @@ describe("prompt — streamlined, and specific where it matters", () => {
     const system = buildSystemPrompt();
     expect(system).toContain("at least 3 different layouts");
     expect(system).toContain("4 different illustration media");
+    expect(system).toContain("use every focalStrategy exactly once");
+    expect(system).toContain("use every visualMood exactly once");
   });
 
   it("does not ask the model for traces, rationales or contrast maths", () => {
@@ -240,9 +242,9 @@ describe("prompt — streamlined, and specific where it matters", () => {
     const conceptPrompt = buildUserPrompt({ brief: constructionBrief });
     const imagePrompt = buildArtworkConstraints(constructionBrief);
     for (const prompt of [conceptPrompt, imagePrompt]) {
-      expect(prompt).toContain("excavator");
-      expect(prompt).toContain("dominant first-read focal subject");
-      expect(prompt).toContain("do not satisfy or replace the construction subject");
+      expect(prompt).toContain("at least two coherent builder cues");
+      expect(prompt).toContain("Do not make a full construction machine mandatory");
+      expect(prompt).toContain("do not satisfy or replace the construction identity");
     }
   });
 
@@ -386,7 +388,7 @@ describe("zero-cost subject preflight", () => {
     vibeDescription: "modern elevated construction theme",
   });
 
-  it("blocks an attractive but generic blueprint before an image call", () => {
+  it("permits blueprint language as one legitimate construction strategy without forcing a machine", () => {
     const result = preflightConceptForBrief(
       concept({
         conceptName: "Little Builder",
@@ -399,8 +401,7 @@ describe("zero-cost subject preflight", () => {
       }),
       construction,
     );
-    expect(result.passed).toBe(false);
-    expect(result.message).toContain("construction");
+    expect(result.passed).toBe(true);
   });
 
   it("blocks Blueprint & Bloom when a hard hat is only an incidental cue", () => {

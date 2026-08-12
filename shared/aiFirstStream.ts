@@ -15,6 +15,7 @@ export const TARGET_DIRECTION_COUNT = 4;
 /** The exact host-facing progress strings. Each is emitted from a real transition. */
 export const PROGRESS_MESSAGES = {
   understanding: "Understanding the event's visual direction…",
+  reviewingConcepts: "Comparing four creative directions before artwork…",
   firstDirection: "Creating the first invitation direction…",
   anotherDirection: "Building another interpretation…",
   finishing: "Checking the finishing details…",
