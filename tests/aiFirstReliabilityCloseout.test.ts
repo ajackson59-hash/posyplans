@@ -2,6 +2,7 @@
 // this file cannot make OpenAI or Anthropic calls.
 
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import express from "express";
 import request from "supertest";
 import type Anthropic from "@anthropic-ai/sdk";
@@ -30,6 +31,15 @@ import { InMemoryArtworkAttemptStore } from "../server/aiFirst/artworkAttemptSto
 import { abortOnUnexpectedResponseClose, registerAiFirstRoutes } from "../server/aiFirst/routes";
 import type { EventBrief } from "../server/aiFirst/brief";
 import { artworkForAspect, concept, conceptQuartet } from "./aiFirstFixtures";
+
+describe("paid canary execution budget", () => {
+  it("gives concept generation, one high-quality image, and vision review at least five minutes", () => {
+    const config = JSON.parse(readFileSync("vercel.json", "utf8")) as {
+      functions?: Record<string, { maxDuration?: number }>;
+    };
+    expect(config.functions?.["api/index.js"]?.maxDuration).toBeGreaterThanOrEqual(300);
+  });
+});
 
 const brief: EventBrief = {
   eventName: "Ada's 4th Birthday",
