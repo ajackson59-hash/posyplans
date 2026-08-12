@@ -119,12 +119,13 @@ function appFor(deps: {
   runStore: InMemoryRunStore;
   artworkAttemptStore: InMemoryArtworkAttemptStore;
   env?: Record<string, string | undefined>;
+  storage?: ReturnType<typeof makeStorage>;
   runPipeline?: (input: Parameters<typeof runAiFirstPipeline>[0]) => Promise<Awaited<ReturnType<typeof runAiFirstPipeline>>>;
 }) {
   const app = express();
   app.use(express.json());
   registerAiFirstRoutes(app, {
-    storage: makeStorage(),
+    storage: deps.storage ?? makeStorage(),
     previewStore: deps.previewStore,
     usageStore: deps.usageStore,
     runStore: deps.runStore,
@@ -534,6 +535,28 @@ describe("duplicate click with the same run id does not buy a second set of imag
     expect(runStore.all.filter((r) => r.runId === runId)).toHaveLength(1);
   });
 
+  it("does not claim a run when zero-cost brief storage fails", async () => {
+    const runStore = new InMemoryRunStore();
+    const app = appFor({
+      previewStore: new InMemoryPreviewStore(),
+      usageStore: new InMemoryUsageStore(),
+      runStore,
+      artworkAttemptStore: new InMemoryArtworkAttemptStore(),
+      storage: makeStorage({
+        listMenuItems: async () => {
+          throw new Error("menu storage unavailable");
+        },
+      }),
+    });
+
+    const result = await request(app)
+      .post(`/api/events/owner/${OWNER}/ai-first/generate`)
+      .send({ runId: "brief-storage-failure" });
+
+    expect(result.status).toBe(500);
+    expect(runStore.all).toHaveLength(0);
+  });
+
   it("never spends twice for the same run+direction+attempt idempotency key", async () => {
     // Two full pipeline runs under the same runId also naturally hit the
     // pre-existing reuse-by-fingerprint path (a fingerprint match is a cache
@@ -584,6 +607,66 @@ describe("duplicate click with the same run id does not buy a second set of imag
     // Still exactly the one pre-seeded row; resolveDirection added nothing.
     expect(billedRows).toHaveLength(1);
     void summary;
+  });
+
+  it("reserves before provider I/O and never auto-retries an uncertain provider result", async () => {
+    const usageStore = new InMemoryUsageStore();
+    const runId = "run-provider-result-uncertain";
+    let imageCalls = 0;
+
+    const first = await runAiFirstPipeline({
+      eventId: EVENT_ID,
+      ownerToken: OWNER,
+      runId,
+      email: "host@example.com",
+      brief,
+      previewStore: new InMemoryPreviewStore(),
+      usageStore,
+      allowance: 40,
+      directionLimit: 1,
+      sink: () => {},
+      anthropic: singleConceptClientWithPassingVision(),
+      ocr: false,
+      generateImage: async () => {
+        imageCalls += 1;
+        // Models the connection disappearing after the provider may already
+        // have accepted the request. Billing cannot safely be assumed false.
+        throw new Error("connection closed after request body was sent");
+      },
+    });
+
+    expect(imageCalls).toBe(1);
+    expect(first.billedImages).toBe(1);
+    expect(first.retries).toBe(0);
+    expect(first.degraded).toContain("direction 1 provider result was uncertain; automatic retry blocked");
+    expect(usageStore.all).toHaveLength(1);
+    expect(usageStore.all[0]).toMatchObject({
+      idempotencyKey: `${runId}:direction-0:attempt-1`,
+      billed: true,
+      automatic: false,
+    });
+
+    await runAiFirstPipeline({
+      eventId: EVENT_ID,
+      ownerToken: OWNER,
+      runId,
+      email: "host@example.com",
+      brief,
+      previewStore: new InMemoryPreviewStore(),
+      usageStore,
+      allowance: 40,
+      directionLimit: 1,
+      sink: () => {},
+      anthropic: singleConceptClientWithPassingVision(),
+      ocr: false,
+      generateImage: async () => {
+        imageCalls += 1;
+        throw new Error("must not be called for a reserved attempt");
+      },
+    });
+
+    expect(imageCalls).toBe(1);
+    expect(usageStore.all).toHaveLength(1);
   });
 
   it("a fresh run id for the same direction is unaffected by another run's idempotency key", async () => {

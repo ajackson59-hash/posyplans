@@ -295,6 +295,22 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
         return;
       }
 
+      // Load every zero-cost brief dependency before taking the durable run
+      // lease. If storage is unavailable, no run is claimed and there is no
+      // five-minute stale lock that could encourage a second paid attempt.
+      const [menuItems, budgetItems, guests] = await Promise.all([
+        deps.storage.listMenuItems(event.id),
+        deps.storage.listBudgetItems(event.id),
+        deps.storage.listGuests(event.id),
+      ]);
+      const brief = buildEventBrief({
+        event,
+        dna: computeEventDna({ eventType: event.eventType, menuItems, budgetItems }).scores,
+        guestCount: guests.length > 0 ? guests.length : null,
+        vibeAnswer: typeof req.body?.feeling === "string" ? req.body.feeling : undefined,
+        inspirationNotes: typeof req.body?.inspirationNotes === "string" ? req.body.inspirationNotes : undefined,
+      });
+
       // Atomic claim, enforced by TWO independent DB constraints (see
       // shared/schema.ts): a plain unique index on runId, and a PARTIAL
       // unique index on eventId for non-terminal active rows. This is what
@@ -330,21 +346,6 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
         });
         return;
       }
-
-      // Everything the model needs is derived from data the host already
-      // gave the app. Requirement 3's point: never re-ask a Concierge user.
-      const [menuItems, budgetItems, guests] = await Promise.all([
-        deps.storage.listMenuItems(event.id),
-        deps.storage.listBudgetItems(event.id),
-        deps.storage.listGuests(event.id),
-      ]);
-      const brief = buildEventBrief({
-        event,
-        dna: computeEventDna({ eventType: event.eventType, menuItems, budgetItems }).scores,
-        guestCount: guests.length > 0 ? guests.length : null,
-        vibeAnswer: typeof req.body?.feeling === "string" ? req.body.feeling : undefined,
-        inspirationNotes: typeof req.body?.inspirationNotes === "string" ? req.body.inspirationNotes : undefined,
-      });
 
       res.writeHead(200, {
         "Content-Type": "text/event-stream",
@@ -564,7 +565,7 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
           quality: row.quality,
           size: row.size,
           costUsdMicros: row.costUsdMicros,
-          costEstimateStatus: row.size ? "model-size-priced" : "legacy-unverified",
+          costEstimateStatus: row.size ? "image-output-only-model-size-estimate" : "legacy-unverified",
           createdAt: row.createdAt,
         })),
       });

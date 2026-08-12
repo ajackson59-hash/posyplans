@@ -20,7 +20,7 @@ import {
   type RunStatus,
 } from "./runStore";
 import type { AiFirstArtworkAttemptStore, ArtworkAttemptRecord } from "./artworkAttemptStore";
-import type { ArtworkModel, ArtworkQuality, ArtworkSize } from "./artwork";
+import { DEFAULT_ARTWORK_MODEL, type ArtworkModel, type ArtworkQuality, type ArtworkSize } from "./artwork";
 
 /**
  * postgres-js surfaces a Postgres unique-violation (SQLSTATE 23505) as a
@@ -140,6 +140,31 @@ export class DbUsageStore implements AiFirstUsageStore {
       costUsdMicros: entry.costUsdMicros,
       createdAt: entry.createdAt,
     });
+  }
+
+  async reserveProviderAttempt(entry: LedgerEntry): Promise<boolean> {
+    if (!entry.billed) throw new Error("provider attempt reservations must be billed or billing-uncertain");
+    // The existing partial unique index on idempotencyKey is the atomic
+    // authority. A competing process or a resumed run gets no inserted row
+    // and therefore must not call the provider.
+    const inserted = await db
+      .insert(aiFirstImageLedger)
+      .values({
+        eventId: entry.eventId,
+        email: entry.email ?? null,
+        reason: entry.reason,
+        billed: entry.billed,
+        automatic: entry.automatic,
+        conceptFingerprint: entry.conceptFingerprint ?? null,
+        previewId: entry.previewId ?? null,
+        reuseOf: entry.reuseOf ?? null,
+        idempotencyKey: entry.idempotencyKey ?? null,
+        costUsdMicros: entry.costUsdMicros,
+        createdAt: entry.createdAt,
+      })
+      .onConflictDoNothing()
+      .returning({ id: aiFirstImageLedger.id });
+    return inserted.length === 1;
   }
 
   async findByIdempotencyKey(key: string): Promise<LedgerEntry | undefined> {
@@ -412,7 +437,7 @@ export class DbArtworkAttemptStore implements AiFirstArtworkAttemptStore {
         failureCodesJson: JSON.stringify(input.failureCodes),
         tier1FindingsJson: JSON.stringify(input.tier1Findings),
         visionScoresJson: input.visionScores ? JSON.stringify(input.visionScores) : null,
-        model: input.model ?? "gpt-image-1",
+        model: input.model ?? DEFAULT_ARTWORK_MODEL,
         quality: input.quality ?? "high",
         size: input.size ?? null,
         costUsdMicros: input.costUsdMicros,

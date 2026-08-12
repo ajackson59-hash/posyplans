@@ -99,7 +99,7 @@ describe("model-aware image cost", () => {
   });
 
   it("defaults safely and rejects unsupported configured models", () => {
-    expect(readAiFirstArtworkModel({})).toBe("gpt-image-1");
+    expect(readAiFirstArtworkModel({})).toBe("gpt-image-2");
     expect(readAiFirstArtworkModel({ [AI_FIRST_IMAGE_MODEL_ENV]: "gpt-image-2" })).toBe("gpt-image-2");
     expect(() => readAiFirstArtworkModel({ [AI_FIRST_IMAGE_MODEL_ENV]: "unknown" })).toThrow(
       AI_FIRST_IMAGE_MODEL_ENV,
@@ -401,7 +401,7 @@ describe("terminal event ordering", () => {
       directionLimit: 1,
       allowance: 1,
       disableAutomaticRetry: true,
-      artworkModel: "gpt-image-1",
+      artworkModel: "gpt-image-2",
     });
     expect(await runStore.get("route-failure")).toMatchObject({
       status: "failed",

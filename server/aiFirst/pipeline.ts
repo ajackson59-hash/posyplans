@@ -35,6 +35,7 @@ import { runTier1Checks, retryCodesFor, type Tier1Finding } from "./tier1";
 import { runVisionGate, visionCostUsd, type VisionVerdict } from "./visionGate";
 import { adaptStudioDirection, loadStudioArtwork } from "./fallback";
 import {
+  DEFAULT_ARTWORK_MODEL,
   estimateImageCostUsdMicros,
   generateArtwork,
   sizeForAspect,
@@ -393,19 +394,10 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
       break;
     }
 
-    // Idempotency at each artwork direction key, enforced BEFORE spend. The
-    // key is stable for (run, direction, attempt); if a prior execution of
-    // this exact run already paid for this exact attempt — the case a
-    // process crash-and-resume or a replayed request produces — that spend
-    // is on the ledger already and this attempt must not buy a second image.
-    // The run-level claim in runStore is the primary defence against a
-    // duplicate *request* ever reaching this loop twice; this is the
-    // belt-and-braces check inside the loop itself.
+    // The key is stable for (run, direction, attempt). The durable reservation
+    // below is the spend boundary: it must commit before network I/O, and a
+    // crash/resume or competing process that finds it must not buy again.
     const idempotencyKey = input.runId ? `${input.runId}:direction-${ctx.index}:attempt-${attempt}` : undefined;
-    if (idempotencyKey && (await input.usageStore.findByIdempotencyKey(idempotencyKey))) {
-      summary.degraded.push(`direction ${ctx.index + 1} attempt ${attempt} already billed under this run — skipped rather than spent twice`);
-      break;
-    }
 
     if (!ctx.spend.take()) {
       summary.degraded.push("billed-image allowance exhausted");
@@ -415,10 +407,34 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
     const attemptStarted = Date.now();
     const prompt = attempt === 1 ? basePrompt : buildRetryPrompt(basePrompt, failureCodes);
     const aspectRatio = aspectRatioForLayout(concept.layoutStyle);
-    const artworkModel = input.artworkModel ?? "gpt-image-1";
+    const artworkModel = input.artworkModel ?? DEFAULT_ARTWORK_MODEL;
     const artworkQuality = "high" as const;
     const artworkSize = sizeForAspect(aspectRatio);
     const imageCostUsdMicros = estimateImageCostUsdMicros(artworkModel, artworkQuality, artworkSize);
+    const reserved = await input.usageStore.reserveProviderAttempt({
+      eventId: input.eventId,
+      email: input.email,
+      reason: attempt === 1 ? "initial" : "quality-retry",
+      // Once the request can reach the provider, billing is conservatively
+      // treated as possible. A transport failure cannot prove it was free.
+      billed: true,
+      automatic: attempt > 1,
+      conceptFingerprint: undefined,
+      idempotencyKey,
+      costUsdMicros: imageCostUsdMicros,
+      createdAt: Date.now(),
+    });
+    if (!reserved) {
+      summary.degraded.push(
+        `direction ${ctx.index + 1} attempt ${attempt} was already reserved under this run — skipped rather than spent twice`,
+      );
+      break;
+    }
+
+    summary.billedImages += 1;
+    // This is an image-output estimate. The provider also bills prompt/input
+    // tokens, which are not knowable at the pre-call reservation boundary.
+    summary.costUsd += imageCostUsdMicros / 1_000_000;
     if (attempt > 1) summary.retries += 1;
 
     let bytes: Buffer;
@@ -441,27 +457,19 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
         attempt,
         tier1: { passed: false, findings: [], durationMs: 0 },
         failureCodes: ["provider-error"],
-        billed: false,
+        // The request crossed the provider boundary. Billing is uncertain,
+        // so the durable reservation remains billed and no automatic retry
+        // may follow it.
+        billed: true,
         durationMs: Date.now() - attemptStarted,
       });
-      ctx.emit({ type: "warning", message: `artwork attempt ${attempt} failed: ${(err as Error).message}` });
-      continue;
+      summary.degraded.push(`direction ${ctx.index + 1} provider result was uncertain; automatic retry blocked`);
+      ctx.emit({
+        type: "warning",
+        message: `artwork attempt ${attempt} did not return safely; no automatic retry was made: ${(err as Error).message}`,
+      });
+      break;
     }
-
-    summary.billedImages += 1;
-    summary.costUsd += imageCostUsdMicros / 1_000_000;
-    await input.usageStore.record({
-      eventId: input.eventId,
-      email: input.email,
-      reason: attempt === 1 ? "initial" : "quality-retry",
-      billed: true,
-      // An automatic retry is spend, never a host-visible action.
-      automatic: attempt > 1,
-      conceptFingerprint: undefined,
-      idempotencyKey,
-      costUsdMicros: imageCostUsdMicros,
-      createdAt: Date.now(),
-    });
 
     // Tier 1 first: it is free, and it catches most of what actually breaks.
     let tier1 = runTier1Checks({

@@ -172,7 +172,7 @@ describe("whole-quartet creative preflight", () => {
     }
   });
 
-  it("blocks four excavator-led variations before the image generator", async () => {
+  it("blocks four prompt-level excavator variations even when their compositions hide the repetition", async () => {
     const repetitive = CONSTRUCTION_REVIEW_QUARTET.map((item, index) =>
       concept({
         ...item,
@@ -180,9 +180,12 @@ describe("whole-quartet creative preflight", () => {
         description: "A third-birthday construction excavator scene for a backyard BBQ.",
         art: {
           medium: ["watercolor", "gouache", "cut-paper collage", "linocut"][index],
-          composition: `one excavator as the dominant focal subject in variation ${index + 1}`,
+          // This deliberately keeps the structural field generic. The
+          // regression was that three strategies were checked only here,
+          // allowing the provider prompt below to repeat the paid subject.
+          composition: `distinct abstract composition lane ${index + 1}`,
           prompt:
-            "A large excavator and hard hat dominate a backyard birthday BBQ jobsite scene with party bunting and construction materials.",
+            "A giant yellow excavator dominates a backyard birthday BBQ jobsite scene with party bunting, builder tools, construction materials, and blueprint markings.",
         },
       }),
     );

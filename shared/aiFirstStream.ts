@@ -100,6 +100,7 @@ export interface RunSummary {
   billedImages: number;
   reusedImages: number;
   retries: number;
+  /** Estimated image-output plus critic-token cost; image prompt/input tokens are additional. */
   costUsd: number;
   msToFirstConcept: number | null;
   msToFirstDirection: number | null;

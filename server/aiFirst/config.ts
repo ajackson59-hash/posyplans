@@ -1,5 +1,5 @@
 import { TARGET_DIRECTION_COUNT } from "@shared/aiFirstStream";
-import type { ArtworkModel } from "./artwork";
+import { DEFAULT_ARTWORK_MODEL, type ArtworkModel } from "./artwork";
 
 export const AI_FIRST_DIRECTION_LIMIT_ENV = "POSY_AI_FIRST_DIRECTION_LIMIT";
 export const AI_FIRST_IMAGE_MODEL_ENV = "POSY_AI_FIRST_IMAGE_MODEL";
@@ -23,7 +23,7 @@ export function readAiFirstDirectionLimit(env: Record<string, string | undefined
  * value is an operator error, not permission to silently spend on a fallback.
  */
 export function readAiFirstArtworkModel(env: Record<string, string | undefined>): ArtworkModel {
-  const configured = env[AI_FIRST_IMAGE_MODEL_ENV]?.trim() || "gpt-image-1";
+  const configured = env[AI_FIRST_IMAGE_MODEL_ENV]?.trim() || DEFAULT_ARTWORK_MODEL;
   if (!SUPPORTED_ARTWORK_MODELS.has(configured as ArtworkModel)) {
     throw new Error(
       `${AI_FIRST_IMAGE_MODEL_ENV} must be one of: ${Array.from(SUPPORTED_ARTWORK_MODELS).join(", ")}.`,

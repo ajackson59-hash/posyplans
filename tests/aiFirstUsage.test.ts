@@ -196,6 +196,13 @@ describe("ledger", () => {
     expect(await store.findByIdempotencyKey("run-1-direction-0")).toBeDefined();
     expect(await store.findByIdempotencyKey("nope")).toBeUndefined();
   });
+
+  it("atomically reserves one provider attempt per idempotency key", async () => {
+    const reserved = entry({ idempotencyKey: "run-1-direction-0-attempt-1" });
+    expect(await store.reserveProviderAttempt(reserved)).toBe(true);
+    expect(await store.reserveProviderAttempt(reserved)).toBe(false);
+    expect(store.all).toHaveLength(1);
+  });
 });
 
 it("holds artwork concurrency at two", () => {

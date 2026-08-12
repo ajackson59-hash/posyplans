@@ -12,6 +12,8 @@
 // three places would be the same work done three times.
 
 export type ArtworkModel = "gpt-image-1" | "gpt-image-2";
+/** Current quality-first default; GPT Image 1 remains explicit legacy support. */
+export const DEFAULT_ARTWORK_MODEL: ArtworkModel = "gpt-image-2";
 export type ArtworkQuality = "high" | "medium" | "low";
 export type ArtworkAspectRatio = "16:9" | "1:1" | "9:16";
 export type ArtworkSize = "1536x1024" | "1024x1024" | "1024x1536";
@@ -36,7 +38,7 @@ const SIZE_FOR_ASPECT: Record<ArtworkAspectRatio, ArtworkSize> = {
   "9:16": "1024x1536",
 };
 
-/** OpenAI image output pricing, in USD micros, effective 2026-08-03. */
+/** OpenAI image-output pricing, in USD micros, verified 2026-08-12. Input tokens are additional. */
 const IMAGE_COST_USD_MICROS: Record<ArtworkModel, Record<ArtworkQuality, Record<ArtworkSize, number>>> = {
   "gpt-image-1": {
     low: { "1024x1024": 11_000, "1024x1536": 16_000, "1536x1024": 16_000 },
@@ -70,7 +72,7 @@ export async function generateArtwork(request: ArtworkRequest): Promise<ArtworkR
     throw new Error("OPENAI_API_KEY is not configured — illustration generation is unavailable.");
   }
   const started = Date.now();
-  const model = request.model ?? "gpt-image-1";
+  const model = request.model ?? DEFAULT_ARTWORK_MODEL;
 
   const response = await fetch("https://api.openai.com/v1/images/generations", {
     method: "POST",

@@ -32,7 +32,7 @@ import { createHash } from "node:crypto";
 import type { AiFirstConcept } from "@shared/aiFirstInvite";
 import type { Tier1Finding } from "./tier1";
 import type { VisionVerdict } from "./visionGate";
-import type { ArtworkModel, ArtworkQuality, ArtworkSize } from "./artwork";
+import { DEFAULT_ARTWORK_MODEL, type ArtworkModel, type ArtworkQuality, type ArtworkSize } from "./artwork";
 
 export type ArtworkAttemptStatus = "accepted" | "rejected";
 
@@ -117,7 +117,7 @@ export class InMemoryArtworkAttemptStore implements AiFirstArtworkAttemptStore {
       failureCodes: input.failureCodes,
       tier1Findings: input.tier1Findings,
       visionScores: input.visionScores,
-      model: input.model ?? "gpt-image-1",
+      model: input.model ?? DEFAULT_ARTWORK_MODEL,
       quality: input.quality ?? "high",
       size: input.size ?? null,
       costUsdMicros: input.costUsdMicros,

@@ -576,6 +576,9 @@ export const aiFirstImageLedger = pgTable(
     // Set on reuse rows to the previewId whose bytes were served instead.
     reuseOf: text("reuse_of"),
     idempotencyKey: text("idempotency_key"),
+    // Conservative image-output estimate. Prompt/input tokens are billed by
+    // the provider too, but are not available before this durable pre-call
+    // reservation is written.
     costUsdMicros: integer("cost_usd_micros").notNull().default(0),
     createdAt: bigint("created_at", { mode: "number" }).notNull(),
   },
@@ -708,7 +711,7 @@ export const aiFirstArtworkAttempts = pgTable(
     failureCodesJson: text("failure_codes_json").notNull(),
     tier1FindingsJson: text("tier1_findings_json").notNull(),
     visionScoresJson: text("vision_scores_json"),
-    model: text("model").notNull().default("gpt-image-1"),
+    model: text("model").notNull().default("gpt-image-2"),
     quality: text("quality").notNull().default("high"),
     // Existing protected-review rows predate provenance and cannot be
     // assigned an honest size after the fact, so this is intentionally null.

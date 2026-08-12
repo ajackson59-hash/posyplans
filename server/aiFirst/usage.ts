@@ -332,12 +332,19 @@ export interface LedgerEntry {
   previewId?: string;
   reuseOf?: string;
   idempotencyKey?: string;
+  /** Estimated image-output cost only; prompt/input tokens are not included. */
   costUsdMicros: number;
   createdAt: number;
 }
 
 export interface AiFirstUsageStore {
   record(entry: LedgerEntry): Promise<void>;
+  /**
+   * Atomically reserves a possibly billed provider attempt before network
+   * I/O. Returns false when the idempotency key was already reserved, so an
+   * interrupted/uncertain attempt is never purchased automatically again.
+   */
+  reserveProviderAttempt(entry: LedgerEntry): Promise<boolean>;
   findByIdempotencyKey(key: string): Promise<LedgerEntry | undefined>;
   snapshot(eventId: number, email: string | undefined, monthStart: number): Promise<UsageSnapshot>;
 }
@@ -353,6 +360,15 @@ export class InMemoryUsageStore implements AiFirstUsageStore {
 
   async record(entry: LedgerEntry): Promise<void> {
     this.entries.push({ ...entry });
+  }
+
+  async reserveProviderAttempt(entry: LedgerEntry): Promise<boolean> {
+    if (!entry.billed) throw new Error("provider attempt reservations must be billed or billing-uncertain");
+    if (entry.idempotencyKey && this.entries.some((candidate) => candidate.idempotencyKey === entry.idempotencyKey)) {
+      return false;
+    }
+    this.entries.push({ ...entry });
+    return true;
   }
 
   async findByIdempotencyKey(key: string): Promise<LedgerEntry | undefined> {

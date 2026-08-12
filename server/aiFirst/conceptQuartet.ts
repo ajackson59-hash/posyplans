@@ -123,7 +123,11 @@ function milestonePattern(milestone: string): RegExp | null {
 }
 
 function dominantMachine(concept: AiFirstConcept): string | null {
-  const focalText = `${concept.art.composition} ${concept.focalStrategy === "iconic-detail" ? concept.art.prompt : ""}`;
+  // Provider prompts are the spend boundary. A concept cannot hide a
+  // repeated hero machine in `art.prompt` while keeping `composition`
+  // generic: every strategy is judged from the complete art brief that will
+  // actually be sent to the image model.
+  const focalText = `${concept.art.medium} ${concept.art.composition} ${concept.art.prompt}`;
   return MACHINE_PATTERNS.find(([, pattern]) => pattern.test(focalText))?.[0] ?? null;
 }
 
