@@ -125,6 +125,30 @@ export function safeTypographyPlacementCoverage(
   return overlaps(REGION_BOX[concept.safeTypographyRegion], typeBox) / area;
 }
 
+/**
+ * `safeTypographyRegion` is ultimately renderer geometry, not creative prose.
+ * Preserve a provider choice when it is genuinely compatible; otherwise
+ * derive the highest-coverage region from the exact inherited placement.
+ * This removes a stochastic correction loop without weakening the gate.
+ */
+export function canonicalSafeTypographyRegion(
+  concept: AiFirstConcept,
+  layoutStyle: LayoutStyle = concept.layoutStyle,
+): SafeTypographyRegion {
+  if (safeTypographyPlacementCoverage(concept, layoutStyle) >= MIN_SAFE_TYPE_PLACEMENT_COVERAGE) {
+    return concept.safeTypographyRegion;
+  }
+
+  return (Object.keys(REGION_BOX) as SafeTypographyRegion[]).reduce((best, candidate) => {
+    const bestCoverage = safeTypographyPlacementCoverage({ ...concept, safeTypographyRegion: best }, layoutStyle);
+    const candidateCoverage = safeTypographyPlacementCoverage(
+      { ...concept, safeTypographyRegion: candidate },
+      layoutStyle,
+    );
+    return candidateCoverage > bestCoverage ? candidate : best;
+  }, concept.safeTypographyRegion);
+}
+
 /* ── Pass 1: before generation ───────────────────────────────────────── */
 
 /**

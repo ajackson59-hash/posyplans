@@ -272,6 +272,33 @@ describe("whole-quartet creative preflight", () => {
     expect(result.errors.join(" ")).toContain('safeTypographyRegion "upper-third" covers only');
   });
 
+  it("canonicalizes a provider geometry mismatch before correction or image spend", async () => {
+    const mismatched = CONSTRUCTION_REVIEW_QUARTET.map((item, index) =>
+      index === 1
+        ? concept({
+            ...item,
+            layoutStyle: "full-bleed",
+            baseThemeId: "deco-midnight",
+            placementId: "high",
+            safeTypographyRegion: "upper-third",
+          })
+        : item,
+    );
+    let emitted = 0;
+    const result = await runConceptOnlyProof({
+      brief: CONSTRUCTION_REVIEW_BRIEF,
+      anthropic: quartetClient(mismatched, () => {
+        emitted += 1;
+      }),
+    });
+
+    expect(emitted).toBe(4);
+    expect(result.concepts[1].safeTypographyRegion).toBe("center");
+    expect(result.conceptRejections).toBe(0);
+    expect(result.imageProviderCalls).toBe(0);
+    expect(result.billedArtworkAttempts).toBe(0);
+  });
+
   it("repairs the exact milestone/media/machine failure once while preserving the zero-image boundary", async () => {
     const first = preflightConceptQuartet(FAILED_PROVIDER_QUARTET, CONSTRUCTION_REVIEW_BRIEF);
     const failures = first.errors.join(" ");

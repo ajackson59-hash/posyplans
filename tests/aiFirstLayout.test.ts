@@ -11,6 +11,7 @@ import {
   OVERLAY_COVERAGE,
   MAX_SALIENT_CROP_FRACTION,
   MIN_SAFE_TYPE_PLACEMENT_COVERAGE,
+  canonicalSafeTypographyRegion,
   evaluateCropSafety,
   safeTypographyPlacementCoverage,
   strongerOverlay,
@@ -153,6 +154,23 @@ describe("layout — before generation", () => {
       code: "safe-region-outside-type-area",
       repair: "regenerate",
     }));
+  });
+
+  it("derives the compatible region from exact placement geometry instead of retry roulette", () => {
+    const mismatched = concept({
+      layoutStyle: "full-bleed",
+      baseThemeId: "deco-midnight",
+      placementId: "high",
+      safeTypographyRegion: "upper-third",
+    });
+    expect(safeTypographyPlacementCoverage(mismatched)).toBeLessThan(MIN_SAFE_TYPE_PLACEMENT_COVERAGE);
+    expect(canonicalSafeTypographyRegion(mismatched)).toBe("center");
+    expect(
+      safeTypographyPlacementCoverage({
+        ...mismatched,
+        safeTypographyRegion: canonicalSafeTypographyRegion(mismatched),
+      }),
+    ).toBeGreaterThanOrEqual(MIN_SAFE_TYPE_PLACEMENT_COVERAGE);
   });
 
   it("accepts a quiet centre that covers the actual centred placement", () => {

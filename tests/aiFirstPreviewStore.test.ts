@@ -48,7 +48,18 @@ describe("content addressing", () => {
         current.art.prompt.trim(),
         current.layoutStyle,
         current.styleLaneId,
+        current.baseThemeId,
+        current.placementId,
+        current.safeTypographyRegion,
       ]),
+    );
+  });
+
+  it("does not reuse artwork after the live type box moves", () => {
+    const current = concept();
+    expect(conceptFingerprint(concept({ placementId: "high" }))).not.toBe(conceptFingerprint(current));
+    expect(conceptFingerprint(concept({ safeTypographyRegion: "upper-third" }))).not.toBe(
+      conceptFingerprint(current),
     );
   });
 

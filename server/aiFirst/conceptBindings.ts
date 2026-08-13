@@ -3,6 +3,7 @@
 // omitted. This keeps milestone and subject compliance out of retry roulette.
 
 import type { AiFirstConcept, FocalStrategy } from "@shared/aiFirstInvite";
+import { canonicalSafeTypographyRegion } from "@shared/aiFirstLayout";
 import type { EventBrief } from "./brief";
 import { subjectFamiliesForBrief } from "./conceptPreflight";
 
@@ -75,6 +76,13 @@ export function bindConceptsToBrief(
       }
     }
 
-    return { ...candidate, description, art: { ...candidate.art, prompt } };
+    return {
+      ...candidate,
+      description,
+      art: { ...candidate.art, prompt },
+      // The renderer owns the real type box. Do not spend a second text call
+      // asking a model to rediscover geometry Posy can derive exactly.
+      safeTypographyRegion: canonicalSafeTypographyRegion(candidate),
+    };
   });
 }

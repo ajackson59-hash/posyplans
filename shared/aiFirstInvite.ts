@@ -28,6 +28,7 @@ import {
 } from "./themeCatalog";
 import { BORDER_STYLES, FONT_PAIRINGS, LAYOUT_STYLES, STYLE_LANES } from "./inviteDesign";
 import { LAYOUT_FRAMES } from "./inviteLayout";
+import { typePlacementFrame } from "./aiFirstLayout";
 import { DNA_AXES, type DnaAxis } from "./eventDna";
 
 /* ── Safe typography regions ─────────────────────────────────────────── */
@@ -275,7 +276,7 @@ export interface ResolvedAiConcept {
  * part of the image cache key so artwork accepted by an older, weaker gate
  * can never skip the current checks; restyles remain free within a version.
  */
-export const AI_FIRST_QUALITY_GATE_VERSION = 2;
+export const AI_FIRST_QUALITY_GATE_VERSION = 3;
 
 /**
  * A stable hash over exactly the fields that change the generated *image*.
@@ -284,8 +285,9 @@ export const AI_FIRST_QUALITY_GATE_VERSION = 2;
  * form from being billed twice.
  *
  * Deliberately excludes conceptName, description, palette, fonts, border,
- * texture, divider and placement: those restyle the card without changing a
- * pixel of the artwork, so they must not invalidate a paid image.
+ * texture and divider: those restyle the card without changing a pixel of the
+ * artwork. Placement geometry is included because the image prompt now keeps
+ * the exact live-type box quiet; moving that box can change the image.
  */
 export function conceptImageFingerprintInput(concept: AiFirstConcept): string {
   const imageFields = [
@@ -294,6 +296,9 @@ export function conceptImageFingerprintInput(concept: AiFirstConcept): string {
     concept.art.prompt.trim(),
     concept.layoutStyle,
     concept.styleLaneId,
+    concept.baseThemeId,
+    concept.placementId,
+    concept.safeTypographyRegion,
   ];
   // Preserve the exact pre-quartet fingerprint shape for previews already in
   // storage within this quality-gate version. Focal metadata remains
@@ -371,12 +376,34 @@ export function safeFramingRequirement(layout: AiFirstConcept["layoutStyle"]): s
   )} — the rest is cropped away. Background texture still reaches every edge.`;
 }
 
+/**
+ * Full-card artwork is the only case where generated pixels sit behind live
+ * type. Give the image model the renderer's exact box rather than a vague
+ * "upper third" label. Layouts with separate art/type panels need no such
+ * instruction because their pixels never sit under the words.
+ */
+export function typographySafetyRequirement(concept: AiFirstConcept): string {
+  if (concept.layoutStyle !== "full-bleed" && concept.layoutStyle !== "backdrop") return "";
+  const frame = typePlacementFrame(concept);
+  const left = Math.round(frame.left);
+  const right = Math.round(frame.left + frame.width);
+  const top = Math.round(frame.top);
+  const bottom = Math.round(frame.top + frame.height);
+  return (
+    `Reserve the rectangle from ${left}% to ${right}% of canvas width and ${top}% to ${bottom}% of canvas height ` +
+    `as a visually quiet typography zone. Keep every face, person, hero object, required subject and high-contrast ` +
+    `detail entirely outside this box; only low-detail background texture may pass through it. ` +
+    `This exact box overrides any conflicting quiet-region wording earlier in the brief.`
+  );
+}
+
 export function buildArtworkPrompt(concept: AiFirstConcept): string {
   return [
     `${concept.art.medium} illustration.`,
     `${concept.art.composition}.`,
     concept.art.prompt.trim().replace(/\s+$/, ""),
     safeFramingRequirement(concept.layoutStyle),
+    typographySafetyRequirement(concept),
     ARTWORK_EDGE_REQUIREMENT,
     ARTWORK_TEXT_REQUIREMENT,
   ]

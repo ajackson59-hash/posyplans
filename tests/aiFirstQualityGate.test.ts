@@ -21,6 +21,7 @@ import {
   aspectRatioForLayout,
   buildArtworkPrompt,
   safeFramingRequirement,
+  typographySafetyRequirement,
   visibleFractionForLayout,
 } from "@shared/aiFirstInvite";
 import { artworkPng, busyTypeRegionPng, concept, framedArtworkPng, solidPng } from "./aiFirstFixtures";
@@ -176,6 +177,27 @@ describe("the artwork edge rule", () => {
       expect(prompt).toContain(ARTWORK_EDGE_REQUIREMENT);
       expect(prompt).toContain(ARTWORK_TEXT_REQUIREMENT);
     }
+  });
+});
+
+describe("protecting the exact live-type box", () => {
+  it("gives full-card artwork exact renderer coordinates and explicit subject exclusion", () => {
+    const prompt = buildArtworkPrompt(concept({
+      layoutStyle: "full-bleed",
+      baseThemeId: "garden-editorial",
+      placementId: "centre",
+      safeTypographyRegion: "center",
+    }));
+    expect(prompt).toContain("Reserve the rectangle from 21% to 79% of canvas width");
+    expect(prompt).toContain("32% to 72% of canvas height");
+    expect(prompt).toContain("Keep every face, person, hero object, required subject");
+    expect(prompt).toContain("overrides any conflicting quiet-region wording");
+  });
+
+  it("does not invent an image-space type box when layout panels already separate art and words", () => {
+    expect(typographySafetyRequirement(concept({ layoutStyle: "split" }))).toBe("");
+    expect(typographySafetyRequirement(concept({ layoutStyle: "banner" }))).toBe("");
+    expect(typographySafetyRequirement(concept({ layoutStyle: "centered" }))).toBe("");
   });
 });
 
