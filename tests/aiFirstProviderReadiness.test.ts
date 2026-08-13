@@ -193,6 +193,25 @@ function reviewApp(input: {
 }
 
 describe("protected Preview review routes", () => {
+  it("advertises the reviewer control only on a paused Vercel Preview", async () => {
+    const preview = reviewApp({});
+    const previewStatus = await request(preview.app).get(`/api/events/owner/${OWNER}/ai-first/status`);
+    expect(previewStatus.status).toBe(200);
+    expect(previewStatus.body.previewReviewAvailable).toBe(true);
+
+    const production = reviewApp({ env: { VERCEL_ENV: "production" } });
+    const productionStatus = await request(production.app).get(`/api/events/owner/${OWNER}/ai-first/status`);
+    expect(productionStatus.status).toBe(200);
+    expect(productionStatus.body.previewReviewAvailable).toBe(false);
+
+    const unpaused = reviewApp({
+      env: { [featureFlagEnvVar("invitationGenerationKillSwitch")]: "0" },
+    });
+    const unpausedStatus = await request(unpaused.app).get(`/api/events/owner/${OWNER}/ai-first/status`);
+    expect(unpausedStatus.status).toBe(200);
+    expect(unpausedStatus.body.previewReviewAvailable).toBe(false);
+  });
+
   it("404s outside Preview before any model check", async () => {
     let checks = 0;
     const { app } = reviewApp({

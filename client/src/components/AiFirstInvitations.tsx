@@ -19,6 +19,7 @@ import type { EventRecord } from "@/lib/types";
 import { eventStyleSummary } from "@shared/eventStyle";
 import type { AiFirstRunOptions, AiFirstSession } from "@/lib/aiFirstSession";
 import { ThemeInvitation } from "@/components/ThemeInvitation";
+import AiFirstPreviewReview from "@/components/AiFirstPreviewReview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -29,6 +30,7 @@ interface AiFirstStatus {
   ceilings: { eventSoft: number; eventHard: number; monthlySoft: number; monthlyHard: number };
   usage: { eventBilled: number; monthlyBilled: number; activeGenerations: number };
   killSwitch: boolean;
+  previewReviewAvailable?: boolean;
   directionLimit: number;
   automaticRetryDisabled: boolean;
   additionalGenerationConfirmationRequired: boolean;
@@ -178,6 +180,10 @@ export default function AiFirstInvitations({
           New artwork is paused right now. Designs you've already made are still available, and the Posy collection is
           open below.
         </p>
+      )}
+
+      {status.data?.previewReviewAvailable && (
+        <AiFirstPreviewReview ownerToken={ownerToken} />
       )}
 
       <section className="mb-5 rounded-md border border-border bg-muted/30 p-4" data-testid="card-invitation-brief">

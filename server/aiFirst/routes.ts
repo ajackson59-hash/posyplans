@@ -227,6 +227,7 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
   app.get(
     "/api/events/owner/:ownerToken/ai-first/status",
     gated(async (req, res) => {
+      const requestFlags = flags();
       const event = await deps.storage.getEventByOwnerToken(String(req.params.ownerToken));
       if (!event) {
         res.status(404).json({ error: "Event not found" });
@@ -244,9 +245,14 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
         plan: tierLabel(tier),
         ceilings: ceilingsForTier(tier),
         usage: { ...usage, activeGenerations },
-        killSwitch: flags().invitationGenerationKillSwitch,
+        killSwitch: requestFlags.invitationGenerationKillSwitch,
+        // The client renders the reviewer control only when the server—not a
+        // build-time browser assumption—proves this is a paused Vercel
+        // Preview. The review endpoints repeat both checks before doing work.
+        previewReviewAvailable:
+          env().VERCEL_ENV === "preview" && requestFlags.invitationGenerationKillSwitch,
         directionLimit: readAiFirstDirectionLimit(env()),
-        automaticRetryDisabled: flags().aiFirstDisableAutomaticRetry,
+        automaticRetryDisabled: requestFlags.aiFirstDisableAutomaticRetry,
         // A reload or return visit must not turn a later cost-bearing run
         // back into an unqualified one-click action. The server enforces the
         // same fact on POST; this field lets the UI explain it beforehand.
