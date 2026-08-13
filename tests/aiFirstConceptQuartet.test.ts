@@ -56,7 +56,7 @@ export const CONSTRUCTION_REVIEW_QUARTET: AiFirstConcept[] = [
       medium: "editorial watercolor",
       composition: "wide upper-banner backyard build-zone party scene above a calm lower type panel",
       prompt:
-        "A refined summer backyard BBQ transformed into a third-birthday little-builder jobsite celebration: one small yellow excavator beside a timber build zone, hard hats resting near a picnic table, restrained bunting, warm late-afternoon light, ink navy shadows, concrete cream and construction yellow, sophisticated watercolor detail, festive but never cartoonish.",
+        "A refined summer backyard BBQ transformed into a third-birthday little-builder jobsite celebration: measured lumber and scaffold frames create a timber build zone, hard hats and safety cones rest near a picnic table, restrained bunting, warm late-afternoon light, ink navy shadows, concrete cream and construction yellow, sophisticated watercolor detail, festive but never cartoonish.",
     },
     safeTypographyRegion: "lower-third",
     minOverlay: "veil",
@@ -344,7 +344,7 @@ describe("whole-quartet creative preflight", () => {
     expect(sequence.streamCalls()).toBe(2);
   });
 
-  it("blocks four prompt-level excavator variations even when their compositions hide the repetition", async () => {
+  it("repairs prompt-level machine repetition before the image boundary while the raw gate stays strict", async () => {
     const repetitive = CONSTRUCTION_REVIEW_QUARTET.map((item, index) =>
       concept({
         ...item,
@@ -363,26 +363,32 @@ describe("whole-quartet creative preflight", () => {
     );
     let imageCalls = 0;
 
-    await expect(
-      runAiFirstPipeline({
-        eventId: 1,
-        brief: CONSTRUCTION_REVIEW_BRIEF,
-        previewStore: new InMemoryPreviewStore(),
-        usageStore: new InMemoryUsageStore(),
-        allowance: 1,
-        directionLimit: 1,
-        disableAutomaticRetry: true,
-        sink: () => {},
-        anthropic: quartetClient(repetitive),
-        ocr: false,
-        generateImage: async ({ aspectRatio }) => {
-          imageCalls += 1;
-          return { bytes: artworkForAspect(aspectRatio), dataUrl: "data:image/png;base64,x", durationMs: 1 };
-        },
-      }),
-    ).rejects.toThrow("creative quartet failed zero-image preflight");
+    const raw = preflightConceptQuartet(repetitive, CONSTRUCTION_REVIEW_BRIEF);
+    expect(raw.passed).toBe(false);
+    expect(raw.errors).toContain("quartet repeats machine-led construction artwork in more than two directions");
+    expect(raw.errors).toContain("quartet repeats excavator as a dominant subject");
 
-    expect(imageCalls).toBe(0);
+    const summary = await runAiFirstPipeline({
+      eventId: 1,
+      brief: CONSTRUCTION_REVIEW_BRIEF,
+      previewStore: new InMemoryPreviewStore(),
+      usageStore: new InMemoryUsageStore(),
+      allowance: 1,
+      directionLimit: 1,
+      disableAutomaticRetry: true,
+      sink: () => {},
+      anthropic: quartetClient(repetitive),
+      ocr: false,
+      generateImage: async ({ prompt, aspectRatio }) => {
+        expect(prompt).not.toMatch(/\b(excavator|digger|dump truck|bulldozer|backhoe|loader|crane)\b/i);
+        expect(prompt).toContain("Builder activity and construction materials create the story");
+        imageCalls += 1;
+        return { bytes: artworkForAspect(aspectRatio), dataUrl: "data:image/png;base64,x", durationMs: 1 };
+      },
+    });
+
+    expect(summary.directions).toBe(1);
+    expect(imageCalls).toBe(1);
   });
 
   it("compares all four text concepts before a one-image proof can start", async () => {
