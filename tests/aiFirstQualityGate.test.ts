@@ -434,7 +434,45 @@ describe("tier 2 — acceptance", () => {
     expect(reviewText).toContain("age-appropriate celebratory character for a 3rd birthday");
     expect(reviewText).toContain("LIVE TYPOGRAPHY BOX");
     expect(reviewText).toContain("left 21%, top 32%, width 58%, height 40%");
+    expect(reviewText).toContain("FINAL TYPE PROTECTION: veil (88% local surface opacity)");
     expect(reviewText).toContain("no face, person, hero object or required subject");
+  });
+
+  it("reviews a paper-panel concept as the final protected card without hiding required subjects", async () => {
+    let reviewText = "";
+    const capturingCritic = {
+      messages: {
+        create: async (request: any) => {
+          reviewText = request.messages[0].content.find((part: any) => part.type === "text")?.text ?? "";
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify({
+                  ...allFive,
+                  requiredPresent: [],
+                  excludedFound: [],
+                  notes: "The required artwork remains visible outside the protected type panel.",
+                }),
+              },
+            ],
+            usage: { input_tokens: 1200, output_tokens: 180 },
+          };
+        },
+      },
+    } as unknown as Anthropic;
+
+    const verdict = await runVisionGate({
+      bytes: artworkPng(),
+      concept: concept({ minOverlay: "plate" }),
+      brief: brief(),
+      client: capturingCritic,
+    });
+
+    expect(verdict.passed).toBe(true);
+    expect(reviewText).toContain("FINAL TYPE PROTECTION: a 94%-opaque solid paper panel");
+    expect(reviewText).toContain("Treat raw pixels beneath the box as covered");
+    expect(reviewText).toContain("Required subjects must remain clearly recognizable outside the panel");
   });
 
   it("is never a silent pass when the critic is unreachable", async () => {

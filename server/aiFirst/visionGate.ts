@@ -12,6 +12,7 @@ import type { AiFirstConcept } from "@shared/aiFirstInvite";
 import { MIN_DIMENSION_SCORE, type VisionScores } from "@shared/aiFirstStream";
 import { concreteSubjectReviewRequirementsForBrief } from "./conceptPreflight";
 import { typePlacementFrame } from "@shared/aiFirstLayout";
+import { LOCAL_TYPE_SURFACE_ALPHA } from "@shared/themeCatalog";
 
 export const VISION_MODEL = "claude-sonnet-4-6";
 
@@ -41,7 +42,7 @@ Score each 1-5. 4 means "a professional stationery studio would ship this". 3 me
 - artifactFree: 5 = no melted, duplicated, malformed or anatomically broken forms.
 - premiumFinish: 5 = genuinely premium editorial illustration. Score 1-2 for clipart, stock-template or generic AI look.
 - briefFidelity: 5 = the artwork unmistakably delivers the brief's stated identity.
-- compositionQuality: 5 = clear, balanced, intentional composition with the live typography box left visually quiet. Any face, person, hero object or required subject inside the supplied LIVE TYPOGRAPHY BOX forces a score of 3 or lower, even when the raw artwork is otherwise attractive.
+- compositionQuality: 5 = clear, balanced, intentional composition after applying the FINAL TYPE PROTECTION described by the user. For none, gradient or veil protection, any face, person, hero object or required subject inside the supplied LIVE TYPOGRAPHY BOX forces a score of 3 or lower. A plate is different: it is a nearly opaque paper panel in the final renderer, so judge the composition as though the pixels beneath that box are covered. Do not fail a plate merely because raw artwork lies beneath it. Do fail briefFidelity or compositionQuality if covering that box hides the only visible must-have, removes the theme's only recognizable subject, or leaves the visible composition outside the panel unbalanced.
 - ageAppropriate: 5 = correctly pitched for the celebrant's age. Babyish work for an adult, or content too mature for a child, scores 1.
 
 Judge BRIEF REQUIREMENTS holistically through briefFidelity and ageAppropriate. Do not repeat them in requiredPresent.
@@ -103,12 +104,18 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
   const { brief, concept } = input;
   const reviewRequirements = concreteSubjectReviewRequirementsForBrief(brief);
   const typeBox = typePlacementFrame(concept);
+  const protectionAlpha = LOCAL_TYPE_SURFACE_ALPHA[concept.minOverlay];
+  const protectionInstruction =
+    concept.minOverlay === "plate"
+      ? `FINAL TYPE PROTECTION: a ${(protectionAlpha * 100).toFixed(0)}%-opaque solid paper panel in ${concept.semanticPalette.textSurface} covers the LIVE TYPOGRAPHY BOX in the rendered invitation. Treat raw pixels beneath the box as covered. Required subjects must remain clearly recognizable outside the panel, and the remaining visible composition must still feel balanced.`
+      : `FINAL TYPE PROTECTION: ${concept.minOverlay} (${(protectionAlpha * 100).toFixed(0)}% local surface opacity). The LIVE TYPOGRAPHY BOX must contain no face, person, hero object or required subject.`;
 
   const userText = [
     `Celebration: ${brief.eventName || brief.eventType || "a celebration"}${brief.milestone ? ` · ${brief.milestone}` : ""}`,
     brief.vibe ? `Intended feeling: ${brief.vibe}` : "",
     `Direction: ${concept.conceptName} — ${concept.description}`,
-    `LIVE TYPOGRAPHY BOX (percentage of final card): left ${typeBox.left.toFixed(0)}%, top ${typeBox.top.toFixed(0)}%, width ${typeBox.width.toFixed(0)}%, height ${typeBox.height.toFixed(0)}%. This box must contain no face, person, hero object or required subject.`,
+    `LIVE TYPOGRAPHY BOX (percentage of final card): left ${typeBox.left.toFixed(0)}%, top ${typeBox.top.toFixed(0)}%, width ${typeBox.width.toFixed(0)}%, height ${typeBox.height.toFixed(0)}%.`,
+    protectionInstruction,
     "",
     "BRIEF REQUIREMENTS (judge holistically in briefFidelity and ageAppropriate):",
     ...brief.requirements.required.map((r) => `- ${r}`),
