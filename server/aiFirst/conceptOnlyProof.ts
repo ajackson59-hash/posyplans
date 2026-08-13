@@ -12,6 +12,7 @@ import type { AiFirstConcept } from "@shared/aiFirstInvite";
 import type { EventBrief } from "./brief";
 import { ConceptStreamParser } from "./conceptStream";
 import { preflightConceptQuartet } from "./conceptQuartet";
+import { bindConceptsToBrief } from "./conceptBindings";
 import { buildConceptCorrectionPrompt, buildSystemPrompt, buildUserPrompt } from "./prompt";
 
 export const CONCEPT_MODEL = "claude-sonnet-4-6";
@@ -79,9 +80,10 @@ export async function runConceptOnlyProof(input: ConceptOnlyProofInput): Promise
     throwIfAborted(input.signal);
     collect(parser.flush());
     input.onReviewingConcepts?.();
-    const quartet = preflightConceptQuartet(candidates, input.brief);
+    const boundCandidates = bindConceptsToBrief(candidates, input.brief);
+    const quartet = preflightConceptQuartet(boundCandidates, input.brief);
     const parserErrors = parser.rejections.flatMap((rejection) => rejection.errors);
-    return { candidates, quartet, parserErrors };
+    return { candidates: boundCandidates, quartet, parserErrors };
   };
 
   const userPrompt = buildUserPrompt({

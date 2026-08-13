@@ -10,6 +10,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { parseAiFirstConcept, type AiFirstConcept } from "@shared/aiFirstInvite";
 import type { EventBrief } from "../server/aiFirst/brief";
 import { preflightConceptQuartet } from "../server/aiFirst/conceptQuartet";
+import { subjectFamiliesForBrief } from "../server/aiFirst/conceptPreflight";
 import { runConceptOnlyProof } from "../server/aiFirst/conceptOnlyProof";
 import { runAiFirstPipeline } from "../server/aiFirst/pipeline";
 import { InMemoryPreviewStore } from "../server/aiFirst/previewStore";
@@ -196,6 +197,41 @@ function sequentialQuartetClient(attempts: AiFirstConcept[][]): {
 }
 
 describe("whole-quartet creative preflight", () => {
+  it("does not misclassify a construction dump-truck brief as vehicles/racing", () => {
+    const families = subjectFamiliesForBrief(CONSTRUCTION_REVIEW_BRIEF).map((family) => family.id);
+    expect(families).toContain("construction");
+    expect(families).not.toContain("vehicles");
+  });
+
+  it("deterministically restores required milestone and construction cues without a correction call", async () => {
+    const omittedFacts = CONSTRUCTION_REVIEW_QUARTET.map((item, index) =>
+      index === 0
+        ? concept({
+            ...item,
+            art: {
+              ...item.art,
+              composition: "wide outdoor scene with a quiet centre",
+              prompt: "A refined backyard birthday scene with bunting and one construction jobsite.",
+            },
+          })
+        : index === 1
+          ? concept({ ...item, description: "A sculptural construction detail for a polished backyard celebration." })
+          : item,
+    );
+    let calls = 0;
+    const result = await runConceptOnlyProof({
+      brief: CONSTRUCTION_REVIEW_BRIEF,
+      anthropic: quartetClient(omittedFacts, () => {
+        calls += 1;
+      }),
+    });
+
+    expect(calls).toBe(4);
+    expect(result.concepts[0].art.prompt).toContain("hard hats");
+    expect(result.concepts[1].description).toContain("3rd birthday");
+    expect(result.conceptRejections).toBe(0);
+  });
+
   it("keeps every review fixture inside the production concept schema", () => {
     CONSTRUCTION_REVIEW_QUARTET.forEach((item, index) => {
       const parsed = parseAiFirstConcept(item);

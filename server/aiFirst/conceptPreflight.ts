@@ -22,6 +22,8 @@ export interface SubjectFamily {
   reviewRequirements?: readonly string[];
   /** Curated themes whose shipped artwork genuinely depicts this subject. */
   compatibleThemeIds: readonly string[];
+  /** Broader keyword families absorbed by this more-specific identity. */
+  suppresses?: readonly string[];
 }
 
 const SUBJECT_FAMILIES: readonly SubjectFamily[] = [
@@ -50,6 +52,11 @@ const SUBJECT_FAMILIES: readonly SubjectFamily[] = [
       "The construction / little-builder identity is unmistakably visible through at least two coherent builder or jobsite cues",
     ],
     compatibleThemeIds: [],
+    // A dump truck is a construction cue, not evidence that the host also
+    // requested a separate vehicles/racing theme. Specific identities win
+    // over broader keyword families so compound-theme validation is real,
+    // not an artefact of overlapping regular expressions.
+    suppresses: ["vehicles"],
   },
   {
     id: "dinosaur",
@@ -157,7 +164,9 @@ function briefIdentity(brief: EventBrief): string {
 
 export function subjectFamiliesForBrief(brief: EventBrief): SubjectFamily[] {
   const identity = briefIdentity(brief);
-  return SUBJECT_FAMILIES.filter((family) => family.trigger.test(identity));
+  const matches = SUBJECT_FAMILIES.filter((family) => family.trigger.test(identity));
+  const suppressed = new Set(matches.flatMap((family) => family.suppresses ?? []));
+  return matches.filter((family) => !suppressed.has(family.id));
 }
 
 export interface ConceptPreflightResult {
