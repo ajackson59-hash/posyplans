@@ -62,6 +62,8 @@ describe("feature flags", () => {
 describe("route gating", () => {
   const routes: [string, string][] = [
     ["get", `/api/events/owner/${OWNER}/ai-first/status`],
+    ["get", `/api/events/owner/${OWNER}/ai-first/review/readiness`],
+    ["post", `/api/events/owner/${OWNER}/ai-first/review/concept-proof`],
     ["post", `/api/events/owner/${OWNER}/ai-first/generate`],
     ["post", `/api/events/owner/${OWNER}/ai-first/apply`],
     ["post", "/api/ai-first/cleanup-previews"],

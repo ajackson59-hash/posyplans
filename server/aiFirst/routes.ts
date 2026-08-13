@@ -33,6 +33,16 @@ import type { AiFirstRunStore } from "./runStore";
 import type { AiFirstArtworkAttemptStore } from "./artworkAttemptStore";
 import { readAiFirstArtworkModel, readAiFirstDirectionLimit } from "./config";
 import { hostFacingGenerationError } from "@shared/aiFirstStream";
+import {
+  checkAiFirstModelReadiness,
+  type AiFirstModelReadiness,
+  type ProviderReadinessInput,
+} from "./providerReadiness";
+import {
+  runConceptOnlyProof,
+  type ConceptOnlyProofInput,
+  type ConceptOnlyProofResult,
+} from "./conceptOnlyProof";
 
 /** One breaker and one limiter per process, shared by every event. */
 const breaker = new CircuitBreaker();
@@ -56,6 +66,10 @@ export interface AiFirstDeps {
   env?: Record<string, string | undefined>;
   /** Test-only seam; Production omits it and uses the real pipeline. */
   runPipeline?: (input: PipelineInput) => Promise<RunSummary>;
+  /** Test seam for the protected, non-generative provider metadata checks. */
+  checkModelReadiness?: (input: ProviderReadinessInput) => Promise<AiFirstModelReadiness>;
+  /** Test seam for the protected concept-only proof. No image generator exists in this input. */
+  runConceptProof?: (input: ConceptOnlyProofInput) => Promise<ConceptOnlyProofResult>;
 }
 
 /** The response stream, not request-body completion, owns SSE lifetime. */
@@ -87,6 +101,128 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
       await handler(req, res);
     };
   };
+
+  /**
+   * Reviewer diagnostics exist only on Vercel Preview, use the event's secret
+   * owner token as their authorization boundary, and require the generation
+   * kill switch to be ON. Production and local requests receive 404 so this
+   * surface cannot become an accidentally supported public API.
+   */
+  const previewOwnerReview = (
+    handler: (req: Request, res: Response, event: any, ownerToken: string) => Promise<void> | void,
+  ) =>
+    gated(async (req, res) => {
+      if (env().VERCEL_ENV !== "preview") {
+        res.status(404).json({ error: "Not found" });
+        return;
+      }
+      const ownerToken = String(req.params.ownerToken);
+      const event = await deps.storage.getEventByOwnerToken(ownerToken);
+      if (!event) {
+        res.status(404).json({ error: "Event not found" });
+        return;
+      }
+      if (!flags().invitationGenerationKillSwitch) {
+        res.status(409).json({
+          error: "Preview readiness review requires invitation generation to remain paused.",
+          denial: "kill-switch-required",
+        });
+        return;
+      }
+      await handler(req, res, event, ownerToken);
+    });
+
+  /**
+   * Non-generative provider readiness. Both calls retrieve model metadata;
+   * neither endpoint can create a concept or image.
+   */
+  app.get(
+    "/api/events/owner/:ownerToken/ai-first/review/readiness",
+    previewOwnerReview(async (_req, res) => {
+      let artworkModel;
+      try {
+        artworkModel = readAiFirstArtworkModel(env());
+      } catch (error) {
+        res.status(503).json({ error: (error as Error).message, denial: "invalid-provider-configuration" });
+        return;
+      }
+      const providers = await (deps.checkModelReadiness ?? checkAiFirstModelReadiness)({
+        env: env(),
+        artworkModel,
+      });
+      const directionLimit = readAiFirstDirectionLimit(env());
+      const automaticRetryDisabled = flags().aiFirstDisableAutomaticRetry;
+      const canaryControlsReady =
+        artworkModel === "gpt-image-2" && directionLimit === 1 && automaticRetryDisabled;
+      res.json({
+        ready: providers.ready && canaryControlsReady,
+        environment: "preview",
+        killSwitch: true,
+        canaryControlsReady,
+        directionLimit,
+        automaticRetryDisabled,
+        artworkModel,
+        providers,
+        imageProviderCalls: 0,
+        billedArtworkAttempts: 0,
+      });
+    }),
+  );
+
+  /**
+   * The real four-concept prompt and zero-image quartet gate, exposed only as
+   * an explicitly confirmed Preview reviewer proof. This path cannot claim a
+   * run, reserve usage, write an artwork attempt, or receive an image
+   * generator. Its returned zero counters are structural facts, not estimates.
+   */
+  app.post(
+    "/api/events/owner/:ownerToken/ai-first/review/concept-proof",
+    previewOwnerReview(async (req, res, event) => {
+      if (req.body?.confirmConceptOnly !== true) {
+        res.status(400).json({
+          error: "Set confirmConceptOnly to true to run the text-only Preview proof.",
+          denial: "concept-proof-confirmation-required",
+        });
+        return;
+      }
+
+      const [menuItems, budgetItems, guests] = await Promise.all([
+        deps.storage.listMenuItems(event.id),
+        deps.storage.listBudgetItems(event.id),
+        deps.storage.listGuests(event.id),
+      ]);
+      const brief = buildEventBrief({
+        event,
+        dna: computeEventDna({ eventType: event.eventType, menuItems, budgetItems }).scores,
+        guestCount: guests.length > 0 ? guests.length : null,
+        vibeAnswer: typeof req.body?.feeling === "string" ? req.body.feeling : undefined,
+        inspirationNotes: typeof req.body?.inspirationNotes === "string" ? req.body.inspirationNotes : undefined,
+      });
+
+      try {
+        const proof = await (deps.runConceptProof ?? runConceptOnlyProof)({
+          brief,
+          direction: typeof req.body?.direction === "string" ? req.body.direction : undefined,
+        });
+        res.json({
+          ...proof,
+          environment: "preview",
+          killSwitch: true,
+          runClaimed: false,
+        });
+      } catch (error) {
+        res.status(503).json({
+          error: (error as Error).message,
+          denial: "concept-proof-failed",
+          environment: "preview",
+          killSwitch: true,
+          runClaimed: false,
+          imageProviderCalls: 0,
+          billedArtworkAttempts: 0,
+        });
+      }
+    }),
+  );
 
   app.get(
     "/api/events/owner/:ownerToken/ai-first/status",

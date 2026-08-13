@@ -13,7 +13,7 @@
 // Every progress event corresponds to something that actually happened. There
 // are no timers pretending to be work.
 
-import Anthropic from "@anthropic-ai/sdk";
+import type Anthropic from "@anthropic-ai/sdk";
 import {
   buildArtworkPrompt,
   aspectRatioForLayout,
@@ -29,8 +29,7 @@ import {
 } from "@shared/aiFirstStream";
 import { OVERLAY_COVERAGE, validateLayoutBeforeGeneration } from "@shared/aiFirstLayout";
 import { normalizeSemanticPalette } from "@shared/aiFirstPalette";
-import { ConceptStreamParser } from "./conceptStream";
-import { buildArtworkConstraints, buildSystemPrompt, buildUserPrompt, buildRetryPrompt } from "./prompt";
+import { buildArtworkConstraints, buildRetryPrompt } from "./prompt";
 import { runTier1Checks, retryCodesFor, type Tier1Finding } from "./tier1";
 import { runVisionGate, visionCostUsd, type VisionVerdict } from "./visionGate";
 import { adaptStudioDirection, loadStudioArtwork } from "./fallback";
@@ -53,9 +52,9 @@ import { MAX_ARTWORK_CONCURRENCY, type AiFirstUsageStore, type CircuitBreaker } 
 import type { EventBrief } from "./brief";
 import type { AiFirstArtworkAttemptStore } from "./artworkAttemptStore";
 import type { AiFirstRunStore } from "./runStore";
-import { preflightConceptQuartet } from "./conceptQuartet";
+import { CONCEPT_MODEL, runConceptOnlyProof } from "./conceptOnlyProof";
 
-export const CONCEPT_MODEL = "claude-sonnet-4-6";
+export { CONCEPT_MODEL };
 export const TARGET_CONCEPT_COUNT = TARGET_DIRECTION_COUNT;
 /** One retry maximum per direction, when the automatic retry is enabled. */
 export const MAX_ARTWORK_ATTEMPTS = 2;
@@ -237,54 +236,24 @@ export async function runAiFirstPipeline(input: PipelineInput): Promise<RunSumma
   };
 
   /* Concepts — streamed for latency, compared as a complete set before spend. */
-  const client = input.anthropic ?? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-  const parser = new ConceptStreamParser();
-  const conceptCandidates: AiFirstConcept[] = [];
-
   try {
-    const stream = await client.messages.stream({
-      model: CONCEPT_MODEL,
-      max_tokens: 4000,
-      system: buildSystemPrompt(),
-      messages: [
-        {
-          role: "user",
-          content: buildUserPrompt({
-            brief: input.brief,
-            direction: input.direction,
-            avoidConceptNames: input.avoidConceptNames,
-            keepConstraints: input.keepConstraints,
-          }),
-        },
-      ],
-    });
-
-    for await (const chunk of stream) {
-      throwIfAborted(input.signal);
-      if (chunk.type !== "content_block_delta" || chunk.delta.type !== "text_delta") continue;
-      for (const line of parser.push(chunk.delta.text)) {
+    const proof = await runConceptOnlyProof({
+      brief: input.brief,
+      direction: input.direction,
+      avoidConceptNames: input.avoidConceptNames,
+      keepConstraints: input.keepConstraints,
+      anthropic: input.anthropic,
+      signal: input.signal,
+      onFirstConcept: () => {
         if (summary.msToFirstConcept === null) summary.msToFirstConcept = since();
-        conceptCandidates.push(line.concept);
-      }
-    }
-    throwIfAborted(input.signal);
-    for (const line of parser.flush()) {
-      if (summary.msToFirstConcept === null) summary.msToFirstConcept = since();
-      conceptCandidates.push(line.concept);
-    }
-
-    emit({ type: "progress", message: PROGRESS_MESSAGES.reviewingConcepts });
-    const quartet = preflightConceptQuartet(conceptCandidates, input.brief);
-    summary.conceptRejections = parser.rejections.length + quartet.errors.length;
-    if (!quartet.passed) {
-      for (const error of quartet.errors) {
-        emit({ type: "warning", message: `creative set blocked before artwork spend: ${error}` });
-      }
-      throw new Error(`creative quartet failed zero-image preflight: ${quartet.errors.join("; ")}`);
-    }
-
-    quartet.concepts.forEach((concept, index) => emit({ type: "concept", index, concept }));
-    quartet.concepts.slice(0, directionLimit).forEach((concept, index) => startDirection(index, concept));
+      },
+      onReviewingConcepts: () => emit({ type: "progress", message: PROGRESS_MESSAGES.reviewingConcepts }),
+      onPreflightWarning: (error) =>
+        emit({ type: "warning", message: `creative set blocked before artwork spend: ${error}` }),
+    });
+    summary.conceptRejections = proof.conceptRejections;
+    proof.concepts.forEach((concept, index) => emit({ type: "concept", index, concept }));
+    proof.concepts.slice(0, directionLimit).forEach((concept, index) => startDirection(index, concept));
   } catch (err) {
     await Promise.allSettled(inFlight);
     if (isAbortError(err) || input.signal?.aborted) throw abortError(input.signal?.reason);
