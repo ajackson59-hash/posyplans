@@ -10,7 +10,9 @@ import {
   MAX_OVERLAY_COVERAGE,
   OVERLAY_COVERAGE,
   MAX_SALIENT_CROP_FRACTION,
+  MIN_SAFE_TYPE_PLACEMENT_COVERAGE,
   evaluateCropSafety,
+  safeTypographyPlacementCoverage,
   strongerOverlay,
   validateLayoutBeforeGeneration,
 } from "@shared/aiFirstLayout";
@@ -90,6 +92,29 @@ describe("layout — before generation", () => {
     expect(repair.overlay).toBe("veil");
   });
 
+  it("replaces a top-fading gradient when artwork sits behind the whole type block", () => {
+    const repair = validateLayoutBeforeGeneration(concept({ layoutStyle: "full-bleed", minOverlay: "gradient" }));
+    expect(repair.overlay).toBe("veil");
+    expect(repair.issues).toContainEqual(expect.objectContaining({
+      code: "art-behind-type-needs-local-surface",
+      repair: "strengthen-overlay",
+    }));
+  });
+
+  it("does not add a veil when the layout already keeps type off the artwork", () => {
+    const repair = validateLayoutBeforeGeneration(
+      concept({
+        layoutStyle: "banner",
+        baseThemeId: "deco-midnight",
+        placementId: "low",
+        safeTypographyRegion: "lower-third",
+        minOverlay: "none",
+      }),
+    );
+    expect(repair.overlay).toBe("none");
+    expect(repair.issues.map((issue) => issue.code)).not.toContain("art-behind-type-needs-local-surface");
+  });
+
   it("never lets an overlay swallow the artwork it sits on", () => {
     expect(MAX_OVERLAY_COVERAGE).toBe(0.4);
     for (const overlay of ["none", "veil", "gradient", "plate"] as const) {
@@ -113,12 +138,29 @@ describe("layout — before generation", () => {
     expect(strongerOverlay("veil", "veil")).toBe("veil");
   });
 
-  it("treats the two side panels as mirror images", () => {
+  it("rejects the artwork panel and accepts the split layout's actual text panel", () => {
     const left = validateLayoutBeforeGeneration(concept({ layoutStyle: "split", safeTypographyRegion: "left-panel" }));
     const right = validateLayoutBeforeGeneration(concept({ layoutStyle: "split", safeTypographyRegion: "right-panel" }));
-    for (const repair of [left, right]) {
-      expect(repair.issues.map((i) => i.code)).not.toContain("safe-region-outside-type-area");
-    }
+    expect(left.issues.map((i) => i.code)).toContain("safe-region-outside-type-area");
+    expect(right.issues.map((i) => i.code)).not.toContain("safe-region-outside-type-area");
+  });
+
+  it("rejects the canary's token intersection between upper-third and centred type", () => {
+    const canary = concept({ safeTypographyRegion: "upper-third", placementId: "centre" });
+    expect(safeTypographyPlacementCoverage(canary)).toBeLessThan(MIN_SAFE_TYPE_PLACEMENT_COVERAGE);
+    const repair = validateLayoutBeforeGeneration(canary);
+    expect(repair.issues).toContainEqual(expect.objectContaining({
+      code: "safe-region-outside-type-area",
+      repair: "regenerate",
+    }));
+  });
+
+  it("accepts a quiet centre that covers the actual centred placement", () => {
+    const centred = concept({ safeTypographyRegion: "center", placementId: "centre" });
+    expect(safeTypographyPlacementCoverage(centred)).toBeGreaterThanOrEqual(MIN_SAFE_TYPE_PLACEMENT_COVERAGE);
+    expect(validateLayoutBeforeGeneration(centred).issues.map((i) => i.code)).not.toContain(
+      "safe-region-outside-type-area",
+    );
   });
 
   it("never renames a layout to something the renderer cannot draw", () => {

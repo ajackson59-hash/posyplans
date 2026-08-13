@@ -22,6 +22,7 @@ import {
 import {
   evaluateCropSafety,
   MIN_FOCAL_VISIBILITY_RATIO,
+  typePlacementFrame,
   type SalientRegion,
 } from "@shared/aiFirstLayout";
 import { contrastRatio } from "@shared/aiFirstPalette";
@@ -211,8 +212,8 @@ export function runTier1Checks(input: Tier1Input): Tier1Result {
   if (!quiet.quiet) {
     findings.push({
       code: "quiet-region",
-      critical: false,
-      message: `the ${concept.safeTypographyRegion} region has a luma spread of ${quiet.spread.toFixed(0)}, too busy to set type on without a stronger overlay`,
+      critical: true,
+      message: `placement "${concept.placementId}" has a luma spread of ${quiet.spread.toFixed(0)}, too busy for live invitation type`,
       measured: quiet.spread,
       limit: quiet.limit,
     });
@@ -228,7 +229,7 @@ export function runTier1Checks(input: Tier1Input): Tier1Result {
     if (ratio < floor) {
       findings.push({
         code: "text-contrast",
-        critical: false,
+        critical: true,
         message: `${role} is ${ratio.toFixed(2)}:1 against textSurface, below the ${floor}:1 floor`,
         measured: ratio,
         limit: floor,
@@ -461,12 +462,12 @@ function mergeAdjacent(blocks: { x: number; y: number }[], bw: number, bh: numbe
   return regions;
 }
 
-/** Luma spread inside the region the concept promised would stay quiet. */
+/** Luma spread inside the exact inherited placement the renderer uses. */
 export function quietnessOfTypeRegion(
   grid: Grid,
   concept: AiFirstConcept,
 ): { quiet: boolean; spread: number; limit: number } {
-  const frame = LAYOUT_FRAMES[concept.layoutStyle].type;
+  const frame = typePlacementFrame(concept);
   const x0 = Math.floor((frame.left / 100) * grid.width);
   const x1 = Math.min(grid.width, Math.ceil(((frame.left + frame.width) / 100) * grid.width));
   const y0 = Math.floor((frame.top / 100) * grid.height);

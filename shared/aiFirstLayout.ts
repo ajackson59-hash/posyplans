@@ -12,8 +12,14 @@
 
 import type { LayoutStyle } from "./inviteDesign";
 import type { AiFirstConcept, SafeTypographyRegion } from "./aiFirstInvite";
-import type { OverlayTreatment } from "./themeCatalog";
-import { LAYOUT_FRAMES, objectCoverSourceRect, type Frame } from "./inviteLayout";
+import { getLaunchTheme, getPlacement, type OverlayTreatment } from "./themeCatalog";
+import {
+  LAYOUT_FRAMES,
+  objectCoverSourceRect,
+  projectPlacement,
+  withinSafeArea,
+  type Frame,
+} from "./inviteLayout";
 
 export interface LayoutIssue {
   code:
@@ -22,6 +28,7 @@ export interface LayoutIssue {
     | "split-art-not-panel-shaped"
     | "banner-internal-mat"
     | "busy-scatter-without-quiet-region"
+    | "art-behind-type-needs-local-surface"
     | "overlay-obscures-artwork"
     | "safe-region-outside-type-area";
   message: string;
@@ -52,8 +59,8 @@ const FIELD_COMPOSITION = /\b(scatter|scattered|field|pattern|repeat|allover|all
 /** Artwork opacity a rescued backdrop is raised to: readable, still recessive. */
 export const BACKDROP_RESCUE_OPACITY = 0.62;
 
-/** Overlay strength ordering — the gate may strengthen, never weaken. */
-const OVERLAY_STRENGTH: Record<OverlayTreatment, number> = { none: 0, veil: 1, gradient: 2, plate: 3 };
+/** Type-protection ordering — the gate may strengthen, never weaken. */
+const OVERLAY_STRENGTH: Record<OverlayTreatment, number> = { none: 0, gradient: 1, veil: 2, plate: 3 };
 
 export function strongerOverlay(a: OverlayTreatment, b: OverlayTreatment): OverlayTreatment {
   return OVERLAY_STRENGTH[a] >= OVERLAY_STRENGTH[b] ? a : b;
@@ -82,10 +89,40 @@ const REGION_BOX: Record<SafeTypographyRegion, Frame> = {
   "right-panel": { top: 0, left: 54, width: 46, height: 100 },
 };
 
+/**
+ * A coarse safe-region label is only meaningful when it covers most of the
+ * actual inherited placement. The former `> 0` intersection test let a
+ * centred 40%-tall type box pass as "upper-third" because two percentage
+ * points happened to touch — exactly how the canary put type over a child.
+ */
+export const MIN_SAFE_TYPE_PLACEMENT_COVERAGE = 0.6;
+
 function overlaps(a: Frame, b: Frame): number {
   const x = Math.max(0, Math.min(a.left + a.width, b.left + b.width) - Math.max(a.left, b.left));
   const y = Math.max(0, Math.min(a.top + a.height, b.top + b.height) - Math.max(a.top, b.top));
   return x * y;
+}
+
+/** The exact box the shared renderer reserves for this concept's live type. */
+export function typePlacementFrame(
+  concept: AiFirstConcept,
+  layoutStyle: LayoutStyle = concept.layoutStyle,
+): Frame {
+  const theme = getLaunchTheme(concept.baseThemeId);
+  if (!theme) return withinSafeArea(LAYOUT_FRAMES[layoutStyle].type);
+  const placement = getPlacement(theme, concept.placementId);
+  return withinSafeArea(projectPlacement(placement.box, LAYOUT_FRAMES[layoutStyle].type));
+}
+
+/** Share of the selected type placement covered by the promised quiet region. */
+export function safeTypographyPlacementCoverage(
+  concept: AiFirstConcept,
+  layoutStyle: LayoutStyle = concept.layoutStyle,
+): number {
+  const typeBox = typePlacementFrame(concept, layoutStyle);
+  const area = typeBox.width * typeBox.height;
+  if (area <= 0) return 0;
+  return overlaps(REGION_BOX[concept.safeTypographyRegion], typeBox) / area;
 }
 
 /* ── Pass 1: before generation ───────────────────────────────────────── */
@@ -146,6 +183,19 @@ export function validateLayoutBeforeGeneration(concept: AiFirstConcept): LayoutR
     overlay = strongerOverlay(overlay, "veil");
   }
 
+  // Full-card artwork sits directly behind live type. A top-fading gradient
+  // does not protect centred or lower detail lines, and `none` protects
+  // nothing. Require a local surface whose opacity is stable across the
+  // complete type block. Banner/split/centred layouts keep type off the art.
+  if ((layoutStyle === "full-bleed" || layoutStyle === "backdrop") && (overlay === "none" || overlay === "gradient")) {
+    issues.push({
+      code: "art-behind-type-needs-local-surface",
+      message: `${layoutStyle} artwork behind live type requires a local veil or plate`,
+      repair: "strengthen-overlay",
+    });
+    overlay = "veil";
+  }
+
   // Overlay must not swallow the artwork it sits on.
   if (OVERLAY_COVERAGE[overlay] > MAX_OVERLAY_COVERAGE) {
     issues.push({
@@ -156,15 +206,18 @@ export function validateLayoutBeforeGeneration(concept: AiFirstConcept): LayoutR
     overlay = "veil";
   }
 
-  // The declared quiet region must actually intersect where type is set.
-  const typeFrame = LAYOUT_FRAMES[layoutStyle].type;
-  if (overlaps(REGION_BOX[concept.safeTypographyRegion], typeFrame) <= 0) {
+  // The declared quiet region must materially cover the selected inherited
+  // placement — a one-pixel touch is not evidence that live type is safe.
+  const safeCoverage = safeTypographyPlacementCoverage(concept, layoutStyle);
+  if (safeCoverage < MIN_SAFE_TYPE_PLACEMENT_COVERAGE) {
     issues.push({
       code: "safe-region-outside-type-area",
-      message: `safeTypographyRegion "${concept.safeTypographyRegion}" does not overlap the ${layoutStyle} type area`,
-      repair: "strengthen-overlay",
+      message:
+        `safeTypographyRegion "${concept.safeTypographyRegion}" covers only ${Math.round(safeCoverage * 100)}% ` +
+        `of placement "${concept.placementId}" in the ${layoutStyle} layout ` +
+        `(minimum ${Math.round(MIN_SAFE_TYPE_PLACEMENT_COVERAGE * 100)}%)`,
+      repair: "regenerate",
     });
-    overlay = strongerOverlay(overlay, "plate");
   }
 
   return { layoutStyle, overlay, artworkOpacity, issues, clean: issues.length === 0 };

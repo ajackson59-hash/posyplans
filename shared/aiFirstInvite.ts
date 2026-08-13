@@ -271,6 +271,13 @@ export interface ResolvedAiConcept {
 /* ── Concept fingerprint ─────────────────────────────────────────────── */
 
 /**
+ * Bump only when the acceptance contract becomes stricter. The version is
+ * part of the image cache key so artwork accepted by an older, weaker gate
+ * can never skip the current checks; restyles remain free within a version.
+ */
+export const AI_FIRST_QUALITY_GATE_VERSION = 2;
+
+/**
  * A stable hash over exactly the fields that change the generated *image*.
  * Two concepts with the same fingerprint must produce the same artwork, so
  * this is the idempotency key that stops a retry storm or a double-submitted
@@ -289,12 +296,12 @@ export function conceptImageFingerprintInput(concept: AiFirstConcept): string {
     concept.styleLaneId,
   ];
   // Preserve the exact pre-quartet fingerprint shape for previews already in
-  // storage. Otherwise an old approved image would miss the reuse lookup and
-  // could be purchased again merely because this release added metadata.
+  // storage within this quality-gate version. Focal metadata remains
+  // conditional so adding the quartet fields alone does not invalidate art.
   return JSON.stringify(
     concept.focalStrategy && concept.visualMood
-      ? [concept.focalStrategy, concept.visualMood, ...imageFields]
-      : imageFields,
+      ? [AI_FIRST_QUALITY_GATE_VERSION, concept.focalStrategy, concept.visualMood, ...imageFields]
+      : [AI_FIRST_QUALITY_GATE_VERSION, ...imageFields],
   );
 }
 

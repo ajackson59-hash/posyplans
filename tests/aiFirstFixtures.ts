@@ -72,8 +72,9 @@ export function conceptQuartet(
       styleLaneId: "bold-graphic",
       fontPairingId: "deco-luxe",
       baseThemeId: "deco-midnight",
-      placementId: "high",
+      placementId: "low",
       layoutStyle: "banner",
+      safeTypographyRegion: "lower-third",
       art: {
         medium: "editorial gouache",
         composition: "one close sculptural detail with a calm lower field",
@@ -90,6 +91,7 @@ export function conceptQuartet(
       baseThemeId: "meadow-storybook",
       placementId: "left-column",
       layoutStyle: "split",
+      safeTypographyRegion: "right-panel",
       art: {
         medium: "cut-paper collage",
         composition: "tall graphic field of theme marks beside a quiet text panel",
@@ -106,6 +108,7 @@ export function conceptQuartet(
       baseThemeId: "garden-editorial",
       placementId: "centre",
       layoutStyle: "centered",
+      safeTypographyRegion: "lower-third",
       art: {
         medium: "linocut",
         composition: "small tactile still life centred within generous breathing room",
@@ -167,6 +170,25 @@ function artworkRgb(
 
 export function artworkPng(width = 256, height = 384, seed = 7): Buffer {
   return encodePng(width, height, artworkRgb(width, height, seed));
+}
+
+/** Artwork with deliberately high-contrast detail inside garden-editorial's centred type box. */
+export function busyTypeRegionPng(width = 256, height = 384): Buffer {
+  const rgb = artworkRgb(width, height, 19);
+  const x0 = Math.floor(width * 0.21);
+  const x1 = Math.ceil(width * 0.79);
+  const y0 = Math.floor(height * 0.32);
+  const y1 = Math.ceil(height * 0.72);
+  for (let y = y0; y < y1; y += 1) {
+    for (let x = x0; x < x1; x += 1) {
+      const value = (Math.floor(x / 4) + Math.floor(y / 4)) % 2 === 0 ? 12 : 244;
+      const at = (y * width + x) * 3;
+      rgb[at] = value;
+      rgb[at + 1] = value;
+      rgb[at + 2] = value;
+    }
+  }
+  return encodePng(width, height, rgb);
 }
 
 /**

@@ -11,6 +11,7 @@ import type { EventBrief } from "./brief";
 import type { AiFirstConcept } from "@shared/aiFirstInvite";
 import { MIN_DIMENSION_SCORE, type VisionScores } from "@shared/aiFirstStream";
 import { concreteSubjectReviewRequirementsForBrief } from "./conceptPreflight";
+import { typePlacementFrame } from "@shared/aiFirstLayout";
 
 export const VISION_MODEL = "claude-sonnet-4-6";
 
@@ -40,7 +41,7 @@ Score each 1-5. 4 means "a professional stationery studio would ship this". 3 me
 - artifactFree: 5 = no melted, duplicated, malformed or anatomically broken forms.
 - premiumFinish: 5 = genuinely premium editorial illustration. Score 1-2 for clipart, stock-template or generic AI look.
 - briefFidelity: 5 = the artwork unmistakably delivers the brief's stated identity.
-- compositionQuality: 5 = clear, balanced, intentional composition that will survive a centre crop.
+- compositionQuality: 5 = clear, balanced, intentional composition with the live typography box left visually quiet. Any face, person, hero object or required subject inside the supplied LIVE TYPOGRAPHY BOX forces a score of 3 or lower, even when the raw artwork is otherwise attractive.
 - ageAppropriate: 5 = correctly pitched for the celebrant's age. Babyish work for an adult, or content too mature for a child, scores 1.
 
 Judge BRIEF REQUIREMENTS holistically through briefFidelity and ageAppropriate. Do not repeat them in requiredPresent.
@@ -101,11 +102,13 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
   const client = input.client ?? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const { brief, concept } = input;
   const reviewRequirements = concreteSubjectReviewRequirementsForBrief(brief);
+  const typeBox = typePlacementFrame(concept);
 
   const userText = [
     `Celebration: ${brief.eventName || brief.eventType || "a celebration"}${brief.milestone ? ` · ${brief.milestone}` : ""}`,
     brief.vibe ? `Intended feeling: ${brief.vibe}` : "",
     `Direction: ${concept.conceptName} — ${concept.description}`,
+    `LIVE TYPOGRAPHY BOX (percentage of final card): left ${typeBox.left.toFixed(0)}%, top ${typeBox.top.toFixed(0)}%, width ${typeBox.width.toFixed(0)}%, height ${typeBox.height.toFixed(0)}%. This box must contain no face, person, hero object or required subject.`,
     "",
     "BRIEF REQUIREMENTS (judge holistically in briefFidelity and ageAppropriate):",
     ...brief.requirements.required.map((r) => `- ${r}`),

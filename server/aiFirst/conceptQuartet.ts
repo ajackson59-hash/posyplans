@@ -7,6 +7,7 @@
 // focal strategies and moods, structural variety, and no repeated hero object.
 
 import { buildArtworkPrompt, type AiFirstConcept, type FocalStrategy } from "@shared/aiFirstInvite";
+import { validateLayoutBeforeGeneration } from "@shared/aiFirstLayout";
 import type { EventBrief } from "./brief";
 import { preflightConceptForBrief, subjectFamiliesForBrief } from "./conceptPreflight";
 import { buildArtworkConstraints } from "./prompt";
@@ -161,10 +162,14 @@ export function preflightConceptQuartet(
     const label = `concept ${index + 1} (${concept.conceptName})`;
     const artBrief = `${concept.art.medium} ${concept.art.composition} ${concept.art.prompt}`;
     const subject = preflightConceptForBrief(concept, brief);
+    const layout = validateLayoutBeforeGeneration(concept);
 
     if (!concept.focalStrategy) errors.push(`${label} is missing focalStrategy`);
     if (!concept.visualMood) errors.push(`${label} is missing visualMood`);
     if (!subject.passed) errors.push(`${label}: ${subject.message}`);
+    for (const issue of layout.issues.filter((finding) => finding.repair === "regenerate")) {
+      errors.push(`${label}: ${issue.message}`);
+    }
 
     if (birthday) {
       if (!OCCASION_ART_CUE.test(artBrief)) errors.push(`${label} artwork omits the birthday/celebration identity`);

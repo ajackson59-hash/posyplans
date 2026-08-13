@@ -16,7 +16,7 @@ import {
   savePreview,
 } from "../server/aiFirst/previewStore";
 import { concept } from "./aiFirstFixtures";
-import { conceptImageFingerprintInput } from "@shared/aiFirstInvite";
+import { AI_FIRST_QUALITY_GATE_VERSION, conceptImageFingerprintInput } from "@shared/aiFirstInvite";
 
 const bytes = Buffer.from("pretend-png-bytes");
 
@@ -37,11 +37,12 @@ describe("content addressing", () => {
     expect(b).not.toBe(a);
   });
 
-  it("preserves the pre-quartet fingerprint shape for legacy stored concepts", () => {
+  it("versions legacy-shaped fingerprints so weaker accepted artwork cannot bypass a stricter gate", () => {
     const current = concept();
     const legacy = { ...current, focalStrategy: undefined, visualMood: undefined };
     expect(conceptImageFingerprintInput(legacy)).toBe(
       JSON.stringify([
+        AI_FIRST_QUALITY_GATE_VERSION,
         current.art.medium.trim().toLowerCase(),
         current.art.composition.trim().toLowerCase(),
         current.art.prompt.trim(),

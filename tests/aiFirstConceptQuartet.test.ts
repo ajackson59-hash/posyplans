@@ -51,14 +51,14 @@ export const CONSTRUCTION_REVIEW_QUARTET: AiFirstConcept[] = [
     fontPairingId: "garden-editorial-type",
     baseThemeId: "garden-editorial",
     placementId: "centre",
-    layoutStyle: "full-bleed",
+    layoutStyle: "banner",
     art: {
       medium: "editorial watercolor",
-      composition: "wide backyard build-zone party scene, small excavator low and off-centre beneath a quiet sky",
+      composition: "wide upper-banner backyard build-zone party scene above a calm lower type panel",
       prompt:
         "A refined summer backyard BBQ transformed into a third-birthday little-builder jobsite celebration: one small yellow excavator beside a timber build zone, hard hats resting near a picnic table, restrained bunting, warm late-afternoon light, ink navy shadows, concrete cream and construction yellow, sophisticated watercolor detail, festive but never cartoonish.",
     },
-    safeTypographyRegion: "upper-third",
+    safeTypographyRegion: "lower-third",
     minOverlay: "veil",
   }),
   concept({
@@ -68,16 +68,16 @@ export const CONSTRUCTION_REVIEW_QUARTET: AiFirstConcept[] = [
     visualMood: "sculptural-editorial",
     styleLaneId: "bold-graphic",
     fontPairingId: "deco-luxe",
-    baseThemeId: "deco-midnight",
+    baseThemeId: "dinosaur-museum",
     placementId: "high",
-    layoutStyle: "banner",
+    layoutStyle: "full-bleed",
     art: {
       medium: "layered gouache",
-      composition: "close sculptural crop of one bulldozer track and blade across the upper banner",
+      composition: "close sculptural crop of one bulldozer track and blade below a quiet upper third",
       prompt:
         "A beautifully observed bulldozer steel track and blade treated as premium editorial machinery detail, parked on a backyard lawn with one hard hat and a distant picnic-table garland signaling a polished third-birthday BBQ, restrained construction yellow, charcoal, warm cream and brushed-metal texture, bold but age-appropriate.",
     },
-    safeTypographyRegion: "lower-third",
+    safeTypographyRegion: "upper-third",
     minOverlay: "none",
   }),
   concept({
@@ -115,7 +115,7 @@ export const CONSTRUCTION_REVIEW_QUARTET: AiFirstConcept[] = [
       prompt:
         "An elevated backyard third-birthday party-table still life arranged from a child-sized hard hat, measuring tape, work gloves, neat lumber offcuts and one shovel, softened by restrained bunting and a single birthday candle, tactile hand-carved linocut grain in construction yellow, ink navy and warm ivory, artisanal and celebratory rather than clip art.",
     },
-    safeTypographyRegion: "upper-third",
+    safeTypographyRegion: "lower-third",
     minOverlay: "none",
   }),
 ];
@@ -253,6 +253,23 @@ describe("whole-quartet creative preflight", () => {
       expect(card.exactArtworkPrompt).toContain("3rd birthday");
       expect(card.exactArtworkPrompt).toContain("No text, no letters, no words, no numbers");
     }
+  });
+
+  it("blocks the canary's upper-third promise with a centred inherited placement before image spend", () => {
+    const mismatched = CONSTRUCTION_REVIEW_QUARTET.map((item, index) =>
+      index === 0
+        ? concept({
+            ...item,
+            layoutStyle: "full-bleed",
+            baseThemeId: "garden-editorial",
+            placementId: "centre",
+            safeTypographyRegion: "upper-third",
+          })
+        : item,
+    );
+    const result = preflightConceptQuartet(mismatched, CONSTRUCTION_REVIEW_BRIEF);
+    expect(result.passed).toBe(false);
+    expect(result.errors.join(" ")).toContain('safeTypographyRegion "upper-third" covers only');
   });
 
   it("repairs the exact milestone/media/machine failure once while preserving the zero-image boundary", async () => {

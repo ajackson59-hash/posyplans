@@ -23,7 +23,7 @@ import {
   safeFramingRequirement,
   visibleFractionForLayout,
 } from "@shared/aiFirstInvite";
-import { artworkPng, concept, framedArtworkPng, solidPng } from "./aiFirstFixtures";
+import { artworkPng, busyTypeRegionPng, concept, framedArtworkPng, solidPng } from "./aiFirstFixtures";
 import type { EventBrief } from "../server/aiFirst/brief";
 import { concreteSubjectReviewRequirementsForBrief } from "../server/aiFirst/conceptPreflight";
 
@@ -86,14 +86,25 @@ describe("tier 1 — critical defects", () => {
   });
 });
 
-describe("tier 1 — advisory findings do not block a good image", () => {
-  it("reports low text contrast without failing the artwork", () => {
+describe("tier 1 — palette diagnostics", () => {
+  it("hard-rejects low text contrast if upstream normalization is ever bypassed", () => {
     const washedOut = concept({
       semanticPalette: { textSurface: "#FFFFFF", headlineColor: "#F2F2F2", bodyColor: "#EFEFEF", accentColor: "#EEEEEE" },
     });
     const result = tier1(artworkPng(), { concept: washedOut });
     expect(result.findings.map((f) => f.code)).toContain("text-contrast");
-    expect(result.findings.filter((f) => f.code === "text-contrast").every((f) => !f.critical)).toBe(true);
+    expect(result.findings.filter((f) => f.code === "text-contrast").every((f) => f.critical)).toBe(true);
+    expect(result.passed).toBe(false);
+  });
+
+  it("hard-rejects artwork that is busy under the exact live-type placement", () => {
+    const result = tier1(busyTypeRegionPng(), {
+      concept: concept({ minOverlay: "veil", placementId: "centre", safeTypographyRegion: "center" }),
+    });
+    const finding = result.findings.find((candidate) => candidate.code === "quiet-region");
+    expect(finding).toBeDefined();
+    expect(finding?.critical).toBe(true);
+    expect(result.passed).toBe(false);
   });
 });
 
@@ -382,6 +393,9 @@ describe("tier 2 — acceptance", () => {
     expect(checklist).not.toContain("do not satisfy or replace");
     expect(reviewText).toContain("the construction visual identity, unmistakably present");
     expect(reviewText).toContain("age-appropriate celebratory character for a 3rd birthday");
+    expect(reviewText).toContain("LIVE TYPOGRAPHY BOX");
+    expect(reviewText).toContain("left 21%, top 32%, width 58%, height 40%");
+    expect(reviewText).toContain("no face, person, hero object or required subject");
   });
 
   it("is never a silent pass when the critic is unreachable", async () => {
