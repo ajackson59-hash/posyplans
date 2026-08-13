@@ -20,7 +20,13 @@ import { InMemoryPreviewStore } from "../server/aiFirst/previewStore";
 import type { PipelineEvent } from "@shared/aiFirstStream";
 import type { EventBrief } from "../server/aiFirst/brief";
 import type { ArtworkRequest } from "../server/aiFirst/artwork";
-import { artworkForAspect, concept, conceptQuartet, framedArtworkForAspect } from "./aiFirstFixtures";
+import {
+  artworkForAspect,
+  busyTypeRegionPng,
+  concept,
+  conceptQuartet,
+  framedArtworkForAspect,
+} from "./aiFirstFixtures";
 
 const brief: EventBrief = {
   eventName: "Ada's 4th Birthday",
@@ -252,6 +258,20 @@ describe("retry and fallback", () => {
     expect(MAX_ARTWORK_ATTEMPTS).toBe(2);
     expect(imageCalls()).toBe(4 * MAX_ARTWORK_ATTEMPTS);
     expect(summary.retries).toBe(4);
+  });
+
+  it("rescues a quiet-region-only failure with a local paper panel and no second image call", async () => {
+    const { summary, events, imageCalls } = await run({
+      bytesFor: (call, aspect) => (call === 1 ? busyTypeRegionPng() : artworkForAspect(aspect)),
+    });
+
+    expect(imageCalls()).toBe(4);
+    expect(summary.billedImages).toBe(4);
+    expect(summary.retries).toBe(0);
+    expect(summary.degraded).toContain(
+      "direction 1 reused its paid artwork with a deterministic paper panel after a quiet-region-only failure",
+    );
+    expect(directionsOf(events).find((event) => event.direction.index === 0)?.direction.overlay).toBe("plate");
   });
 
   it("replaces a direction that fails twice instead of showing it", async () => {

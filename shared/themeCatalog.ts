@@ -88,6 +88,21 @@ export const OVERLAY_LABELS: Record<OverlayTreatment, string> = {
 };
 
 /**
+ * Stable surface opacity over the complete live-type box. The deterministic
+ * quality gate imports the same values as the renderer, so it judges the card
+ * customers actually see instead of rejecting safe artwork from raw pixels.
+ * A gradient is deliberately zero here: its opacity changes by position and
+ * cannot guarantee the whole type block. Full-card AI layouts canonicalize it
+ * to a local veil before generation.
+ */
+export const LOCAL_TYPE_SURFACE_ALPHA: Record<OverlayTreatment, number> = {
+  none: 0,
+  veil: 0.88,
+  plate: 0.94,
+  gradient: 0,
+};
+
+/**
  * The decorative vector motif a theme draws over its artwork. Every motif is
  * coloured from the live palette, so changing colourway repaints the art.
  */

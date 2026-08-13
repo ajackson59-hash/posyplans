@@ -10,6 +10,8 @@ import {
   findSalientRegions,
   focalVisibilityAfterOpacity,
   longestFlatBand,
+  MAX_RENDERED_TYPE_REGION_LUMA_SPREAD,
+  quietnessOfTypeRegion,
   retryCodesFor,
   runTier1Checks,
   uniformBorderRingFraction,
@@ -110,6 +112,21 @@ describe("tier 1 — palette diagnostics", () => {
 });
 
 describe("tier 1 — the measurements themselves", () => {
+  it("judges the protected card, preserving the old bar while giving the local veil deterministic margin", () => {
+    const canaryRange = grid(100, 100, (x, y) => ((x + y) % 2 === 0 ? 46 : 210));
+    const protectedRegion = quietnessOfTypeRegion(canaryRange, concept({ minOverlay: "veil" }));
+    expect(protectedRegion.rawSpread).toBe(164);
+    expect(protectedRegion.spread).toBeCloseTo(19.68, 2);
+    expect(protectedRegion.limit).toBe(MAX_RENDERED_TYPE_REGION_LUMA_SPREAD);
+    expect(protectedRegion.quiet).toBe(true);
+
+    const unprotectedRegion = quietnessOfTypeRegion(canaryRange, concept({ minOverlay: "none" }));
+    expect(unprotectedRegion.quiet).toBe(false);
+
+    const extremeRange = grid(100, 100, (x, y) => ((x + y) % 2 === 0 ? 12 : 244));
+    expect(quietnessOfTypeRegion(extremeRange, concept({ minOverlay: "veil" })).quiet).toBe(false);
+  });
+
   it("measures a flat band as a fraction of the edge", () => {
     expect(longestFlatBand(grid(40, 40, () => 128))).toBe(1);
     expect(longestFlatBand(grid(40, 40, (x, y) => ((x * 7 + y * 13) % 5) * 60))).toBeLessThan(1);

@@ -18,6 +18,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import {
   getFontPairingIdFor,
+  LOCAL_TYPE_SURFACE_ALPHA,
   getOverlay,
   getPaletteVariant,
   getPlacement,
@@ -225,11 +226,11 @@ export function ThemeInvitation({
             // still cover the first and last line leaves a visible rectangular
             // seam where it meets the edge of its own box.
             style={{
-              top: `${textBlock.top - 3}%`,
-              left: `${textBlock.left - 3}%`,
-              width: `${textBlock.width + 6}%`,
-              height: `${textBlock.height + 6}%`,
-              backgroundColor: rgba(palette.surface, 0.86),
+              top: `${typeBox.top - 3}%`,
+              left: `${typeBox.left - 3}%`,
+              width: `${typeBox.width + 6}%`,
+              height: `${typeBox.height + 6}%`,
+              backgroundColor: rgba(palette.surface, LOCAL_TYPE_SURFACE_ALPHA.veil),
               borderRadius: `${rootSize * 4}px`,
               filter: `blur(${rootSize * 2.6}px)`,
             }}
@@ -245,7 +246,7 @@ export function ThemeInvitation({
               left: `${textBlock.left - 5}%`,
               width: `${textBlock.width + 10}%`,
               height: `${textBlock.height + 8}%`,
-              backgroundColor: rgba(palette.surface, 0.94),
+              backgroundColor: rgba(palette.surface, LOCAL_TYPE_SURFACE_ALPHA.plate),
               boxShadow: `0 ${rootSize * 0.6}px ${rootSize * 2.4}px ${rgba("#000000", 0.12)}`,
             }}
           />

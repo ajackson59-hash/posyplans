@@ -29,6 +29,7 @@ import { contrastRatio } from "@shared/aiFirstPalette";
 import { LAYOUT_FRAMES } from "@shared/inviteLayout";
 import type { AiFirstConcept } from "@shared/aiFirstInvite";
 import { aspectRatioForLayout } from "@shared/aiFirstInvite";
+import { LOCAL_TYPE_SURFACE_ALPHA } from "@shared/themeCatalog";
 
 export type Tier1Code =
   | "file-integrity"
@@ -86,6 +87,14 @@ const SALIENCE_MIN_RATIO = 1.5;
 const MIN_MOTIF_SALIENCE_SHARE = 0.2;
 const MIN_OCR_TOKEN_LENGTH = 3;
 const OCR_MIN_CONFIDENCE = 60;
+/**
+ * The former raw-art limit was 150. A 0.86 local veil reduced that to 21 on
+ * the rendered card, so 21 remains the launch bar. The renderer now uses a
+ * slightly stronger 0.88 veil, creating deterministic safety margin without
+ * lowering the standard.
+ */
+export const MAX_RENDERED_TYPE_REGION_LUMA_SPREAD = 21;
+const MAX_UNPROTECTED_TYPE_REGION_LUMA_SPREAD = 90;
 
 const EXPECTED_ASPECT: Record<"16:9" | "1:1" | "9:16", number> = {
   "16:9": 1536 / 1024,
@@ -213,7 +222,9 @@ export function runTier1Checks(input: Tier1Input): Tier1Result {
     findings.push({
       code: "quiet-region",
       critical: true,
-      message: `placement "${concept.placementId}" has a luma spread of ${quiet.spread.toFixed(0)}, too busy for live invitation type`,
+      message:
+        `placement "${concept.placementId}" has a rendered luma spread of ${quiet.spread.toFixed(0)} ` +
+        `after ${concept.minOverlay} protection (raw ${quiet.rawSpread.toFixed(0)}), too busy for live invitation type`,
       measured: quiet.spread,
       limit: quiet.limit,
     });
@@ -466,7 +477,7 @@ function mergeAdjacent(blocks: { x: number; y: number }[], bw: number, bh: numbe
 export function quietnessOfTypeRegion(
   grid: Grid,
   concept: AiFirstConcept,
-): { quiet: boolean; spread: number; limit: number } {
+): { quiet: boolean; spread: number; rawSpread: number; limit: number } {
   const frame = typePlacementFrame(concept);
   const x0 = Math.floor((frame.left / 100) * grid.width);
   const x1 = Math.min(grid.width, Math.ceil(((frame.left + frame.width) / 100) * grid.width));
@@ -477,17 +488,20 @@ export function quietnessOfTypeRegion(
   for (let y = y0; y < y1; y += 1) {
     for (let x = x0; x < x1; x += 1) values.push(grid.data[y * grid.width + x]);
   }
-  if (values.length === 0) return { quiet: true, spread: 0, limit: 0 };
+  if (values.length === 0) return { quiet: true, spread: 0, rawSpread: 0, limit: 0 };
 
   values.sort((a, b) => a - b);
   const p2 = values[Math.floor(values.length * 0.02)];
   const p98 = values[Math.min(values.length - 1, Math.floor(values.length * 0.98))];
-  const spread = p98 - p2;
-
-  // An overlay is expected to do some of this work, so the bar is "could a
-  // veil rescue it", not "is it already blank".
-  const limit = concept.minOverlay === "none" ? 90 : 150;
-  return { quiet: spread <= limit, spread, limit };
+  const rawSpread = p98 - p2;
+  const surfaceAlpha = LOCAL_TYPE_SURFACE_ALPHA[concept.minOverlay];
+  // A uniform surface colour shifts every pixel by the same amount, so its
+  // luma spread is attenuated exactly by the remaining artwork opacity.
+  const spread = rawSpread * (1 - surfaceAlpha);
+  const limit = surfaceAlpha > 0
+    ? MAX_RENDERED_TYPE_REGION_LUMA_SPREAD
+    : MAX_UNPROTECTED_TYPE_REGION_LUMA_SPREAD;
+  return { quiet: spread <= limit, spread, rawSpread, limit };
 }
 
 /**

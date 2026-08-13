@@ -481,6 +481,32 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
       }
     }
 
+    // If the paid pixels are otherwise sound, strengthen only the local live-
+    // type surface and re-evaluate the exact same bytes. This is a deterministic
+    // composition repair, not an image retry: no provider call and no second
+    // ledger reservation. The renderer and Tier 1 share the same surface-
+    // opacity contract, so a pass here is evidence about the final card.
+    if (onlyCriticalFailureIs(tier1.findings, "quiet-region") && repair.overlay !== "plate") {
+      const candidateConcept: AiFirstConcept = { ...concept, minOverlay: "plate" };
+      const candidateRepair = validateLayoutBeforeGeneration(candidateConcept);
+      const candidateTier1 = runTier1Checks({
+        bytes,
+        concept: candidateConcept,
+        overlayCoverage: OVERLAY_COVERAGE[candidateRepair.overlay],
+        artworkOpacity: candidateRepair.artworkOpacity ?? artworkOpacity ?? 1,
+        ocr: input.ocr,
+      });
+      if (candidateTier1.passed) {
+        concept = candidateConcept;
+        repair = candidateRepair;
+        artworkOpacity = candidateRepair.artworkOpacity ?? artworkOpacity;
+        tier1 = candidateTier1;
+        summary.degraded.push(
+          `direction ${ctx.index + 1} reused its paid artwork with a deterministic paper panel after a quiet-region-only failure`,
+        );
+      }
+    }
+
     let vision: VisionVerdict | undefined;
     if (tier1.passed) {
       vision = await runVisionGate({ bytes, concept, brief: input.brief, client: input.anthropic });
