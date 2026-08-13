@@ -149,6 +149,49 @@ export function canonicalSafeTypographyRegion(
   }, concept.safeTypographyRegion);
 }
 
+export interface CanonicalTypeGeometry {
+  placementId: string;
+  safeTypographyRegion: SafeTypographyRegion;
+}
+
+/**
+ * Some legal theme placements straddle two coarse quiet-region labels, so no
+ * label can cover the required 60% even after the best region is selected.
+ * When that happens, choose the highest-coverage placement/region pair from
+ * the same curated theme. The renderer already supports every candidate in
+ * this menu; this changes no global template and removes another stochastic
+ * text-correction loop from server-owned geometry.
+ */
+export function canonicalTypeGeometry(
+  concept: AiFirstConcept,
+  layoutStyle: LayoutStyle = concept.layoutStyle,
+): CanonicalTypeGeometry {
+  const safeTypographyRegion = canonicalSafeTypographyRegion(concept, layoutStyle);
+  const canonicalRegionConcept = { ...concept, safeTypographyRegion };
+  if (safeTypographyPlacementCoverage(canonicalRegionConcept, layoutStyle) >= MIN_SAFE_TYPE_PLACEMENT_COVERAGE) {
+    return { placementId: concept.placementId, safeTypographyRegion };
+  }
+
+  const theme = getLaunchTheme(concept.baseThemeId);
+  if (!theme) return { placementId: concept.placementId, safeTypographyRegion };
+
+  let best = {
+    placementId: concept.placementId,
+    safeTypographyRegion,
+    coverage: safeTypographyPlacementCoverage(canonicalRegionConcept, layoutStyle),
+  };
+  for (const placement of theme.placements) {
+    for (const region of Object.keys(REGION_BOX) as SafeTypographyRegion[]) {
+      const coverage = safeTypographyPlacementCoverage(
+        { ...concept, placementId: placement.id, safeTypographyRegion: region },
+        layoutStyle,
+      );
+      if (coverage > best.coverage) best = { placementId: placement.id, safeTypographyRegion: region, coverage };
+    }
+  }
+  return { placementId: best.placementId, safeTypographyRegion: best.safeTypographyRegion };
+}
+
 /* ── Pass 1: before generation ───────────────────────────────────────── */
 
 /**

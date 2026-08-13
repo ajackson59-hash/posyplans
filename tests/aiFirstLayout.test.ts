@@ -12,6 +12,7 @@ import {
   MAX_SALIENT_CROP_FRACTION,
   MIN_SAFE_TYPE_PLACEMENT_COVERAGE,
   canonicalSafeTypographyRegion,
+  canonicalTypeGeometry,
   evaluateCropSafety,
   safeTypographyPlacementCoverage,
   strongerOverlay,
@@ -169,6 +170,29 @@ describe("layout — before generation", () => {
       safeTypographyPlacementCoverage({
         ...mismatched,
         safeTypographyRegion: canonicalSafeTypographyRegion(mismatched),
+      }),
+    ).toBeGreaterThanOrEqual(MIN_SAFE_TYPE_PLACEMENT_COVERAGE);
+  });
+
+  it("moves an impossible straddling placement within the same curated theme", () => {
+    const straddling = concept({
+      layoutStyle: "backdrop",
+      baseThemeId: "pool-editorial",
+      placementId: "high",
+      safeTypographyRegion: "upper-third",
+    });
+    const regionOnly = canonicalSafeTypographyRegion(straddling);
+    expect(
+      safeTypographyPlacementCoverage({ ...straddling, safeTypographyRegion: regionOnly }),
+    ).toBeLessThan(MIN_SAFE_TYPE_PLACEMENT_COVERAGE);
+
+    const geometry = canonicalTypeGeometry(straddling);
+    expect(geometry.placementId).not.toBe("high");
+    expect(
+      safeTypographyPlacementCoverage({
+        ...straddling,
+        placementId: geometry.placementId,
+        safeTypographyRegion: geometry.safeTypographyRegion,
       }),
     ).toBeGreaterThanOrEqual(MIN_SAFE_TYPE_PLACEMENT_COVERAGE);
   });
