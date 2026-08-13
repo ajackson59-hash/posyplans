@@ -20,6 +20,7 @@ import { InMemoryPreviewStore } from "../server/aiFirst/previewStore";
 import type { PipelineEvent } from "@shared/aiFirstStream";
 import type { EventBrief } from "../server/aiFirst/brief";
 import type { ArtworkRequest } from "../server/aiFirst/artwork";
+import type { AiFirstConcept } from "@shared/aiFirstInvite";
 import {
   artworkForAspect,
   busyTypeRegionPng,
@@ -68,6 +69,7 @@ interface FakeOptions {
   /** Emits the concepts one at a time with a gap, as a real stream does. */
   conceptGapMs?: number;
   visionPasses?: (call: number) => boolean;
+  concepts?: AiFirstConcept[];
 }
 
 function fakeAnthropic(options: FakeOptions = {}): { client: Anthropic; visionCalls: () => number } {
@@ -76,7 +78,7 @@ function fakeAnthropic(options: FakeOptions = {}): { client: Anthropic; visionCa
     messages: {
       stream: async () =>
         (async function* () {
-          for (const item of CONCEPTS) {
+          for (const item of options.concepts ?? CONCEPTS) {
             if (options.conceptGapMs) await wait(options.conceptGapMs);
             yield { type: "content_block_delta", delta: { type: "text_delta", text: `${JSON.stringify(item)}\n` } };
           }
@@ -158,10 +160,11 @@ describe("a clean run", () => {
   });
 
   it("buys exactly one image per direction when nothing fails", async () => {
-    const { summary, imageCalls } = await run();
+    const { summary, events, imageCalls } = await run();
     expect(imageCalls()).toBe(4);
     expect(summary.billedImages).toBe(4);
     expect(summary.retries).toBe(0);
+    expect(directionsOf(events).find((event) => event.direction.index === 0)?.direction.overlay).toBe("plate");
   });
 
   it("validates all concepts before revealing each approved artwork direction", async () => {
@@ -261,7 +264,11 @@ describe("retry and fallback", () => {
   });
 
   it("rescues a quiet-region-only failure with a local paper panel and no second image call", async () => {
+    const concepts = CONCEPTS.map((item) => ({ ...item }));
+    [concepts[0].focalStrategy, concepts[1].focalStrategy] = [concepts[1].focalStrategy, concepts[0].focalStrategy];
+    [concepts[0].visualMood, concepts[1].visualMood] = [concepts[1].visualMood, concepts[0].visualMood];
     const { summary, events, imageCalls } = await run({
+      concepts,
       bytesFor: (call, aspect) => (call === 1 ? busyTypeRegionPng() : artworkForAspect(aspect)),
     });
 

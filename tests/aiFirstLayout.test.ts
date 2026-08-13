@@ -40,11 +40,23 @@ const art = (over: Partial<{ medium: string; composition: string; prompt: string
 
 describe("layout — before generation", () => {
   it("leaves a compatible concept completely alone", () => {
-    const repair = validateLayoutBeforeGeneration(concept());
+    const repair = validateLayoutBeforeGeneration(concept({ focalStrategy: "iconic-detail" }));
     expect(repair.clean).toBe(true);
     expect(repair.issues).toEqual([]);
     expect(repair.layoutStyle).toBe("full-bleed");
     expect(repair.artworkOpacity).toBeUndefined();
+  });
+
+  it("gives a full-bleed narrative scene a solid paper panel before any provider spend", () => {
+    const repair = validateLayoutBeforeGeneration(
+      concept({ layoutStyle: "full-bleed", focalStrategy: "narrative-scene", minOverlay: "veil" }),
+    );
+
+    expect(repair.overlay).toBe("plate");
+    expect(repair.issues).toContainEqual(expect.objectContaining({
+      code: "art-behind-type-needs-local-surface",
+      repair: "strengthen-overlay",
+    }));
   });
 
   it("rescues a focal subject that a backdrop's 30% would erase", () => {
@@ -88,14 +100,20 @@ describe("layout — before generation", () => {
 
   it("gives busy all-over art a quiet place for the words", () => {
     const repair = validateLayoutBeforeGeneration(
-      concept({ minOverlay: "none", art: art({ composition: "an all-over scattered field of stars" }) }),
+      concept({
+        focalStrategy: "graphic-world",
+        minOverlay: "none",
+        art: art({ composition: "an all-over scattered field of stars" }),
+      }),
     );
     expect(repair.issues.map((i) => i.code)).toContain("busy-scatter-without-quiet-region");
     expect(repair.overlay).toBe("veil");
   });
 
   it("replaces a top-fading gradient when artwork sits behind the whole type block", () => {
-    const repair = validateLayoutBeforeGeneration(concept({ layoutStyle: "full-bleed", minOverlay: "gradient" }));
+    const repair = validateLayoutBeforeGeneration(
+      concept({ focalStrategy: "iconic-detail", layoutStyle: "full-bleed", minOverlay: "gradient" }),
+    );
     expect(repair.overlay).toBe("veil");
     expect(repair.issues).toContainEqual(expect.objectContaining({
       code: "art-behind-type-needs-local-surface",

@@ -250,6 +250,21 @@ export function validateLayoutBeforeGeneration(concept: AiFirstConcept): LayoutR
     overlay = strongerOverlay(overlay, "veil");
   }
 
+  // A cinematic full-bleed narrative is intentionally busy: people, hero
+  // objects and party activity can move between otherwise valid generations.
+  // A translucent veil cannot guarantee that live type stays visually
+  // separate from those semantic subjects. Use the renderer's solid local
+  // paper panel before any image or vision spend, so the critic judges the
+  // same protected composition the host will actually see.
+  if (layoutStyle === "full-bleed" && concept.focalStrategy === "narrative-scene" && overlay !== "plate") {
+    issues.push({
+      code: "art-behind-type-needs-local-surface",
+      message: "a full-bleed narrative scene requires a solid local paper panel behind live type",
+      repair: "strengthen-overlay",
+    });
+    overlay = "plate";
+  }
+
   // Full-card artwork sits directly behind live type. A top-fading gradient
   // does not protect centred or lower detail lines, and `none` protects
   // nothing. Require a local surface whose opacity is stable across the
