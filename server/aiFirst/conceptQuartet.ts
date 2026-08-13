@@ -159,7 +159,6 @@ export function preflightConceptQuartet(
 
   concepts.forEach((concept, index) => {
     const label = `concept ${index + 1} (${concept.conceptName})`;
-    const directionIdentity = `${concept.conceptName} ${concept.description}`;
     const artBrief = `${concept.art.medium} ${concept.art.composition} ${concept.art.prompt}`;
     const subject = preflightConceptForBrief(concept, brief);
 
@@ -169,8 +168,11 @@ export function preflightConceptQuartet(
 
     if (birthday) {
       if (!OCCASION_ART_CUE.test(artBrief)) errors.push(`${label} artwork omits the birthday/celebration identity`);
-      if (milestone && !milestone.test(directionIdentity)) {
-        errors.push(`${label} host-facing direction omits the ${brief.milestone} milestone`);
+      if (milestone && !milestone.test(concept.description)) {
+        errors.push(`${label} host-facing description omits the ${brief.milestone} milestone`);
+      }
+      if (milestone && !milestone.test(artBrief)) {
+        errors.push(`${label} artwork direction omits the ${brief.milestone} milestone`);
       }
     }
 

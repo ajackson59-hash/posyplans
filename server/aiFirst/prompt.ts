@@ -27,7 +27,7 @@ import { BORDER_STYLES, FONT_PAIRINGS, LAYOUT_STYLES, STYLE_LANES } from "@share
 import { FOCAL_STRATEGIES, SAFE_TYPOGRAPHY_REGIONS, VISUAL_MOODS } from "@shared/aiFirstInvite";
 import { DNA_AXES } from "@shared/eventDna";
 import { briefToPromptBlock, type EventBrief } from "./brief";
-import { concreteSubjectRequirementsForBrief } from "./conceptPreflight";
+import { concreteSubjectRequirementsForBrief, subjectFamiliesForBrief } from "./conceptPreflight";
 
 const list = (values: readonly string[]): string => values.join(" | ");
 
@@ -112,6 +112,40 @@ export interface UserPromptInput {
   keepConstraints?: string[];
 }
 
+/**
+ * The model chooses the art within each lane; the server chooses the four
+ * lanes before asking. This removes the recurring failure where a nominally
+ * diverse quartet quietly reused one machine, medium, or visual structure.
+ */
+function orderedQuartetBlueprint(brief: EventBrief): string[] {
+  const construction = subjectFamiliesForBrief(brief).some((family) => family.id === "construction");
+  const lines = [
+    "Line 1 — focalStrategy=narrative-scene; visualMood=cinematic-narrative; styleLaneId=editorial-premium; fontPairingId=editorial-serif; art.medium must be gouache; tell an event story in its setting.",
+    "Line 2 — focalStrategy=iconic-detail; visualMood=sculptural-editorial; styleLaneId=bold-graphic; fontPairingId=deco-luxe; art.medium must be watercolor; isolate one sculptural subject detail.",
+    "Line 3 — focalStrategy=graphic-world; visualMood=graphic-modernist; styleLaneId=minimal-modern; fontPairingId=minimal-geometric; art.medium must be cut-paper collage; build a visual system rather than a hero object.",
+    "Line 4 — focalStrategy=tactile-still-life; visualMood=tactile-artisanal; styleLaneId=handcrafted-rustic; fontPairingId=rustic-handwritten; art.medium must be linocut; arrange meaningful materials and celebration objects.",
+    "Use four different layoutStyle values. The line number, focal strategy, visual mood, style lane, font pairing, medium family, and focal subject are binding and may not be swapped or repeated.",
+  ];
+
+  if (construction) {
+    lines.push(
+      "Construction subject map: Line 1 is a machine-free jobsite celebration led by builder activity, materials, safety gear and party details; Line 2 is the ONLY machine-led direction and may show one close machinery detail; Line 3 is a vehicle-free blueprint/site-plan world with measurement and jobsite markings; Line 4 is a vehicle-free builder's still life with at least three coherent tools, safety items or materials.",
+      "A dump truck, excavator, bulldozer, crane, loader or other machine named in Line 2 must not appear in any other line. Lines 1, 3 and 4 must not use any vehicle as their dominant subject.",
+    );
+  }
+
+  return lines;
+}
+
+function milestoneIdentityContract(brief: EventBrief): string[] {
+  const birthday = /\bbirthday\b/i.test(`${brief.eventName} ${brief.eventType} ${brief.vibe}`);
+  if (!birthday || !brief.milestone) return [];
+  return [
+    `Every description and every art.prompt must literally say "${brief.milestone} birthday" or spell the ordinal out (for example, "third birthday").`,
+    "This phrase communicates event identity to the art director; the artwork must still contain no rendered lettering, words or numerals.",
+  ];
+}
+
 export function buildUserPrompt(input: UserPromptInput): string {
   const parts = [briefToPromptBlock(input.brief)];
   const concreteRequirements = concreteSubjectRequirementsForBrief(input.brief);
@@ -121,9 +155,16 @@ export function buildUserPrompt(input: UserPromptInput): string {
       "",
       "CONCRETE SUBJECT CONTRACT (every concept must satisfy every line):",
       ...concreteRequirements.map((requirement) => `- ${requirement}.`),
-      "- conceptName and description must identify the host's subject, not merely a colour, texture or material.",
+      "- Every description and every art.prompt must explicitly identify the host's concrete subject, not merely a colour, texture or material.",
     );
   }
+
+  const milestoneContract = milestoneIdentityContract(input.brief);
+  if (milestoneContract.length > 0) {
+    parts.push("", "MILESTONE IDENTITY CONTRACT (every concept must satisfy every line):", ...milestoneContract.map((line) => `- ${line}`));
+  }
+
+  parts.push("", "ORDERED QUARTET BLUEPRINT (binding, assigned before generation):", ...orderedQuartetBlueprint(input.brief).map((line) => `- ${line}`));
 
   if (input.keepConstraints?.length) {
     parts.push("", "KEEP UNCHANGED (the host locked these):", ...input.keepConstraints.map((c) => `- ${c}`));
@@ -137,6 +178,18 @@ export function buildUserPrompt(input: UserPromptInput): string {
 
   parts.push("", "Emit the four NDJSON lines now.");
   return parts.join("\n");
+}
+
+/** The only permitted automatic concept correction; it is still text-only. */
+export function buildConceptCorrectionPrompt(errors: readonly string[]): string {
+  return [
+    "ZERO-IMAGE SERVER REVIEW FAILED.",
+    "Rewrite all four concepts from scratch. Do not patch or explain the previous quartet.",
+    "The event brief, milestone contract, concrete-subject contract and ordered quartet blueprint remain binding.",
+    "Correct every server finding below:",
+    ...Array.from(new Set(errors)).map((error) => `- ${error}`),
+    "Emit exactly four replacement NDJSON objects and nothing else.",
+  ].join("\n");
 }
 
 /**

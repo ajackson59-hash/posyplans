@@ -192,7 +192,9 @@ export function preflightConceptForBrief(concept: AiFirstConcept, brief: EventBr
   // Only the art fields reach the image provider. A themed concept name or a
   // persuasive host description cannot compensate for an unthemed art brief.
   const artBrief = `${concept.art.medium} ${concept.art.composition} ${concept.art.prompt}`;
-  const directionIdentity = `${concept.conceptName} ${concept.description}`;
+  // The description is what the host actually reads. A themed concept name
+  // cannot compensate for generic customer-facing direction copy.
+  const directionIdentity = concept.description;
   const missingSubjects = families
     .filter((family) => {
       if (!family.artworkCue.test(artBrief)) return true;

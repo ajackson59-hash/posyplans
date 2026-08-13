@@ -12,9 +12,10 @@ import type { AiFirstConcept } from "@shared/aiFirstInvite";
 import type { EventBrief } from "./brief";
 import { ConceptStreamParser } from "./conceptStream";
 import { preflightConceptQuartet } from "./conceptQuartet";
-import { buildSystemPrompt, buildUserPrompt } from "./prompt";
+import { buildConceptCorrectionPrompt, buildSystemPrompt, buildUserPrompt } from "./prompt";
 
 export const CONCEPT_MODEL = "claude-sonnet-4-6";
+export const MAX_TEXT_ONLY_CONCEPT_CORRECTIONS = 1;
 
 export interface ConceptOnlyProofInput {
   brief: EventBrief;
@@ -49,56 +50,77 @@ function throwIfAborted(signal?: AbortSignal): void {
 
 export async function runConceptOnlyProof(input: ConceptOnlyProofInput): Promise<ConceptOnlyProofResult> {
   const client = input.anthropic ?? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-  const parser = new ConceptStreamParser();
-  const candidates: AiFirstConcept[] = [];
   let firstConceptReported = false;
 
-  const collect = (concepts: ReturnType<ConceptStreamParser["push"]>) => {
-    for (const line of concepts) {
-      if (!firstConceptReported) {
-        firstConceptReported = true;
-        input.onFirstConcept?.();
+  type ConceptMessage = { role: "user" | "assistant"; content: string };
+  const requestQuartet = async (messages: ConceptMessage[]) => {
+    const parser = new ConceptStreamParser();
+    const candidates: AiFirstConcept[] = [];
+    const collect = (concepts: ReturnType<ConceptStreamParser["push"]>) => {
+      for (const line of concepts) {
+        if (!firstConceptReported) {
+          firstConceptReported = true;
+          input.onFirstConcept?.();
+        }
+        candidates.push(line.concept);
       }
-      candidates.push(line.concept);
+    };
+    const stream = await client.messages.stream({
+      model: CONCEPT_MODEL,
+      max_tokens: 4000,
+      system: buildSystemPrompt(),
+      messages,
+    });
+    for await (const chunk of stream) {
+      throwIfAborted(input.signal);
+      if (chunk.type !== "content_block_delta" || chunk.delta.type !== "text_delta") continue;
+      collect(parser.push(chunk.delta.text));
     }
+    throwIfAborted(input.signal);
+    collect(parser.flush());
+    input.onReviewingConcepts?.();
+    const quartet = preflightConceptQuartet(candidates, input.brief);
+    const parserErrors = parser.rejections.flatMap((rejection) => rejection.errors);
+    return { candidates, quartet, parserErrors };
   };
 
-  const stream = await client.messages.stream({
-    model: CONCEPT_MODEL,
-    max_tokens: 4000,
-    system: buildSystemPrompt(),
-    messages: [
-      {
-        role: "user",
-        content: buildUserPrompt({
-          brief: input.brief,
-          direction: input.direction,
-          avoidConceptNames: input.avoidConceptNames,
-          keepConstraints: input.keepConstraints,
-        }),
-      },
-    ],
+  const userPrompt = buildUserPrompt({
+    brief: input.brief,
+    direction: input.direction,
+    avoidConceptNames: input.avoidConceptNames,
+    keepConstraints: input.keepConstraints,
   });
+  let attempt = await requestQuartet([{ role: "user", content: userPrompt }]);
+  let conceptRejections = attempt.parserErrors.length + attempt.quartet.errors.length;
 
-  for await (const chunk of stream) {
-    throwIfAborted(input.signal);
-    if (chunk.type !== "content_block_delta" || chunk.delta.type !== "text_delta") continue;
-    collect(parser.push(chunk.delta.text));
+  if (!attempt.quartet.passed) {
+    const firstErrors = [...attempt.parserErrors, ...attempt.quartet.errors];
+    const assistantContent = attempt.candidates.length
+      ? attempt.candidates.map((concept) => JSON.stringify(concept)).join("\n")
+      : "No valid concept objects were parsed from the first response.";
+
+    // One correction is permitted because it remains entirely before the
+    // image provider boundary. Artwork automatic retry remains disabled and
+    // no run, usage reservation, preview, attempt, or ledger can exist here.
+    attempt = await requestQuartet([
+      { role: "user", content: userPrompt },
+      { role: "assistant", content: assistantContent },
+      { role: "user", content: buildConceptCorrectionPrompt(firstErrors) },
+    ]);
+    conceptRejections += attempt.parserErrors.length + attempt.quartet.errors.length;
   }
-  throwIfAborted(input.signal);
-  collect(parser.flush());
 
-  input.onReviewingConcepts?.();
-  const quartet = preflightConceptQuartet(candidates, input.brief);
-  const conceptRejections = parser.rejections.length + quartet.errors.length;
-  if (!quartet.passed) {
-    for (const error of quartet.errors) input.onPreflightWarning?.(error);
-    throw new Error(`creative quartet failed zero-image preflight: ${quartet.errors.join("; ")}`);
+  if (!attempt.quartet.passed) {
+    const finalErrors = [...attempt.parserErrors, ...attempt.quartet.errors];
+    for (const error of finalErrors) input.onPreflightWarning?.(error);
+    throw new Error(
+      `creative quartet failed zero-image preflight after ${MAX_TEXT_ONLY_CONCEPT_CORRECTIONS} text-only correction pass: ${finalErrors.join("; ")}`,
+    );
   }
 
   return {
     model: CONCEPT_MODEL,
-    concepts: quartet.concepts,
+    concepts: attempt.quartet.concepts,
     conceptRejections,
     imageProviderCalls: 0,
     billedArtworkAttempts: 0,

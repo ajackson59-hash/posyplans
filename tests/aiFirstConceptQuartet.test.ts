@@ -10,6 +10,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { parseAiFirstConcept, type AiFirstConcept } from "@shared/aiFirstInvite";
 import type { EventBrief } from "../server/aiFirst/brief";
 import { preflightConceptQuartet } from "../server/aiFirst/conceptQuartet";
+import { runConceptOnlyProof } from "../server/aiFirst/conceptOnlyProof";
 import { runAiFirstPipeline } from "../server/aiFirst/pipeline";
 import { InMemoryPreviewStore } from "../server/aiFirst/previewStore";
 import { InMemoryUsageStore } from "../server/aiFirst/usage";
@@ -54,7 +55,7 @@ export const CONSTRUCTION_REVIEW_QUARTET: AiFirstConcept[] = [
       medium: "editorial watercolor",
       composition: "wide backyard build-zone party scene, small excavator low and off-centre beneath a quiet sky",
       prompt:
-        "A refined summer backyard BBQ transformed into a little-builder jobsite celebration: one small yellow excavator beside a timber build zone, hard hats resting near a picnic table, restrained bunting, warm late-afternoon light, ink navy shadows, concrete cream and construction yellow, sophisticated watercolor detail, festive but never cartoonish.",
+        "A refined summer backyard BBQ transformed into a third-birthday little-builder jobsite celebration: one small yellow excavator beside a timber build zone, hard hats resting near a picnic table, restrained bunting, warm late-afternoon light, ink navy shadows, concrete cream and construction yellow, sophisticated watercolor detail, festive but never cartoonish.",
     },
     safeTypographyRegion: "upper-third",
     minOverlay: "veil",
@@ -92,7 +93,7 @@ export const CONSTRUCTION_REVIEW_QUARTET: AiFirstConcept[] = [
       medium: "cut-paper collage",
       composition: "tall site-plan grid with layered construction markings beside a quiet text panel",
       prompt:
-        "An intelligent cut-paper backyard site plan for a little-builder birthday: survey grid, measured lumber shapes, tiny traffic-cone markers, caution-stripe rhythm, picnic-table footprint and confetti-like construction markings, modern warm yellow, navy and concrete cream, unmistakably construction and celebration without a full vehicle or generic blueprint poster.",
+        "An intelligent cut-paper backyard site plan for a little-builder third birthday: survey grid, measured lumber shapes, tiny traffic-cone markers, caution-stripe rhythm, picnic-table footprint and confetti-like construction markings, modern warm yellow, navy and concrete cream, unmistakably construction and celebration without a full vehicle or generic blueprint poster.",
     },
     safeTypographyRegion: "right-panel",
     minOverlay: "plate",
@@ -111,7 +112,7 @@ export const CONSTRUCTION_REVIEW_QUARTET: AiFirstConcept[] = [
       medium: "hand-carved linocut",
       composition: "small centred still life of builder materials with generous ivory breathing room",
       prompt:
-        "An elevated backyard party-table still life arranged from a child-sized hard hat, measuring tape, work gloves, neat lumber offcuts and one shovel, softened by restrained bunting and a single birthday candle, tactile hand-carved linocut grain in construction yellow, ink navy and warm ivory, artisanal and celebratory rather than clip art.",
+        "An elevated backyard third-birthday party-table still life arranged from a child-sized hard hat, measuring tape, work gloves, neat lumber offcuts and one shovel, softened by restrained bunting and a single birthday candle, tactile hand-carved linocut grain in construction yellow, ink navy and warm ivory, artisanal and celebratory rather than clip art.",
     },
     safeTypographyRegion: "upper-third",
     minOverlay: "none",
@@ -148,6 +149,52 @@ function quartetClient(concepts: AiFirstConcept[], onEmit?: () => void): Anthrop
   } as unknown as Anthropic;
 }
 
+const FAILED_PROVIDER_QUARTET: AiFirstConcept[] = CONSTRUCTION_REVIEW_QUARTET.map((item, index) => {
+  const names = [
+    "Jobsite Celebration — Narrative Scene",
+    "Steel & Confetti — Iconic Detail",
+    "Site Plan for a Party — Graphic World",
+    "Builder's Table — Tactile Still Life",
+  ];
+  const prompts = [
+    "A dump truck dominates a backyard birthday construction jobsite with hard hats, lumber, a picnic table and party bunting.",
+    "A dump truck isolated as an editorial object at a backyard birthday party.",
+    "A dump truck dominates a backyard birthday blueprint site-plan world with survey grids, measured lumber and construction markings.",
+    "A dump truck dominates a backyard birthday builder still life with a hard hat, measuring tape, work gloves and lumber offcuts.",
+  ];
+  return concept({
+    ...item,
+    conceptName: names[index],
+    description: "A polished construction direction for a backyard little-builder celebration.",
+    art: {
+      medium: "digital illustration",
+      composition: `provider composition ${index + 1}`,
+      prompt: prompts[index],
+    },
+  });
+});
+
+function sequentialQuartetClient(attempts: AiFirstConcept[][]): {
+  client: Anthropic;
+  streamCalls: () => number;
+} {
+  let calls = 0;
+  const client = {
+    messages: {
+      stream: async () => {
+        const concepts = attempts[Math.min(calls, attempts.length - 1)];
+        calls += 1;
+        return (async function* () {
+          for (const item of concepts) {
+            yield { type: "content_block_delta", delta: { type: "text_delta", text: `${JSON.stringify(item)}\n` } };
+          }
+        })();
+      },
+    },
+  } as unknown as Anthropic;
+  return { client, streamCalls: () => calls };
+}
+
 describe("whole-quartet creative preflight", () => {
   it("keeps every review fixture inside the production concept schema", () => {
     CONSTRUCTION_REVIEW_QUARTET.forEach((item, index) => {
@@ -170,6 +217,51 @@ describe("whole-quartet creative preflight", () => {
       expect(card.exactArtworkPrompt).toContain("3rd birthday");
       expect(card.exactArtworkPrompt).toContain("No text, no letters, no words, no numbers");
     }
+  });
+
+  it("repairs the exact milestone/media/machine failure once while preserving the zero-image boundary", async () => {
+    const first = preflightConceptQuartet(FAILED_PROVIDER_QUARTET, CONSTRUCTION_REVIEW_BRIEF);
+    const failures = first.errors.join(" ");
+    expect(failures).toContain("host-facing description omits the 3rd milestone");
+    expect(failures).toContain("artwork direction omits the 3rd milestone");
+    expect(failures).toContain("at least two coherent construction/jobsite cue groups");
+    expect(failures).toContain("4 distinct illustration media");
+    expect(failures).toContain("repeats dump truck as a dominant subject");
+    expect(failures).toContain("machine-led construction artwork in more than two directions");
+
+    const sequence = sequentialQuartetClient([FAILED_PROVIDER_QUARTET, CONSTRUCTION_REVIEW_QUARTET]);
+    const originalFetch = globalThis.fetch;
+    let fetchCalls = 0;
+    globalThis.fetch = (async () => {
+      fetchCalls += 1;
+      throw new Error("text-only concept correction must never reach an image provider");
+    }) as typeof fetch;
+    try {
+      const result = await runConceptOnlyProof({
+        brief: CONSTRUCTION_REVIEW_BRIEF,
+        anthropic: sequence.client,
+      });
+      expect(sequence.streamCalls()).toBe(2);
+      expect(result.concepts).toEqual(CONSTRUCTION_REVIEW_QUARTET);
+      expect(result.conceptRejections).toBeGreaterThan(0);
+      expect(result.imageProviderCalls).toBe(0);
+      expect(result.billedArtworkAttempts).toBe(0);
+      expect(fetchCalls).toBe(0);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("stops after one text-only correction instead of looping", async () => {
+    const sequence = sequentialQuartetClient([
+      FAILED_PROVIDER_QUARTET,
+      FAILED_PROVIDER_QUARTET,
+      CONSTRUCTION_REVIEW_QUARTET,
+    ]);
+    await expect(
+      runConceptOnlyProof({ brief: CONSTRUCTION_REVIEW_BRIEF, anthropic: sequence.client }),
+    ).rejects.toThrow("after 1 text-only correction pass");
+    expect(sequence.streamCalls()).toBe(2);
   });
 
   it("blocks four prompt-level excavator variations even when their compositions hide the repetition", async () => {

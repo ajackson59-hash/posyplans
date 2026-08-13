@@ -215,7 +215,7 @@ export default function AiFirstPreviewReview({ ownerToken }: { ownerToken: strin
             Four text concepts passed with the safety boundary intact
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            {conceptProof.data.model} · {conceptProof.data.conceptRejections} rejected concepts · zero artwork calls · zero billed attempts · no run claimed
+            {conceptProof.data.model} · {conceptProof.data.conceptRejections} preflight issues corrected · zero artwork calls · zero billed attempts · no run claimed
           </p>
           <ol className="mt-3 grid gap-3 sm:grid-cols-2">
             {conceptProof.data.concepts.map((concept, index) => (

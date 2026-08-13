@@ -61,7 +61,7 @@ export function conceptQuartet(
       art: {
         medium: "watercolor",
         composition: `wide narrative celebration scene, subject offset below a quiet upper third`,
-        prompt: `${subject} Place the theme inside a refined birthday celebration with festive bunting and candlelight.`,
+        prompt: `${subject} Place the theme inside a refined ${milestone} birthday celebration with festive bunting and candlelight.`,
       },
     },
     concept({
@@ -77,7 +77,7 @@ export function conceptQuartet(
       art: {
         medium: "editorial gouache",
         composition: "one close sculptural detail with a calm lower field",
-        prompt: `${subject} Reframe one distinctive theme detail as elevated gouache for a modern birthday party, with a restrained festive garland.`,
+        prompt: `${subject} Reframe one distinctive theme detail as elevated gouache for a modern ${milestone} birthday party, with a restrained festive garland.`,
       },
     }),
     concept({
@@ -93,7 +93,7 @@ export function conceptQuartet(
       art: {
         medium: "cut-paper collage",
         composition: "tall graphic field of theme marks beside a quiet text panel",
-        prompt: `${subject} Translate the theme into an intelligent cut-paper system with celebratory confetti marks and generous negative space.`,
+        prompt: `${subject} Translate the theme into an intelligent cut-paper system for a ${milestone} birthday, with celebratory confetti marks and generous negative space.`,
       },
     }),
     concept({
@@ -109,7 +109,7 @@ export function conceptQuartet(
       art: {
         medium: "linocut",
         composition: "small tactile still life centred within generous breathing room",
-        prompt: `${subject} Arrange tactile theme materials with one refined birthday candle and subtle party ribbon as artisanal linocut stationery.`,
+        prompt: `${subject} Arrange tactile theme materials for a ${milestone} birthday with one refined candle and subtle party ribbon as artisanal linocut stationery.`,
       },
     }),
   ];

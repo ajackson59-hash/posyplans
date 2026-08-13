@@ -211,7 +211,10 @@ describe("prompt — streamlined, and specific where it matters", () => {
 
   it("stays far below the proof's 17k-character payload", () => {
     const total = buildSystemPrompt().length + buildUserPrompt({ brief: brief() }).length;
-    expect(total).toBeLessThan(9_000);
+    // The binding ordered quartet blueprint deliberately spends a small
+    // amount of input context to prevent repeated media and focal subjects.
+    // It remains materially below the retired 17k proof payload.
+    expect(total).toBeLessThan(10_000);
   });
 
   it("carries pinned constraints and the host's steer verbatim", () => {
@@ -246,6 +249,11 @@ describe("prompt — streamlined, and specific where it matters", () => {
       expect(prompt).toContain("Do not make a full construction machine mandatory");
       expect(prompt).toContain("do not satisfy or replace the construction identity");
     }
+    expect(conceptPrompt).toContain("MILESTONE IDENTITY CONTRACT");
+    expect(conceptPrompt).toContain('"3rd birthday"');
+    expect(conceptPrompt).toContain("ORDERED QUARTET BLUEPRINT");
+    expect(conceptPrompt).toContain("Line 2 is the ONLY machine-led direction");
+    expect(conceptPrompt).toContain("Line 3 is a vehicle-free blueprint/site-plan world");
   });
 
   it("renders the brief compactly", () => {
