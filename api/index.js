@@ -33,9 +33,9 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 ));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-// node_modules/ms/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/ms/index.js
 var require_ms = __commonJS({
-  "node_modules/ms/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/ms/index.js"(exports2, module2) {
     var s = 1e3;
     var m = s * 60;
     var h = m * 60;
@@ -46,7 +46,7 @@ var require_ms = __commonJS({
       options = options || {};
       var type = typeof val;
       if (type === "string" && val.length > 0) {
-        return parse3(val);
+        return parse4(val);
       } else if (type === "number" && isFinite(val)) {
         return options.long ? fmtLong(val) : fmtShort(val);
       }
@@ -54,19 +54,19 @@ var require_ms = __commonJS({
         "val is not a non-empty string or a valid number. val=" + JSON.stringify(val)
       );
     };
-    function parse3(str) {
+    function parse4(str) {
       str = String(str);
       if (str.length > 100) {
         return;
       }
-      var match = /^(-?(?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|w|years?|yrs?|y)?$/i.exec(
+      var match2 = /^(-?(?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|w|years?|yrs?|y)?$/i.exec(
         str
       );
-      if (!match) {
+      if (!match2) {
         return;
       }
-      var n = parseFloat(match[1]);
-      var type = (match[2] || "ms").toLowerCase();
+      var n = parseFloat(match2[1]);
+      var type = (match2[2] || "ms").toLowerCase();
       switch (type) {
         case "years":
         case "year":
@@ -149,9 +149,9 @@ var require_ms = __commonJS({
   }
 });
 
-// node_modules/debug/src/common.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/debug/src/common.js
 var require_common = __commonJS({
-  "node_modules/debug/src/common.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/debug/src/common.js"(exports2, module2) {
     function setup(env) {
       createDebug.debug = createDebug;
       createDebug.default = createDebug;
@@ -196,20 +196,20 @@ var require_common = __commonJS({
           if (typeof args[0] !== "string") {
             args.unshift("%O");
           }
-          let index = 0;
-          args[0] = args[0].replace(/%([a-zA-Z%])/g, (match, format) => {
-            if (match === "%%") {
+          let index2 = 0;
+          args[0] = args[0].replace(/%([a-zA-Z%])/g, (match2, format2) => {
+            if (match2 === "%%") {
               return "%";
             }
-            index++;
-            const formatter = createDebug.formatters[format];
+            index2++;
+            const formatter = createDebug.formatters[format2];
             if (typeof formatter === "function") {
-              const val = args[index];
-              match = formatter.call(self, val);
-              args.splice(index, 1);
-              index--;
+              const val = args[index2];
+              match2 = formatter.call(self, val);
+              args.splice(index2, 1);
+              index2--;
             }
-            return match;
+            return match2;
           });
           createDebug.formatArgs.call(self, args);
           const logFn = self.log || createDebug.log;
@@ -326,9 +326,9 @@ var require_common = __commonJS({
   }
 });
 
-// node_modules/debug/src/browser.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/debug/src/browser.js
 var require_browser = __commonJS({
-  "node_modules/debug/src/browser.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/debug/src/browser.js"(exports2, module2) {
     exports2.formatArgs = formatArgs;
     exports2.save = save;
     exports2.load = load;
@@ -442,15 +442,15 @@ var require_browser = __commonJS({
       }
       const c = "color: " + this.color;
       args.splice(1, 0, c, "color: inherit");
-      let index = 0;
+      let index2 = 0;
       let lastC = 0;
-      args[0].replace(/%[a-zA-Z%]/g, (match) => {
-        if (match === "%%") {
+      args[0].replace(/%[a-zA-Z%]/g, (match2) => {
+        if (match2 === "%%") {
           return;
         }
-        index++;
-        if (match === "%c") {
-          lastC = index;
+        index2++;
+        if (match2 === "%c") {
+          lastC = index2;
         }
       });
       args.splice(lastC, 0, c);
@@ -485,8 +485,8 @@ var require_browser = __commonJS({
       }
     }
     module2.exports = require_common()(exports2);
-    var { formatters: formatters2 } = module2.exports;
-    formatters2.j = function(v) {
+    var { formatters: formatters3 } = module2.exports;
+    formatters3.j = function(v) {
       try {
         return JSON.stringify(v);
       } catch (error) {
@@ -496,9 +496,9 @@ var require_browser = __commonJS({
   }
 });
 
-// node_modules/debug/src/node.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/debug/src/node.js
 var require_node = __commonJS({
-  "node_modules/debug/src/node.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/debug/src/node.js"(exports2, module2) {
     var tty = require("tty");
     var util2 = require("util");
     exports2.init = init;
@@ -658,21 +658,21 @@ var require_node = __commonJS({
       }
     }
     module2.exports = require_common()(exports2);
-    var { formatters: formatters2 } = module2.exports;
-    formatters2.o = function(v) {
+    var { formatters: formatters3 } = module2.exports;
+    formatters3.o = function(v) {
       this.inspectOpts.colors = this.useColors;
       return util2.inspect(v, this.inspectOpts).split("\n").map((str) => str.trim()).join(" ");
     };
-    formatters2.O = function(v) {
+    formatters3.O = function(v) {
       this.inspectOpts.colors = this.useColors;
       return util2.inspect(v, this.inspectOpts);
     };
   }
 });
 
-// node_modules/debug/src/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/debug/src/index.js
 var require_src = __commonJS({
-  "node_modules/debug/src/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/debug/src/index.js"(exports2, module2) {
     if (typeof process === "undefined" || process.type === "renderer" || process.browser === true || process.__nwjs) {
       module2.exports = require_browser();
     } else {
@@ -681,9 +681,9 @@ var require_src = __commonJS({
   }
 });
 
-// node_modules/depd/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/depd/index.js
 var require_depd = __commonJS({
-  "node_modules/depd/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/depd/index.js"(exports2, module2) {
     var relative2 = require("path").relative;
     module2.exports = depd;
     var basePath = process.cwd();
@@ -698,7 +698,7 @@ var require_depd = __commonJS({
       }
       return false;
     }
-    function convertDataDescriptorToAccessor(obj, prop, message) {
+    function convertDataDescriptorToAccessor(obj, prop, message2) {
       var descriptor = Object.getOwnPropertyDescriptor(obj, prop);
       var value = descriptor.value;
       descriptor.get = function getter() {
@@ -738,8 +738,8 @@ var require_depd = __commonJS({
       var stack = getStack();
       var site = callSiteLocation(stack[1]);
       var file = site[0];
-      function deprecate(message) {
-        log2.call(deprecate, message);
+      function deprecate(message2) {
+        log2.call(deprecate, message2);
       }
       deprecate._file = file;
       deprecate._ignored = isignored(namespace);
@@ -768,7 +768,7 @@ var require_depd = __commonJS({
       var str = process.env.TRACE_DEPRECATION || "";
       return containsNamespace(str, namespace);
     }
-    function log2(message, site) {
+    function log2(message2, site) {
       var haslisteners = eehaslisteners(process, "deprecation");
       if (!haslisteners && this._ignored) {
         return;
@@ -807,7 +807,7 @@ var require_depd = __commonJS({
         return;
       }
       this._warned[key] = true;
-      var msg = message;
+      var msg = message2;
       if (!msg) {
         msg = callSite === depSite || !callSite.name ? defaultMessage(depSite) : defaultMessage(callSite);
       }
@@ -816,8 +816,8 @@ var require_depd = __commonJS({
         process.emit("deprecation", err);
         return;
       }
-      var format = process.stderr.isTTY ? formatColor : formatPlain;
-      var output = format.call(this, msg, caller, stack.slice(i));
+      var format2 = process.stderr.isTTY ? formatColor : formatPlain;
+      var output = format2.call(this, msg, caller, stack.slice(i));
       process.stderr.write(output + "\n", "utf8");
     }
     function callSiteLocation(callSite) {
@@ -893,7 +893,7 @@ var require_depd = __commonJS({
     function prepareObjectStackTrace(obj, stack) {
       return stack;
     }
-    function wrapfunction(fn, message) {
+    function wrapfunction(fn, message2) {
       if (typeof fn !== "function") {
         throw new TypeError("argument fn must be a function");
       }
@@ -908,10 +908,10 @@ var require_depd = __commonJS({
         "message",
         "site",
         '"use strict"\nreturn function (' + args + ") {log.call(deprecate, message, site)\nreturn fn.apply(this, arguments)\n}"
-      )(fn, log2, this, message, site);
+      )(fn, log2, this, message2, site);
       return deprecatedfn;
     }
-    function wrapproperty(obj, prop, message) {
+    function wrapproperty(obj, prop, message2) {
       if (!obj || typeof obj !== "object" && typeof obj !== "function") {
         throw new TypeError("argument obj must be object");
       }
@@ -927,25 +927,25 @@ var require_depd = __commonJS({
       var site = callSiteLocation(stack[1]);
       site.name = prop;
       if ("value" in descriptor) {
-        descriptor = convertDataDescriptorToAccessor(obj, prop, message);
+        descriptor = convertDataDescriptorToAccessor(obj, prop, message2);
       }
       var get = descriptor.get;
       var set = descriptor.set;
       if (typeof get === "function") {
         descriptor.get = function getter() {
-          log2.call(deprecate, message, site);
+          log2.call(deprecate, message2, site);
           return get.apply(this, arguments);
         };
       }
       if (typeof set === "function") {
         descriptor.set = function setter() {
-          log2.call(deprecate, message, site);
+          log2.call(deprecate, message2, site);
           return set.apply(this, arguments);
         };
       }
       Object.defineProperty(obj, prop, descriptor);
     }
-    function DeprecationError(namespace, message, stack) {
+    function DeprecationError(namespace, message2, stack) {
       var error = new Error();
       var stackString;
       Object.defineProperty(error, "constructor", {
@@ -954,7 +954,7 @@ var require_depd = __commonJS({
       Object.defineProperty(error, "message", {
         configurable: true,
         enumerable: false,
-        value: message,
+        value: message2,
         writable: true
       });
       Object.defineProperty(error, "name", {
@@ -987,9 +987,9 @@ var require_depd = __commonJS({
   }
 });
 
-// node_modules/setprototypeof/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/setprototypeof/index.js
 var require_setprototypeof = __commonJS({
-  "node_modules/setprototypeof/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/setprototypeof/index.js"(exports2, module2) {
     "use strict";
     module2.exports = Object.setPrototypeOf || ({ __proto__: [] } instanceof Array ? setProtoOf : mixinProperties);
     function setProtoOf(obj, proto) {
@@ -1007,9 +1007,9 @@ var require_setprototypeof = __commonJS({
   }
 });
 
-// node_modules/statuses/codes.json
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/statuses/codes.json
 var require_codes = __commonJS({
-  "node_modules/statuses/codes.json"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/statuses/codes.json"(exports2, module2) {
     module2.exports = {
       "100": "Continue",
       "101": "Switching Protocols",
@@ -1078,9 +1078,9 @@ var require_codes = __commonJS({
   }
 });
 
-// node_modules/statuses/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/statuses/index.js
 var require_statuses = __commonJS({
-  "node_modules/statuses/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/statuses/index.js"(exports2, module2) {
     "use strict";
     var codes = require_codes();
     module2.exports = status;
@@ -1109,9 +1109,9 @@ var require_statuses = __commonJS({
     function createMessageToStatusCodeMap(codes2) {
       var map = {};
       Object.keys(codes2).forEach(function forEachCode(code) {
-        var message = codes2[code];
+        var message2 = codes2[code];
         var status2 = Number(code);
-        map[message.toLowerCase()] = status2;
+        map[message2.toLowerCase()] = status2;
       });
       return map;
     }
@@ -1120,10 +1120,10 @@ var require_statuses = __commonJS({
         return Number(code);
       });
     }
-    function getStatusCode(message) {
-      var msg = message.toLowerCase();
+    function getStatusCode(message2) {
+      var msg = message2.toLowerCase();
       if (!Object.prototype.hasOwnProperty.call(status.code, msg)) {
-        throw new Error('invalid status message: "' + message + '"');
+        throw new Error('invalid status message: "' + message2 + '"');
       }
       return status.code[msg];
     }
@@ -1149,9 +1149,9 @@ var require_statuses = __commonJS({
   }
 });
 
-// node_modules/inherits/inherits_browser.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/inherits/inherits_browser.js
 var require_inherits_browser = __commonJS({
-  "node_modules/inherits/inherits_browser.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/inherits/inherits_browser.js"(exports2, module2) {
     if (typeof Object.create === "function") {
       module2.exports = function inherits(ctor, superCtor) {
         if (superCtor) {
@@ -1181,9 +1181,9 @@ var require_inherits_browser = __commonJS({
   }
 });
 
-// node_modules/inherits/inherits.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/inherits/inherits.js
 var require_inherits = __commonJS({
-  "node_modules/inherits/inherits.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/inherits/inherits.js"(exports2, module2) {
     try {
       util2 = require("util");
       if (typeof util2.inherits !== "function") throw "";
@@ -1195,9 +1195,9 @@ var require_inherits = __commonJS({
   }
 });
 
-// node_modules/toidentifier/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/toidentifier/index.js
 var require_toidentifier = __commonJS({
-  "node_modules/toidentifier/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/toidentifier/index.js"(exports2, module2) {
     "use strict";
     module2.exports = toIdentifier;
     function toIdentifier(str) {
@@ -1208,9 +1208,9 @@ var require_toidentifier = __commonJS({
   }
 });
 
-// node_modules/http-errors/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/http-errors/index.js
 var require_http_errors = __commonJS({
-  "node_modules/http-errors/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/http-errors/index.js"(exports2, module2) {
     "use strict";
     var deprecate = require_depd()("http-errors");
     var setPrototypeOf = require_setprototypeof();
@@ -1276,8 +1276,8 @@ var require_http_errors = __commonJS({
     }
     function createClientErrorConstructor(HttpError, name, code) {
       var className = toClassName(name);
-      function ClientError(message) {
-        var msg = message != null ? message : statuses.message[code];
+      function ClientError(message2) {
+        var msg = message2 != null ? message2 : statuses.message[code];
         var err = new Error(msg);
         Error.captureStackTrace(err, ClientError);
         setPrototypeOf(err, ClientError.prototype);
@@ -1315,8 +1315,8 @@ var require_http_errors = __commonJS({
     }
     function createServerErrorConstructor(HttpError, name, code) {
       var className = toClassName(name);
-      function ServerError(message) {
-        var msg = message != null ? message : statuses.message[code];
+      function ServerError(message2) {
+        var msg = message2 != null ? message2 : statuses.message[code];
         var err = new Error(msg);
         Error.captureStackTrace(err, ServerError);
         setPrototypeOf(err, ServerError.prototype);
@@ -1372,13 +1372,13 @@ var require_http_errors = __commonJS({
   }
 });
 
-// node_modules/bytes/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/bytes/index.js
 var require_bytes = __commonJS({
-  "node_modules/bytes/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/bytes/index.js"(exports2, module2) {
     "use strict";
     module2.exports = bytes;
-    module2.exports.format = format;
-    module2.exports.parse = parse3;
+    module2.exports.format = format2;
+    module2.exports.parse = parse4;
     var formatThousandsRegExp = /\B(?=(\d{3})+(?!\d))/g;
     var formatDecimalsRegExp = /(?:\.0*|(\.[^0]+)0+)$/;
     var map = {
@@ -1392,14 +1392,14 @@ var require_bytes = __commonJS({
     var parseRegExp = /^((-|\+)?(\d+(?:\.\d+)?)) *(kb|mb|gb|tb|pb)$/i;
     function bytes(value, options) {
       if (typeof value === "string") {
-        return parse3(value);
+        return parse4(value);
       }
       if (typeof value === "number") {
-        return format(value, options);
+        return format2(value, options);
       }
       return null;
     }
-    function format(value, options) {
+    function format2(value, options) {
       if (!Number.isFinite(value)) {
         return null;
       }
@@ -1436,7 +1436,7 @@ var require_bytes = __commonJS({
       }
       return str + unitSeparator + unit;
     }
-    function parse3(val) {
+    function parse4(val) {
       if (typeof val === "number" && !isNaN(val)) {
         return val;
       }
@@ -1461,9 +1461,9 @@ var require_bytes = __commonJS({
   }
 });
 
-// node_modules/safer-buffer/safer.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/safer-buffer/safer.js
 var require_safer = __commonJS({
-  "node_modules/safer-buffer/safer.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/safer-buffer/safer.js"(exports2, module2) {
     "use strict";
     var buffer2 = require("buffer");
     var Buffer2 = buffer2.Buffer;
@@ -1529,9 +1529,9 @@ var require_safer = __commonJS({
   }
 });
 
-// node_modules/iconv-lite/lib/bom-handling.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/lib/bom-handling.js
 var require_bom_handling = __commonJS({
-  "node_modules/iconv-lite/lib/bom-handling.js"(exports2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/lib/bom-handling.js"(exports2) {
     "use strict";
     var BOMChar = "\uFEFF";
     exports2.PrependBOM = PrependBOMWrapper;
@@ -1575,9 +1575,9 @@ var require_bom_handling = __commonJS({
   }
 });
 
-// node_modules/iconv-lite/lib/helpers/merge-exports.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/lib/helpers/merge-exports.js
 var require_merge_exports = __commonJS({
-  "node_modules/iconv-lite/lib/helpers/merge-exports.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/lib/helpers/merge-exports.js"(exports2, module2) {
     "use strict";
     var hasOwn2 = typeof Object.hasOwn === "undefined" ? Function.call.bind(Object.prototype.hasOwnProperty) : Object.hasOwn;
     function mergeModules(target, module3) {
@@ -1591,9 +1591,9 @@ var require_merge_exports = __commonJS({
   }
 });
 
-// node_modules/iconv-lite/encodings/internal.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/internal.js
 var require_internal = __commonJS({
-  "node_modules/iconv-lite/encodings/internal.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/internal.js"(exports2, module2) {
     "use strict";
     var Buffer2 = require_safer().Buffer;
     module2.exports = {
@@ -1772,9 +1772,9 @@ var require_internal = __commonJS({
   }
 });
 
-// node_modules/iconv-lite/encodings/utf32.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/utf32.js
 var require_utf32 = __commonJS({
-  "node_modules/iconv-lite/encodings/utf32.js"(exports2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/utf32.js"(exports2) {
     "use strict";
     var Buffer2 = require_safer().Buffer;
     exports2._utf32 = Utf32Codec;
@@ -2007,9 +2007,9 @@ var require_utf32 = __commonJS({
   }
 });
 
-// node_modules/iconv-lite/encodings/utf16.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/utf16.js
 var require_utf16 = __commonJS({
-  "node_modules/iconv-lite/encodings/utf16.js"(exports2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/utf16.js"(exports2) {
     "use strict";
     var Buffer2 = require_safer().Buffer;
     exports2.utf16be = Utf16BECodec;
@@ -2150,9 +2150,9 @@ var require_utf16 = __commonJS({
   }
 });
 
-// node_modules/iconv-lite/encodings/utf7.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/utf7.js
 var require_utf7 = __commonJS({
-  "node_modules/iconv-lite/encodings/utf7.js"(exports2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/utf7.js"(exports2) {
     "use strict";
     var Buffer2 = require_safer().Buffer;
     exports2.utf7 = Utf7Codec;
@@ -2368,9 +2368,9 @@ var require_utf7 = __commonJS({
   }
 });
 
-// node_modules/iconv-lite/encodings/sbcs-codec.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/sbcs-codec.js
 var require_sbcs_codec = __commonJS({
-  "node_modules/iconv-lite/encodings/sbcs-codec.js"(exports2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/sbcs-codec.js"(exports2) {
     "use strict";
     var Buffer2 = require_safer().Buffer;
     exports2._sbcs = SBCSCodec;
@@ -2430,9 +2430,9 @@ var require_sbcs_codec = __commonJS({
   }
 });
 
-// node_modules/iconv-lite/encodings/sbcs-data.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/sbcs-data.js
 var require_sbcs_data = __commonJS({
-  "node_modules/iconv-lite/encodings/sbcs-data.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/sbcs-data.js"(exports2, module2) {
     "use strict";
     module2.exports = {
       // Not supported by iconv, not sure why.
@@ -2585,9 +2585,9 @@ var require_sbcs_data = __commonJS({
   }
 });
 
-// node_modules/iconv-lite/encodings/sbcs-data-generated.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/sbcs-data-generated.js
 var require_sbcs_data_generated = __commonJS({
-  "node_modules/iconv-lite/encodings/sbcs-data-generated.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/sbcs-data-generated.js"(exports2, module2) {
     "use strict";
     module2.exports = {
       "437": "cp437",
@@ -3040,9 +3040,9 @@ var require_sbcs_data_generated = __commonJS({
   }
 });
 
-// node_modules/iconv-lite/encodings/dbcs-codec.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/dbcs-codec.js
 var require_dbcs_codec = __commonJS({
-  "node_modules/iconv-lite/encodings/dbcs-codec.js"(exports2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/dbcs-codec.js"(exports2) {
     "use strict";
     var Buffer2 = require_safer().Buffer;
     exports2._dbcs = DBCSCodec;
@@ -3500,9 +3500,9 @@ var require_dbcs_codec = __commonJS({
   }
 });
 
-// node_modules/iconv-lite/encodings/tables/shiftjis.json
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/shiftjis.json
 var require_shiftjis = __commonJS({
-  "node_modules/iconv-lite/encodings/tables/shiftjis.json"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/shiftjis.json"(exports2, module2) {
     module2.exports = [
       ["0", "\0", 128],
       ["a1", "\uFF61", 62],
@@ -3631,9 +3631,9 @@ var require_shiftjis = __commonJS({
   }
 });
 
-// node_modules/iconv-lite/encodings/tables/eucjp.json
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/eucjp.json
 var require_eucjp = __commonJS({
-  "node_modules/iconv-lite/encodings/tables/eucjp.json"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/eucjp.json"(exports2, module2) {
     module2.exports = [
       ["0", "\0", 127],
       ["8ea1", "\uFF61", 62],
@@ -3819,9 +3819,9 @@ var require_eucjp = __commonJS({
   }
 });
 
-// node_modules/iconv-lite/encodings/tables/cp936.json
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/cp936.json
 var require_cp936 = __commonJS({
-  "node_modules/iconv-lite/encodings/tables/cp936.json"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/cp936.json"(exports2, module2) {
     module2.exports = [
       ["0", "\0", 127, "\u20AC"],
       ["8140", "\u4E02\u4E04\u4E05\u4E06\u4E0F\u4E12\u4E17\u4E1F\u4E20\u4E21\u4E23\u4E26\u4E29\u4E2E\u4E2F\u4E31\u4E33\u4E35\u4E37\u4E3C\u4E40\u4E41\u4E42\u4E44\u4E46\u4E4A\u4E51\u4E55\u4E57\u4E5A\u4E5B\u4E62\u4E63\u4E64\u4E65\u4E67\u4E68\u4E6A", 5, "\u4E72\u4E74", 9, "\u4E7F", 6, "\u4E87\u4E8A"],
@@ -4089,9 +4089,9 @@ var require_cp936 = __commonJS({
   }
 });
 
-// node_modules/iconv-lite/encodings/tables/gbk-added.json
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/gbk-added.json
 var require_gbk_added = __commonJS({
-  "node_modules/iconv-lite/encodings/tables/gbk-added.json"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/gbk-added.json"(exports2, module2) {
     module2.exports = [
       ["a140", "\uE4C6", 62],
       ["a180", "\uE505", 32],
@@ -4151,16 +4151,16 @@ var require_gbk_added = __commonJS({
   }
 });
 
-// node_modules/iconv-lite/encodings/tables/gb18030-ranges.json
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/gb18030-ranges.json
 var require_gb18030_ranges = __commonJS({
-  "node_modules/iconv-lite/encodings/tables/gb18030-ranges.json"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/gb18030-ranges.json"(exports2, module2) {
     module2.exports = { uChars: [128, 165, 169, 178, 184, 216, 226, 235, 238, 244, 248, 251, 253, 258, 276, 284, 300, 325, 329, 334, 364, 463, 465, 467, 469, 471, 473, 475, 477, 506, 594, 610, 712, 716, 730, 930, 938, 962, 970, 1026, 1104, 1106, 8209, 8215, 8218, 8222, 8231, 8241, 8244, 8246, 8252, 8365, 8452, 8454, 8458, 8471, 8482, 8556, 8570, 8596, 8602, 8713, 8720, 8722, 8726, 8731, 8737, 8740, 8742, 8748, 8751, 8760, 8766, 8777, 8781, 8787, 8802, 8808, 8816, 8854, 8858, 8870, 8896, 8979, 9322, 9372, 9548, 9588, 9616, 9622, 9634, 9652, 9662, 9672, 9676, 9680, 9702, 9735, 9738, 9793, 9795, 11906, 11909, 11913, 11917, 11928, 11944, 11947, 11951, 11956, 11960, 11964, 11979, 12284, 12292, 12312, 12319, 12330, 12351, 12436, 12447, 12535, 12543, 12586, 12842, 12850, 12964, 13200, 13215, 13218, 13253, 13263, 13267, 13270, 13384, 13428, 13727, 13839, 13851, 14617, 14703, 14801, 14816, 14964, 15183, 15471, 15585, 16471, 16736, 17208, 17325, 17330, 17374, 17623, 17997, 18018, 18212, 18218, 18301, 18318, 18760, 18811, 18814, 18820, 18823, 18844, 18848, 18872, 19576, 19620, 19738, 19887, 40870, 59244, 59336, 59367, 59413, 59417, 59423, 59431, 59437, 59443, 59452, 59460, 59478, 59493, 63789, 63866, 63894, 63976, 63986, 64016, 64018, 64021, 64025, 64034, 64037, 64042, 65074, 65093, 65107, 65112, 65127, 65132, 65375, 65510, 65536], gbChars: [0, 36, 38, 45, 50, 81, 89, 95, 96, 100, 103, 104, 105, 109, 126, 133, 148, 172, 175, 179, 208, 306, 307, 308, 309, 310, 311, 312, 313, 341, 428, 443, 544, 545, 558, 741, 742, 749, 750, 805, 819, 820, 7922, 7924, 7925, 7927, 7934, 7943, 7944, 7945, 7950, 8062, 8148, 8149, 8152, 8164, 8174, 8236, 8240, 8262, 8264, 8374, 8380, 8381, 8384, 8388, 8390, 8392, 8393, 8394, 8396, 8401, 8406, 8416, 8419, 8424, 8437, 8439, 8445, 8482, 8485, 8496, 8521, 8603, 8936, 8946, 9046, 9050, 9063, 9066, 9076, 9092, 9100, 9108, 9111, 9113, 9131, 9162, 9164, 9218, 9219, 11329, 11331, 11334, 11336, 11346, 11361, 11363, 11366, 11370, 11372, 11375, 11389, 11682, 11686, 11687, 11692, 11694, 11714, 11716, 11723, 11725, 11730, 11736, 11982, 11989, 12102, 12336, 12348, 12350, 12384, 12393, 12395, 12397, 12510, 12553, 12851, 12962, 12973, 13738, 13823, 13919, 13933, 14080, 14298, 14585, 14698, 15583, 15847, 16318, 16434, 16438, 16481, 16729, 17102, 17122, 17315, 17320, 17402, 17418, 17859, 17909, 17911, 17915, 17916, 17936, 17939, 17961, 18664, 18703, 18814, 18962, 19043, 33469, 33470, 33471, 33484, 33485, 33490, 33497, 33501, 33505, 33513, 33520, 33536, 33550, 37845, 37921, 37948, 38029, 38038, 38064, 38065, 38066, 38069, 38075, 38076, 38078, 39108, 39109, 39113, 39114, 39115, 39116, 39265, 39394, 189e3] };
   }
 });
 
-// node_modules/iconv-lite/encodings/tables/cp949.json
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/cp949.json
 var require_cp949 = __commonJS({
-  "node_modules/iconv-lite/encodings/tables/cp949.json"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/cp949.json"(exports2, module2) {
     module2.exports = [
       ["0", "\0", 127],
       ["8141", "\uAC02\uAC03\uAC05\uAC06\uAC0B", 4, "\uAC18\uAC1E\uAC1F\uAC21\uAC22\uAC23\uAC25", 6, "\uAC2E\uAC32\uAC33\uAC34"],
@@ -4437,9 +4437,9 @@ var require_cp949 = __commonJS({
   }
 });
 
-// node_modules/iconv-lite/encodings/tables/cp950.json
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/cp950.json
 var require_cp950 = __commonJS({
-  "node_modules/iconv-lite/encodings/tables/cp950.json"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/cp950.json"(exports2, module2) {
     module2.exports = [
       ["0", "\0", 127],
       ["a140", "\u3000\uFF0C\u3001\u3002\uFF0E\u2027\uFF1B\uFF1A\uFF1F\uFF01\uFE30\u2026\u2025\uFE50\uFE51\uFE52\xB7\uFE54\uFE55\uFE56\uFE57\uFF5C\u2013\uFE31\u2014\uFE33\u2574\uFE34\uFE4F\uFF08\uFF09\uFE35\uFE36\uFF5B\uFF5D\uFE37\uFE38\u3014\u3015\uFE39\uFE3A\u3010\u3011\uFE3B\uFE3C\u300A\u300B\uFE3D\uFE3E\u3008\u3009\uFE3F\uFE40\u300C\u300D\uFE41\uFE42\u300E\u300F\uFE43\uFE44\uFE59\uFE5A"],
@@ -4620,9 +4620,9 @@ var require_cp950 = __commonJS({
   }
 });
 
-// node_modules/iconv-lite/encodings/tables/big5-added.json
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/big5-added.json
 var require_big5_added = __commonJS({
-  "node_modules/iconv-lite/encodings/tables/big5-added.json"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/big5-added.json"(exports2, module2) {
     module2.exports = [
       ["8740", "\u43F0\u4C32\u4603\u45A6\u4578\u{27267}\u4D77\u45B3\u{27CB1}\u4CE2\u{27CC5}\u3B95\u4736\u4744\u4C47\u4C40\u{242BF}\u{23617}\u{27352}\u{26E8B}\u{270D2}\u4C57\u{2A351}\u474F\u45DA\u4C85\u{27C6C}\u4D07\u4AA4\u46A1\u{26B23}\u7225\u{25A54}\u{21A63}\u{23E06}\u{23F61}\u664D\u56FB"],
       ["8767", "\u7D95\u591D\u{28BB9}\u3DF4\u9734\u{27BEF}\u5BDB\u{21D5E}\u5AA4\u3625\u{29EB0}\u5AD1\u5BB7\u5CFC\u676E\u8593\u{29945}\u7461\u749D\u3875\u{21D53}\u{2369E}\u{26021}\u3EEC"],
@@ -4748,9 +4748,9 @@ var require_big5_added = __commonJS({
   }
 });
 
-// node_modules/iconv-lite/encodings/dbcs-data.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/dbcs-data.js
 var require_dbcs_data = __commonJS({
-  "node_modules/iconv-lite/encodings/dbcs-data.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/dbcs-data.js"(exports2, module2) {
     "use strict";
     module2.exports = {
       // == Japanese/ShiftJIS ====================================================
@@ -4995,9 +4995,9 @@ var require_dbcs_data = __commonJS({
   }
 });
 
-// node_modules/iconv-lite/encodings/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/index.js
 var require_encodings = __commonJS({
-  "node_modules/iconv-lite/encodings/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/index.js"(exports2, module2) {
     "use strict";
     var mergeModules = require_merge_exports();
     var modules = [
@@ -5020,9 +5020,9 @@ var require_encodings = __commonJS({
   }
 });
 
-// node_modules/iconv-lite/lib/streams.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/lib/streams.js
 var require_streams = __commonJS({
-  "node_modules/iconv-lite/lib/streams.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/lib/streams.js"(exports2, module2) {
     "use strict";
     var Buffer2 = require_safer().Buffer;
     module2.exports = function(streamModule) {
@@ -5117,9 +5117,9 @@ var require_streams = __commonJS({
   }
 });
 
-// node_modules/iconv-lite/lib/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/lib/index.js
 var require_lib = __commonJS({
-  "node_modules/iconv-lite/lib/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/lib/index.js"(exports2, module2) {
     "use strict";
     var Buffer2 = require_safer().Buffer;
     var bomHandling = require_bom_handling();
@@ -5249,9 +5249,9 @@ var require_lib = __commonJS({
   }
 });
 
-// node_modules/unpipe/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/unpipe/index.js
 var require_unpipe = __commonJS({
-  "node_modules/unpipe/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/unpipe/index.js"(exports2, module2) {
     "use strict";
     module2.exports = unpipe;
     function hasPipeDataListeners(stream) {
@@ -5287,9 +5287,9 @@ var require_unpipe = __commonJS({
   }
 });
 
-// node_modules/raw-body/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/raw-body/index.js
 var require_raw_body = __commonJS({
-  "node_modules/raw-body/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/raw-body/index.js"(exports2, module2) {
     "use strict";
     var asyncHooks = tryRequireAsyncHooks();
     var bytes = require_bytes();
@@ -5476,9 +5476,9 @@ var require_raw_body = __commonJS({
   }
 });
 
-// node_modules/ee-first/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/ee-first/index.js
 var require_ee_first = __commonJS({
-  "node_modules/ee-first/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/ee-first/index.js"(exports2, module2) {
     "use strict";
     module2.exports = first;
     function first(stuff, done) {
@@ -5532,9 +5532,9 @@ var require_ee_first = __commonJS({
   }
 });
 
-// node_modules/on-finished/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/on-finished/index.js
 var require_on_finished = __commonJS({
-  "node_modules/on-finished/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/on-finished/index.js"(exports2, module2) {
     "use strict";
     module2.exports = onFinished;
     module2.exports.isFinished = isFinished;
@@ -5636,13 +5636,13 @@ var require_on_finished = __commonJS({
   }
 });
 
-// node_modules/type-is/node_modules/content-type/dist/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/type-is/node_modules/content-type/dist/index.js
 var require_dist = __commonJS({
-  "node_modules/type-is/node_modules/content-type/dist/index.js"(exports2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/type-is/node_modules/content-type/dist/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.format = format;
-    exports2.parse = parse3;
+    exports2.format = format2;
+    exports2.parse = parse4;
     var TEXT_REGEXP = /^[\u0009\u0020-\u007e\u0080-\u00ff]*$/;
     var TOKEN_REGEXP = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
     var QUOTE_REGEXP = /[\\"]/g;
@@ -5653,7 +5653,7 @@ var require_dist = __commonJS({
       C.prototype = /* @__PURE__ */ Object.create(null);
       return C;
     })();
-    function format(obj) {
+    function format2(obj) {
       const { type, parameters } = obj;
       if (!type || !TYPE_REGEXP.test(type)) {
         throw new TypeError(`Invalid type: ${type}`);
@@ -5669,14 +5669,14 @@ var require_dist = __commonJS({
       }
       return result;
     }
-    function parse3(header, options) {
+    function parse4(header, options) {
       const len = header.length;
-      let index = skipOWS(header, 0, len);
-      const valueStart = index;
-      index = skipValue(header, index, len);
-      const valueEnd = trailingOWS(header, valueStart, index);
+      let index2 = skipOWS(header, 0, len);
+      const valueStart = index2;
+      index2 = skipValue(header, index2, len);
+      const valueEnd = trailingOWS(header, valueStart, index2);
       const type = header.slice(valueStart, valueEnd).toLowerCase();
-      const parameters = options?.parameters === false ? new NullObject() : parseParameters(header, index, len);
+      const parameters = options?.parameters === false ? new NullObject() : parseParameters(header, index2, len);
       return { type, parameters };
     }
     var SP = 32;
@@ -5685,68 +5685,68 @@ var require_dist = __commonJS({
     var EQ = 61;
     var DQUOTE = 34;
     var BSLASH = 92;
-    function parseParameters(header, index, len) {
+    function parseParameters(header, index2, len) {
       const parameters = new NullObject();
-      parameter: while (index < len) {
-        index = skipOWS(header, index + 1, len);
-        const keyStart = index;
-        while (index < len) {
-          const code = header.charCodeAt(index);
+      parameter: while (index2 < len) {
+        index2 = skipOWS(header, index2 + 1, len);
+        const keyStart = index2;
+        while (index2 < len) {
+          const code = header.charCodeAt(index2);
           if (code === SEMI)
             continue parameter;
           if (code === EQ) {
-            const keyEnd = trailingOWS(header, keyStart, index);
+            const keyEnd = trailingOWS(header, keyStart, index2);
             const key = header.slice(keyStart, keyEnd).toLowerCase();
-            index = skipOWS(header, index + 1, len);
-            if (index < len && header.charCodeAt(index) === DQUOTE) {
-              index++;
+            index2 = skipOWS(header, index2 + 1, len);
+            if (index2 < len && header.charCodeAt(index2) === DQUOTE) {
+              index2++;
               let value = "";
-              while (index < len) {
-                const code2 = header.charCodeAt(index++);
+              while (index2 < len) {
+                const code2 = header.charCodeAt(index2++);
                 if (code2 === DQUOTE) {
-                  index = skipValue(header, index, len);
+                  index2 = skipValue(header, index2, len);
                   if (parameters[key] === void 0)
                     parameters[key] = value;
                   break;
                 }
-                if (code2 === BSLASH && index < len) {
-                  value += header[index++];
+                if (code2 === BSLASH && index2 < len) {
+                  value += header[index2++];
                   continue;
                 }
                 value += String.fromCharCode(code2);
               }
               continue parameter;
             }
-            const valueStart = index;
-            index = skipValue(header, index, len);
+            const valueStart = index2;
+            index2 = skipValue(header, index2, len);
             if (parameters[key] === void 0) {
-              const valueEnd = trailingOWS(header, valueStart, index);
+              const valueEnd = trailingOWS(header, valueStart, index2);
               parameters[key] = header.slice(valueStart, valueEnd);
             }
             continue parameter;
           }
-          index++;
+          index2++;
         }
       }
       return parameters;
     }
-    function skipValue(str, index, len) {
-      while (index < len) {
-        const char2 = str.charCodeAt(index);
+    function skipValue(str, index2, len) {
+      while (index2 < len) {
+        const char2 = str.charCodeAt(index2);
         if (char2 === SEMI)
           break;
-        index++;
+        index2++;
       }
-      return index;
+      return index2;
     }
-    function skipOWS(header, index, len) {
-      while (index < len) {
-        const char2 = header.charCodeAt(index);
+    function skipOWS(header, index2, len) {
+      while (index2 < len) {
+        const char2 = header.charCodeAt(index2);
         if (char2 !== SP && char2 !== HTAB)
           break;
-        index++;
+        index2++;
       }
-      return index;
+      return index2;
     }
     function trailingOWS(header, start, end) {
       while (end > start) {
@@ -5767,9 +5767,9 @@ var require_dist = __commonJS({
   }
 });
 
-// node_modules/mime-db/db.json
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/mime-db/db.json
 var require_db = __commonJS({
-  "node_modules/mime-db/db.json"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/mime-db/db.json"(exports2, module2) {
     module2.exports = {
       "application/1d-interleaved-parityfec": {
         source: "iana"
@@ -15115,16 +15115,16 @@ var require_db = __commonJS({
   }
 });
 
-// node_modules/mime-db/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/mime-db/index.js
 var require_mime_db = __commonJS({
-  "node_modules/mime-db/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/mime-db/index.js"(exports2, module2) {
     module2.exports = require_db();
   }
 });
 
-// node_modules/mime-types/mimeScore.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/mime-types/mimeScore.js
 var require_mimeScore = __commonJS({
-  "node_modules/mime-types/mimeScore.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/mime-types/mimeScore.js"(exports2, module2) {
     var FACET_SCORES = {
       "prs.": 100,
       "x-": 200,
@@ -15166,9 +15166,9 @@ var require_mimeScore = __commonJS({
   }
 });
 
-// node_modules/mime-types/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/mime-types/index.js
 var require_mime_types = __commonJS({
-  "node_modules/mime-types/index.js"(exports2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/mime-types/index.js"(exports2) {
     "use strict";
     var db2 = require_mime_db();
     var extname = require("path").extname;
@@ -15188,12 +15188,12 @@ var require_mime_types = __commonJS({
       if (!type || typeof type !== "string") {
         return false;
       }
-      var match = EXTRACT_TYPE_REGEXP.exec(type);
-      var mime = match && db2[match[1].toLowerCase()];
+      var match2 = EXTRACT_TYPE_REGEXP.exec(type);
+      var mime = match2 && db2[match2[1].toLowerCase()];
       if (mime && mime.charset) {
         return mime.charset;
       }
-      if (match && TEXT_TYPE_REGEXP.test(match[1])) {
+      if (match2 && TEXT_TYPE_REGEXP.test(match2[1])) {
         return "UTF-8";
       }
       return false;
@@ -15216,18 +15216,18 @@ var require_mime_types = __commonJS({
       if (!type || typeof type !== "string") {
         return false;
       }
-      var match = EXTRACT_TYPE_REGEXP.exec(type);
-      var exts = match && exports2.extensions[match[1].toLowerCase()];
+      var match2 = EXTRACT_TYPE_REGEXP.exec(type);
+      var exts = match2 && exports2.extensions[match2[1].toLowerCase()];
       if (!exts || !exts.length) {
         return false;
       }
       return exts[0];
     }
-    function lookup(path7) {
-      if (!path7 || typeof path7 !== "string") {
+    function lookup(path8) {
+      if (!path8 || typeof path8 !== "string") {
         return false;
       }
-      var extension2 = extname("x." + path7).toLowerCase().slice(1);
+      var extension2 = extname("x." + path8).toLowerCase().slice(1);
       if (!extension2) {
         return false;
       }
@@ -15272,17 +15272,17 @@ var require_mime_types = __commonJS({
   }
 });
 
-// node_modules/media-typer/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/media-typer/index.js
 var require_media_typer = __commonJS({
-  "node_modules/media-typer/index.js"(exports2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/media-typer/index.js"(exports2) {
     "use strict";
     var SUBTYPE_NAME_REGEXP = /^[A-Za-z0-9][A-Za-z0-9!#$&^_.-]{0,126}$/;
     var TYPE_NAME_REGEXP = /^[A-Za-z0-9][A-Za-z0-9!#$&^_-]{0,126}$/;
     var TYPE_REGEXP = /^ *([A-Za-z0-9][A-Za-z0-9!#$&^_-]{0,126})\/([A-Za-z0-9][A-Za-z0-9!#$&^_.+-]{0,126}) *$/;
-    exports2.format = format;
-    exports2.parse = parse3;
+    exports2.format = format2;
+    exports2.parse = parse4;
     exports2.test = test;
-    function format(obj) {
+    function format2(obj) {
       if (!obj || typeof obj !== "object") {
         throw new TypeError("argument obj is required");
       }
@@ -15313,24 +15313,24 @@ var require_media_typer = __commonJS({
       }
       return TYPE_REGEXP.test(string.toLowerCase());
     }
-    function parse3(string) {
+    function parse4(string) {
       if (!string) {
         throw new TypeError("argument string is required");
       }
       if (typeof string !== "string") {
         throw new TypeError("argument string is required to be a string");
       }
-      var match = TYPE_REGEXP.exec(string.toLowerCase());
-      if (!match) {
+      var match2 = TYPE_REGEXP.exec(string.toLowerCase());
+      if (!match2) {
         throw new TypeError("invalid media type");
       }
-      var type = match[1];
-      var subtype = match[2];
+      var type = match2[1];
+      var subtype = match2[2];
       var suffix;
-      var index = subtype.lastIndexOf("+");
-      if (index !== -1) {
-        suffix = subtype.substr(index + 1);
-        subtype = subtype.substr(0, index);
+      var index2 = subtype.lastIndexOf("+");
+      if (index2 !== -1) {
+        suffix = subtype.substr(index2 + 1);
+        subtype = subtype.substr(0, index2);
       }
       return new MediaType(type, subtype, suffix);
     }
@@ -15342,9 +15342,9 @@ var require_media_typer = __commonJS({
   }
 });
 
-// node_modules/type-is/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/type-is/index.js
 var require_type_is = __commonJS({
-  "node_modules/type-is/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/type-is/index.js"(exports2, module2) {
     "use strict";
     var contentType = require_dist();
     var mime = require_mime_types();
@@ -15433,13 +15433,13 @@ var require_type_is = __commonJS({
   }
 });
 
-// node_modules/body-parser/node_modules/content-type/dist/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/node_modules/content-type/dist/index.js
 var require_dist2 = __commonJS({
-  "node_modules/body-parser/node_modules/content-type/dist/index.js"(exports2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/node_modules/content-type/dist/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.format = format;
-    exports2.parse = parse3;
+    exports2.format = format2;
+    exports2.parse = parse4;
     var TEXT_REGEXP = /^[\u0009\u0020-\u007e\u0080-\u00ff]*$/;
     var TOKEN_REGEXP = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
     var QUOTE_REGEXP = /[\\"]/g;
@@ -15450,7 +15450,7 @@ var require_dist2 = __commonJS({
       C.prototype = /* @__PURE__ */ Object.create(null);
       return C;
     })();
-    function format(obj) {
+    function format2(obj) {
       const { type, parameters } = obj;
       if (!type || !TYPE_REGEXP.test(type)) {
         throw new TypeError(`Invalid type: ${type}`);
@@ -15466,14 +15466,14 @@ var require_dist2 = __commonJS({
       }
       return result;
     }
-    function parse3(header, options) {
+    function parse4(header, options) {
       const len = header.length;
-      let index = skipOWS(header, 0, len);
-      const valueStart = index;
-      index = skipValue(header, index, len);
-      const valueEnd = trailingOWS(header, valueStart, index);
+      let index2 = skipOWS(header, 0, len);
+      const valueStart = index2;
+      index2 = skipValue(header, index2, len);
+      const valueEnd = trailingOWS(header, valueStart, index2);
       const type = header.slice(valueStart, valueEnd).toLowerCase();
-      const parameters = options?.parameters === false ? new NullObject() : parseParameters(header, index, len);
+      const parameters = options?.parameters === false ? new NullObject() : parseParameters(header, index2, len);
       return { type, parameters };
     }
     var SP = 32;
@@ -15482,68 +15482,68 @@ var require_dist2 = __commonJS({
     var EQ = 61;
     var DQUOTE = 34;
     var BSLASH = 92;
-    function parseParameters(header, index, len) {
+    function parseParameters(header, index2, len) {
       const parameters = new NullObject();
-      parameter: while (index < len) {
-        index = skipOWS(header, index + 1, len);
-        const keyStart = index;
-        while (index < len) {
-          const code = header.charCodeAt(index);
+      parameter: while (index2 < len) {
+        index2 = skipOWS(header, index2 + 1, len);
+        const keyStart = index2;
+        while (index2 < len) {
+          const code = header.charCodeAt(index2);
           if (code === SEMI)
             continue parameter;
           if (code === EQ) {
-            const keyEnd = trailingOWS(header, keyStart, index);
+            const keyEnd = trailingOWS(header, keyStart, index2);
             const key = header.slice(keyStart, keyEnd).toLowerCase();
-            index = skipOWS(header, index + 1, len);
-            if (index < len && header.charCodeAt(index) === DQUOTE) {
-              index++;
+            index2 = skipOWS(header, index2 + 1, len);
+            if (index2 < len && header.charCodeAt(index2) === DQUOTE) {
+              index2++;
               let value = "";
-              while (index < len) {
-                const code2 = header.charCodeAt(index++);
+              while (index2 < len) {
+                const code2 = header.charCodeAt(index2++);
                 if (code2 === DQUOTE) {
-                  index = skipValue(header, index, len);
+                  index2 = skipValue(header, index2, len);
                   if (parameters[key] === void 0)
                     parameters[key] = value;
                   break;
                 }
-                if (code2 === BSLASH && index < len) {
-                  value += header[index++];
+                if (code2 === BSLASH && index2 < len) {
+                  value += header[index2++];
                   continue;
                 }
                 value += String.fromCharCode(code2);
               }
               continue parameter;
             }
-            const valueStart = index;
-            index = skipValue(header, index, len);
+            const valueStart = index2;
+            index2 = skipValue(header, index2, len);
             if (parameters[key] === void 0) {
-              const valueEnd = trailingOWS(header, valueStart, index);
+              const valueEnd = trailingOWS(header, valueStart, index2);
               parameters[key] = header.slice(valueStart, valueEnd);
             }
             continue parameter;
           }
-          index++;
+          index2++;
         }
       }
       return parameters;
     }
-    function skipValue(str, index, len) {
-      while (index < len) {
-        const char2 = str.charCodeAt(index);
+    function skipValue(str, index2, len) {
+      while (index2 < len) {
+        const char2 = str.charCodeAt(index2);
         if (char2 === SEMI)
           break;
-        index++;
+        index2++;
       }
-      return index;
+      return index2;
     }
-    function skipOWS(header, index, len) {
-      while (index < len) {
-        const char2 = header.charCodeAt(index);
+    function skipOWS(header, index2, len) {
+      while (index2 < len) {
+        const char2 = header.charCodeAt(index2);
         if (char2 !== SP && char2 !== HTAB)
           break;
-        index++;
+        index2++;
       }
-      return index;
+      return index2;
     }
     function trailingOWS(header, start, end) {
       while (end > start) {
@@ -15564,9 +15564,9 @@ var require_dist2 = __commonJS({
   }
 });
 
-// node_modules/body-parser/lib/utils.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/lib/utils.js
 var require_utils = __commonJS({
-  "node_modules/body-parser/lib/utils.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/lib/utils.js"(exports2, module2) {
     "use strict";
     var bytes = require_bytes();
     var contentType = require_dist2();
@@ -15616,9 +15616,9 @@ var require_utils = __commonJS({
   }
 });
 
-// node_modules/body-parser/lib/read.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/lib/read.js
 var require_read = __commonJS({
-  "node_modules/body-parser/lib/read.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/lib/read.js"(exports2, module2) {
     "use strict";
     var createError = require_http_errors();
     var getBody = require_raw_body();
@@ -15628,7 +15628,7 @@ var require_read = __commonJS({
     var hasBody = require_type_is().hasBody;
     var { getCharset } = require_utils();
     module2.exports = read;
-    function read(req, res, next, parse3, debug, options) {
+    function read(req, res, next, parse4, debug, options) {
       if (onFinished.isFinished(req)) {
         debug("body already parsed");
         next();
@@ -15716,7 +15716,7 @@ var require_read = __commonJS({
         try {
           debug("parse body");
           str = typeof body !== "string" && encoding !== null ? iconv.decode(body, encoding) : body;
-          req.body = parse3(str, encoding);
+          req.body = parse4(str, encoding);
         } catch (err) {
           next(createError(400, err, {
             body: str,
@@ -15774,9 +15774,9 @@ var require_read = __commonJS({
   }
 });
 
-// node_modules/body-parser/lib/types/json.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/lib/types/json.js
 var require_json = __commonJS({
-  "node_modules/body-parser/lib/types/json.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/lib/types/json.js"(exports2, module2) {
     "use strict";
     var debug = require_src()("body-parser:json");
     var read = require_read();
@@ -15787,21 +15787,21 @@ var require_json = __commonJS({
     var JSON_SYNTAX_REGEXP = /#+/g;
     function json2(options) {
       const normalizedOptions = normalizeOptions(options, "application/json");
-      const parse3 = createJsonParser(options);
+      const parse4 = createJsonParser(options);
       const readOptions = {
         ...normalizedOptions,
         // assert charset per RFC 7159 sec 8.1
         isValidCharset: (charset) => charset.slice(0, 4) === "utf-"
       };
       return function jsonParser(req, res, next) {
-        read(req, res, next, parse3, debug, readOptions);
+        read(req, res, next, parse4, debug, readOptions);
       };
     }
     function createJsonParser(options) {
       const reviver = options?.reviver;
       const strict = options?.strict !== false;
       if (strict) {
-        return function parse3(body) {
+        return function parse4(body) {
           if (body.length === 0) {
             return {};
           }
@@ -15821,7 +15821,7 @@ var require_json = __commonJS({
           }
         };
       }
-      return function parse3(body) {
+      return function parse4(body) {
         if (body.length === 0) {
           return {};
         }
@@ -15837,10 +15837,10 @@ var require_json = __commonJS({
       };
     }
     function createStrictSyntaxError(str, char2) {
-      const index = str.indexOf(char2);
+      const index2 = str.indexOf(char2);
       let partial = "";
-      if (index !== -1) {
-        partial = str.substring(0, index) + JSON_SYNTAX_CHAR.repeat(str.length - index);
+      if (index2 !== -1) {
+        partial = str.substring(0, index2) + JSON_SYNTAX_CHAR.repeat(str.length - index2);
       }
       try {
         JSON.parse(partial);
@@ -15848,15 +15848,15 @@ var require_json = __commonJS({
       } catch (e) {
         return normalizeJsonSyntaxError(e, {
           message: e.message.replace(JSON_SYNTAX_REGEXP, function(placeholder) {
-            return str.substring(index, index + placeholder.length);
+            return str.substring(index2, index2 + placeholder.length);
           }),
           stack: e.stack
         });
       }
     }
     function firstchar(str) {
-      const match = FIRST_CHAR_REGEXP.exec(str);
-      return match ? match[1] : void 0;
+      const match2 = FIRST_CHAR_REGEXP.exec(str);
+      return match2 ? match2[1] : void 0;
     }
     function normalizeJsonSyntaxError(error, obj) {
       const keys = Object.getOwnPropertyNames(error);
@@ -15873,9 +15873,9 @@ var require_json = __commonJS({
   }
 });
 
-// node_modules/body-parser/lib/types/raw.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/lib/types/raw.js
 var require_raw = __commonJS({
-  "node_modules/body-parser/lib/types/raw.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/lib/types/raw.js"(exports2, module2) {
     "use strict";
     var debug = require_src()("body-parser:raw");
     var read = require_read();
@@ -15895,9 +15895,9 @@ var require_raw = __commonJS({
   }
 });
 
-// node_modules/body-parser/lib/types/text.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/lib/types/text.js
 var require_text = __commonJS({
-  "node_modules/body-parser/lib/types/text.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/lib/types/text.js"(exports2, module2) {
     "use strict";
     var debug = require_src()("body-parser:text");
     var read = require_read();
@@ -15912,24 +15912,24 @@ var require_text = __commonJS({
   }
 });
 
-// node_modules/es-errors/type.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-errors/type.js
 var require_type = __commonJS({
-  "node_modules/es-errors/type.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-errors/type.js"(exports2, module2) {
     "use strict";
     module2.exports = TypeError;
   }
 });
 
-// node_modules/object-inspect/util.inspect.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/object-inspect/util.inspect.js
 var require_util_inspect = __commonJS({
-  "node_modules/object-inspect/util.inspect.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/object-inspect/util.inspect.js"(exports2, module2) {
     module2.exports = require("util").inspect;
   }
 });
 
-// node_modules/object-inspect/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/object-inspect/index.js
 var require_object_inspect = __commonJS({
-  "node_modules/object-inspect/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/object-inspect/index.js"(exports2, module2) {
     var hasMap = typeof Map === "function" && Map.prototype;
     var mapSizeDescriptor = Object.getOwnPropertyDescriptor && hasMap ? Object.getOwnPropertyDescriptor(Map.prototype, "size") : null;
     var mapSize = hasMap && mapSizeDescriptor && typeof mapSizeDescriptor.get === "function" ? mapSizeDescriptor.get : null;
@@ -16159,7 +16159,7 @@ var require_object_inspect = __commonJS({
       if (typeof globalThis !== "undefined" && obj === globalThis || typeof global !== "undefined" && obj === global) {
         return "{ [object globalThis] }";
       }
-      if (!isDate(obj) && !isRegExp(obj)) {
+      if (!isDate2(obj) && !isRegExp(obj)) {
         var ys = arrObjKeys(obj, inspect);
         var isPlainObject = gPO ? gPO(obj) === Object.prototype : obj instanceof Object || obj.constructor === Object;
         var protoTag = obj instanceof Object ? "" : "null prototype";
@@ -16190,7 +16190,7 @@ var require_object_inspect = __commonJS({
     function isArray2(obj) {
       return toStr(obj) === "[object Array]" && canTrustToString(obj);
     }
-    function isDate(obj) {
+    function isDate2(obj) {
       return toStr(obj) === "[object Date]" && canTrustToString(obj);
     }
     function isRegExp(obj) {
@@ -16458,22 +16458,22 @@ var require_object_inspect = __commonJS({
   }
 });
 
-// node_modules/side-channel-list/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/side-channel-list/index.js
 var require_side_channel_list = __commonJS({
-  "node_modules/side-channel-list/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/side-channel-list/index.js"(exports2, module2) {
     "use strict";
     var inspect = require_object_inspect();
     var $TypeError = require_type();
-    var listGetNode = function(list, key, isDelete) {
-      var prev = list;
+    var listGetNode = function(list2, key, isDelete) {
+      var prev = list2;
       var curr;
       for (; (curr = prev.next) != null; prev = curr) {
         if (curr.key === key) {
           prev.next = curr.next;
           if (!isDelete) {
             curr.next = /** @type {NonNullable<typeof list.next>} */
-            list.next;
-            list.next = curr;
+            list2.next;
+            list2.next = curr;
           }
           return curr;
         }
@@ -16513,9 +16513,9 @@ var require_side_channel_list = __commonJS({
     };
     module2.exports = function getSideChannelList() {
       var $o;
-      var channel = {
+      var channel2 = {
         assert: function(key) {
-          if (!channel.has(key)) {
+          if (!channel2.has(key)) {
             throw new $TypeError("Side channel does not contain " + inspect(key));
           }
         },
@@ -16546,118 +16546,118 @@ var require_side_channel_list = __commonJS({
           );
         }
       };
-      return channel;
+      return channel2;
     };
   }
 });
 
-// node_modules/es-object-atoms/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-object-atoms/index.js
 var require_es_object_atoms = __commonJS({
-  "node_modules/es-object-atoms/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-object-atoms/index.js"(exports2, module2) {
     "use strict";
     module2.exports = Object;
   }
 });
 
-// node_modules/es-errors/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-errors/index.js
 var require_es_errors = __commonJS({
-  "node_modules/es-errors/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-errors/index.js"(exports2, module2) {
     "use strict";
     module2.exports = Error;
   }
 });
 
-// node_modules/es-errors/eval.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-errors/eval.js
 var require_eval = __commonJS({
-  "node_modules/es-errors/eval.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-errors/eval.js"(exports2, module2) {
     "use strict";
     module2.exports = EvalError;
   }
 });
 
-// node_modules/es-errors/range.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-errors/range.js
 var require_range = __commonJS({
-  "node_modules/es-errors/range.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-errors/range.js"(exports2, module2) {
     "use strict";
     module2.exports = RangeError;
   }
 });
 
-// node_modules/es-errors/ref.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-errors/ref.js
 var require_ref = __commonJS({
-  "node_modules/es-errors/ref.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-errors/ref.js"(exports2, module2) {
     "use strict";
     module2.exports = ReferenceError;
   }
 });
 
-// node_modules/es-errors/syntax.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-errors/syntax.js
 var require_syntax = __commonJS({
-  "node_modules/es-errors/syntax.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-errors/syntax.js"(exports2, module2) {
     "use strict";
     module2.exports = SyntaxError;
   }
 });
 
-// node_modules/es-errors/uri.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-errors/uri.js
 var require_uri = __commonJS({
-  "node_modules/es-errors/uri.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-errors/uri.js"(exports2, module2) {
     "use strict";
     module2.exports = URIError;
   }
 });
 
-// node_modules/math-intrinsics/abs.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/abs.js
 var require_abs = __commonJS({
-  "node_modules/math-intrinsics/abs.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/abs.js"(exports2, module2) {
     "use strict";
     module2.exports = Math.abs;
   }
 });
 
-// node_modules/math-intrinsics/floor.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/floor.js
 var require_floor = __commonJS({
-  "node_modules/math-intrinsics/floor.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/floor.js"(exports2, module2) {
     "use strict";
     module2.exports = Math.floor;
   }
 });
 
-// node_modules/math-intrinsics/max.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/max.js
 var require_max = __commonJS({
-  "node_modules/math-intrinsics/max.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/max.js"(exports2, module2) {
     "use strict";
     module2.exports = Math.max;
   }
 });
 
-// node_modules/math-intrinsics/min.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/min.js
 var require_min = __commonJS({
-  "node_modules/math-intrinsics/min.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/min.js"(exports2, module2) {
     "use strict";
     module2.exports = Math.min;
   }
 });
 
-// node_modules/math-intrinsics/pow.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/pow.js
 var require_pow = __commonJS({
-  "node_modules/math-intrinsics/pow.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/pow.js"(exports2, module2) {
     "use strict";
     module2.exports = Math.pow;
   }
 });
 
-// node_modules/math-intrinsics/round.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/round.js
 var require_round = __commonJS({
-  "node_modules/math-intrinsics/round.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/round.js"(exports2, module2) {
     "use strict";
     module2.exports = Math.round;
   }
 });
 
-// node_modules/math-intrinsics/isNaN.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/isNaN.js
 var require_isNaN = __commonJS({
-  "node_modules/math-intrinsics/isNaN.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/isNaN.js"(exports2, module2) {
     "use strict";
     module2.exports = Number.isNaN || function isNaN2(a) {
       return a !== a;
@@ -16665,9 +16665,9 @@ var require_isNaN = __commonJS({
   }
 });
 
-// node_modules/math-intrinsics/sign.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/sign.js
 var require_sign = __commonJS({
-  "node_modules/math-intrinsics/sign.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/sign.js"(exports2, module2) {
     "use strict";
     var $isNaN = require_isNaN();
     module2.exports = function sign(number) {
@@ -16679,17 +16679,17 @@ var require_sign = __commonJS({
   }
 });
 
-// node_modules/gopd/gOPD.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/gopd/gOPD.js
 var require_gOPD = __commonJS({
-  "node_modules/gopd/gOPD.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/gopd/gOPD.js"(exports2, module2) {
     "use strict";
     module2.exports = Object.getOwnPropertyDescriptor;
   }
 });
 
-// node_modules/gopd/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/gopd/index.js
 var require_gopd = __commonJS({
-  "node_modules/gopd/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/gopd/index.js"(exports2, module2) {
     "use strict";
     var $gOPD = require_gOPD();
     if ($gOPD) {
@@ -16703,9 +16703,9 @@ var require_gopd = __commonJS({
   }
 });
 
-// node_modules/es-define-property/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-define-property/index.js
 var require_es_define_property = __commonJS({
-  "node_modules/es-define-property/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-define-property/index.js"(exports2, module2) {
     "use strict";
     var $defineProperty = Object.defineProperty || false;
     if ($defineProperty) {
@@ -16719,9 +16719,9 @@ var require_es_define_property = __commonJS({
   }
 });
 
-// node_modules/has-symbols/shams.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/has-symbols/shams.js
 var require_shams = __commonJS({
-  "node_modules/has-symbols/shams.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/has-symbols/shams.js"(exports2, module2) {
     "use strict";
     module2.exports = function hasSymbols() {
       if (typeof Symbol !== "function" || typeof Object.getOwnPropertySymbols !== "function") {
@@ -16774,9 +16774,9 @@ var require_shams = __commonJS({
   }
 });
 
-// node_modules/has-symbols/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/has-symbols/index.js
 var require_has_symbols = __commonJS({
-  "node_modules/has-symbols/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/has-symbols/index.js"(exports2, module2) {
     "use strict";
     var origSymbol = typeof Symbol !== "undefined" && Symbol;
     var hasSymbolSham = require_shams();
@@ -16798,30 +16798,30 @@ var require_has_symbols = __commonJS({
   }
 });
 
-// node_modules/get-proto/Reflect.getPrototypeOf.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/get-proto/Reflect.getPrototypeOf.js
 var require_Reflect_getPrototypeOf = __commonJS({
-  "node_modules/get-proto/Reflect.getPrototypeOf.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/get-proto/Reflect.getPrototypeOf.js"(exports2, module2) {
     "use strict";
     module2.exports = typeof Reflect !== "undefined" && Reflect.getPrototypeOf || null;
   }
 });
 
-// node_modules/get-proto/Object.getPrototypeOf.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/get-proto/Object.getPrototypeOf.js
 var require_Object_getPrototypeOf = __commonJS({
-  "node_modules/get-proto/Object.getPrototypeOf.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/get-proto/Object.getPrototypeOf.js"(exports2, module2) {
     "use strict";
     var $Object = require_es_object_atoms();
     module2.exports = $Object.getPrototypeOf || null;
   }
 });
 
-// node_modules/function-bind/implementation.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/function-bind/implementation.js
 var require_implementation = __commonJS({
-  "node_modules/function-bind/implementation.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/function-bind/implementation.js"(exports2, module2) {
     "use strict";
     var ERROR_MESSAGE = "Function.prototype.bind called on incompatible ";
     var toStr = Object.prototype.toString;
-    var max = Math.max;
+    var max2 = Math.max;
     var funcType = "[object Function]";
     var concatty = function concatty2(a, b2) {
       var arr = [];
@@ -16873,7 +16873,7 @@ var require_implementation = __commonJS({
           concatty(args, arguments)
         );
       };
-      var boundLength = max(0, target.length - args.length);
+      var boundLength = max2(0, target.length - args.length);
       var boundArgs = [];
       for (var i = 0; i < boundLength; i++) {
         boundArgs[i] = "$" + i;
@@ -16891,42 +16891,42 @@ var require_implementation = __commonJS({
   }
 });
 
-// node_modules/function-bind/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/function-bind/index.js
 var require_function_bind = __commonJS({
-  "node_modules/function-bind/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/function-bind/index.js"(exports2, module2) {
     "use strict";
     var implementation = require_implementation();
     module2.exports = Function.prototype.bind || implementation;
   }
 });
 
-// node_modules/call-bind-apply-helpers/functionCall.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/call-bind-apply-helpers/functionCall.js
 var require_functionCall = __commonJS({
-  "node_modules/call-bind-apply-helpers/functionCall.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/call-bind-apply-helpers/functionCall.js"(exports2, module2) {
     "use strict";
     module2.exports = Function.prototype.call;
   }
 });
 
-// node_modules/call-bind-apply-helpers/functionApply.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/call-bind-apply-helpers/functionApply.js
 var require_functionApply = __commonJS({
-  "node_modules/call-bind-apply-helpers/functionApply.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/call-bind-apply-helpers/functionApply.js"(exports2, module2) {
     "use strict";
     module2.exports = Function.prototype.apply;
   }
 });
 
-// node_modules/call-bind-apply-helpers/reflectApply.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/call-bind-apply-helpers/reflectApply.js
 var require_reflectApply = __commonJS({
-  "node_modules/call-bind-apply-helpers/reflectApply.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/call-bind-apply-helpers/reflectApply.js"(exports2, module2) {
     "use strict";
     module2.exports = typeof Reflect !== "undefined" && Reflect && Reflect.apply;
   }
 });
 
-// node_modules/call-bind-apply-helpers/actualApply.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/call-bind-apply-helpers/actualApply.js
 var require_actualApply = __commonJS({
-  "node_modules/call-bind-apply-helpers/actualApply.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/call-bind-apply-helpers/actualApply.js"(exports2, module2) {
     "use strict";
     var bind = require_function_bind();
     var $apply = require_functionApply();
@@ -16936,9 +16936,9 @@ var require_actualApply = __commonJS({
   }
 });
 
-// node_modules/call-bind-apply-helpers/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/call-bind-apply-helpers/index.js
 var require_call_bind_apply_helpers = __commonJS({
-  "node_modules/call-bind-apply-helpers/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/call-bind-apply-helpers/index.js"(exports2, module2) {
     "use strict";
     var bind = require_function_bind();
     var $TypeError = require_type();
@@ -16953,9 +16953,9 @@ var require_call_bind_apply_helpers = __commonJS({
   }
 });
 
-// node_modules/dunder-proto/get.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/dunder-proto/get.js
 var require_get = __commonJS({
-  "node_modules/dunder-proto/get.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/dunder-proto/get.js"(exports2, module2) {
     "use strict";
     var callBind = require_call_bind_apply_helpers();
     var gOPD = require_gopd();
@@ -16984,9 +16984,9 @@ var require_get = __commonJS({
   }
 });
 
-// node_modules/get-proto/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/get-proto/index.js
 var require_get_proto = __commonJS({
-  "node_modules/get-proto/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/get-proto/index.js"(exports2, module2) {
     "use strict";
     var reflectGetProto = require_Reflect_getPrototypeOf();
     var originalGetProto = require_Object_getPrototypeOf();
@@ -17004,9 +17004,9 @@ var require_get_proto = __commonJS({
   }
 });
 
-// node_modules/hasown/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/hasown/index.js
 var require_hasown = __commonJS({
-  "node_modules/hasown/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/hasown/index.js"(exports2, module2) {
     "use strict";
     var call = Function.prototype.call;
     var $hasOwn = Object.prototype.hasOwnProperty;
@@ -17015,9 +17015,9 @@ var require_hasown = __commonJS({
   }
 });
 
-// node_modules/get-intrinsic/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/get-intrinsic/index.js
 var require_get_intrinsic = __commonJS({
-  "node_modules/get-intrinsic/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/get-intrinsic/index.js"(exports2, module2) {
     "use strict";
     var undefined2;
     var $Object = require_es_object_atoms();
@@ -17030,7 +17030,7 @@ var require_get_intrinsic = __commonJS({
     var $URIError = require_uri();
     var abs = require_abs();
     var floor = require_floor();
-    var max = require_max();
+    var max2 = require_max();
     var min = require_min();
     var pow = require_pow();
     var round = require_round();
@@ -17144,7 +17144,7 @@ var require_get_intrinsic = __commonJS({
       "%Object.getPrototypeOf%": $ObjectGPO,
       "%Math.abs%": abs,
       "%Math.floor%": floor,
-      "%Math.max%": max,
+      "%Math.max%": max2,
       "%Math.min%": min,
       "%Math.pow%": pow,
       "%Math.round%": round,
@@ -17254,8 +17254,8 @@ var require_get_intrinsic = __commonJS({
         throw new $SyntaxError("invalid intrinsic syntax, expected opening `%`");
       }
       var result = [];
-      $replace(string, rePropName, function(match, number, quote, subString) {
-        result[result.length] = quote ? $replace(subString, reEscapeChar, "$1") : number || match;
+      $replace(string, rePropName, function(match2, number, quote, subString) {
+        result[result.length] = quote ? $replace(subString, reEscapeChar, "$1") : number || match2;
       });
       return result;
     };
@@ -17346,9 +17346,9 @@ var require_get_intrinsic = __commonJS({
   }
 });
 
-// node_modules/call-bound/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/call-bound/index.js
 var require_call_bound = __commonJS({
-  "node_modules/call-bound/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/call-bound/index.js"(exports2, module2) {
     "use strict";
     var GetIntrinsic = require_get_intrinsic();
     var callBindBasic = require_call_bind_apply_helpers();
@@ -17369,9 +17369,9 @@ var require_call_bound = __commonJS({
   }
 });
 
-// node_modules/side-channel-map/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/side-channel-map/index.js
 var require_side_channel_map = __commonJS({
-  "node_modules/side-channel-map/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/side-channel-map/index.js"(exports2, module2) {
     "use strict";
     var GetIntrinsic = require_get_intrinsic();
     var callBound = require_call_bound();
@@ -17386,9 +17386,9 @@ var require_side_channel_map = __commonJS({
     module2.exports = !!$Map && /** @type {Exclude<import('.'), false>} */
     function getSideChannelMap() {
       var $m;
-      var channel = {
+      var channel2 = {
         assert: function(key) {
-          if (!channel.has(key)) {
+          if (!channel2.has(key)) {
             throw new $TypeError("Side channel does not contain " + inspect(key));
           }
         },
@@ -17420,14 +17420,14 @@ var require_side_channel_map = __commonJS({
           $mapSet($m, key, value);
         }
       };
-      return channel;
+      return channel2;
     };
   }
 });
 
-// node_modules/side-channel-weakmap/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/side-channel-weakmap/index.js
 var require_side_channel_weakmap = __commonJS({
-  "node_modules/side-channel-weakmap/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/side-channel-weakmap/index.js"(exports2, module2) {
     "use strict";
     var GetIntrinsic = require_get_intrinsic();
     var callBound = require_call_bound();
@@ -17444,9 +17444,9 @@ var require_side_channel_weakmap = __commonJS({
       function getSideChannelWeakMap() {
         var $wm;
         var $m;
-        var channel = {
+        var channel2 = {
           assert: function(key) {
-            if (!channel.has(key)) {
+            if (!channel2.has(key)) {
               throw new $TypeError("Side channel does not contain " + inspect(key));
             }
           },
@@ -17492,15 +17492,15 @@ var require_side_channel_weakmap = __commonJS({
             }
           }
         };
-        return channel;
+        return channel2;
       }
     ) : getSideChannelMap;
   }
 });
 
-// node_modules/side-channel/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/side-channel/index.js
 var require_side_channel = __commonJS({
-  "node_modules/side-channel/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/side-channel/index.js"(exports2, module2) {
     "use strict";
     var $TypeError = require_type();
     var inspect = require_object_inspect();
@@ -17510,9 +17510,9 @@ var require_side_channel = __commonJS({
     var makeChannel = getSideChannelWeakMap || getSideChannelMap || getSideChannelList;
     module2.exports = function getSideChannel() {
       var $channelData;
-      var channel = {
+      var channel2 = {
         assert: function(key) {
-          if (!channel.has(key)) {
+          if (!channel2.has(key)) {
             var keyDesc = key && Object(key) === key ? "the given object key" : inspect(key);
             throw new $TypeError("Side channel does not contain " + keyDesc);
           }
@@ -17533,14 +17533,14 @@ var require_side_channel = __commonJS({
           $channelData.set(key, value);
         }
       };
-      return channel;
+      return channel2;
     };
   }
 });
 
-// node_modules/qs/lib/formats.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/qs/lib/formats.js
 var require_formats = __commonJS({
-  "node_modules/qs/lib/formats.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/qs/lib/formats.js"(exports2, module2) {
     "use strict";
     var replace = String.prototype.replace;
     var percentTwenties = /%20/g;
@@ -17564,9 +17564,9 @@ var require_formats = __commonJS({
   }
 });
 
-// node_modules/qs/lib/utils.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/qs/lib/utils.js
 var require_utils2 = __commonJS({
-  "node_modules/qs/lib/utils.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/qs/lib/utils.js"(exports2, module2) {
     "use strict";
     var formats = require_formats();
     var getSideChannel = require_side_channel();
@@ -17740,7 +17740,7 @@ var require_utils2 = __commonJS({
       }
     };
     var limit2 = 1024;
-    var encode2 = function encode3(str, defaultEncoder, charset, kind, format) {
+    var encode2 = function encode3(str, defaultEncoder, charset, kind, format2) {
       if (str.length === 0) {
         return str;
       }
@@ -17768,7 +17768,7 @@ var require_utils2 = __commonJS({
         var arr = [];
         for (var i = 0; i < segment.length; ++i) {
           var c = segment.charCodeAt(i);
-          if (c === 45 || c === 46 || c === 95 || c === 126 || c >= 48 && c <= 57 || c >= 65 && c <= 90 || c >= 97 && c <= 122 || format === formats.RFC1738 && (c === 40 || c === 41)) {
+          if (c === 45 || c === 46 || c === 95 || c === 126 || c >= 48 && c <= 57 || c >= 65 && c <= 90 || c >= 97 && c <= 122 || format2 === formats.RFC1738 && (c === 40 || c === 41)) {
             arr[arr.length] = segment.charAt(i);
             continue;
           }
@@ -17866,9 +17866,9 @@ var require_utils2 = __commonJS({
   }
 });
 
-// node_modules/qs/lib/stringify.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/qs/lib/stringify.js
 var require_stringify = __commonJS({
-  "node_modules/qs/lib/stringify.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/qs/lib/stringify.js"(exports2, module2) {
     "use strict";
     var getSideChannel = require_side_channel();
     var utils = require_utils2();
@@ -17921,7 +17921,7 @@ var require_stringify = __commonJS({
       return typeof v === "string" || typeof v === "number" || typeof v === "boolean" || typeof v === "symbol" || typeof v === "bigint";
     };
     var sentinel2 = {};
-    var stringify3 = function stringify4(object, prefix, generateArrayPrefix, commaRoundTrip, allowEmptyArrays, strictNullHandling, skipNulls, encodeDotInKeys, encoder2, filter, sort, allowDots, serializeDate, format, formatter, encodeValuesOnly, charset, sideChannel) {
+    var stringify3 = function stringify4(object, prefix, generateArrayPrefix, commaRoundTrip, allowEmptyArrays, strictNullHandling, skipNulls, encodeDotInKeys, encoder2, filter, sort, allowDots, serializeDate, format2, formatter, encodeValuesOnly, charset, sideChannel) {
       var obj = object;
       var tmpSc = sideChannel;
       var step = 0;
@@ -17954,14 +17954,14 @@ var require_stringify = __commonJS({
       }
       if (obj === null) {
         if (strictNullHandling) {
-          return formatter(encoder2 && !encodeValuesOnly ? encoder2(prefix, defaults2.encoder, charset, "key", format) : prefix);
+          return formatter(encoder2 && !encodeValuesOnly ? encoder2(prefix, defaults2.encoder, charset, "key", format2) : prefix);
         }
         obj = "";
       }
       if (isNonNullishPrimitive(obj) || utils.isBuffer(obj)) {
         if (encoder2) {
-          var keyValue = encodeValuesOnly ? prefix : encoder2(prefix, defaults2.encoder, charset, "key", format);
-          return [formatter(keyValue) + "=" + formatter(encoder2(obj, defaults2.encoder, charset, "value", format))];
+          var keyValue = encodeValuesOnly ? prefix : encoder2(prefix, defaults2.encoder, charset, "key", format2);
+          return [formatter(keyValue) + "=" + formatter(encoder2(obj, defaults2.encoder, charset, "value", format2))];
         }
         return [formatter(prefix) + "=" + formatter(String(obj))];
       }
@@ -18013,7 +18013,7 @@ var require_stringify = __commonJS({
           sort,
           allowDots,
           serializeDate,
-          format,
+          format2,
           formatter,
           encodeValuesOnly,
           charset,
@@ -18039,14 +18039,14 @@ var require_stringify = __commonJS({
       if (typeof opts.charset !== "undefined" && opts.charset !== "utf-8" && opts.charset !== "iso-8859-1") {
         throw new TypeError("The charset option must be either utf-8, iso-8859-1, or undefined");
       }
-      var format = formats["default"];
+      var format2 = formats["default"];
       if (typeof opts.format !== "undefined") {
         if (!has2.call(formats.formatters, opts.format)) {
           throw new TypeError("Unknown format option provided.");
         }
-        format = opts.format;
+        format2 = opts.format;
       }
-      var formatter = formats.formatters[format];
+      var formatter = formats.formatters[format2];
       var filter = defaults2.filter;
       if (typeof opts.filter === "function" || isArray2(opts.filter)) {
         filter = opts.filter;
@@ -18077,7 +18077,7 @@ var require_stringify = __commonJS({
         encoder: typeof opts.encoder === "function" ? opts.encoder : defaults2.encoder,
         encodeValuesOnly: typeof opts.encodeValuesOnly === "boolean" ? opts.encodeValuesOnly : defaults2.encodeValuesOnly,
         filter,
-        format,
+        format: format2,
         formatter,
         serializeDate: typeof opts.serializeDate === "function" ? opts.serializeDate : defaults2.serializeDate,
         skipNulls: typeof opts.skipNulls === "boolean" ? opts.skipNulls : defaults2.skipNulls,
@@ -18154,9 +18154,9 @@ var require_stringify = __commonJS({
   }
 });
 
-// node_modules/qs/lib/parse.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/qs/lib/parse.js
 var require_parse = __commonJS({
-  "node_modules/qs/lib/parse.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/qs/lib/parse.js"(exports2, module2) {
     "use strict";
     var utils = require_utils2();
     var has2 = Object.prototype.hasOwnProperty;
@@ -18320,18 +18320,18 @@ var require_parse = __commonJS({
           obj = options.plainObjects ? { __proto__: null } : {};
           var cleanRoot = root.charAt(0) === "[" && root.charAt(root.length - 1) === "]" ? root.slice(1, -1) : root;
           var decodedRoot = options.decodeDotInKeys ? cleanRoot.replace(/%2E/g, ".") : cleanRoot;
-          var index = parseInt(decodedRoot, 10);
-          var isValidArrayIndex = !isNaN(index) && root !== decodedRoot && String(index) === decodedRoot && index >= 0 && options.parseArrays;
+          var index2 = parseInt(decodedRoot, 10);
+          var isValidArrayIndex = !isNaN(index2) && root !== decodedRoot && String(index2) === decodedRoot && index2 >= 0 && options.parseArrays;
           if (!options.parseArrays && decodedRoot === "") {
             obj = { 0: leaf };
-          } else if (isValidArrayIndex && index < options.arrayLimit) {
+          } else if (isValidArrayIndex && index2 < options.arrayLimit) {
             obj = [];
-            obj[index] = leaf;
+            obj[index2] = leaf;
           } else if (isValidArrayIndex && options.throwOnLimitExceeded) {
             throw new RangeError("Array limit exceeded. Only " + options.arrayLimit + " element" + (options.arrayLimit === 1 ? "" : "s") + " allowed in an array.");
           } else if (isValidArrayIndex) {
-            obj[index] = leaf;
-            utils.markOverflow(obj, index);
+            obj[index2] = leaf;
+            utils.markOverflow(obj, index2);
           } else if (decodedRoot !== "__proto__") {
             obj[decodedRoot] = leaf;
           }
@@ -18483,24 +18483,24 @@ var require_parse = __commonJS({
   }
 });
 
-// node_modules/qs/lib/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/qs/lib/index.js
 var require_lib2 = __commonJS({
-  "node_modules/qs/lib/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/qs/lib/index.js"(exports2, module2) {
     "use strict";
     var stringify3 = require_stringify();
-    var parse3 = require_parse();
+    var parse4 = require_parse();
     var formats = require_formats();
     module2.exports = {
       formats,
-      parse: parse3,
+      parse: parse4,
       stringify: stringify3
     };
   }
 });
 
-// node_modules/body-parser/lib/types/urlencoded.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/lib/types/urlencoded.js
 var require_urlencoded = __commonJS({
-  "node_modules/body-parser/lib/types/urlencoded.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/lib/types/urlencoded.js"(exports2, module2) {
     "use strict";
     var createError = require_http_errors();
     var debug = require_src()("body-parser:urlencoded");
@@ -18513,14 +18513,14 @@ var require_urlencoded = __commonJS({
       if (normalizedOptions.defaultCharset !== "utf-8" && normalizedOptions.defaultCharset !== "iso-8859-1") {
         throw new TypeError("option defaultCharset must be either utf-8 or iso-8859-1");
       }
-      const parse3 = createQueryParser(options);
+      const parse4 = createQueryParser(options);
       const readOptions = {
         ...normalizedOptions,
         // assert charset
         isValidCharset: (charset) => charset === "utf-8" || charset === "iso-8859-1"
       };
       return function urlencodedParser(req, res, next) {
-        read(req, res, next, parse3, debug, readOptions);
+        read(req, res, next, parse4, debug, readOptions);
       };
     }
     function createQueryParser(options) {
@@ -18538,7 +18538,7 @@ var require_urlencoded = __commonJS({
       if (isFinite(parameterLimit)) {
         parameterLimit = parameterLimit | 0;
       }
-      return function parse3(body, encoding) {
+      return function parse4(body, encoding) {
         if (!body.length) return {};
         const paramCount = parameterCount(body, parameterLimit);
         if (paramCount === void 0) {
@@ -18573,20 +18573,20 @@ var require_urlencoded = __commonJS({
     }
     function parameterCount(body, limit2) {
       let count = 0;
-      let index = -1;
+      let index2 = -1;
       do {
         count++;
         if (count > limit2) return void 0;
-        index = body.indexOf("&", index + 1);
-      } while (index !== -1);
+        index2 = body.indexOf("&", index2 + 1);
+      } while (index2 !== -1);
       return count;
     }
   }
 });
 
-// node_modules/body-parser/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/index.js
 var require_body_parser = __commonJS({
-  "node_modules/body-parser/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/index.js"(exports2, module2) {
     "use strict";
     exports2 = module2.exports = bodyParser;
     exports2.json = require_json();
@@ -18599,9 +18599,9 @@ var require_body_parser = __commonJS({
   }
 });
 
-// node_modules/merge-descriptors/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/merge-descriptors/index.js
 var require_merge_descriptors = __commonJS({
-  "node_modules/merge-descriptors/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/merge-descriptors/index.js"(exports2, module2) {
     "use strict";
     function mergeDescriptors(destination, source, overwrite = true) {
       if (!destination) {
@@ -18623,9 +18623,9 @@ var require_merge_descriptors = __commonJS({
   }
 });
 
-// node_modules/encodeurl/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/encodeurl/index.js
 var require_encodeurl = __commonJS({
-  "node_modules/encodeurl/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/encodeurl/index.js"(exports2, module2) {
     "use strict";
     module2.exports = encodeUrl;
     var ENCODE_CHARS_REGEXP = /(?:[^\x21\x23-\x3B\x3D\x3F-\x5F\x61-\x7A\x7C\x7E]|%(?:[^0-9A-Fa-f]|[0-9A-Fa-f][^0-9A-Fa-f]|$))+/g;
@@ -18637,24 +18637,24 @@ var require_encodeurl = __commonJS({
   }
 });
 
-// node_modules/escape-html/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/escape-html/index.js
 var require_escape_html = __commonJS({
-  "node_modules/escape-html/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/escape-html/index.js"(exports2, module2) {
     "use strict";
     var matchHtmlRegExp = /["'&<>]/;
-    module2.exports = escapeHtml;
-    function escapeHtml(string) {
+    module2.exports = escapeHtml2;
+    function escapeHtml2(string) {
       var str = "" + string;
-      var match = matchHtmlRegExp.exec(str);
-      if (!match) {
+      var match2 = matchHtmlRegExp.exec(str);
+      if (!match2) {
         return str;
       }
       var escape3;
       var html = "";
-      var index = 0;
+      var index2 = 0;
       var lastIndex = 0;
-      for (index = match.index; index < str.length; index++) {
-        switch (str.charCodeAt(index)) {
+      for (index2 = match2.index; index2 < str.length; index2++) {
+        switch (str.charCodeAt(index2)) {
           case 34:
             escape3 = "&quot;";
             break;
@@ -18673,23 +18673,23 @@ var require_escape_html = __commonJS({
           default:
             continue;
         }
-        if (lastIndex !== index) {
-          html += str.substring(lastIndex, index);
+        if (lastIndex !== index2) {
+          html += str.substring(lastIndex, index2);
         }
-        lastIndex = index + 1;
+        lastIndex = index2 + 1;
         html += escape3;
       }
-      return lastIndex !== index ? html + str.substring(lastIndex, index) : html;
+      return lastIndex !== index2 ? html + str.substring(lastIndex, index2) : html;
     }
   }
 });
 
-// node_modules/parseurl/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/parseurl/index.js
 var require_parseurl = __commonJS({
-  "node_modules/parseurl/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/parseurl/index.js"(exports2, module2) {
     "use strict";
     var url = require("url");
-    var parse3 = url.parse;
+    var parse4 = url.parse;
     var Url = url.Url;
     module2.exports = parseurl;
     module2.exports.original = originalurl;
@@ -18721,7 +18721,7 @@ var require_parseurl = __commonJS({
     }
     function fastparse(str) {
       if (typeof str !== "string" || str.charCodeAt(0) !== 47) {
-        return parse3(str);
+        return parse4(str);
       }
       var pathname = str;
       var query = null;
@@ -18749,7 +18749,7 @@ var require_parseurl = __commonJS({
           /* #  */
           case 160:
           case 65279:
-            return parse3(str);
+            return parse4(str);
         }
       }
       var url2 = Url !== void 0 ? new Url() : {};
@@ -18768,19 +18768,19 @@ var require_parseurl = __commonJS({
   }
 });
 
-// node_modules/finalhandler/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/finalhandler/index.js
 var require_finalhandler = __commonJS({
-  "node_modules/finalhandler/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/finalhandler/index.js"(exports2, module2) {
     "use strict";
     var debug = require_src()("finalhandler");
     var encodeUrl = require_encodeurl();
-    var escapeHtml = require_escape_html();
+    var escapeHtml2 = require_escape_html();
     var onFinished = require_on_finished();
     var parseUrl2 = require_parseurl();
     var statuses = require_statuses();
     var isFinished = onFinished.isFinished;
-    function createHtmlDocument(message) {
-      var body = escapeHtml(message).replaceAll("\n", "<br>").replaceAll("  ", " &nbsp;");
+    function createHtmlDocument(message2) {
+      var body = escapeHtml2(message2).replaceAll("\n", "<br>").replaceAll("  ", " &nbsp;");
       return '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<title>Error</title>\n</head>\n<body>\n<pre>' + body + "</pre>\n</body>\n</html>\n";
     }
     module2.exports = finalhandler;
@@ -18861,9 +18861,9 @@ var require_finalhandler = __commonJS({
       }
       return status;
     }
-    function send(req, res, status, headers, message) {
+    function send(req, res, status, headers, message2) {
       function write() {
-        var body = createHtmlDocument(message);
+        var body = createHtmlDocument(message2);
         res.statusCode = status;
         if (req.httpVersionMajor < 2) {
           res.statusMessage = statuses.message[status];
@@ -18895,18 +18895,18 @@ var require_finalhandler = __commonJS({
   }
 });
 
-// node_modules/express/lib/view.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/express/lib/view.js
 var require_view = __commonJS({
-  "node_modules/express/lib/view.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/express/lib/view.js"(exports2, module2) {
     "use strict";
     var debug = require_src()("express:view");
-    var path7 = require("node:path");
+    var path8 = require("node:path");
     var fs6 = require("node:fs");
-    var dirname5 = path7.dirname;
-    var basename3 = path7.basename;
-    var extname = path7.extname;
-    var join5 = path7.join;
-    var resolve4 = path7.resolve;
+    var dirname5 = path8.dirname;
+    var basename3 = path8.basename;
+    var extname = path8.extname;
+    var join6 = path8.join;
+    var resolve4 = path8.resolve;
     module2.exports = View2;
     function View2(name, options) {
       var opts = options || {};
@@ -18935,17 +18935,17 @@ var require_view = __commonJS({
       this.path = this.lookup(fileName);
     }
     View2.prototype.lookup = function lookup(name) {
-      var path8;
+      var path9;
       var roots = [].concat(this.root);
       debug('lookup "%s"', name);
-      for (var i = 0; i < roots.length && !path8; i++) {
+      for (var i = 0; i < roots.length && !path9; i++) {
         var root = roots[i];
         var loc = resolve4(root, name);
         var dir = dirname5(loc);
         var file = basename3(loc);
-        path8 = this.resolve(dir, file);
+        path9 = this.resolve(dir, file);
       }
-      return path8;
+      return path9;
     };
     View2.prototype.render = function render(options, callback) {
       var sync = true;
@@ -18967,21 +18967,21 @@ var require_view = __commonJS({
     };
     View2.prototype.resolve = function resolve5(dir, file) {
       var ext = this.ext;
-      var path8 = join5(dir, file);
-      var stat2 = tryStat(path8);
+      var path9 = join6(dir, file);
+      var stat2 = tryStat(path9);
       if (stat2 && stat2.isFile()) {
-        return path8;
+        return path9;
       }
-      path8 = join5(dir, basename3(file, ext), "index" + ext);
-      stat2 = tryStat(path8);
+      path9 = join6(dir, basename3(file, ext), "index" + ext);
+      stat2 = tryStat(path9);
       if (stat2 && stat2.isFile()) {
-        return path8;
+        return path9;
       }
     };
-    function tryStat(path8) {
-      debug('stat "%s"', path8);
+    function tryStat(path9) {
+      debug('stat "%s"', path9);
       try {
-        return fs6.statSync(path8);
+        return fs6.statSync(path9);
       } catch (e) {
         return void 0;
       }
@@ -18989,9 +18989,9 @@ var require_view = __commonJS({
   }
 });
 
-// node_modules/content-type/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/content-type/index.js
 var require_content_type = __commonJS({
-  "node_modules/content-type/index.js"(exports2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/content-type/index.js"(exports2) {
     "use strict";
     var PARAM_REGEXP = /; *([!#$%&'*+.^_`|~0-9A-Za-z-]+) *= *("(?:[\u000b\u0020\u0021\u0023-\u005b\u005d-\u007e\u0080-\u00ff]|\\[\u000b\u0020-\u00ff])*"|[!#$%&'*+.^_`|~0-9A-Za-z-]+) */g;
     var TEXT_REGEXP = /^[\u000b\u0020-\u007e\u0080-\u00ff]+$/;
@@ -18999,9 +18999,9 @@ var require_content_type = __commonJS({
     var QESC_REGEXP = /\\([\u000b\u0020-\u00ff])/g;
     var QUOTE_REGEXP = /([\\"])/g;
     var TYPE_REGEXP = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+\/[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
-    exports2.format = format;
-    exports2.parse = parse3;
-    function format(obj) {
+    exports2.format = format2;
+    exports2.parse = parse4;
+    function format2(obj) {
       if (!obj || typeof obj !== "object") {
         throw new TypeError("argument obj is required");
       }
@@ -19024,7 +19024,7 @@ var require_content_type = __commonJS({
       }
       return string;
     }
-    function parse3(string) {
+    function parse4(string) {
       if (!string) {
         throw new TypeError("argument string is required");
       }
@@ -19032,24 +19032,24 @@ var require_content_type = __commonJS({
       if (typeof header !== "string") {
         throw new TypeError("argument string is required to be a string");
       }
-      var index = header.indexOf(";");
-      var type = index !== -1 ? header.slice(0, index).trim() : header.trim();
+      var index2 = header.indexOf(";");
+      var type = index2 !== -1 ? header.slice(0, index2).trim() : header.trim();
       if (!TYPE_REGEXP.test(type)) {
         throw new TypeError("invalid media type");
       }
       var obj = new ContentType(type.toLowerCase());
-      if (index !== -1) {
+      if (index2 !== -1) {
         var key;
-        var match;
+        var match2;
         var value;
-        PARAM_REGEXP.lastIndex = index;
-        while (match = PARAM_REGEXP.exec(header)) {
-          if (match.index !== index) {
+        PARAM_REGEXP.lastIndex = index2;
+        while (match2 = PARAM_REGEXP.exec(header)) {
+          if (match2.index !== index2) {
             throw new TypeError("invalid parameter format");
           }
-          index += match[0].length;
-          key = match[1].toLowerCase();
-          value = match[2];
+          index2 += match2[0].length;
+          key = match2[1].toLowerCase();
+          value = match2[2];
           if (value.charCodeAt(0) === 34) {
             value = value.slice(1, -1);
             if (value.indexOf("\\") !== -1) {
@@ -19058,7 +19058,7 @@ var require_content_type = __commonJS({
           }
           obj.parameters[key] = value;
         }
-        if (index !== header.length) {
+        if (index2 !== header.length) {
           throw new TypeError("invalid parameter format");
         }
       }
@@ -19093,9 +19093,9 @@ var require_content_type = __commonJS({
   }
 });
 
-// node_modules/etag/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/etag/index.js
 var require_etag = __commonJS({
-  "node_modules/etag/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/etag/index.js"(exports2, module2) {
     "use strict";
     module2.exports = etag;
     var crypto6 = require("crypto");
@@ -19135,16 +19135,16 @@ var require_etag = __commonJS({
   }
 });
 
-// node_modules/forwarded/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/forwarded/index.js
 var require_forwarded = __commonJS({
-  "node_modules/forwarded/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/forwarded/index.js"(exports2, module2) {
     "use strict";
     module2.exports = forwarded;
     function forwarded(req) {
       if (!req) {
         throw new TypeError("argument req is required");
       }
-      var proxyAddrs = parse3(req.headers["x-forwarded-for"] || "");
+      var proxyAddrs = parse4(req.headers["x-forwarded-for"] || "");
       var socketAddr = getSocketAddr(req);
       var addrs = [socketAddr].concat(proxyAddrs);
       return addrs;
@@ -19152,9 +19152,9 @@ var require_forwarded = __commonJS({
     function getSocketAddr(req) {
       return req.socket ? req.socket.remoteAddress : req.connection.remoteAddress;
     }
-    function parse3(header) {
+    function parse4(header) {
       var end = header.length;
-      var list = [];
+      var list2 = [];
       var start = header.length;
       for (var i = header.length - 1; i >= 0; i--) {
         switch (header.charCodeAt(i)) {
@@ -19165,7 +19165,7 @@ var require_forwarded = __commonJS({
             break;
           case 44:
             if (start !== end) {
-              list.push(header.substring(start, end));
+              list2.push(header.substring(start, end));
             }
             start = end = i;
             break;
@@ -19175,16 +19175,16 @@ var require_forwarded = __commonJS({
         }
       }
       if (start !== end) {
-        list.push(header.substring(start, end));
+        list2.push(header.substring(start, end));
       }
-      return list;
+      return list2;
     }
   }
 });
 
-// node_modules/ipaddr.js/lib/ipaddr.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/ipaddr.js/lib/ipaddr.js
 var require_ipaddr = __commonJS({
-  "node_modules/ipaddr.js/lib/ipaddr.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/ipaddr.js/lib/ipaddr.js"(exports2, module2) {
     (function() {
       var expandIPv6, ipaddr, ipv4Part, ipv4Regexes, ipv6Part, ipv6Regexes, matchCIDR, root, zoneIndex;
       ipaddr = {};
@@ -19326,7 +19326,7 @@ var require_ipaddr = __commonJS({
         longValue: new RegExp("^" + ipv4Part + "$", "i")
       };
       ipaddr.IPv4.parser = function(string) {
-        var match, parseIntAuto, part, shift, value;
+        var match2, parseIntAuto, part, shift, value;
         parseIntAuto = function(string2) {
           if (string2[0] === "0" && string2[1] !== "x") {
             return parseInt(string2, 8);
@@ -19334,10 +19334,10 @@ var require_ipaddr = __commonJS({
             return parseInt(string2);
           }
         };
-        if (match = string.match(ipv4Regexes.fourOctet)) {
+        if (match2 = string.match(ipv4Regexes.fourOctet)) {
           return (function() {
             var k, len, ref, results;
-            ref = match.slice(1, 6);
+            ref = match2.slice(1, 6);
             results = [];
             for (k = 0, len = ref.length; k < len; k++) {
               part = ref[k];
@@ -19345,8 +19345,8 @@ var require_ipaddr = __commonJS({
             }
             return results;
           })();
-        } else if (match = string.match(ipv4Regexes.longValue)) {
-          value = parseIntAuto(match[1]);
+        } else if (match2 = string.match(ipv4Regexes.longValue)) {
+          value = parseIntAuto(match2[1]);
           if (value > 4294967295 || value < 0) {
             throw new Error("ipaddr: address outside defined range");
           }
@@ -19393,15 +19393,15 @@ var require_ipaddr = __commonJS({
           return this.toNormalizedString().replace(/((^|:)(0(:|$))+)/, "::");
         };
         IPv6.prototype.toRFC5952String = function() {
-          var bestMatchIndex, bestMatchLength, match, regex, string;
+          var bestMatchIndex, bestMatchLength, match2, regex, string;
           regex = /((^|:)(0(:|$)){2,})/g;
           string = this.toNormalizedString();
           bestMatchIndex = 0;
           bestMatchLength = -1;
-          while (match = regex.exec(string)) {
-            if (match[0].length > bestMatchLength) {
-              bestMatchIndex = match.index;
-              bestMatchLength = match[0].length;
+          while (match2 = regex.exec(string)) {
+            if (match2[0].length > bestMatchLength) {
+              bestMatchIndex = match2.index;
+              bestMatchLength = match2[0].length;
             }
           }
           if (bestMatchLength < 0) {
@@ -19594,14 +19594,14 @@ var require_ipaddr = __commonJS({
         };
       };
       ipaddr.IPv6.parser = function(string) {
-        var addr, k, len, match, octet, octets, zoneId;
+        var addr, k, len, match2, octet, octets, zoneId;
         if (ipv6Regexes["native"].test(string)) {
           return expandIPv6(string, 8);
-        } else if (match = string.match(ipv6Regexes["transitional"])) {
-          zoneId = match[6] || "";
-          addr = expandIPv6(match[1].slice(0, -1) + zoneId, 6);
+        } else if (match2 = string.match(ipv6Regexes["transitional"])) {
+          zoneId = match2[6] || "";
+          addr = expandIPv6(match2[1].slice(0, -1) + zoneId, 6);
           if (addr.parts) {
-            octets = [parseInt(match[2]), parseInt(match[3]), parseInt(match[4]), parseInt(match[5])];
+            octets = [parseInt(match2[2]), parseInt(match2[3]), parseInt(match2[4]), parseInt(match2[5])];
             for (k = 0, len = octets.length; k < len; k++) {
               octet = octets[k];
               if (!(0 <= octet && octet <= 255)) {
@@ -19669,11 +19669,11 @@ var require_ipaddr = __commonJS({
         return new this(addr.parts, addr.zoneId);
       };
       ipaddr.IPv4.parseCIDR = function(string) {
-        var maskLength, match, parsed;
-        if (match = string.match(/^(.+)\/(\d+)$/)) {
-          maskLength = parseInt(match[2]);
+        var maskLength, match2, parsed;
+        if (match2 = string.match(/^(.+)\/(\d+)$/)) {
+          maskLength = parseInt(match2[2]);
           if (maskLength >= 0 && maskLength <= 32) {
-            parsed = [this.parse(match[1]), maskLength];
+            parsed = [this.parse(match2[1]), maskLength];
             Object.defineProperty(parsed, "toString", {
               value: function() {
                 return this.join("/");
@@ -19739,11 +19739,11 @@ var require_ipaddr = __commonJS({
         }
       };
       ipaddr.IPv6.parseCIDR = function(string) {
-        var maskLength, match, parsed;
-        if (match = string.match(/^(.+)\/(\d+)$/)) {
-          maskLength = parseInt(match[2]);
+        var maskLength, match2, parsed;
+        if (match2 = string.match(/^(.+)\/(\d+)$/)) {
+          maskLength = parseInt(match2[2]);
           if (maskLength >= 0 && maskLength <= 128) {
-            parsed = [this.parse(match[1]), maskLength];
+            parsed = [this.parse(match2[1]), maskLength];
             Object.defineProperty(parsed, "toString", {
               value: function() {
                 return this.join("/");
@@ -19804,9 +19804,9 @@ var require_ipaddr = __commonJS({
   }
 });
 
-// node_modules/proxy-addr/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/proxy-addr/index.js
 var require_proxy_addr = __commonJS({
-  "node_modules/proxy-addr/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/proxy-addr/index.js"(exports2, module2) {
     "use strict";
     module2.exports = proxyaddr;
     module2.exports.all = alladdrs;
@@ -19879,10 +19879,10 @@ var require_proxy_addr = __commonJS({
       if (pos === -1 && ip.kind() === "ipv6" && ip.isIPv4MappedAddress()) {
         ip = ip.toIPv4Address();
       }
-      var max = ip.kind() === "ipv6" ? 128 : 32;
+      var max2 = ip.kind() === "ipv6" ? 128 : 32;
       var range = pos !== -1 ? note.substring(pos + 1, note.length) : null;
       if (range === null) {
-        range = max;
+        range = max2;
       } else if (DIGIT_REGEXP.test(range)) {
         range = parseInt(range, 10);
       } else if (ip.kind() === "ipv4" && isip(range)) {
@@ -19890,7 +19890,7 @@ var require_proxy_addr = __commonJS({
       } else {
         range = null;
       }
-      if (range <= 0 || range > max) {
+      if (range <= 0 || range > max2) {
         throw new TypeError("invalid range on address: " + note);
       }
       return [ip, range];
@@ -19963,9 +19963,9 @@ var require_proxy_addr = __commonJS({
   }
 });
 
-// node_modules/express/lib/utils.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/express/lib/utils.js
 var require_utils3 = __commonJS({
-  "node_modules/express/lib/utils.js"(exports2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/express/lib/utils.js"(exports2) {
     "use strict";
     var { METHODS } = require("node:http");
     var contentType = require_content_type();
@@ -19987,25 +19987,25 @@ var require_utils3 = __commonJS({
     function acceptParams(str) {
       var length = str.length;
       var colonIndex = str.indexOf(";");
-      var index = colonIndex === -1 ? length : colonIndex;
-      var ret = { value: str.slice(0, index).trim(), quality: 1, params: {} };
-      while (index < length) {
-        var splitIndex = str.indexOf("=", index);
+      var index2 = colonIndex === -1 ? length : colonIndex;
+      var ret = { value: str.slice(0, index2).trim(), quality: 1, params: {} };
+      while (index2 < length) {
+        var splitIndex = str.indexOf("=", index2);
         if (splitIndex === -1) break;
-        var colonIndex = str.indexOf(";", index);
+        var colonIndex = str.indexOf(";", index2);
         var endIndex = colonIndex === -1 ? length : colonIndex;
         if (splitIndex > endIndex) {
-          index = str.lastIndexOf(";", splitIndex - 1) + 1;
+          index2 = str.lastIndexOf(";", splitIndex - 1) + 1;
           continue;
         }
-        var key = str.slice(index, splitIndex).trim();
+        var key = str.slice(index2, splitIndex).trim();
         var value = str.slice(splitIndex + 1, endIndex).trim();
         if (key === "q") {
           ret.quality = parseFloat(value);
         } else {
           ret.params[key] = value;
         }
-        index = endIndex + 1;
+        index2 = endIndex + 1;
       }
       return ret;
     }
@@ -20090,9 +20090,9 @@ var require_utils3 = __commonJS({
   }
 });
 
-// node_modules/wrappy/wrappy.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/wrappy/wrappy.js
 var require_wrappy = __commonJS({
-  "node_modules/wrappy/wrappy.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/wrappy/wrappy.js"(exports2, module2) {
     module2.exports = wrappy;
     function wrappy(fn, cb) {
       if (fn && cb) return wrappy(fn)(cb);
@@ -20120,9 +20120,9 @@ var require_wrappy = __commonJS({
   }
 });
 
-// node_modules/once/once.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/once/once.js
 var require_once = __commonJS({
-  "node_modules/once/once.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/once/once.js"(exports2, module2) {
     var wrappy = require_wrappy();
     module2.exports = wrappy(once);
     module2.exports.strict = wrappy(onceStrict);
@@ -20164,9 +20164,9 @@ var require_once = __commonJS({
   }
 });
 
-// node_modules/is-promise/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/is-promise/index.js
 var require_is_promise = __commonJS({
-  "node_modules/is-promise/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/is-promise/index.js"(exports2, module2) {
     module2.exports = isPromise;
     module2.exports.default = isPromise;
     function isPromise(obj) {
@@ -20175,15 +20175,15 @@ var require_is_promise = __commonJS({
   }
 });
 
-// node_modules/path-to-regexp/dist/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/path-to-regexp/dist/index.js
 var require_dist3 = __commonJS({
-  "node_modules/path-to-regexp/dist/index.js"(exports2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/path-to-regexp/dist/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.PathError = exports2.TokenData = void 0;
-    exports2.parse = parse3;
+    exports2.parse = parse4;
     exports2.compile = compile;
-    exports2.match = match;
+    exports2.match = match2;
     exports2.pathToRegexp = pathToRegexp;
     exports2.stringify = stringify3;
     var DEFAULT_DELIMITER = "/";
@@ -20205,8 +20205,8 @@ var require_dist3 = __commonJS({
     };
     exports2.TokenData = TokenData;
     var PathError = class extends TypeError {
-      constructor(message, originalPath) {
-        let text2 = message;
+      constructor(message2, originalPath) {
+        let text2 = message2;
         if (originalPath)
           text2 += `: ${originalPath}`;
         text2 += `; visit https://git.new/pathToRegexpError for info`;
@@ -20215,60 +20215,60 @@ var require_dist3 = __commonJS({
       }
     };
     exports2.PathError = PathError;
-    function parse3(str, options = {}) {
+    function parse4(str, options = {}) {
       const { encodePath = NOOP_VALUE } = options;
       const chars = [...str];
-      let index = 0;
+      let index2 = 0;
       function consumeUntil(end) {
         const output = [];
-        let path7 = "";
+        let path8 = "";
         function writePath() {
-          if (!path7)
+          if (!path8)
             return;
           output.push({
             type: "text",
-            value: encodePath(path7)
+            value: encodePath(path8)
           });
-          path7 = "";
+          path8 = "";
         }
-        while (index < chars.length) {
-          const value = chars[index++];
+        while (index2 < chars.length) {
+          const value = chars[index2++];
           if (value === end) {
             writePath();
             return output;
           }
           if (value === "\\") {
-            if (index === chars.length) {
-              throw new PathError(`Unexpected end after \\ at index ${index}`, str);
+            if (index2 === chars.length) {
+              throw new PathError(`Unexpected end after \\ at index ${index2}`, str);
             }
-            path7 += chars[index++];
+            path8 += chars[index2++];
             continue;
           }
           if (value === ":" || value === "*") {
             const type = value === ":" ? "param" : "wildcard";
             let name = "";
-            if (ID_START.test(chars[index])) {
+            if (ID_START.test(chars[index2])) {
               do {
-                name += chars[index++];
-              } while (ID_CONTINUE.test(chars[index]));
-            } else if (chars[index] === '"') {
-              let quoteStart = index;
-              while (index < chars.length) {
-                if (chars[++index] === '"') {
-                  index++;
+                name += chars[index2++];
+              } while (ID_CONTINUE.test(chars[index2]));
+            } else if (chars[index2] === '"') {
+              let quoteStart = index2;
+              while (index2 < chars.length) {
+                if (chars[++index2] === '"') {
+                  index2++;
                   quoteStart = 0;
                   break;
                 }
-                if (chars[index] === "\\")
-                  index++;
-                name += chars[index];
+                if (chars[index2] === "\\")
+                  index2++;
+                name += chars[index2];
               }
               if (quoteStart) {
                 throw new PathError(`Unterminated quote at index ${quoteStart}`, str);
               }
             }
             if (!name) {
-              throw new PathError(`Missing parameter name at index ${index}`, str);
+              throw new PathError(`Missing parameter name at index ${index2}`, str);
             }
             writePath();
             output.push({ type, name });
@@ -20283,29 +20283,29 @@ var require_dist3 = __commonJS({
             continue;
           }
           if (value === "}" || value === "(" || value === ")" || value === "[" || value === "]" || value === "+" || value === "?" || value === "!") {
-            throw new PathError(`Unexpected ${value} at index ${index - 1}`, str);
+            throw new PathError(`Unexpected ${value} at index ${index2 - 1}`, str);
           }
-          path7 += value;
+          path8 += value;
         }
         if (end) {
-          throw new PathError(`Unexpected end at index ${index}, expected ${end}`, str);
+          throw new PathError(`Unexpected end at index ${index2}, expected ${end}`, str);
         }
         writePath();
         return output;
       }
       return new TokenData(consumeUntil(""), str);
     }
-    function compile(path7, options = {}) {
+    function compile(path8, options = {}) {
       const { encode: encode2 = encodeURIComponent, delimiter: delimiter2 = DEFAULT_DELIMITER } = options;
-      const data = typeof path7 === "object" ? path7 : parse3(path7, options);
+      const data = typeof path8 === "object" ? path8 : parse4(path8, options);
       const fn = tokensToFunction(data.tokens, delimiter2, encode2);
-      return function path8(params = {}) {
+      return function path9(params = {}) {
         const missing = [];
-        const path9 = fn(params, missing);
+        const path10 = fn(params, missing);
         if (missing.length) {
           throw new TypeError(`Missing parameters: ${missing.join(", ")}`);
         }
-        return path9;
+        return path10;
       };
     }
     function tokensToFunction(tokens, delimiter2, encode2) {
@@ -20367,9 +20367,9 @@ var require_dist3 = __commonJS({
         return encodeValue(value);
       };
     }
-    function match(path7, options = {}) {
+    function match2(path8, options = {}) {
       const { decode = decodeURIComponent, delimiter: delimiter2 = DEFAULT_DELIMITER } = options;
-      const { regexp, keys } = pathToRegexp(path7, options);
+      const { regexp, keys } = pathToRegexp(path8, options);
       const decoders = keys.map((key) => {
         if (decode === false)
           return NOOP_VALUE;
@@ -20377,11 +20377,11 @@ var require_dist3 = __commonJS({
           return decode;
         return (value) => value.split(delimiter2).map(decode);
       });
-      return function match2(input) {
+      return function match3(input) {
         const m = regexp.exec(input);
         if (!m)
           return false;
-        const path8 = m[0];
+        const path9 = m[0];
         const params = /* @__PURE__ */ Object.create(null);
         for (let i = 1; i < m.length; i++) {
           if (m[i] === void 0)
@@ -20390,21 +20390,21 @@ var require_dist3 = __commonJS({
           const decoder = decoders[i - 1];
           params[key.name] = decoder(m[i]);
         }
-        return { path: path8, params };
+        return { path: path9, params };
       };
     }
-    function pathToRegexp(path7, options = {}) {
+    function pathToRegexp(path8, options = {}) {
       const { delimiter: delimiter2 = DEFAULT_DELIMITER, end = true, sensitive = false, trailing = true } = options;
       const keys = [];
       let source = "";
       let combinations = 0;
-      function process2(path8) {
-        if (Array.isArray(path8)) {
-          for (const p of path8)
+      function process2(path9) {
+        if (Array.isArray(path9)) {
+          for (const p of path9)
             process2(p);
           return;
         }
-        const data = typeof path8 === "object" ? path8 : parse3(path8, options);
+        const data = typeof path9 === "object" ? path9 : parse4(path9, options);
         flatten(data.tokens, 0, [], (tokens) => {
           if (combinations >= 256) {
             throw new PathError("Too many path combinations", data.originalPath);
@@ -20415,19 +20415,19 @@ var require_dist3 = __commonJS({
           combinations++;
         });
       }
-      process2(path7);
+      process2(path8);
       let pattern = `^(?:${source})`;
       if (trailing)
         pattern += "(?:" + escape3(delimiter2) + "$)?";
       pattern += end ? "$" : "(?=" + escape3(delimiter2) + "|$)";
       return { regexp: new RegExp(pattern, sensitive ? "" : "i"), keys };
     }
-    function flatten(tokens, index, result, callback) {
-      while (index < tokens.length) {
-        const token = tokens[index++];
+    function flatten(tokens, index2, result, callback) {
+      while (index2 < tokens.length) {
+        const token = tokens[index2++];
         if (token.type === "group") {
           const len = result.length;
-          flatten(token.tokens, 0, result, (seq) => flatten(tokens, index, seq, callback));
+          flatten(token.tokens, 0, result, (seq) => flatten(tokens, index2, seq, callback));
           result.length = len;
           continue;
         }
@@ -20441,10 +20441,10 @@ var require_dist3 = __commonJS({
       let wildcardBacktrack = "";
       let prevCaptureType = 0;
       let hasSegmentCapture = 0;
-      let index = 0;
-      function hasInSegment(index2, type) {
-        while (index2 < tokens.length) {
-          const token = tokens[index2++];
+      let index2 = 0;
+      function hasInSegment(index3, type) {
+        while (index3 < tokens.length) {
+          const token = tokens[index3++];
           if (token.type === type)
             return true;
           if (token.type === "text") {
@@ -20454,18 +20454,18 @@ var require_dist3 = __commonJS({
         }
         return false;
       }
-      function peekText(index2) {
+      function peekText(index3) {
         let result2 = "";
-        while (index2 < tokens.length) {
-          const token = tokens[index2++];
+        while (index3 < tokens.length) {
+          const token = tokens[index3++];
           if (token.type !== "text")
             break;
           result2 += token.value;
         }
         return result2;
       }
-      while (index < tokens.length) {
-        const token = tokens[index++];
+      while (index2 < tokens.length) {
+        const token = tokens[index2++];
         if (token.type === "text") {
           result += escape3(token.value);
           backtrack += token.value;
@@ -20480,7 +20480,7 @@ var require_dist3 = __commonJS({
             throw new PathError(`Missing text before "${token.name}" ${token.type}`, originalPath);
           }
           if (token.type === "param") {
-            result += hasSegmentCapture & 2 ? `(${negate(delimiter2, backtrack)}+)` : hasInSegment(index, "wildcard") ? `(${negate(delimiter2, peekText(index))}+)` : hasSegmentCapture & 1 ? `(${negate(delimiter2, backtrack)}+|${escape3(backtrack)})` : `(${negate(delimiter2, "")}+)`;
+            result += hasSegmentCapture & 2 ? `(${negate(delimiter2, backtrack)}+)` : hasInSegment(index2, "wildcard") ? `(${negate(delimiter2, peekText(index2))}+)` : hasSegmentCapture & 1 ? `(${negate(delimiter2, backtrack)}+|${escape3(backtrack)})` : `(${negate(delimiter2, "")}+)`;
             hasSegmentCapture |= prevCaptureType = 1;
           } else {
             result += hasSegmentCapture & 2 ? `(${negate(backtrack, "")}+)` : wildcardBacktrack ? `(${negate(wildcardBacktrack, "")}+|${negate(delimiter2, "")}+)` : `([^]+)`;
@@ -20506,10 +20506,10 @@ var require_dist3 = __commonJS({
         return `(?:(?!${escape3(a)})[^${escape3(b2)}])`;
       return `[^${escape3(a + b2)}]`;
     }
-    function stringifyTokens(tokens, index) {
+    function stringifyTokens(tokens, index2) {
       let value = "";
-      while (index < tokens.length) {
-        const token = tokens[index++];
+      while (index2 < tokens.length) {
+        const token = tokens[index2++];
         if (token.type === "text") {
           value += escapeText(token.value);
           continue;
@@ -20519,11 +20519,11 @@ var require_dist3 = __commonJS({
           continue;
         }
         if (token.type === "param") {
-          value += ":" + stringifyName(token.name, tokens[index]);
+          value += ":" + stringifyName(token.name, tokens[index2]);
           continue;
         }
         if (token.type === "wildcard") {
-          value += "*" + stringifyName(token.name, tokens[index]);
+          value += "*" + stringifyName(token.name, tokens[index2]);
           continue;
         }
         throw new TypeError(`Unknown token type: ${token.type}`);
@@ -20544,9 +20544,9 @@ var require_dist3 = __commonJS({
   }
 });
 
-// node_modules/router/lib/layer.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/router/lib/layer.js
 var require_layer = __commonJS({
-  "node_modules/router/lib/layer.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/router/lib/layer.js"(exports2, module2) {
     "use strict";
     var isPromise = require_is_promise();
     var pathRegexp = require_dist3();
@@ -20555,18 +20555,18 @@ var require_layer = __commonJS({
     var TRAILING_SLASH_REGEXP = /\/+$/;
     var MATCHING_GROUP_REGEXP = /\((?:\?<(.*?)>)?(?!\?)/g;
     module2.exports = Layer;
-    function Layer(path7, options, fn) {
+    function Layer(path8, options, fn) {
       if (!(this instanceof Layer)) {
-        return new Layer(path7, options, fn);
+        return new Layer(path8, options, fn);
       }
-      debug("new %o", path7);
+      debug("new %o", path8);
       const opts = options || {};
       this.handle = fn;
       this.keys = [];
       this.name = fn.name || "<anonymous>";
       this.params = void 0;
       this.path = void 0;
-      this.slash = path7 === "/" && opts.end === false;
+      this.slash = path8 === "/" && opts.end === false;
       function matcher(_path) {
         if (_path instanceof RegExp) {
           const keys = [];
@@ -20579,22 +20579,22 @@ var require_layer = __commonJS({
             });
           }
           return function regexpMatcher(p) {
-            const match = _path.exec(p);
-            if (!match) {
+            const match2 = _path.exec(p);
+            if (!match2) {
               return false;
             }
             const params = {};
-            for (let i = 1; i < match.length; i++) {
+            for (let i = 1; i < match2.length; i++) {
               const key = keys[i - 1];
               const prop = key.name;
-              const val = decodeParam(match[i]);
+              const val = decodeParam(match2[i]);
               if (val !== void 0) {
                 params[prop] = val;
               }
             }
             return {
               params,
-              path: match[0]
+              path: match2[0]
             };
           };
         }
@@ -20605,7 +20605,7 @@ var require_layer = __commonJS({
           decode: decodeParam
         });
       }
-      this.matchers = Array.isArray(path7) ? path7.map(matcher) : [matcher(path7)];
+      this.matchers = Array.isArray(path8) ? path8.map(matcher) : [matcher(path8)];
     }
     Layer.prototype.handleError = function handleError(error, req, res, next) {
       const fn = this.handle;
@@ -20645,28 +20645,28 @@ var require_layer = __commonJS({
         next(err);
       }
     };
-    Layer.prototype.match = function match(path7) {
-      let match2;
-      if (path7 != null) {
+    Layer.prototype.match = function match2(path8) {
+      let match3;
+      if (path8 != null) {
         if (this.slash) {
           this.params = {};
           this.path = "";
           return true;
         }
         let i = 0;
-        while (!match2 && i < this.matchers.length) {
-          match2 = this.matchers[i](path7);
+        while (!match3 && i < this.matchers.length) {
+          match3 = this.matchers[i](path8);
           i++;
         }
       }
-      if (!match2) {
+      if (!match3) {
         this.params = void 0;
         this.path = void 0;
         return false;
       }
-      this.params = match2.params;
-      this.path = match2.path;
-      this.keys = Object.keys(match2.params);
+      this.params = match3.params;
+      this.path = match3.path;
+      this.keys = Object.keys(match3.params);
       return true;
     };
     function decodeParam(val) {
@@ -20683,20 +20683,20 @@ var require_layer = __commonJS({
         throw err;
       }
     }
-    function loosen(path7) {
-      if (path7 instanceof RegExp || path7 === "/") {
-        return path7;
+    function loosen(path8) {
+      if (path8 instanceof RegExp || path8 === "/") {
+        return path8;
       }
-      return Array.isArray(path7) ? path7.map(function(p) {
+      return Array.isArray(path8) ? path8.map(function(p) {
         return loosen(p);
-      }) : String(path7).replace(TRAILING_SLASH_REGEXP, "");
+      }) : String(path8).replace(TRAILING_SLASH_REGEXP, "");
     }
   }
 });
 
-// node_modules/router/lib/route.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/router/lib/route.js
 var require_route = __commonJS({
-  "node_modules/router/lib/route.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/router/lib/route.js"(exports2, module2) {
     "use strict";
     var debug = require_src()("router:route");
     var Layer = require_layer();
@@ -20705,9 +20705,9 @@ var require_route = __commonJS({
     var flatten = Array.prototype.flat;
     var methods = METHODS.map((method) => method.toLowerCase());
     module2.exports = Route;
-    function Route(path7) {
-      debug("new %o", path7);
-      this.path = path7;
+    function Route(path8) {
+      debug("new %o", path8);
+      this.path = path8;
       this.stack = [];
       this.methods = /* @__PURE__ */ Object.create(null);
     }
@@ -20758,12 +20758,12 @@ var require_route = __commonJS({
           return setImmediate(next, err);
         }
         let layer;
-        let match;
-        while (match !== true && idx < stack.length) {
+        let match2;
+        while (match2 !== true && idx < stack.length) {
           layer = stack[idx++];
-          match = !layer.method || layer.method === method;
+          match2 = !layer.method || layer.method === method;
         }
-        if (match !== true) {
+        if (match2 !== true) {
           return done(err);
         }
         if (err) {
@@ -20814,9 +20814,9 @@ var require_route = __commonJS({
   }
 });
 
-// node_modules/router/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/router/index.js
 var require_router = __commonJS({
-  "node_modules/router/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/router/index.js"(exports2, module2) {
     "use strict";
     var isPromise = require_is_promise();
     var Layer = require_layer();
@@ -20915,28 +20915,28 @@ var require_router = __commonJS({
         if (++sync > 100) {
           return setImmediate(next, err);
         }
-        const path7 = getPathname(req);
-        if (path7 == null) {
+        const path8 = getPathname(req);
+        if (path8 == null) {
           return done(layerError);
         }
         let layer;
-        let match;
+        let match2;
         let route;
-        while (match !== true && idx < stack.length) {
+        while (match2 !== true && idx < stack.length) {
           layer = stack[idx++];
-          match = matchLayer(layer, path7);
+          match2 = matchLayer(layer, path8);
           route = layer.route;
-          if (typeof match !== "boolean") {
-            layerError = layerError || match;
+          if (typeof match2 !== "boolean") {
+            layerError = layerError || match2;
           }
-          if (match !== true) {
+          if (match2 !== true) {
             continue;
           }
           if (!route) {
             continue;
           }
           if (layerError) {
-            match = false;
+            match2 = false;
             continue;
           }
           const method = req.method;
@@ -20945,10 +20945,10 @@ var require_router = __commonJS({
             methods2.push.apply(methods2, route._methods());
           }
           if (!hasMethod && method !== "HEAD") {
-            match = false;
+            match2 = false;
           }
         }
-        if (match !== true) {
+        if (match2 !== true) {
           return done(layerError);
         }
         if (route) {
@@ -20962,18 +20962,18 @@ var require_router = __commonJS({
           } else if (route) {
             layer.handleRequest(req, res, next);
           } else {
-            trimPrefix(layer, layerError, layerPath, path7);
+            trimPrefix(layer, layerError, layerPath, path8);
           }
           sync = 0;
         });
       }
-      function trimPrefix(layer, layerError, layerPath, path7) {
+      function trimPrefix(layer, layerError, layerPath, path8) {
         if (layerPath.length !== 0) {
-          if (layerPath !== path7.substring(0, layerPath.length)) {
+          if (layerPath !== path8.substring(0, layerPath.length)) {
             next(layerError);
             return;
           }
-          const c = path7[layerPath.length];
+          const c = path8[layerPath.length];
           if (c && c !== "/") {
             next(layerError);
             return;
@@ -20997,7 +20997,7 @@ var require_router = __commonJS({
     };
     Router.prototype.use = function use(handler) {
       let offset = 0;
-      let path7 = "/";
+      let path8 = "/";
       if (typeof handler !== "function") {
         let arg = handler;
         while (Array.isArray(arg) && arg.length !== 0) {
@@ -21005,7 +21005,7 @@ var require_router = __commonJS({
         }
         if (typeof arg !== "function") {
           offset = 1;
-          path7 = handler;
+          path8 = handler;
         }
       }
       const callbacks = flatten.call(slice.call(arguments, offset), Infinity);
@@ -21017,8 +21017,8 @@ var require_router = __commonJS({
         if (typeof fn !== "function") {
           throw new TypeError("argument handler must be a function");
         }
-        debug("use %o %s", path7, fn.name || "<anonymous>");
-        const layer = new Layer(path7, {
+        debug("use %o %s", path8, fn.name || "<anonymous>");
+        const layer = new Layer(path8, {
           sensitive: this.caseSensitive,
           strict: false,
           end: false
@@ -21028,9 +21028,9 @@ var require_router = __commonJS({
       }
       return this;
     };
-    Router.prototype.route = function route(path7) {
-      const route2 = new Route(path7);
-      const layer = new Layer(path7, {
+    Router.prototype.route = function route(path8) {
+      const route2 = new Route(path8);
+      const layer = new Layer(path8, {
         sensitive: this.caseSensitive,
         strict: this.strict,
         end: true
@@ -21043,8 +21043,8 @@ var require_router = __commonJS({
       return route2;
     };
     methods.concat("all").forEach(function(method) {
-      Router.prototype[method] = function(path7) {
-        const route = this.route(path7);
+      Router.prototype[method] = function(path8) {
+        const route = this.route(path8);
         route[method].apply(route, slice.call(arguments, 1));
         return this;
       };
@@ -21073,9 +21073,9 @@ var require_router = __commonJS({
       const fqdnIndex = url.substring(0, pathLength).indexOf("://");
       return fqdnIndex !== -1 ? url.substring(0, url.indexOf("/", 3 + fqdnIndex)) : void 0;
     }
-    function matchLayer(layer, path7) {
+    function matchLayer(layer, path8) {
       try {
-        return layer.match(path7);
+        return layer.match(path8);
       } catch (err) {
         return err;
       }
@@ -21212,9 +21212,9 @@ var require_router = __commonJS({
   }
 });
 
-// node_modules/express/lib/application.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/express/lib/application.js
 var require_application = __commonJS({
-  "node_modules/express/lib/application.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/express/lib/application.js"(exports2, module2) {
     "use strict";
     var finalhandler = require_finalhandler();
     var debug = require_src()("express:application");
@@ -21303,7 +21303,7 @@ var require_application = __commonJS({
     };
     app2.use = function use(fn) {
       var offset = 0;
-      var path7 = "/";
+      var path8 = "/";
       if (typeof fn !== "function") {
         var arg = fn;
         while (Array.isArray(arg) && arg.length !== 0) {
@@ -21311,7 +21311,7 @@ var require_application = __commonJS({
         }
         if (typeof arg !== "function") {
           offset = 1;
-          path7 = fn;
+          path8 = fn;
         }
       }
       var fns = flatten.call(slice.call(arguments, offset), Infinity);
@@ -21321,12 +21321,12 @@ var require_application = __commonJS({
       var router = this.router;
       fns.forEach(function(fn2) {
         if (!fn2 || !fn2.handle || !fn2.set) {
-          return router.use(path7, fn2);
+          return router.use(path8, fn2);
         }
-        debug(".use app under %s", path7);
-        fn2.mountpath = path7;
+        debug(".use app under %s", path8);
+        fn2.mountpath = path8;
         fn2.parent = this;
-        router.use(path7, function mounted_app(req, res, next) {
+        router.use(path8, function mounted_app(req, res, next) {
           var orig = req.app;
           fn2.handle(req, res, function(err) {
             Object.setPrototypeOf(req, orig.request);
@@ -21338,8 +21338,8 @@ var require_application = __commonJS({
       }, this);
       return this;
     };
-    app2.route = function route(path7) {
-      return this.router.route(path7);
+    app2.route = function route(path8) {
+      return this.router.route(path8);
     };
     app2.engine = function engine(ext, fn) {
       if (typeof fn !== "function") {
@@ -21382,7 +21382,7 @@ var require_application = __commonJS({
       }
       return this;
     };
-    app2.path = function path7() {
+    app2.path = function path8() {
       return this.parent ? this.parent.path() + this.mountpath : "";
     };
     app2.enabled = function enabled(setting) {
@@ -21398,17 +21398,17 @@ var require_application = __commonJS({
       return this.set(setting, false);
     };
     methods.forEach(function(method) {
-      app2[method] = function(path7) {
+      app2[method] = function(path8) {
         if (method === "get" && arguments.length === 1) {
-          return this.set(path7);
+          return this.set(path8);
         }
-        var route = this.route(path7);
+        var route = this.route(path8);
         route[method].apply(route, slice.call(arguments, 1));
         return this;
       };
     });
-    app2.all = function all(path7) {
-      var route = this.route(path7);
+    app2.all = function all(path8) {
+      var route = this.route(path8);
       var args = slice.call(arguments, 1);
       for (var i = 0; i < methods.length; i++) {
         route[methods[i]].apply(route, args);
@@ -21473,9 +21473,9 @@ var require_application = __commonJS({
   }
 });
 
-// node_modules/negotiator/lib/charset.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/negotiator/lib/charset.js
 var require_charset = __commonJS({
-  "node_modules/negotiator/lib/charset.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/negotiator/lib/charset.js"(exports2, module2) {
     "use strict";
     module2.exports = preferredCharsets;
     module2.exports.preferredCharsets = preferredCharsets;
@@ -21492,12 +21492,12 @@ var require_charset = __commonJS({
       return accepts;
     }
     function parseCharset(str, i) {
-      var match = simpleCharsetRegExp.exec(str);
-      if (!match) return null;
-      var charset = match[1];
+      var match2 = simpleCharsetRegExp.exec(str);
+      if (!match2) return null;
+      var charset = match2[1];
       var q = 1;
-      if (match[2]) {
-        var params = match[2].split(";");
+      if (match2[2]) {
+        var params = match2[2].split(";");
         for (var j = 0; j < params.length; j++) {
           var p = params[j].trim().split("=");
           if (p[0] === "q") {
@@ -21512,17 +21512,17 @@ var require_charset = __commonJS({
         i
       };
     }
-    function getCharsetPriority(charset, accepted, index) {
+    function getCharsetPriority(charset, accepted, index2) {
       var priority = { o: -1, q: 0, s: 0 };
       for (var i = 0; i < accepted.length; i++) {
-        var spec = specify(charset, accepted[i], index);
+        var spec = specify(charset, accepted[i], index2);
         if (spec && (priority.s - spec.s || priority.q - spec.q || priority.o - spec.o) < 0) {
           priority = spec;
         }
       }
       return priority;
     }
-    function specify(charset, spec, index) {
+    function specify(charset, spec, index2) {
       var s = 0;
       if (spec.charset.toLowerCase() === charset.toLowerCase()) {
         s |= 1;
@@ -21530,7 +21530,7 @@ var require_charset = __commonJS({
         return null;
       }
       return {
-        i: index,
+        i: index2,
         o: spec.i,
         q: spec.q,
         s
@@ -21541,8 +21541,8 @@ var require_charset = __commonJS({
       if (!provided) {
         return accepts.filter(isQuality).sort(compareSpecs).map(getFullCharset);
       }
-      var priorities = provided.map(function getPriority(type, index) {
-        return getCharsetPriority(type, accepts, index);
+      var priorities = provided.map(function getPriority(type, index2) {
+        return getCharsetPriority(type, accepts, index2);
       });
       return priorities.filter(isQuality).sort(compareSpecs).map(function getCharset(priority) {
         return provided[priorities.indexOf(priority)];
@@ -21560,9 +21560,9 @@ var require_charset = __commonJS({
   }
 });
 
-// node_modules/negotiator/lib/encoding.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/negotiator/lib/encoding.js
 var require_encoding = __commonJS({
-  "node_modules/negotiator/lib/encoding.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/negotiator/lib/encoding.js"(exports2, module2) {
     "use strict";
     module2.exports = preferredEncodings;
     module2.exports.preferredEncodings = preferredEncodings;
@@ -21590,12 +21590,12 @@ var require_encoding = __commonJS({
       return accepts;
     }
     function parseEncoding(str, i) {
-      var match = simpleEncodingRegExp.exec(str);
-      if (!match) return null;
-      var encoding = match[1];
+      var match2 = simpleEncodingRegExp.exec(str);
+      if (!match2) return null;
+      var encoding = match2[1];
       var q = 1;
-      if (match[2]) {
-        var params = match[2].split(";");
+      if (match2[2]) {
+        var params = match2[2].split(";");
         for (var j = 0; j < params.length; j++) {
           var p = params[j].trim().split("=");
           if (p[0] === "q") {
@@ -21610,17 +21610,17 @@ var require_encoding = __commonJS({
         i
       };
     }
-    function getEncodingPriority(encoding, accepted, index) {
+    function getEncodingPriority(encoding, accepted, index2) {
       var priority = { encoding, o: -1, q: 0, s: 0 };
       for (var i = 0; i < accepted.length; i++) {
-        var spec = specify(encoding, accepted[i], index);
+        var spec = specify(encoding, accepted[i], index2);
         if (spec && (priority.s - spec.s || priority.q - spec.q || priority.o - spec.o) < 0) {
           priority = spec;
         }
       }
       return priority;
     }
-    function specify(encoding, spec, index) {
+    function specify(encoding, spec, index2) {
       var s = 0;
       if (spec.encoding.toLowerCase() === encoding.toLowerCase()) {
         s |= 1;
@@ -21629,7 +21629,7 @@ var require_encoding = __commonJS({
       }
       return {
         encoding,
-        i: index,
+        i: index2,
         o: spec.i,
         q: spec.q,
         s
@@ -21654,8 +21654,8 @@ var require_encoding = __commonJS({
       if (!provided) {
         return accepts.filter(isQuality).sort(comparator).map(getFullEncoding);
       }
-      var priorities = provided.map(function getPriority(type, index) {
-        return getEncodingPriority(type, accepts, index);
+      var priorities = provided.map(function getPriority(type, index2) {
+        return getEncodingPriority(type, accepts, index2);
       });
       return priorities.filter(isQuality).sort(comparator).map(function getEncoding(priority) {
         return provided[priorities.indexOf(priority)];
@@ -21673,9 +21673,9 @@ var require_encoding = __commonJS({
   }
 });
 
-// node_modules/negotiator/lib/language.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/negotiator/lib/language.js
 var require_language = __commonJS({
-  "node_modules/negotiator/lib/language.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/negotiator/lib/language.js"(exports2, module2) {
     "use strict";
     module2.exports = preferredLanguages;
     module2.exports.preferredLanguages = preferredLanguages;
@@ -21692,15 +21692,15 @@ var require_language = __commonJS({
       return accepts;
     }
     function parseLanguage(str, i) {
-      var match = simpleLanguageRegExp.exec(str);
-      if (!match) return null;
-      var prefix = match[1];
-      var suffix = match[2];
+      var match2 = simpleLanguageRegExp.exec(str);
+      if (!match2) return null;
+      var prefix = match2[1];
+      var suffix = match2[2];
       var full = prefix;
       if (suffix) full += "-" + suffix;
       var q = 1;
-      if (match[3]) {
-        var params = match[3].split(";");
+      if (match2[3]) {
+        var params = match2[3].split(";");
         for (var j = 0; j < params.length; j++) {
           var p = params[j].split("=");
           if (p[0] === "q") q = parseFloat(p[1]);
@@ -21714,17 +21714,17 @@ var require_language = __commonJS({
         full
       };
     }
-    function getLanguagePriority(language, accepted, index) {
+    function getLanguagePriority(language, accepted, index2) {
       var priority = { o: -1, q: 0, s: 0 };
       for (var i = 0; i < accepted.length; i++) {
-        var spec = specify(language, accepted[i], index);
+        var spec = specify(language, accepted[i], index2);
         if (spec && (priority.s - spec.s || priority.q - spec.q || priority.o - spec.o) < 0) {
           priority = spec;
         }
       }
       return priority;
     }
-    function specify(language, spec, index) {
+    function specify(language, spec, index2) {
       var p = parseLanguage(language);
       if (!p) return null;
       var s = 0;
@@ -21738,7 +21738,7 @@ var require_language = __commonJS({
         return null;
       }
       return {
-        i: index,
+        i: index2,
         o: spec.i,
         q: spec.q,
         s
@@ -21749,8 +21749,8 @@ var require_language = __commonJS({
       if (!provided) {
         return accepts.filter(isQuality).sort(compareSpecs).map(getFullLanguage);
       }
-      var priorities = provided.map(function getPriority(type, index) {
-        return getLanguagePriority(type, accepts, index);
+      var priorities = provided.map(function getPriority(type, index2) {
+        return getLanguagePriority(type, accepts, index2);
       });
       return priorities.filter(isQuality).sort(compareSpecs).map(function getLanguage(priority) {
         return provided[priorities.indexOf(priority)];
@@ -21768,9 +21768,9 @@ var require_language = __commonJS({
   }
 });
 
-// node_modules/negotiator/lib/mediaType.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/negotiator/lib/mediaType.js
 var require_mediaType = __commonJS({
-  "node_modules/negotiator/lib/mediaType.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/negotiator/lib/mediaType.js"(exports2, module2) {
     "use strict";
     module2.exports = preferredMediaTypes;
     module2.exports.preferredMediaTypes = preferredMediaTypes;
@@ -21787,14 +21787,14 @@ var require_mediaType = __commonJS({
       return accepts;
     }
     function parseMediaType(str, i) {
-      var match = simpleMediaTypeRegExp.exec(str);
-      if (!match) return null;
+      var match2 = simpleMediaTypeRegExp.exec(str);
+      if (!match2) return null;
       var params = /* @__PURE__ */ Object.create(null);
       var q = 1;
-      var subtype = match[2];
-      var type = match[1];
-      if (match[3]) {
-        var kvps = splitParameters(match[3]).map(splitKeyValuePair);
+      var subtype = match2[2];
+      var type = match2[1];
+      if (match2[3]) {
+        var kvps = splitParameters(match2[3]).map(splitKeyValuePair);
         for (var j = 0; j < kvps.length; j++) {
           var pair = kvps[j];
           var key = pair[0].toLowerCase();
@@ -21815,17 +21815,17 @@ var require_mediaType = __commonJS({
         i
       };
     }
-    function getMediaTypePriority(type, accepted, index) {
+    function getMediaTypePriority(type, accepted, index2) {
       var priority = { o: -1, q: 0, s: 0 };
       for (var i = 0; i < accepted.length; i++) {
-        var spec = specify(type, accepted[i], index);
+        var spec = specify(type, accepted[i], index2);
         if (spec && (priority.s - spec.s || priority.q - spec.q || priority.o - spec.o) < 0) {
           priority = spec;
         }
       }
       return priority;
     }
-    function specify(type, spec, index) {
+    function specify(type, spec, index2) {
       var p = parseMediaType(type);
       var s = 0;
       if (!p) {
@@ -21852,7 +21852,7 @@ var require_mediaType = __commonJS({
         }
       }
       return {
-        i: index,
+        i: index2,
         o: spec.i,
         q: spec.q,
         s
@@ -21863,8 +21863,8 @@ var require_mediaType = __commonJS({
       if (!provided) {
         return accepts.filter(isQuality).sort(compareSpecs).map(getFullType);
       }
-      var priorities = provided.map(function getPriority(type, index) {
-        return getMediaTypePriority(type, accepts, index);
+      var priorities = provided.map(function getPriority(type, index2) {
+        return getMediaTypePriority(type, accepts, index2);
       });
       return priorities.filter(isQuality).sort(compareSpecs).map(function getType(priority) {
         return provided[priorities.indexOf(priority)];
@@ -21881,22 +21881,22 @@ var require_mediaType = __commonJS({
     }
     function quoteCount(string) {
       var count = 0;
-      var index = 0;
-      while ((index = string.indexOf('"', index)) !== -1) {
+      var index2 = 0;
+      while ((index2 = string.indexOf('"', index2)) !== -1) {
         count++;
-        index++;
+        index2++;
       }
       return count;
     }
     function splitKeyValuePair(str) {
-      var index = str.indexOf("=");
+      var index2 = str.indexOf("=");
       var key;
       var val;
-      if (index === -1) {
+      if (index2 === -1) {
         key = str;
       } else {
-        key = str.slice(0, index);
-        val = str.slice(index + 1);
+        key = str.slice(0, index2);
+        val = str.slice(index2 + 1);
       }
       return [key, val];
     }
@@ -21930,9 +21930,9 @@ var require_mediaType = __commonJS({
   }
 });
 
-// node_modules/negotiator/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/negotiator/index.js
 var require_negotiator = __commonJS({
-  "node_modules/negotiator/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/negotiator/index.js"(exports2, module2) {
     "use strict";
     var preferredCharsets = require_charset();
     var preferredEncodings = require_encoding();
@@ -21986,9 +21986,9 @@ var require_negotiator = __commonJS({
   }
 });
 
-// node_modules/accepts/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/accepts/index.js
 var require_accepts = __commonJS({
-  "node_modules/accepts/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/accepts/index.js"(exports2, module2) {
     "use strict";
     var Negotiator = require_negotiator();
     var mime = require_mime_types();
@@ -22067,9 +22067,9 @@ var require_accepts = __commonJS({
   }
 });
 
-// node_modules/fresh/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/fresh/index.js
 var require_fresh = __commonJS({
-  "node_modules/fresh/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/fresh/index.js"(exports2, module2) {
     "use strict";
     var CACHE_CONTROL_NO_CACHE_REGEXP = /(?:^|,)\s*?no-cache\s*?(?:,|$)/;
     module2.exports = fresh;
@@ -22093,8 +22093,8 @@ var require_fresh = __commonJS({
         }
         var matches = parseTokenList(noneMatch);
         for (var i = 0; i < matches.length; i++) {
-          var match = matches[i];
-          if (match === etag || match === "W/" + etag || "W/" + match === etag) {
+          var match2 = matches[i];
+          if (match2 === etag || match2 === "W/" + etag || "W/" + match2 === etag) {
             return true;
           }
         }
@@ -22115,7 +22115,7 @@ var require_fresh = __commonJS({
     }
     function parseTokenList(str) {
       var end = 0;
-      var list = [];
+      var list2 = [];
       var start = 0;
       for (var i = 0, len = str.length; i < len; i++) {
         switch (str.charCodeAt(i)) {
@@ -22125,7 +22125,7 @@ var require_fresh = __commonJS({
             }
             break;
           case 44:
-            list.push(str.substring(start, end));
+            list2.push(str.substring(start, end));
             start = end = i + 1;
             break;
           default:
@@ -22133,28 +22133,28 @@ var require_fresh = __commonJS({
             break;
         }
       }
-      list.push(str.substring(start, end));
-      return list;
+      list2.push(str.substring(start, end));
+      return list2;
     }
   }
 });
 
-// node_modules/range-parser/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/range-parser/index.js
 var require_range_parser = __commonJS({
-  "node_modules/range-parser/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/range-parser/index.js"(exports2, module2) {
     "use strict";
     module2.exports = rangeParser;
     function rangeParser(size2, str, options) {
       if (typeof str !== "string") {
         throw new TypeError("argument str must be a string");
       }
-      var index = str.indexOf("=");
-      if (index === -1) {
+      var index2 = str.indexOf("=");
+      if (index2 === -1) {
         return -2;
       }
-      var arr = str.slice(index + 1).split(",");
+      var arr = str.slice(index2 + 1).split(",");
       var ranges = [];
-      ranges.type = str.slice(0, index);
+      ranges.type = str.slice(0, index2);
       for (var i = 0; i < arr.length; i++) {
         var indexOf = arr[i].indexOf("-");
         if (indexOf === -1) {
@@ -22210,11 +22210,11 @@ var require_range_parser = __commonJS({
       combined.type = ranges.type;
       return combined;
     }
-    function mapWithIndex(range, index) {
+    function mapWithIndex(range, index2) {
       return {
         start: range.start,
         end: range.end,
-        index
+        index: index2
       };
     }
     function mapWithoutIndex(range) {
@@ -22232,9 +22232,9 @@ var require_range_parser = __commonJS({
   }
 });
 
-// node_modules/express/lib/request.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/express/lib/request.js
 var require_request = __commonJS({
-  "node_modules/express/lib/request.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/express/lib/request.js"(exports2, module2) {
     "use strict";
     var accepts = require_accepts();
     var isIP = require("node:net").isIP;
@@ -22242,7 +22242,7 @@ var require_request = __commonJS({
     var http2 = require("node:http");
     var fresh = require_fresh();
     var parseRange = require_range_parser();
-    var parse3 = require_parseurl();
+    var parse4 = require_parseurl();
     var proxyaddr = require_proxy_addr();
     var req = Object.create(http2.IncomingMessage.prototype);
     module2.exports = req;
@@ -22287,7 +22287,7 @@ var require_request = __commonJS({
       if (!queryparse) {
         return /* @__PURE__ */ Object.create(null);
       }
-      var querystring = parse3(this).query;
+      var querystring = parse4(this).query;
       return queryparse(querystring);
     });
     req.is = function is2(types2) {
@@ -22307,8 +22307,8 @@ var require_request = __commonJS({
         return proto;
       }
       var header = this.get("X-Forwarded-Proto") || proto;
-      var index = header.indexOf(",");
-      return index !== -1 ? header.substring(0, index).trim() : header.trim();
+      var index2 = header.indexOf(",");
+      return index2 !== -1 ? header.substring(0, index2).trim() : header.trim();
     });
     defineGetter(req, "secure", function secure() {
       return this.protocol === "https";
@@ -22330,8 +22330,8 @@ var require_request = __commonJS({
       var subdomains2 = !isIP(hostname) ? hostname.split(".").reverse() : [hostname];
       return subdomains2.slice(offset);
     });
-    defineGetter(req, "path", function path7() {
-      return parse3(this).pathname;
+    defineGetter(req, "path", function path8() {
+      return parse4(this).pathname;
     });
     defineGetter(req, "host", function host() {
       var trust = this.app.get("trust proxy fn");
@@ -22347,8 +22347,8 @@ var require_request = __commonJS({
       var host = this.host;
       if (!host) return;
       var offset = host[0] === "[" ? host.indexOf("]") + 1 : 0;
-      var index = host.indexOf(":", offset);
-      return index !== -1 ? host.substring(0, index) : host;
+      var index2 = host.indexOf(":", offset);
+      return index2 !== -1 ? host.substring(0, index2) : host;
     });
     defineGetter(req, "fresh", function() {
       var method = this.method;
@@ -22380,12 +22380,12 @@ var require_request = __commonJS({
   }
 });
 
-// node_modules/content-disposition/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/content-disposition/index.js
 var require_content_disposition = __commonJS({
-  "node_modules/content-disposition/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/content-disposition/index.js"(exports2, module2) {
     "use strict";
     module2.exports = contentDisposition;
-    module2.exports.parse = parse3;
+    module2.exports.parse = parse4;
     var utf8Decoder = new TextDecoder("utf-8");
     var ENCODE_URL_ATTR_CHAR_REGEXP = /[\x00-\x20"'()*,/:;<=>?@[\\\]{}\x7f]/g;
     var NON_LATIN1_REGEXP = /[^\x20-\x7e\xa0-\xff]/g;
@@ -22400,7 +22400,7 @@ var require_content_disposition = __commonJS({
       var opts = options || {};
       var type = opts.type || "attachment";
       var params = createparams(filename, opts.fallback);
-      return format(new ContentDisposition(type, params));
+      return format2(new ContentDisposition(type, params));
     }
     function createparams(filename, fallback) {
       if (filename === void 0) {
@@ -22431,7 +22431,7 @@ var require_content_disposition = __commonJS({
       }
       return params;
     }
-    function format(obj) {
+    function format2(obj) {
       var parameters = obj.parameters;
       var type = obj.type;
       if (!type || typeof type !== "string" || !TOKEN_REGEXP.test(type)) {
@@ -22450,12 +22450,12 @@ var require_content_disposition = __commonJS({
       return string;
     }
     function decodefield(str) {
-      const match = EXT_VALUE_REGEXP.exec(str);
-      if (!match) {
+      const match2 = EXT_VALUE_REGEXP.exec(str);
+      if (!match2) {
         throw new TypeError("invalid extended field value");
       }
-      const charset = match[1].toLowerCase();
-      const encoded = match[2];
+      const charset = match2[1].toLowerCase();
+      const encoded = match2[2];
       switch (charset) {
         case "iso-8859-1": {
           const binary = decodeHexEscapes(encoded);
@@ -22480,28 +22480,28 @@ var require_content_disposition = __commonJS({
     function getlatin1(val) {
       return String(val).replace(NON_LATIN1_REGEXP, "?");
     }
-    function parse3(string) {
+    function parse4(string) {
       if (!string || typeof string !== "string") {
         throw new TypeError("argument string is required");
       }
-      var match = DISPOSITION_TYPE_REGEXP.exec(string);
-      if (!match) {
+      var match2 = DISPOSITION_TYPE_REGEXP.exec(string);
+      if (!match2) {
         throw new TypeError("invalid type format");
       }
-      var index = match[0].length;
-      var type = match[1].toLowerCase();
+      var index2 = match2[0].length;
+      var type = match2[1].toLowerCase();
       var key;
       var names = [];
       var params = {};
       var value;
-      index = PARAM_REGEXP.lastIndex = match[0].slice(-1) === ";" ? index - 1 : index;
-      while (match = PARAM_REGEXP.exec(string)) {
-        if (match.index !== index) {
+      index2 = PARAM_REGEXP.lastIndex = match2[0].slice(-1) === ";" ? index2 - 1 : index2;
+      while (match2 = PARAM_REGEXP.exec(string)) {
+        if (match2.index !== index2) {
           throw new TypeError("invalid parameter format");
         }
-        index += match[0].length;
-        key = match[1].toLowerCase();
-        value = match[2];
+        index2 += match2[0].length;
+        key = match2[1].toLowerCase();
+        value = match2[2];
         if (names.indexOf(key) !== -1) {
           throw new TypeError("invalid duplicate parameter");
         }
@@ -22520,7 +22520,7 @@ var require_content_disposition = __commonJS({
         }
         params[key] = value;
       }
-      if (index !== -1 && index !== string.length) {
+      if (index2 !== -1 && index2 !== string.length) {
         throw new TypeError("invalid parameter format");
       }
       return new ContentDisposition(type, params);
@@ -22541,8 +22541,8 @@ var require_content_disposition = __commonJS({
       this.type = type;
       this.parameters = parameters;
     }
-    function basename3(path7) {
-      const normalized = path7.replaceAll("\\", "/");
+    function basename3(path8) {
+      const normalized = path8.replaceAll("\\", "/");
       let end = normalized.length;
       while (end > 0 && normalized[end - 1] === "/") {
         end--;
@@ -22589,9 +22589,9 @@ var require_content_disposition = __commonJS({
   }
 });
 
-// node_modules/cookie-signature/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/cookie-signature/index.js
 var require_cookie_signature = __commonJS({
-  "node_modules/cookie-signature/index.js"(exports2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/cookie-signature/index.js"(exports2) {
     var crypto6 = require("crypto");
     exports2.sign = function(val, secret) {
       if ("string" != typeof val) throw new TypeError("Cookie value must be provided as a string.");
@@ -22607,11 +22607,11 @@ var require_cookie_signature = __commonJS({
   }
 });
 
-// node_modules/cookie/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/cookie/index.js
 var require_cookie = __commonJS({
-  "node_modules/cookie/index.js"(exports2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/cookie/index.js"(exports2) {
     "use strict";
-    exports2.parse = parse3;
+    exports2.parse = parse4;
     exports2.serialize = serialize;
     var __toString = Object.prototype.toString;
     var __hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -22619,7 +22619,7 @@ var require_cookie = __commonJS({
     var cookieValueRegExp = /^("?)[\u0021\u0023-\u002B\u002D-\u003A\u003C-\u005B\u005D-\u007E]*\1$/;
     var domainValueRegExp = /^([.]?[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)([.][a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$/i;
     var pathValueRegExp = /^[\u0020-\u003A\u003D-\u007E]*$/;
-    function parse3(str, opt) {
+    function parse4(str, opt) {
       if (typeof str !== "string") {
         throw new TypeError("argument str must be a string");
       }
@@ -22627,20 +22627,20 @@ var require_cookie = __commonJS({
       var len = str.length;
       if (len < 2) return obj;
       var dec = opt && opt.decode || decode;
-      var index = 0;
+      var index2 = 0;
       var eqIdx = 0;
       var endIdx = 0;
       do {
-        eqIdx = str.indexOf("=", index);
+        eqIdx = str.indexOf("=", index2);
         if (eqIdx === -1) break;
-        endIdx = str.indexOf(";", index);
+        endIdx = str.indexOf(";", index2);
         if (endIdx === -1) {
           endIdx = len;
         } else if (eqIdx > endIdx) {
-          index = str.lastIndexOf(";", eqIdx - 1) + 1;
+          index2 = str.lastIndexOf(";", eqIdx - 1) + 1;
           continue;
         }
-        var keyStartIdx = startIndex(str, index, eqIdx);
+        var keyStartIdx = startIndex(str, index2, eqIdx);
         var keyEndIdx = endIndex(str, eqIdx, keyStartIdx);
         var key = str.slice(keyStartIdx, keyEndIdx);
         if (!__hasOwnProperty.call(obj, key)) {
@@ -22653,21 +22653,21 @@ var require_cookie = __commonJS({
           var val = str.slice(valStartIdx, valEndIdx);
           obj[key] = tryDecode(val, dec);
         }
-        index = endIdx + 1;
-      } while (index < len);
+        index2 = endIdx + 1;
+      } while (index2 < len);
       return obj;
     }
-    function startIndex(str, index, max) {
+    function startIndex(str, index2, max2) {
       do {
-        var code = str.charCodeAt(index);
-        if (code !== 32 && code !== 9) return index;
-      } while (++index < max);
-      return max;
+        var code = str.charCodeAt(index2);
+        if (code !== 32 && code !== 9) return index2;
+      } while (++index2 < max2);
+      return max2;
     }
-    function endIndex(str, index, min) {
-      while (index > min) {
-        var code = str.charCodeAt(--index);
-        if (code !== 32 && code !== 9) return index + 1;
+    function endIndex(str, index2, min) {
+      while (index2 > min) {
+        var code = str.charCodeAt(--index2);
+        if (code !== 32 && code !== 9) return index2 + 1;
       }
       return min;
     }
@@ -22706,7 +22706,7 @@ var require_cookie = __commonJS({
       }
       if (opt.expires) {
         var expires = opt.expires;
-        if (!isDate(expires) || isNaN(expires.valueOf())) {
+        if (!isDate2(expires) || isNaN(expires.valueOf())) {
           throw new TypeError("option expires is invalid");
         }
         str += "; Expires=" + expires.toUTCString();
@@ -22760,7 +22760,7 @@ var require_cookie = __commonJS({
     function decode(str) {
       return str.indexOf("%") !== -1 ? decodeURIComponent(str) : str;
     }
-    function isDate(val) {
+    function isDate2(val) {
       return __toString.call(val) === "[object Date]";
     }
     function tryDecode(str, decode2) {
@@ -22773,14 +22773,14 @@ var require_cookie = __commonJS({
   }
 });
 
-// node_modules/send/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/send/index.js
 var require_send = __commonJS({
-  "node_modules/send/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/send/index.js"(exports2, module2) {
     "use strict";
     var createError = require_http_errors();
     var debug = require_src()("send");
     var encodeUrl = require_encodeurl();
-    var escapeHtml = require_escape_html();
+    var escapeHtml2 = require_escape_html();
     var etag = require_etag();
     var fresh = require_fresh();
     var fs6 = require("fs");
@@ -22788,27 +22788,27 @@ var require_send = __commonJS({
     var ms = require_ms();
     var onFinished = require_on_finished();
     var parseRange = require_range_parser();
-    var path7 = require("path");
+    var path8 = require("path");
     var statuses = require_statuses();
     var Stream4 = require("stream");
     var util2 = require("util");
-    var extname = path7.extname;
-    var join5 = path7.join;
-    var normalize3 = path7.normalize;
-    var resolve4 = path7.resolve;
-    var sep4 = path7.sep;
+    var extname = path8.extname;
+    var join6 = path8.join;
+    var normalize3 = path8.normalize;
+    var resolve4 = path8.resolve;
+    var sep4 = path8.sep;
     var BYTES_RANGE_REGEXP = /^ *bytes=/;
     var MAX_MAXAGE = 60 * 60 * 24 * 365 * 1e3;
     var UP_PATH_REGEXP = /(?:^|[\\/])\.\.(?:[\\/]|$)/;
     module2.exports = send;
-    function send(req, path8, options) {
-      return new SendStream(req, path8, options);
+    function send(req, path9, options) {
+      return new SendStream(req, path9, options);
     }
-    function SendStream(req, path8, options) {
+    function SendStream(req, path9, options) {
       Stream4.call(this);
       var opts = options || {};
       this.options = opts;
-      this.path = path8;
+      this.path = path9;
       this.req = req;
       this._acceptRanges = opts.acceptRanges !== void 0 ? Boolean(opts.acceptRanges) : true;
       this._cacheControl = opts.cacheControl !== void 0 ? Boolean(opts.cacheControl) : true;
@@ -22833,7 +22833,7 @@ var require_send = __commonJS({
       }
       var res = this.res;
       var msg = statuses.message[status] || String(status);
-      var doc = createHtmlDocument("Error", escapeHtml(msg));
+      var doc = createHtmlDocument("Error", escapeHtml2(msg));
       clearHeaders(res);
       if (err && err.headers) {
         setHeaders(res, err.headers);
@@ -22854,11 +22854,11 @@ var require_send = __commonJS({
     SendStream.prototype.isPreconditionFailure = function isPreconditionFailure() {
       var req = this.req;
       var res = this.res;
-      var match = req.headers["if-match"];
-      if (match) {
+      var match2 = req.headers["if-match"];
+      if (match2) {
         var etag2 = res.getHeader("ETag");
-        return !etag2 || match !== "*" && parseTokenList(match).every(function(match2) {
-          return match2 !== etag2 && match2 !== "W/" + etag2 && "W/" + match2 !== etag2;
+        return !etag2 || match2 !== "*" && parseTokenList(match2).every(function(match3) {
+          return match3 !== etag2 && match3 !== "W/" + etag2 && "W/" + match3 !== etag2;
         });
       }
       var unmodifiedSince = parseHttpDate(req.headers["if-unmodified-since"]);
@@ -22922,10 +22922,10 @@ var require_send = __commonJS({
       var lastModified = this.res.getHeader("Last-Modified");
       return parseHttpDate(lastModified) <= parseHttpDate(ifRange);
     };
-    SendStream.prototype.redirect = function redirect(path8) {
+    SendStream.prototype.redirect = function redirect(path9) {
       var res = this.res;
       if (hasListeners(this, "directory")) {
-        this.emit("directory", res, path8);
+        this.emit("directory", res, path9);
         return;
       }
       if (this.hasTrailingSlash()) {
@@ -22933,7 +22933,7 @@ var require_send = __commonJS({
         return;
       }
       var loc = encodeUrl(collapseLeadingSlashes(this.path + "/"));
-      var doc = createHtmlDocument("Redirecting", "Redirecting to " + escapeHtml(loc));
+      var doc = createHtmlDocument("Redirecting", "Redirecting to " + escapeHtml2(loc));
       res.statusCode = 301;
       res.setHeader("Content-Type", "text/html; charset=UTF-8");
       res.setHeader("Content-Length", Buffer.byteLength(doc));
@@ -22945,38 +22945,38 @@ var require_send = __commonJS({
     SendStream.prototype.pipe = function pipe(res) {
       var root = this._root;
       this.res = res;
-      var path8 = decode(this.path);
-      if (path8 === -1) {
+      var path9 = decode(this.path);
+      if (path9 === -1) {
         this.error(400);
         return res;
       }
-      if (~path8.indexOf("\0")) {
+      if (~path9.indexOf("\0")) {
         this.error(400);
         return res;
       }
       var parts;
       if (root !== null) {
-        if (path8) {
-          path8 = normalize3("." + sep4 + path8);
+        if (path9) {
+          path9 = normalize3("." + sep4 + path9);
         }
-        if (UP_PATH_REGEXP.test(path8)) {
-          debug('malicious path "%s"', path8);
+        if (UP_PATH_REGEXP.test(path9)) {
+          debug('malicious path "%s"', path9);
           this.error(403);
           return res;
         }
-        parts = path8.split(sep4);
-        path8 = normalize3(join5(root, path8));
+        parts = path9.split(sep4);
+        path9 = normalize3(join6(root, path9));
       } else {
-        if (UP_PATH_REGEXP.test(path8)) {
-          debug('malicious path "%s"', path8);
+        if (UP_PATH_REGEXP.test(path9)) {
+          debug('malicious path "%s"', path9);
           this.error(403);
           return res;
         }
-        parts = normalize3(path8).split(sep4);
-        path8 = resolve4(path8);
+        parts = normalize3(path9).split(sep4);
+        path9 = resolve4(path9);
       }
       if (containsDotFile(parts)) {
-        debug('%s dotfile "%s"', this._dotfiles, path8);
+        debug('%s dotfile "%s"', this._dotfiles, path9);
         switch (this._dotfiles) {
           case "allow":
             break;
@@ -22990,13 +22990,13 @@ var require_send = __commonJS({
         }
       }
       if (this._index.length && this.hasTrailingSlash()) {
-        this.sendIndex(path8);
+        this.sendIndex(path9);
         return res;
       }
-      this.sendFile(path8);
+      this.sendFile(path9);
       return res;
     };
-    SendStream.prototype.send = function send2(path8, stat2) {
+    SendStream.prototype.send = function send2(path9, stat2) {
       var len = stat2.size;
       var options = this.options;
       var opts = {};
@@ -23008,9 +23008,9 @@ var require_send = __commonJS({
         this.headersAlreadySent();
         return;
       }
-      debug('pipe "%s"', path8);
-      this.setHeader(path8, stat2);
-      this.type(path8);
+      debug('pipe "%s"', path9);
+      this.setHeader(path9, stat2);
+      this.type(path9);
       if (this.isConditionalGET()) {
         if (this.isPreconditionFailure()) {
           this.error(412);
@@ -23059,28 +23059,28 @@ var require_send = __commonJS({
         res.end();
         return;
       }
-      this.stream(path8, opts);
+      this.stream(path9, opts);
     };
-    SendStream.prototype.sendFile = function sendFile(path8) {
+    SendStream.prototype.sendFile = function sendFile(path9) {
       var i = 0;
       var self = this;
-      debug('stat "%s"', path8);
-      fs6.stat(path8, function onstat(err, stat2) {
-        var pathEndsWithSep = path8[path8.length - 1] === sep4;
-        if (err && err.code === "ENOENT" && !extname(path8) && !pathEndsWithSep) {
+      debug('stat "%s"', path9);
+      fs6.stat(path9, function onstat(err, stat2) {
+        var pathEndsWithSep = path9[path9.length - 1] === sep4;
+        if (err && err.code === "ENOENT" && !extname(path9) && !pathEndsWithSep) {
           return next(err);
         }
         if (err) return self.onStatError(err);
-        if (stat2.isDirectory()) return self.redirect(path8);
+        if (stat2.isDirectory()) return self.redirect(path9);
         if (pathEndsWithSep) return self.error(404);
-        self.emit("file", path8, stat2);
-        self.send(path8, stat2);
+        self.emit("file", path9, stat2);
+        self.send(path9, stat2);
       });
       function next(err) {
         if (self._extensions.length <= i) {
           return err ? self.onStatError(err) : self.error(404);
         }
-        var p = path8 + "." + self._extensions[i++];
+        var p = path9 + "." + self._extensions[i++];
         debug('stat "%s"', p);
         fs6.stat(p, function(err2, stat2) {
           if (err2) return next(err2);
@@ -23090,7 +23090,7 @@ var require_send = __commonJS({
         });
       }
     };
-    SendStream.prototype.sendIndex = function sendIndex(path8) {
+    SendStream.prototype.sendIndex = function sendIndex(path9) {
       var i = -1;
       var self = this;
       function next(err) {
@@ -23098,7 +23098,7 @@ var require_send = __commonJS({
           if (err) return self.onStatError(err);
           return self.error(404);
         }
-        var p = join5(path8, self._index[i]);
+        var p = join6(path9, self._index[i]);
         debug('stat "%s"', p);
         fs6.stat(p, function(err2, stat2) {
           if (err2) return next(err2);
@@ -23109,10 +23109,10 @@ var require_send = __commonJS({
       }
       next();
     };
-    SendStream.prototype.stream = function stream(path8, options) {
+    SendStream.prototype.stream = function stream(path9, options) {
       var self = this;
       var res = this.res;
-      var stream2 = fs6.createReadStream(path8, options);
+      var stream2 = fs6.createReadStream(path9, options);
       this.emit("stream", stream2);
       stream2.pipe(res);
       function cleanup() {
@@ -23127,17 +23127,17 @@ var require_send = __commonJS({
         self.emit("end");
       });
     };
-    SendStream.prototype.type = function type(path8) {
+    SendStream.prototype.type = function type(path9) {
       var res = this.res;
       if (res.getHeader("Content-Type")) return;
-      var ext = extname(path8);
+      var ext = extname(path9);
       var type2 = mime.contentType(ext) || "application/octet-stream";
       debug("content-type %s", type2);
       res.setHeader("Content-Type", type2);
     };
-    SendStream.prototype.setHeader = function setHeader(path8, stat2) {
+    SendStream.prototype.setHeader = function setHeader(path9, stat2) {
       var res = this.res;
-      this.emit("headers", res, path8, stat2);
+      this.emit("headers", res, path9, stat2);
       if (this._acceptRanges && !res.getHeader("Accept-Ranges")) {
         debug("accept ranges");
         res.setHeader("Accept-Ranges", "bytes");
@@ -23195,9 +23195,9 @@ var require_send = __commonJS({
       }
       return err instanceof Error ? createError(status, err, { expose: false }) : createError(status, err);
     }
-    function decode(path8) {
+    function decode(path9) {
       try {
-        return decodeURIComponent(path8);
+        return decodeURIComponent(path9);
       } catch (err) {
         return -1;
       }
@@ -23207,13 +23207,13 @@ var require_send = __commonJS({
       return count > 0;
     }
     function normalizeList(val, name) {
-      var list = [].concat(val || []);
-      for (var i = 0; i < list.length; i++) {
-        if (typeof list[i] !== "string") {
+      var list2 = [].concat(val || []);
+      for (var i = 0; i < list2.length; i++) {
+        if (typeof list2[i] !== "string") {
           throw new TypeError(name + " must be array of strings or false");
         }
       }
-      return list;
+      return list2;
     }
     function parseHttpDate(date2) {
       var timestamp2 = date2 && Date.parse(date2);
@@ -23221,7 +23221,7 @@ var require_send = __commonJS({
     }
     function parseTokenList(str) {
       var end = 0;
-      var list = [];
+      var list2 = [];
       var start = 0;
       for (var i = 0, len = str.length; i < len; i++) {
         switch (str.charCodeAt(i)) {
@@ -23232,7 +23232,7 @@ var require_send = __commonJS({
             break;
           case 44:
             if (start !== end) {
-              list.push(str.substring(start, end));
+              list2.push(str.substring(start, end));
             }
             start = end = i + 1;
             break;
@@ -23242,9 +23242,9 @@ var require_send = __commonJS({
         }
       }
       if (start !== end) {
-        list.push(str.substring(start, end));
+        list2.push(str.substring(start, end));
       }
-      return list;
+      return list2;
     }
     function setHeaders(res, headers) {
       var keys = Object.keys(headers);
@@ -23256,9 +23256,9 @@ var require_send = __commonJS({
   }
 });
 
-// node_modules/vary/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/vary/index.js
 var require_vary = __commonJS({
-  "node_modules/vary/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/vary/index.js"(exports2, module2) {
     "use strict";
     module2.exports = vary;
     module2.exports.append = append;
@@ -23270,7 +23270,7 @@ var require_vary = __commonJS({
       if (!field) {
         throw new TypeError("field argument is required");
       }
-      var fields = !Array.isArray(field) ? parse3(String(field)) : field;
+      var fields = !Array.isArray(field) ? parse4(String(field)) : field;
       for (var j = 0; j < fields.length; j++) {
         if (!FIELD_NAME_REGEXP.test(fields[j])) {
           throw new TypeError("field argument contains an invalid header name");
@@ -23280,7 +23280,7 @@ var require_vary = __commonJS({
         return header;
       }
       var val = header;
-      var vals = parse3(header.toLowerCase());
+      var vals = parse4(header.toLowerCase());
       if (fields.indexOf("*") !== -1 || vals.indexOf("*") !== -1) {
         return "*";
       }
@@ -23293,9 +23293,9 @@ var require_vary = __commonJS({
       }
       return val;
     }
-    function parse3(header) {
+    function parse4(header) {
       var end = 0;
-      var list = [];
+      var list2 = [];
       var start = 0;
       for (var i = 0, len = header.length; i < len; i++) {
         switch (header.charCodeAt(i)) {
@@ -23305,7 +23305,7 @@ var require_vary = __commonJS({
             }
             break;
           case 44:
-            list.push(header.substring(start, end));
+            list2.push(header.substring(start, end));
             start = end = i + 1;
             break;
           default:
@@ -23313,8 +23313,8 @@ var require_vary = __commonJS({
             break;
         }
       }
-      list.push(header.substring(start, end));
-      return list;
+      list2.push(header.substring(start, end));
+      return list2;
     }
     function vary(res, field) {
       if (!res || !res.getHeader || !res.setHeader) {
@@ -23329,19 +23329,19 @@ var require_vary = __commonJS({
   }
 });
 
-// node_modules/express/lib/response.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/express/lib/response.js
 var require_response = __commonJS({
-  "node_modules/express/lib/response.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/express/lib/response.js"(exports2, module2) {
     "use strict";
     var contentDisposition = require_content_disposition();
     var createError = require_http_errors();
     var deprecate = require_depd()("express");
     var encodeUrl = require_encodeurl();
-    var escapeHtml = require_escape_html();
+    var escapeHtml2 = require_escape_html();
     var http2 = require("node:http");
     var onFinished = require_on_finished();
     var mime = require_mime_types();
-    var path7 = require("node:path");
+    var path8 = require("node:path");
     var pathIsAbsolute = require("node:path").isAbsolute;
     var statuses = require_statuses();
     var sign = require_cookie_signature().sign;
@@ -23350,8 +23350,8 @@ var require_response = __commonJS({
     var setCharset = require_utils3().setCharset;
     var cookie = require_cookie();
     var send = require_send();
-    var extname = path7.extname;
-    var resolve4 = path7.resolve;
+    var extname = path8.extname;
+    var resolve4 = path8.resolve;
     var vary = require_vary();
     var { Buffer: Buffer2 } = require("node:buffer");
     var res = Object.create(http2.ServerResponse.prototype);
@@ -23497,26 +23497,26 @@ var require_response = __commonJS({
       this.type("txt");
       return this.send(body);
     };
-    res.sendFile = function sendFile(path8, options, callback) {
+    res.sendFile = function sendFile(path9, options, callback) {
       var done = callback;
       var req = this.req;
       var res2 = this;
       var next = req.next;
       var opts = options || {};
-      if (!path8) {
+      if (!path9) {
         throw new TypeError("path argument is required to res.sendFile");
       }
-      if (typeof path8 !== "string") {
+      if (typeof path9 !== "string") {
         throw new TypeError("path must be a string to res.sendFile");
       }
       if (typeof options === "function") {
         done = options;
         opts = {};
       }
-      if (!opts.root && !pathIsAbsolute(path8)) {
+      if (!opts.root && !pathIsAbsolute(path9)) {
         throw new TypeError("path must be absolute or specify root to res.sendFile");
       }
-      var pathname = encodeURI(path8);
+      var pathname = encodeURI(path9);
       opts.etag = this.app.enabled("etag");
       var file = send(req, pathname, opts);
       sendfile(res2, file, opts, function(err) {
@@ -23527,7 +23527,7 @@ var require_response = __commonJS({
         }
       });
     };
-    res.download = function download(path8, filename, options, callback) {
+    res.download = function download(path9, filename, options, callback) {
       var done = callback;
       var name = filename;
       var opts = options || null;
@@ -23544,7 +23544,7 @@ var require_response = __commonJS({
         opts = filename;
       }
       var headers = {
-        "Content-Disposition": contentDisposition(name || path8)
+        "Content-Disposition": contentDisposition(name || path9)
       };
       if (opts && opts.headers) {
         var keys = Object.keys(opts.headers);
@@ -23557,7 +23557,7 @@ var require_response = __commonJS({
       }
       opts = Object.create(opts);
       opts.headers = headers;
-      var fullPath = !opts.root ? resolve4(path8) : path8;
+      var fullPath = !opts.root ? resolve4(path9) : path9;
       return this.sendFile(fullPath, opts, done);
     };
     res.contentType = res.type = function contentType(type) {
@@ -23676,7 +23676,7 @@ var require_response = __commonJS({
           body = statuses.message[status] + ". Redirecting to " + address;
         },
         html: function() {
-          var u = escapeHtml(address);
+          var u = escapeHtml2(address);
           body = "<p>" + statuses.message[status] + ". Redirecting to " + u + "</p>";
         },
         default: function() {
@@ -23799,12 +23799,12 @@ var require_response = __commonJS({
   }
 });
 
-// node_modules/serve-static/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/serve-static/index.js
 var require_serve_static = __commonJS({
-  "node_modules/serve-static/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/serve-static/index.js"(exports2, module2) {
     "use strict";
     var encodeUrl = require_encodeurl();
-    var escapeHtml = require_escape_html();
+    var escapeHtml2 = require_escape_html();
     var parseUrl2 = require_parseurl();
     var resolve4 = require("path").resolve;
     var send = require_send();
@@ -23840,11 +23840,11 @@ var require_serve_static = __commonJS({
         }
         var forwardError = !fallthrough;
         var originalUrl = parseUrl2.original(req);
-        var path7 = parseUrl2(req).pathname;
-        if (path7 === "/" && originalUrl.pathname.substr(-1) !== "/") {
-          path7 = "";
+        var path8 = parseUrl2(req).pathname;
+        if (path8 === "/" && originalUrl.pathname.substr(-1) !== "/") {
+          path8 = "";
         }
-        var stream = send(req, path7, opts);
+        var stream = send(req, path8, opts);
         stream.on("directory", onDirectory);
         if (setHeaders) {
           stream.on("headers", setHeaders);
@@ -23890,7 +23890,7 @@ var require_serve_static = __commonJS({
         originalUrl.path = null;
         originalUrl.pathname = collapseLeadingSlashes(originalUrl.pathname + "/");
         var loc = encodeUrl(url.format(originalUrl));
-        var doc = createHtmlDocument("Redirecting", "Redirecting to " + escapeHtml(loc));
+        var doc = createHtmlDocument("Redirecting", "Redirecting to " + escapeHtml2(loc));
         res.statusCode = 301;
         res.setHeader("Content-Type", "text/html; charset=UTF-8");
         res.setHeader("Content-Length", Buffer.byteLength(doc));
@@ -23903,9 +23903,9 @@ var require_serve_static = __commonJS({
   }
 });
 
-// node_modules/express/lib/express.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/express/lib/express.js
 var require_express = __commonJS({
-  "node_modules/express/lib/express.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/express/lib/express.js"(exports2, module2) {
     "use strict";
     var bodyParser = require_body_parser();
     var EventEmitter2 = require("node:events").EventEmitter;
@@ -23943,15 +23943,15 @@ var require_express = __commonJS({
   }
 });
 
-// node_modules/express/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/express/index.js
 var require_express2 = __commonJS({
-  "node_modules/express/index.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/express/index.js"(exports2, module2) {
     "use strict";
     module2.exports = require_express();
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/tslib.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/tslib.mjs
 function __classPrivateFieldSet(receiver, state, value, kind, f) {
   if (kind === "m")
     throw new TypeError("Private method is not writable");
@@ -23969,14 +23969,14 @@ function __classPrivateFieldGet(receiver, state, kind, f) {
   return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 }
 var init_tslib = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/tslib.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/tslib.mjs"() {
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/utils/uuid.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/uuid.mjs
 var uuid4;
 var init_uuid = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/utils/uuid.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/uuid.mjs"() {
     uuid4 = function() {
       const { crypto: crypto6 } = globalThis;
       if (crypto6?.randomUUID) {
@@ -23990,7 +23990,7 @@ var init_uuid = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/errors.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/errors.mjs
 function isAbortError(err) {
   return typeof err === "object" && err !== null && // Spec-compliant fetch implementations
   ("name" in err && err.name === "AbortError" || // Expo fetch
@@ -23998,7 +23998,7 @@ function isAbortError(err) {
 }
 var castToError;
 var init_errors = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/errors.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/errors.mjs"() {
     castToError = (err) => {
       if (err instanceof Error)
         return err;
@@ -24026,24 +24026,24 @@ var init_errors = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/core/error.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/error.mjs
 var AnthropicError, APIError, APIUserAbortError, APIConnectionError, APIConnectionTimeoutError, RetryableError, BadRequestError, AuthenticationError, PermissionDeniedError, NotFoundError, ConflictError, UnprocessableEntityError, RateLimitError, InternalServerError;
 var init_error = __esm({
-  "node_modules/@anthropic-ai/sdk/core/error.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/error.mjs"() {
     init_errors();
     AnthropicError = class extends Error {
     };
     APIError = class _APIError extends AnthropicError {
-      constructor(status, error, message, headers, type) {
-        super(`${_APIError.makeMessage(status, error, message)}`);
+      constructor(status, error, message2, headers, type) {
+        super(`${_APIError.makeMessage(status, error, message2)}`);
         this.status = status;
         this.headers = headers;
         this.requestID = headers?.get("request-id");
         this.error = error;
         this.type = type ?? null;
       }
-      static makeMessage(status, error, message) {
-        const msg = error?.message ? typeof error.message === "string" ? error.message : JSON.stringify(error.message) : error ? JSON.stringify(error) : message;
+      static makeMessage(status, error, message2) {
+        const msg = error?.message ? typeof error.message === "string" ? error.message : JSON.stringify(error.message) : error ? JSON.stringify(error) : message2;
         if (status && msg) {
           return `${status} ${msg}`;
         }
@@ -24055,59 +24055,59 @@ var init_error = __esm({
         }
         return "(no status code or body)";
       }
-      static generate(status, errorResponse, message, headers) {
+      static generate(status, errorResponse, message2, headers) {
         if (!status || !headers) {
-          return new APIConnectionError({ message, cause: castToError(errorResponse) });
+          return new APIConnectionError({ message: message2, cause: castToError(errorResponse) });
         }
         const error = errorResponse;
         const type = error?.["error"]?.["type"];
         if (status === 400) {
-          return new BadRequestError(status, error, message, headers, type);
+          return new BadRequestError(status, error, message2, headers, type);
         }
         if (status === 401) {
-          return new AuthenticationError(status, error, message, headers, type);
+          return new AuthenticationError(status, error, message2, headers, type);
         }
         if (status === 403) {
-          return new PermissionDeniedError(status, error, message, headers, type);
+          return new PermissionDeniedError(status, error, message2, headers, type);
         }
         if (status === 404) {
-          return new NotFoundError(status, error, message, headers, type);
+          return new NotFoundError(status, error, message2, headers, type);
         }
         if (status === 409) {
-          return new ConflictError(status, error, message, headers, type);
+          return new ConflictError(status, error, message2, headers, type);
         }
         if (status === 422) {
-          return new UnprocessableEntityError(status, error, message, headers, type);
+          return new UnprocessableEntityError(status, error, message2, headers, type);
         }
         if (status === 429) {
-          return new RateLimitError(status, error, message, headers, type);
+          return new RateLimitError(status, error, message2, headers, type);
         }
         if (status >= 500) {
-          return new InternalServerError(status, error, message, headers, type);
+          return new InternalServerError(status, error, message2, headers, type);
         }
-        return new _APIError(status, error, message, headers, type);
+        return new _APIError(status, error, message2, headers, type);
       }
     };
     APIUserAbortError = class extends APIError {
-      constructor({ message } = {}) {
-        super(void 0, void 0, message || "Request was aborted.", void 0);
+      constructor({ message: message2 } = {}) {
+        super(void 0, void 0, message2 || "Request was aborted.", void 0);
       }
     };
     APIConnectionError = class extends APIError {
-      constructor({ message, cause }) {
-        super(void 0, void 0, message || "Connection error.", void 0);
+      constructor({ message: message2, cause }) {
+        super(void 0, void 0, message2 || "Connection error.", void 0);
         if (cause)
           this.cause = cause;
       }
     };
     APIConnectionTimeoutError = class extends APIConnectionError {
-      constructor({ message } = {}) {
-        super({ message: message ?? "Request timed out." });
+      constructor({ message: message2 } = {}) {
+        super({ message: message2 ?? "Request timed out." });
       }
     };
     RetryableError = class extends AnthropicError {
-      constructor(message, { cause } = {}) {
-        super(message ?? "Retryable error.");
+      constructor(message2, { cause } = {}) {
+        super(message2 ?? "Retryable error.");
         if (cause !== void 0)
           this.cause = cause;
       }
@@ -24131,7 +24131,7 @@ var init_error = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/utils/values.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/values.mjs
 function maybeObj(x) {
   if (typeof x !== "object") {
     return {};
@@ -24150,7 +24150,7 @@ function hasOwn(obj, key) {
 }
 var startsWithSchemeRegexp, isAbsoluteURL, isArray, isReadonlyArray, validatePositiveInteger, safeJSON;
 var init_values = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/utils/values.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/values.mjs"() {
     init_error();
     startsWithSchemeRegexp = /^[a-z][a-z0-9+.-]*:/i;
     isAbsoluteURL = (url) => {
@@ -24177,10 +24177,10 @@ var init_values = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/utils/sleep.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/sleep.mjs
 var sleep;
 var init_sleep = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/utils/sleep.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/sleep.mjs"() {
     sleep = (ms, signal) => new Promise((resolve4) => {
       if (signal?.aborted)
         return resolve4();
@@ -24197,15 +24197,15 @@ var init_sleep = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/version.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/version.mjs
 var VERSION;
 var init_version = __esm({
-  "node_modules/@anthropic-ai/sdk/version.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/version.mjs"() {
     VERSION = "0.111.0";
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/detect-platform.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/detect-platform.mjs
 function getDetectedPlatform() {
   if (typeof Deno !== "undefined" && Deno.build != null) {
     return "deno";
@@ -24231,11 +24231,11 @@ function getBrowserInfo() {
     { key: "safari", pattern: /(?:Version\W+(\d+)\.(\d+)(?:\.(\d+))?)?(?:\W+Mobile\S*)?\W+Safari/ }
   ];
   for (const { key, pattern } of browserPatterns) {
-    const match = pattern.exec(navigator.userAgent);
-    if (match) {
-      const major = match[1] || 0;
-      const minor = match[2] || 0;
-      const patch = match[3] || 0;
+    const match2 = pattern.exec(navigator.userAgent);
+    if (match2) {
+      const major = match2[1] || 0;
+      const minor = match2[2] || 0;
+      const patch = match2[3] || 0;
       return { browser: key, version: `${major}.${minor}.${patch}` };
     }
   }
@@ -24243,7 +24243,7 @@ function getBrowserInfo() {
 }
 var isRunningInBrowser, getPlatformProperties, normalizeArch, normalizePlatform, _platformHeaders, getPlatformHeaders;
 var init_detect_platform = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/detect-platform.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/detect-platform.mjs"() {
     init_version();
     isRunningInBrowser = () => {
       return (
@@ -24344,7 +24344,7 @@ var init_detect_platform = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/shims.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/shims.mjs
 function getDefaultFetch() {
   if (typeof fetch !== "undefined") {
     return fetch;
@@ -24416,14 +24416,14 @@ async function CancelReadableStream(stream) {
   await cancelPromise;
 }
 var init_shims = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/shims.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/shims.mjs"() {
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/request-options.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/request-options.mjs
 var FallbackEncoder;
 var init_request_options = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/request-options.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/request-options.mjs"() {
     FallbackEncoder = ({ headers, body }) => {
       return {
         bodyHeaders: {
@@ -24435,10 +24435,10 @@ var init_request_options = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/qs/formats.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/qs/formats.mjs
 var default_format, default_formatter, formatters, RFC1738;
 var init_formats = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/qs/formats.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/qs/formats.mjs"() {
     default_format = "RFC3986";
     default_formatter = (v) => String(v);
     formatters = {
@@ -24449,7 +24449,7 @@ var init_formats = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/qs/utils.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/qs/utils.mjs
 function is_buffer(obj) {
   if (!obj || typeof obj !== "object") {
     return false;
@@ -24468,7 +24468,7 @@ function maybe_map(val, fn) {
 }
 var has, hex_table, limit, encode;
 var init_utils = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/qs/utils.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/qs/utils.mjs"() {
     init_formats();
     init_values();
     has = (obj, key) => (has = Object.hasOwn ?? Function.prototype.call.bind(Object.prototype.hasOwnProperty), has(obj, key));
@@ -24480,7 +24480,7 @@ var init_utils = __esm({
       return array;
     })();
     limit = 1024;
-    encode = (str, _defaultEncoder, charset, _kind, format) => {
+    encode = (str, _defaultEncoder, charset, _kind, format2) => {
       if (str.length === 0) {
         return str;
       }
@@ -24508,7 +24508,7 @@ var init_utils = __esm({
           c >= 48 && c <= 57 || // 0-9
           c >= 65 && c <= 90 || // a-z
           c >= 97 && c <= 122 || // A-Z
-          format === RFC1738 && (c === 40 || c === 41)) {
+          format2 === RFC1738 && (c === 40 || c === 41)) {
             arr[arr.length] = segment.charAt(i);
             continue;
           }
@@ -24535,11 +24535,11 @@ var init_utils = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/qs/stringify.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/qs/stringify.mjs
 function is_non_nullish_primitive(v) {
   return typeof v === "string" || typeof v === "number" || typeof v === "boolean" || typeof v === "symbol" || typeof v === "bigint";
 }
-function inner_stringify(object, prefix, generateArrayPrefix, commaRoundTrip, allowEmptyArrays, strictNullHandling, skipNulls, encodeDotInKeys, encoder2, filter, sort, allowDots, serializeDate, format, formatter, encodeValuesOnly, charset, sideChannel) {
+function inner_stringify(object, prefix, generateArrayPrefix, commaRoundTrip, allowEmptyArrays, strictNullHandling, skipNulls, encodeDotInKeys, encoder2, filter, sort, allowDots, serializeDate, format2, formatter, encodeValuesOnly, charset, sideChannel) {
   let obj = object;
   let tmp_sc = sideChannel;
   let step = 0;
@@ -24574,17 +24574,17 @@ function inner_stringify(object, prefix, generateArrayPrefix, commaRoundTrip, al
     if (strictNullHandling) {
       return encoder2 && !encodeValuesOnly ? (
         // @ts-expect-error
-        encoder2(prefix, defaults.encoder, charset, "key", format)
+        encoder2(prefix, defaults.encoder, charset, "key", format2)
       ) : prefix;
     }
     obj = "";
   }
   if (is_non_nullish_primitive(obj) || is_buffer(obj)) {
     if (encoder2) {
-      const key_value = encodeValuesOnly ? prefix : encoder2(prefix, defaults.encoder, charset, "key", format);
+      const key_value = encodeValuesOnly ? prefix : encoder2(prefix, defaults.encoder, charset, "key", format2);
       return [
         formatter?.(key_value) + "=" + // @ts-expect-error
-        formatter?.(encoder2(obj, defaults.encoder, charset, "value", format))
+        formatter?.(encoder2(obj, defaults.encoder, charset, "value", format2))
       ];
     }
     return [formatter?.(prefix) + "=" + formatter?.(String(obj))];
@@ -24639,7 +24639,7 @@ function inner_stringify(object, prefix, generateArrayPrefix, commaRoundTrip, al
       sort,
       allowDots,
       serializeDate,
-      format,
+      format2,
       formatter,
       encodeValuesOnly,
       charset,
@@ -24662,14 +24662,14 @@ function normalize_stringify_options(opts = defaults) {
   if (typeof opts.charset !== "undefined" && opts.charset !== "utf-8" && opts.charset !== "iso-8859-1") {
     throw new TypeError("The charset option must be either utf-8, iso-8859-1, or undefined");
   }
-  let format = default_format;
+  let format2 = default_format;
   if (typeof opts.format !== "undefined") {
     if (!has(formatters, opts.format)) {
       throw new TypeError("Unknown format option provided.");
     }
-    format = opts.format;
+    format2 = opts.format;
   }
-  const formatter = formatters[format];
+  const formatter = formatters[format2];
   let filter = defaults.filter;
   if (typeof opts.filter === "function" || isArray(opts.filter)) {
     filter = opts.filter;
@@ -24701,7 +24701,7 @@ function normalize_stringify_options(opts = defaults) {
     encoder: typeof opts.encoder === "function" ? opts.encoder : defaults.encoder,
     encodeValuesOnly: typeof opts.encodeValuesOnly === "boolean" ? opts.encodeValuesOnly : defaults.encodeValuesOnly,
     filter,
-    format,
+    format: format2,
     formatter,
     serializeDate: typeof opts.serializeDate === "function" ? opts.serializeDate : defaults.serializeDate,
     skipNulls: typeof opts.skipNulls === "boolean" ? opts.skipNulls : defaults.skipNulls,
@@ -24775,7 +24775,7 @@ function stringify2(object, opts = {}) {
 }
 var array_prefix_generators, push_to_array, toISOString, defaults, sentinel;
 var init_stringify = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/qs/stringify.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/qs/stringify.mjs"() {
     init_utils();
     init_formats();
     init_values();
@@ -24820,17 +24820,17 @@ var init_stringify = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/utils/query.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/query.mjs
 function stringifyQuery(query) {
   return stringify2(query, { arrayFormat: "brackets" });
 }
 var init_query = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/utils/query.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/query.mjs"() {
     init_stringify();
   }
 });
 
-// node_modules/@anthropic-ai/sdk/lib/credentials/types.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/credentials/types.mjs
 function requireSecureTokenEndpoint(baseURL) {
   if (!baseURL)
     return;
@@ -24888,14 +24888,14 @@ function redactSensitive(body) {
   }
   return null;
 }
-async function checkCredentialsFileSafety(path7, onWarn = (m) => console.warn(`anthropic-sdk: ${m}`)) {
+async function checkCredentialsFileSafety(path8, onWarn = (m) => console.warn(`anthropic-sdk: ${m}`)) {
   if (typeof process === "undefined" || process.platform === "win32")
     return;
   const fs6 = await import("node:fs");
-  let resolved = path7;
+  let resolved = path8;
   let st;
   try {
-    resolved = await fs6.promises.realpath(path7);
+    resolved = await fs6.promises.realpath(path8);
     st = await fs6.promises.stat(resolved);
   } catch {
     return;
@@ -24913,8 +24913,8 @@ async function checkCredentialsFileSafety(path7, onWarn = (m) => console.warn(`a
 }
 async function writeCredentialsFileAtomic(targetPath, data) {
   const fs6 = await import("node:fs");
-  const path7 = await import("node:path");
-  const dir = path7.dirname(targetPath);
+  const path8 = await import("node:path");
+  const dir = path8.dirname(targetPath);
   await fs6.promises.mkdir(dir, { recursive: true, mode: 448 });
   const tmpPath = `${targetPath}.${process.pid}.${Math.random().toString(36).slice(2)}.tmp`;
   try {
@@ -24977,7 +24977,7 @@ async function readLimitedText(resp) {
 }
 var GRANT_TYPE_JWT_BEARER, GRANT_TYPE_REFRESH_TOKEN, TOKEN_ENDPOINT, OAUTH_API_BETA_HEADER, FEDERATION_BETA_HEADER, ADVISORY_REFRESH_THRESHOLD_IN_SECONDS, MANDATORY_REFRESH_THRESHOLD_IN_SECONDS, ADVISORY_REFRESH_BACKOFF_IN_SECONDS, MAX_TOKEN_RESPONSE_BYTES, MAX_ERROR_BODY_CHARS, SAFE_ERROR_KEYS, WorkloadIdentityError;
 var init_types = __esm({
-  "node_modules/@anthropic-ai/sdk/lib/credentials/types.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/credentials/types.mjs"() {
     init_error();
     GRANT_TYPE_JWT_BEARER = "urn:ietf:params:oauth:grant-type:jwt-bearer";
     GRANT_TYPE_REFRESH_TOKEN = "refresh_token";
@@ -24991,8 +24991,8 @@ var init_types = __esm({
     MAX_ERROR_BODY_CHARS = 2e3;
     SAFE_ERROR_KEYS = /* @__PURE__ */ new Set(["error", "error_description", "error_uri"]);
     WorkloadIdentityError = class extends AnthropicError {
-      constructor(message, statusCode = null, body = null, requestId = null) {
-        super(message);
+      constructor(message2, statusCode = null, body = null, requestId = null) {
+        super(message2);
         this.statusCode = statusCode;
         this.body = body;
         this.requestId = requestId;
@@ -25001,19 +25001,19 @@ var init_types = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/utils/time.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/time.mjs
 function nowAsSeconds() {
   return Math.floor(Date.now() / 1e3);
 }
 var init_time = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/utils/time.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/time.mjs"() {
   }
 });
 
-// node_modules/@anthropic-ai/sdk/lib/credentials/token-cache.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/credentials/token-cache.mjs
 var TokenCache;
 var init_token_cache = __esm({
-  "node_modules/@anthropic-ai/sdk/lib/credentials/token-cache.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/credentials/token-cache.mjs"() {
     init_types();
     init_time();
     TokenCache = class {
@@ -25106,10 +25106,10 @@ var init_token_cache = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/utils/env.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/env.mjs
 var readEnv;
 var init_env = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/utils/env.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/env.mjs"() {
     readEnv = (env) => {
       if (typeof globalThis.process !== "undefined") {
         return globalThis.process.env?.[env]?.trim() || void 0;
@@ -25122,17 +25122,17 @@ var init_env = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/utils/bytes.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/bytes.mjs
 function concatBytes(buffers) {
   let length = 0;
   for (const buffer2 of buffers) {
     length += buffer2.length;
   }
   const output = new Uint8Array(length);
-  let index = 0;
+  let index2 = 0;
   for (const buffer2 of buffers) {
-    output.set(buffer2, index);
-    index += buffer2.length;
+    output.set(buffer2, index2);
+    index2 += buffer2.length;
   }
   return output;
 }
@@ -25146,19 +25146,19 @@ function decodeUTF8(bytes) {
 }
 var encodeUTF8_, decodeUTF8_;
 var init_bytes = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/utils/bytes.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/bytes.mjs"() {
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/utils/base64.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/base64.mjs
 var init_base64 = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/utils/base64.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/base64.mjs"() {
     init_error();
     init_bytes();
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/utils/log.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/log.mjs
 function noop3() {
 }
 function makeLogFn(fnLevel, logger, logLevel) {
@@ -25200,7 +25200,7 @@ function defaultLogger() {
 }
 var defaultLogLevel, levelNumbers, parseLogLevel, noopLogger, cachedLoggers, lastEnvLevel, cachedDefaultLogger, formatRequestDetails;
 var init_log = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/utils/log.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/log.mjs"() {
     init_values();
     init_env();
     defaultLogLevel = "warn";
@@ -25250,9 +25250,9 @@ var init_log = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/utils.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils.mjs
 var init_utils2 = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/utils.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils.mjs"() {
     init_values();
     init_base64();
     init_env();
@@ -25263,7 +25263,7 @@ var init_utils2 = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/core/credentials.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/credentials.mjs
 function validateProfileName(name) {
   if (!name) {
     throw new Error("profile name is empty");
@@ -25280,7 +25280,7 @@ function validateProfileName(name) {
 }
 var CREDENTIALS_FILE_VERSION, PROFILE_NAME_PATTERN, loadConfigWithSource, getCredentialsPath, getRootConfigPath, supportsLocalConfigFiles, getActiveProfileName;
 var init_credentials = __esm({
-  "node_modules/@anthropic-ai/sdk/core/credentials.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/credentials.mjs"() {
     init_detect_platform();
     init_utils2();
     CREDENTIALS_FILE_VERSION = "1.0";
@@ -25297,8 +25297,8 @@ var init_credentials = __esm({
       }
       validateProfileName(profileName);
       const fs6 = await import("node:fs");
-      const path7 = await import("node:path");
-      const configPath = path7.join(rootConfigPath, "configs", `${profileName}.json`);
+      const path8 = await import("node:path");
+      const configPath = path8.join(rootConfigPath, "configs", `${profileName}.json`);
       let configRaw;
       try {
         configRaw = await fs6.promises.readFile(configPath, "utf-8");
@@ -25382,14 +25382,14 @@ var init_credentials = __esm({
         return null;
       }
       validateProfileName(profileName);
-      const path7 = await import("node:path");
-      return path7.join(rootConfigPath, "credentials", `${profileName}.json`);
+      const path8 = await import("node:path");
+      return path8.join(rootConfigPath, "credentials", `${profileName}.json`);
     };
     getRootConfigPath = async () => {
       if (!supportsLocalConfigFiles()) {
         return null;
       }
-      const path7 = await import("node:path");
+      const path8 = await import("node:path");
       const configDir = readEnv("ANTHROPIC_CONFIG_DIR");
       if (configDir) {
         return configDir;
@@ -25398,21 +25398,21 @@ var init_credentials = __esm({
       if (os3 === "Windows") {
         const appData = readEnv("APPDATA");
         if (appData) {
-          return path7.join(appData, "Anthropic");
+          return path8.join(appData, "Anthropic");
         }
         const userProfile = readEnv("USERPROFILE");
         if (userProfile) {
-          return path7.join(userProfile, "AppData", "Roaming", "Anthropic");
+          return path8.join(userProfile, "AppData", "Roaming", "Anthropic");
         }
         return null;
       }
       const xdgConfigHome = readEnv("XDG_CONFIG_HOME");
       if (xdgConfigHome) {
-        return path7.join(xdgConfigHome, "anthropic");
+        return path8.join(xdgConfigHome, "anthropic");
       }
       const home = readEnv("HOME");
       if (home) {
-        return path7.join(home, ".config", "anthropic");
+        return path8.join(home, ".config", "anthropic");
       }
       return null;
     };
@@ -25430,8 +25430,8 @@ var init_credentials = __esm({
         return profileName;
       }
       const fs6 = await import("node:fs");
-      const path7 = await import("node:path");
-      const filePath = path7.join(rootConfigPath, "active_config");
+      const path8 = await import("node:path");
+      const filePath = path8.join(rootConfigPath, "active_config");
       try {
         return (await fs6.promises.readFile(filePath, "utf-8")).trim() || "default";
       } catch (err) {
@@ -25444,22 +25444,22 @@ var init_credentials = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/lib/credentials/identity-token.mjs
-function identityTokenFromFile(path7) {
-  if (!path7) {
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/credentials/identity-token.mjs
+function identityTokenFromFile(path8) {
+  if (!path8) {
     throw new AnthropicError("Identity token file path is empty");
   }
   return async () => {
     const fs6 = await import("node:fs");
     let content;
     try {
-      content = await fs6.promises.readFile(path7, "utf-8");
+      content = await fs6.promises.readFile(path8, "utf-8");
     } catch (err) {
-      throw new AnthropicError(`Failed to read identity token file at ${path7}: ${err}`);
+      throw new AnthropicError(`Failed to read identity token file at ${path8}: ${err}`);
     }
     const token = content.trim();
     if (!token) {
-      throw new AnthropicError(`Identity token file at ${path7} is empty`);
+      throw new AnthropicError(`Identity token file at ${path8} is empty`);
     }
     return token;
   };
@@ -25471,12 +25471,12 @@ function identityTokenFromValue(token) {
   return () => token;
 }
 var init_identity_token = __esm({
-  "node_modules/@anthropic-ai/sdk/lib/credentials/identity-token.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/credentials/identity-token.mjs"() {
     init_error();
   }
 });
 
-// node_modules/@anthropic-ai/sdk/lib/credentials/oidc-federation.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/credentials/oidc-federation.mjs
 function oidcFederationProvider(config) {
   return async () => {
     requireSecureTokenEndpoint(config.baseURL);
@@ -25534,14 +25534,14 @@ function oidcFederationProvider(config) {
   };
 }
 var init_oidc_federation = __esm({
-  "node_modules/@anthropic-ai/sdk/lib/credentials/oidc-federation.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/credentials/oidc-federation.mjs"() {
     init_types();
     init_time();
     init_version();
   }
 });
 
-// node_modules/@anthropic-ai/sdk/lib/credentials/user-oauth.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/credentials/user-oauth.mjs
 function userOAuthProvider(config) {
   return async (opts) => {
     const fs6 = await import("node:fs");
@@ -25558,13 +25558,13 @@ function userOAuthProvider(config) {
     } catch (err) {
       throw new WorkloadIdentityError(`Credentials file at ${config.credentialsPath} is not valid JSON: ${err}`);
     }
-    const accessToken = creds.access_token;
-    if (!accessToken) {
+    const accessToken2 = creds.access_token;
+    if (!accessToken2) {
       throw new WorkloadIdentityError(`Credentials file at ${config.credentialsPath} must include 'access_token'`);
     }
     const expiresAt = creds.expires_at;
     if (!opts?.forceRefresh && (expiresAt == null || nowAsSeconds() < expiresAt - MANDATORY_REFRESH_THRESHOLD_IN_SECONDS)) {
-      return { token: accessToken, expiresAt: expiresAt ?? null };
+      return { token: accessToken2, expiresAt: expiresAt ?? null };
     }
     const refreshToken = creds.refresh_token;
     if (!config.clientId || !refreshToken) {
@@ -25615,7 +25615,7 @@ function userOAuthProvider(config) {
   };
 }
 var init_user_oauth = __esm({
-  "node_modules/@anthropic-ai/sdk/lib/credentials/user-oauth.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/credentials/user-oauth.mjs"() {
     init_credentials();
     init_types();
     init_time();
@@ -25623,7 +25623,7 @@ var init_user_oauth = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/lib/credentials/credential-chain.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/credentials/credential-chain.mjs
 function resolveCredentialsFromConfig(config, options) {
   const credentialsPath = config.authentication.credentials_path ?? null;
   const effectiveBaseURL = (config.base_url || options.baseURL).replace(/\/+$/, "");
@@ -25755,7 +25755,7 @@ function cachedExchangeProvider(exchange, credentialsPath, onCacheWriteError, on
   };
 }
 var init_credential_chain = __esm({
-  "node_modules/@anthropic-ai/sdk/lib/credentials/credential-chain.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/credentials/credential-chain.mjs"() {
     init_env();
     init_credentials();
     init_types();
@@ -25766,7 +25766,7 @@ var init_credential_chain = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/decoders/line.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/decoders/line.mjs
 function findNewlineIndex(buffer2, startIndex) {
   const newline = 10;
   const carriage = 13;
@@ -25798,7 +25798,7 @@ function findDoubleNewlineIndex(buffer2) {
 }
 var _LineDecoder_buffer, _LineDecoder_carriageReturnIndex, LineDecoder;
 var init_line = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/decoders/line.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/decoders/line.mjs"() {
     init_tslib();
     init_bytes();
     LineDecoder = class {
@@ -25848,7 +25848,7 @@ var init_line = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/core/streaming.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/streaming.mjs
 async function* _iterSSEMessages(response, controller) {
   if (!response.body) {
     controller.abort();
@@ -25895,15 +25895,15 @@ async function* iterSSEChunks(iterator) {
   }
 }
 function partition(str, delimiter2) {
-  const index = str.indexOf(delimiter2);
-  if (index !== -1) {
-    return [str.substring(0, index), delimiter2, str.substring(index + delimiter2.length)];
+  const index2 = str.indexOf(delimiter2);
+  if (index2 !== -1) {
+    return [str.substring(0, index2), delimiter2, str.substring(index2 + delimiter2.length)];
   }
   return [str, "", ""];
 }
 var _Stream_client, Stream3, SSEDecoder;
 var init_streaming = __esm({
-  "node_modules/@anthropic-ai/sdk/core/streaming.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/streaming.mjs"() {
     init_tslib();
     init_error();
     init_shims();
@@ -26124,7 +26124,7 @@ var init_streaming = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/parse.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/parse.mjs
 async function defaultParseResponse(client, props) {
   const { response, requestLogID, retryOfRequestLogID, startTime } = props;
   const body = await (async () => {
@@ -26171,13 +26171,13 @@ function addRequestID(value, response) {
   });
 }
 var init_parse = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/parse.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/parse.mjs"() {
     init_streaming();
     init_log();
   }
 });
 
-// node_modules/@anthropic-ai/sdk/core/middleware.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/middleware.mjs
 function isFetchOriginError(err) {
   return typeof err === "object" && err !== null && fetchOriginErrors.has(err);
 }
@@ -26273,7 +26273,7 @@ function applyMiddleware(fetchFn, middleware, options, client) {
 }
 var fetchOriginErrors;
 var init_middleware = __esm({
-  "node_modules/@anthropic-ai/sdk/core/middleware.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/middleware.mjs"() {
     init_errors();
     init_parse();
     init_log();
@@ -26283,10 +26283,10 @@ var init_middleware = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/core/api-promise.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/api-promise.mjs
 var _APIPromise_client, APIPromise;
 var init_api_promise = __esm({
-  "node_modules/@anthropic-ai/sdk/core/api-promise.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/api-promise.mjs"() {
     init_tslib();
     init_parse();
     APIPromise = class _APIPromise extends Promise {
@@ -26352,10 +26352,10 @@ var init_api_promise = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/core/pagination.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/pagination.mjs
 var _AbstractPage_client, AbstractPage, PagePromise, Page, PageCursor, BidirectionalPageCursor;
 var init_pagination = __esm({
-  "node_modules/@anthropic-ai/sdk/core/pagination.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/pagination.mjs"() {
     init_tslib();
     init_error();
     init_parse();
@@ -26510,7 +26510,7 @@ var init_pagination = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/uploads.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/uploads.mjs
 function makeFile(fileBits, fileName, options) {
   checkFileSupport();
   return new File(fileBits, fileName ?? "unknown_file", options);
@@ -26541,7 +26541,7 @@ function supportsFormData(fetchObject) {
 }
 var checkFileSupport, isAsyncIterable, multipartFormRequestOptions, supportsFormDataMap, createForm, isNamedBlob, addFormValue;
 var init_uploads = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/uploads.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/uploads.mjs"() {
     init_shims();
     checkFileSupport = () => {
       if (typeof File === "undefined") {
@@ -26594,7 +26594,7 @@ var init_uploads = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/to-file.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/to-file.mjs
 async function toFile(value, name, options) {
   checkFileSupport();
   value = await value;
@@ -26648,7 +26648,7 @@ function propsForError(value) {
 }
 var isBlobLike, isFileLike, isResponseLike;
 var init_to_file = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/to-file.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/to-file.mjs"() {
     init_uploads();
     init_uploads();
     isBlobLike = (value) => value != null && typeof value === "object" && typeof value.size === "number" && typeof value.type === "string" && typeof value.text === "function" && typeof value.slice === "function" && typeof value.arrayBuffer === "function";
@@ -26657,23 +26657,23 @@ var init_to_file = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/core/uploads.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/uploads.mjs
 var init_uploads2 = __esm({
-  "node_modules/@anthropic-ai/sdk/core/uploads.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/uploads.mjs"() {
     init_to_file();
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/shared.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/shared.mjs
 var init_shared = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/shared.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/shared.mjs"() {
   }
 });
 
-// node_modules/@anthropic-ai/sdk/core/resource.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/resource.mjs
 var APIResource;
 var init_resource = __esm({
-  "node_modules/@anthropic-ai/sdk/core/resource.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/resource.mjs"() {
     APIResource = class {
       constructor(client) {
         this._client = client;
@@ -26682,7 +26682,7 @@ var init_resource = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/headers.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/headers.mjs
 function* iterateHeaders(headers) {
   if (!headers)
     return;
@@ -26723,7 +26723,7 @@ function* iterateHeaders(headers) {
 }
 var brand_privateNullableHeaders, clearSentinel, APPEND_HEADERS, appendHeaderValue, buildHeaders;
 var init_headers = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/headers.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/headers.mjs"() {
     init_values();
     brand_privateNullableHeaders = Symbol.for("brand.privateNullableHeaders");
     clearSentinel = Symbol("clear");
@@ -26775,27 +26775,27 @@ var init_headers = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/utils/path.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/path.mjs
 function encodeURIPath(str) {
   return str.replace(/[^A-Za-z0-9\-._~!$&'()*+,;=:@]+/g, encodeURIComponent);
 }
 var EMPTY, createPathTagFunction, path;
 var init_path = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/utils/path.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/path.mjs"() {
     init_error();
     EMPTY = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.create(null));
-    createPathTagFunction = (pathEncoder = encodeURIPath) => function path7(statics, ...params) {
+    createPathTagFunction = (pathEncoder = encodeURIPath) => function path8(statics, ...params) {
       if (statics.length === 1)
         return statics[0];
       let postPath = false;
       const invalidSegments = [];
-      const path8 = statics.reduce((previousValue, currentValue, index) => {
+      const path9 = statics.reduce((previousValue, currentValue, index2) => {
         if (/[?#]/.test(currentValue)) {
           postPath = true;
         }
-        const value = params[index];
+        const value = params[index2];
         let encoded = (postPath ? encodeURIComponent : pathEncoder)("" + value);
-        if (index !== params.length && (value == null || typeof value === "object" && // handle values from other realms
+        if (index2 !== params.length && (value == null || typeof value === "object" && // handle values from other realms
         value.toString === Object.getPrototypeOf(Object.getPrototypeOf(value.hasOwnProperty ?? EMPTY) ?? EMPTY)?.toString)) {
           encoded = value + "";
           invalidSegments.push({
@@ -26804,16 +26804,16 @@ var init_path = __esm({
             error: `Value of type ${Object.prototype.toString.call(value).slice(8, -1)} is not a valid path parameter`
           });
         }
-        return previousValue + currentValue + (index === params.length ? "" : encoded);
+        return previousValue + currentValue + (index2 === params.length ? "" : encoded);
       }, "");
-      const pathOnly = path8.split(/[?#]/, 1)[0];
+      const pathOnly = path9.split(/[?#]/, 1)[0];
       const invalidSegmentPattern = /(?<=^|\/)(?:\.|%2e){1,2}(?=\/|$)/gi;
-      let match;
-      while ((match = invalidSegmentPattern.exec(pathOnly)) !== null) {
+      let match2;
+      while ((match2 = invalidSegmentPattern.exec(pathOnly)) !== null) {
         invalidSegments.push({
-          start: match.index,
-          length: match[0].length,
-          error: `Value "${match[0]}" can't be safely passed as a path parameter`
+          start: match2.index,
+          length: match2[0].length,
+          error: `Value "${match2[0]}" can't be safely passed as a path parameter`
         });
       }
       invalidSegments.sort((a, b2) => a.start - b2.start);
@@ -26827,19 +26827,19 @@ var init_path = __esm({
         }, "");
         throw new AnthropicError(`Path parameters result in path with invalid segments:
 ${invalidSegments.map((e) => e.error).join("\n")}
-${path8}
+${path9}
 ${underline}`);
       }
-      return path8;
+      return path9;
     };
     path = /* @__PURE__ */ createPathTagFunction(encodeURIPath);
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/beta/deployment-runs.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/deployment-runs.mjs
 var DeploymentRuns;
 var init_deployment_runs = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/beta/deployment-runs.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/deployment-runs.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -26892,10 +26892,10 @@ var init_deployment_runs = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/beta/deployments.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/deployments.mjs
 var Deployments;
 var init_deployments = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/beta/deployments.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/deployments.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -27089,10 +27089,10 @@ var init_deployments = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/beta/dreams.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/dreams.mjs
 var Dreams;
 var init_dreams = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/beta/dreams.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/dreams.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -27206,7 +27206,7 @@ var init_dreams = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/stainless-helper-header.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/stainless-helper-header.mjs
 function helperHeader(value) {
   return { [STAINLESS_HELPER_HEADER]: value };
 }
@@ -27223,11 +27223,11 @@ function collectStainlessHelpers(tools, messages2) {
     }
   }
   if (messages2) {
-    for (const message of messages2) {
-      if (wasCreatedByStainlessHelper(message)) {
-        helpers.add(message[SDK_HELPER_SYMBOL]);
+    for (const message2 of messages2) {
+      if (wasCreatedByStainlessHelper(message2)) {
+        helpers.add(message2[SDK_HELPER_SYMBOL]);
       }
-      const content = message.content;
+      const content = message2.content;
       if (Array.isArray(content)) {
         for (const block of content) {
           if (wasCreatedByStainlessHelper(block)) {
@@ -27253,17 +27253,17 @@ function stainlessHelperHeaderFromFile(file) {
 }
 var STAINLESS_HELPER_HEADER, STAINLESS_HELPER_METHOD_HEADER, SDK_HELPER_SYMBOL;
 var init_stainless_helper_header = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/stainless-helper-header.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/stainless-helper-header.mjs"() {
     STAINLESS_HELPER_HEADER = "x-stainless-helper";
     STAINLESS_HELPER_METHOD_HEADER = "x-stainless-helper-method";
     SDK_HELPER_SYMBOL = Symbol("anthropic.sdk.stainlessHelper");
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/beta/files.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/files.mjs
 var Files;
 var init_files = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/beta/files.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/files.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -27385,10 +27385,10 @@ var init_files = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/beta/models.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/models.mjs
 var Models;
 var init_models = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/beta/models.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/models.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -27446,10 +27446,10 @@ var init_models = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/beta/user-profiles.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/user-profiles.mjs
 var UserProfiles;
 var init_user_profiles = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/beta/user-profiles.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/user-profiles.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -27565,9 +27565,9 @@ var init_user_profiles = __esm({
   }
 });
 
-// node_modules/standardwebhooks/dist/timing_safe_equal.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/standardwebhooks/dist/timing_safe_equal.js
 var require_timing_safe_equal = __commonJS({
-  "node_modules/standardwebhooks/dist/timing_safe_equal.js"(exports2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/standardwebhooks/dist/timing_safe_equal.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.timingSafeEqual = void 0;
@@ -27600,9 +27600,9 @@ var require_timing_safe_equal = __commonJS({
   }
 });
 
-// node_modules/@stablelib/base64/lib/base64.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@stablelib/base64/lib/base64.js
 var require_base64 = __commonJS({
-  "node_modules/@stablelib/base64/lib/base64.js"(exports2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@stablelib/base64/lib/base64.js"(exports2) {
     "use strict";
     var __extends = exports2 && exports2.__extends || /* @__PURE__ */ (function() {
       var extendStatics = function(d, b2) {
@@ -27813,24 +27813,24 @@ var require_base64 = __commonJS({
   }
 });
 
-// node_modules/fast-sha256/sha256.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/fast-sha256/sha256.js
 var require_sha256 = __commonJS({
-  "node_modules/fast-sha256/sha256.js"(exports2, module2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/fast-sha256/sha256.js"(exports2, module2) {
     (function(root, factory) {
       var exports3 = {};
       factory(exports3);
-      var sha2562 = exports3["default"];
+      var sha2563 = exports3["default"];
       for (var k in exports3) {
-        sha2562[k] = exports3[k];
+        sha2563[k] = exports3[k];
       }
       if (typeof module2 === "object" && typeof module2.exports === "object") {
-        module2.exports = sha2562;
+        module2.exports = sha2563;
       } else if (typeof define === "function" && define.amd) {
         define(function() {
-          return sha2562;
+          return sha2563;
         });
       } else {
-        root.sha256 = sha2562;
+        root.sha256 = sha2563;
       }
     })(exports2, function(exports3) {
       "use strict";
@@ -28237,27 +28237,27 @@ var require_sha256 = __commonJS({
   }
 });
 
-// node_modules/standardwebhooks/dist/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/standardwebhooks/dist/index.js
 var require_dist4 = __commonJS({
-  "node_modules/standardwebhooks/dist/index.js"(exports2) {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/standardwebhooks/dist/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.Webhook = exports2.WebhookVerificationError = void 0;
     var timing_safe_equal_1 = require_timing_safe_equal();
     var base64 = require_base64();
-    var sha2562 = require_sha256();
+    var sha2563 = require_sha256();
     var WEBHOOK_TOLERANCE_IN_SECONDS = 5 * 60;
     var ExtendableError = class _ExtendableError extends Error {
-      constructor(message) {
-        super(message);
+      constructor(message2) {
+        super(message2);
         Object.setPrototypeOf(this, _ExtendableError.prototype);
         this.name = "ExtendableError";
-        this.stack = new Error(message).stack;
+        this.stack = new Error(message2).stack;
       }
     };
     var WebhookVerificationError = class _WebhookVerificationError extends ExtendableError {
-      constructor(message) {
-        super(message);
+      constructor(message2) {
+        super(message2);
         Object.setPrototypeOf(this, _WebhookVerificationError.prototype);
         this.name = "WebhookVerificationError";
       }
@@ -28321,7 +28321,7 @@ var require_dist4 = __commonJS({
         const encoder2 = new TextEncoder();
         const timestampNumber = Math.floor(timestamp2.getTime() / 1e3);
         const toSign = encoder2.encode(`${msgId}.${timestampNumber}.${payload}`);
-        const expectedSignature = base64.encode(sha2562.hmac(this.key, toSign));
+        const expectedSignature = base64.encode(sha2563.hmac(this.key, toSign));
         return `v1,${expectedSignature}`;
       }
       verifyTimestamp(timestampHeader) {
@@ -28344,10 +28344,10 @@ var require_dist4 = __commonJS({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/beta/webhooks.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/webhooks.mjs
 var import_standardwebhooks, Webhooks;
 var init_webhooks = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/beta/webhooks.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/webhooks.mjs"() {
     init_resource();
     import_standardwebhooks = __toESM(require_dist4(), 1);
     Webhooks = class extends APIResource {
@@ -28365,10 +28365,10 @@ var init_webhooks = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/beta/agents/versions.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/agents/versions.mjs
 var Versions;
 var init_versions = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/beta/agents/versions.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/agents/versions.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -28402,10 +28402,10 @@ var init_versions = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/beta/agents/agents.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/agents/agents.mjs
 var Agents;
 var init_agents = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/beta/agents/agents.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/agents/agents.mjs"() {
     init_resource();
     init_versions();
     init_versions();
@@ -28533,7 +28533,7 @@ var init_agents = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/utils/abort.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/abort.mjs
 function linkAbort(external, controller) {
   if (!external)
     return () => {
@@ -28548,11 +28548,11 @@ function linkAbort(external, controller) {
   return () => external.removeEventListener("abort", onAbort);
 }
 var init_abort = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/utils/abort.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/abort.mjs"() {
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/utils/backoff.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/backoff.mjs
 function isStatus(e, code) {
   return e instanceof APIError && e.status === code;
 }
@@ -28572,12 +28572,12 @@ function applyJitter(ms) {
   return ms * (1 - Math.random() * 0.25);
 }
 var init_backoff = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/utils/backoff.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/backoff.mjs"() {
     init_error();
   }
 });
 
-// node_modules/@anthropic-ai/sdk/lib/helper-client.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/helper-client.mjs
 function copyClientForHelper(client, { authToken, helper }) {
   if (!authToken) {
     throw new AnthropicError(`copyClientForHelper: expected a non-empty authToken but received ${JSON.stringify(authToken)}`);
@@ -28603,14 +28603,14 @@ function copyClientForHelper(client, { authToken, helper }) {
   });
 }
 var init_helper_client = __esm({
-  "node_modules/@anthropic-ai/sdk/lib/helper-client.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/helper-client.mjs"() {
     init_error();
     init_headers();
     init_stainless_helper_header();
   }
 });
 
-// node_modules/@anthropic-ai/sdk/lib/environments/poller.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/environments/poller.mjs
 function backoff3(attempt) {
   return backoff2(attempt, POLL_BACKOFF_BASE_MS, POLL_BACKOFF_CAP_MS);
 }
@@ -28621,7 +28621,7 @@ function defaultWorkerId() {
 }
 var _WorkPoller_runnerClient, _WorkPoller_consumed, _WorkPoller_controller, _WorkPoller_detachExternal, _WorkPoller_autoStop, _WorkPoller_drain, _WorkPoller_blockMs, _WorkPoller_reclaimOlderThanMs, _WorkPoller_requestOpts, POLL_BLOCK_MS, POLL_BACKOFF_BASE_MS, POLL_BACKOFF_CAP_MS, WorkPoller;
 var init_poller = __esm({
-  "node_modules/@anthropic-ai/sdk/lib/environments/poller.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/environments/poller.mjs"() {
     init_tslib();
     init_error();
     init_log();
@@ -28743,10 +28743,10 @@ var init_poller = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/utils/async-queue.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/async-queue.mjs
 var _AsyncQueue_items, _AsyncQueue_waiters, _AsyncQueue_closed, AsyncQueue;
 var init_async_queue = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/utils/async-queue.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/async-queue.mjs"() {
     init_tslib();
     AsyncQueue = class {
       constructor() {
@@ -28812,18 +28812,18 @@ var init_async_queue = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/lib/tools/ToolError.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/tools/ToolError.mjs
 var ToolError;
 var init_ToolError = __esm({
-  "node_modules/@anthropic-ai/sdk/lib/tools/ToolError.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/tools/ToolError.mjs"() {
     ToolError = class extends Error {
       constructor(content) {
-        const message = typeof content === "string" ? content : content.map((block) => {
+        const message2 = typeof content === "string" ? content : content.map((block) => {
           if (block.type === "text")
             return block.text;
           return `[${block.type}]`;
         }).join(" ");
-        super(message);
+        super(message2);
         this.name = "ToolError";
         this.content = content;
       }
@@ -28831,7 +28831,7 @@ var init_ToolError = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/lib/tools/BetaRunnableTool.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/tools/BetaRunnableTool.mjs
 function toolName(tool) {
   return "name" in tool ? tool.name : tool.mcp_server_name;
 }
@@ -28848,12 +28848,12 @@ async function runRunnableTool(tool, rawInput, context) {
   }
 }
 var init_BetaRunnableTool = __esm({
-  "node_modules/@anthropic-ai/sdk/lib/tools/BetaRunnableTool.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/tools/BetaRunnableTool.mjs"() {
     init_ToolError();
   }
 });
 
-// node_modules/@anthropic-ai/sdk/lib/tools/SessionToolRunner.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/tools/SessionToolRunner.mjs
 function isEndTurnIdle(ev) {
   return ev.type === "session.status_idle" && ev.stop_reason?.type === "end_turn";
 }
@@ -28886,7 +28886,7 @@ function toSessionContent(content) {
 }
 var _IdleClock_maxIdleMs, _IdleClock_onExpire, _IdleClock_blockers, _IdleClock_armPending, _IdleClock_timer, _SessionToolRunner_instances, _SessionToolRunner_consumed, _SessionToolRunner_controller, _SessionToolRunner_detachExternal, _SessionToolRunner_requestOpts, _SessionToolRunner_toolByName, _SessionToolRunner_logger, _SessionToolRunner_seen, _SessionToolRunner_answered, _SessionToolRunner_confirmationVerdicts, _SessionToolRunner_awaitingConfirmation, _SessionToolRunner_results, _SessionToolRunner_inFlightCount, _SessionToolRunner_onIdle, _SessionToolRunner_idleClock, _SessionToolRunner_requestOptions, _SessionToolRunner_streamLoop, _SessionToolRunner_reconcile, _SessionToolRunner_ingestHistory, _SessionToolRunner_handleStreamEvent, _SessionToolRunner_routeToolEvent, _SessionToolRunner_noteConfirmation, _SessionToolRunner_applyVerdict, _SessionToolRunner_surfaceCall, _SessionToolRunner_execute, _SessionToolRunner_sendResult, _SessionToolRunner_drain, STREAM_BACKOFF_START_MS, STREAM_BACKOFF_CAP_MS, TOOL_TIMEOUT_MS, DRAIN_TIMEOUT_MS, SEND_RETRIES, DEFAULT_MAX_IDLE_MS, IdleClock, SessionToolRunner;
 var init_SessionToolRunner = __esm({
-  "node_modules/@anthropic-ai/sdk/lib/tools/SessionToolRunner.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/tools/SessionToolRunner.mjs"() {
     init_tslib();
     init_error();
     init_log();
@@ -29361,14 +29361,14 @@ var init_SessionToolRunner = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/lib/transform-json-schema.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/transform-json-schema.mjs
 var init_transform_json_schema = __esm({
-  "node_modules/@anthropic-ai/sdk/lib/transform-json-schema.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/transform-json-schema.mjs"() {
     init_utils2();
   }
 });
 
-// node_modules/@anthropic-ai/sdk/helpers/beta/json-schema.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/helpers/beta/json-schema.mjs
 function betaTool(options) {
   if (options.inputSchema.type !== "object") {
     throw new Error(`JSON schema for tool "${options.name}" must be an object, but got ${options.inputSchema.type}`);
@@ -29384,13 +29384,13 @@ function betaTool(options) {
   };
 }
 var init_json_schema = __esm({
-  "node_modules/@anthropic-ai/sdk/helpers/beta/json-schema.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/helpers/beta/json-schema.mjs"() {
     init_sdk();
     init_transform_json_schema();
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/utils/promise.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/promise.mjs
 function promiseWithResolvers() {
   let resolve4;
   let reject;
@@ -29401,11 +29401,11 @@ function promiseWithResolvers() {
   return { promise, resolve: resolve4, reject };
 }
 var init_promise = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/utils/promise.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/promise.mjs"() {
   }
 });
 
-// node_modules/@anthropic-ai/sdk/tools/agent-toolset/fs-util.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/tools/agent-toolset/fs-util.mjs
 async function realpathOrSelf(p) {
   try {
     return await fs2.realpath(p);
@@ -29503,7 +29503,7 @@ function fsErrorMessage(err, file) {
 }
 var fs2, path2, import_node_crypto, DIR_CREATE_MODE, FILE_CREATE_MODE;
 var init_fs_util = __esm({
-  "node_modules/@anthropic-ai/sdk/tools/agent-toolset/fs-util.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/tools/agent-toolset/fs-util.mjs"() {
     fs2 = __toESM(require("node:fs/promises"), 1);
     path2 = __toESM(require("node:path"), 1);
     import_node_crypto = require("node:crypto");
@@ -29513,7 +29513,7 @@ var init_fs_util = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/tools/agent-toolset/skills.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/tools/agent-toolset/skills.mjs
 async function setupSkills(ctx) {
   const { client, sessionId } = ctx;
   if (!client || !sessionId)
@@ -29661,24 +29661,24 @@ async function readHead(file, n) {
     await handle.close();
   }
 }
-var fs3, fssync, path3, import_node_child_process2, import_node_util, import_node_stream, import_promises, execFileAsync;
+var fs3, fssync, path3, import_node_child_process, import_node_util, import_node_stream, import_promises, execFileAsync;
 var init_skills = __esm({
-  "node_modules/@anthropic-ai/sdk/tools/agent-toolset/skills.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/tools/agent-toolset/skills.mjs"() {
     fs3 = __toESM(require("node:fs/promises"), 1);
     fssync = __toESM(require("node:fs"), 1);
     path3 = __toESM(require("node:path"), 1);
-    import_node_child_process2 = require("node:child_process");
+    import_node_child_process = require("node:child_process");
     import_node_util = require("node:util");
     import_node_stream = require("node:stream");
     import_promises = require("node:stream/promises");
     init_error();
     init_log();
     init_fs_util();
-    execFileAsync = (0, import_node_util.promisify)(import_node_child_process2.execFile);
+    execFileAsync = (0, import_node_util.promisify)(import_node_child_process.execFile);
   }
 });
 
-// node_modules/@anthropic-ai/sdk/tools/agent-toolset/node.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/tools/agent-toolset/node.mjs
 var node_exports = {};
 __export(node_exports, {
   BashSession: () => BashSession,
@@ -30127,7 +30127,7 @@ async function findRg() {
 }
 var fs4, fssync2, path4, cp, crypto3, readline, _BashSession_instances, _BashSession_proc, _BashSession_buf, _BashSession_truncated, _BashSession_closed, _BashSession_waiting, _BashSession_append, BASH_OUTPUT_LIMIT, BASH_DEFAULT_TIMEOUT_MS, DEFAULT_MAX_FILE_BYTES, GREP_OUTPUT_LIMIT, GREP_MAX_LINE_LENGTH, GLOB_RESULT_LIMIT, ANSI_RE, fsGlob, BashSession, WALK_MAX_DEPTH, WALK_MAX_ENTRIES;
 var init_node = __esm({
-  "node_modules/@anthropic-ai/sdk/tools/agent-toolset/node.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/tools/agent-toolset/node.mjs"() {
     init_tslib();
     fs4 = __toESM(require("node:fs/promises"), 1);
     fssync2 = __toESM(require("node:fs"), 1);
@@ -30275,7 +30275,7 @@ ${out}`;
   }
 });
 
-// node_modules/@anthropic-ai/sdk/lib/environments/worker.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/environments/worker.mjs
 async function forceStop(client, work, log2, requestOptions) {
   try {
     await client.beta.environments.work.stop(
@@ -30329,7 +30329,7 @@ async function heartbeatLoop(client, work, ctrl, logger, requestOptions) {
 }
 var _EnvironmentWorker_instances, _EnvironmentWorker_signal, _EnvironmentWorker_handleItem, HEARTBEAT_DEFAULT_MS, NO_HEARTBEAT_SENTINEL, EnvironmentWorker;
 var init_worker = __esm({
-  "node_modules/@anthropic-ai/sdk/lib/environments/worker.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/environments/worker.mjs"() {
     init_tslib();
     init_error();
     init_log();
@@ -30487,10 +30487,10 @@ var init_worker = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/beta/environments/work.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/environments/work.mjs
 var Work;
 var init_work = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/beta/environments/work.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/environments/work.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -30760,10 +30760,10 @@ var init_work = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/beta/environments/environments.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/environments/environments.mjs
 var Environments;
 var init_environments = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/beta/environments/environments.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/environments/environments.mjs"() {
     init_resource();
     init_work();
     init_work();
@@ -30910,10 +30910,10 @@ var init_environments = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memories.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memories.mjs
 var Memories;
 var init_memories = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memories.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memories.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -31041,10 +31041,10 @@ var init_memories = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memory-versions.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memory-versions.mjs
 var MemoryVersions;
 var init_memory_versions = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memory-versions.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memory-versions.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -31123,10 +31123,10 @@ var init_memory_versions = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memory-stores.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memory-stores.mjs
 var MemoryStores;
 var init_memory_stores = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memory-stores.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memory-stores.mjs"() {
     init_resource();
     init_memories();
     init_memories();
@@ -31268,17 +31268,17 @@ var init_memory_stores = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/error.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/error.mjs
 var init_error2 = __esm({
-  "node_modules/@anthropic-ai/sdk/error.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/error.mjs"() {
     init_error();
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/decoders/jsonl.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/decoders/jsonl.mjs
 var JSONLDecoder;
 var init_jsonl = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/decoders/jsonl.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/decoders/jsonl.mjs"() {
     init_error();
     init_shims();
     init_line();
@@ -31315,10 +31315,10 @@ var init_jsonl = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/beta/messages/batches.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/messages/batches.mjs
 var Batches;
 var init_batches = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/beta/messages/batches.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/messages/batches.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -31521,10 +31521,10 @@ var init_batches = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/constants.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/constants.mjs
 var MODEL_NONSTREAMING_TOKENS;
 var init_constants = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/constants.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/constants.mjs"() {
     MODEL_NONSTREAMING_TOKENS = {
       "claude-opus-4-20250514": 8192,
       "claude-opus-4-0": 8192,
@@ -31538,16 +31538,16 @@ var init_constants = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/lib/beta-parser.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/beta-parser.mjs
 function getOutputFormat(params) {
   return params?.output_format ?? params?.output_config?.format;
 }
-function maybeParseBetaMessage(message, params, opts) {
+function maybeParseBetaMessage(message2, params, opts) {
   const outputFormat = getOutputFormat(params);
   if (!params || !("parse" in (outputFormat ?? {}))) {
     return {
-      ...message,
-      content: message.content.map((block) => {
+      ...message2,
+      content: message2.content.map((block) => {
         if (block.type === "text") {
           const parsedBlock = Object.defineProperty({ ...block }, "parsed_output", {
             value: null,
@@ -31566,11 +31566,11 @@ function maybeParseBetaMessage(message, params, opts) {
       parsed_output: null
     };
   }
-  return parseBetaMessage(message, params, opts);
+  return parseBetaMessage(message2, params, opts);
 }
-function parseBetaMessage(message, params, opts) {
+function parseBetaMessage(message2, params, opts) {
   let firstParsedOutput = null;
-  const content = message.content.map((block) => {
+  const content = message2.content.map((block) => {
     if (block.type === "text") {
       const parsedOutput = parseBetaOutputFormat(params, block.text);
       if (firstParsedOutput === null) {
@@ -31591,7 +31591,7 @@ function parseBetaMessage(message, params, opts) {
     return block;
   });
   return {
-    ...message,
+    ...message2,
     content,
     parsed_output: firstParsedOutput
   };
@@ -31611,22 +31611,22 @@ function parseBetaOutputFormat(params, content) {
   }
 }
 var init_beta_parser = __esm({
-  "node_modules/@anthropic-ai/sdk/lib/beta-parser.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/beta-parser.mjs"() {
     init_error();
   }
 });
 
-// node_modules/@anthropic-ai/sdk/streaming.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/streaming.mjs
 var init_streaming2 = __esm({
-  "node_modules/@anthropic-ai/sdk/streaming.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/streaming.mjs"() {
     init_streaming();
   }
 });
 
-// node_modules/@anthropic-ai/sdk/_vendor/partial-json-parser/parser.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/_vendor/partial-json-parser/parser.mjs
 var tokenize, strip, unstrip, generate, partialParse;
 var init_parser = __esm({
-  "node_modules/@anthropic-ai/sdk/_vendor/partial-json-parser/parser.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/_vendor/partial-json-parser/parser.mjs"() {
     tokenize = (input) => {
       let current = 0;
       let tokens = [];
@@ -31850,7 +31850,7 @@ var init_parser = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/internal/message-stream-utils.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/message-stream-utils.mjs
 function withLazyInput(prev, jsonBuf) {
   const next = {};
   for (const key of Object.keys(prev)) {
@@ -31875,13 +31875,13 @@ function withLazyInput(prev, jsonBuf) {
 }
 var JSON_BUF_PROPERTY;
 var init_message_stream_utils = __esm({
-  "node_modules/@anthropic-ai/sdk/internal/message-stream-utils.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/message-stream-utils.mjs"() {
     init_parser();
     JSON_BUF_PROPERTY = "__json_buf";
   }
 });
 
-// node_modules/@anthropic-ai/sdk/lib/BetaMessageStream.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/BetaMessageStream.mjs
 function tracksToolInput(content) {
   return content.type === "tool_use" || content.type === "server_tool_use" || content.type === "mcp_tool_use";
 }
@@ -31889,7 +31889,7 @@ function checkNever(x) {
 }
 var _BetaMessageStream_instances, _BetaMessageStream_currentMessageSnapshot, _BetaMessageStream_params, _BetaMessageStream_connectedPromise, _BetaMessageStream_resolveConnectedPromise, _BetaMessageStream_rejectConnectedPromise, _BetaMessageStream_endPromise, _BetaMessageStream_resolveEndPromise, _BetaMessageStream_rejectEndPromise, _BetaMessageStream_listeners, _BetaMessageStream_ended, _BetaMessageStream_errored, _BetaMessageStream_aborted, _BetaMessageStream_catchingPromiseCreated, _BetaMessageStream_response, _BetaMessageStream_request_id, _BetaMessageStream_logger, _BetaMessageStream_getFinalMessage, _BetaMessageStream_getFinalText, _BetaMessageStream_handleError, _BetaMessageStream_beginRequest, _BetaMessageStream_addStreamEvent, _BetaMessageStream_endRequest, _BetaMessageStream_accumulateMessage, _BetaMessageStream_toolInputParseError, BetaMessageStream;
 var init_BetaMessageStream = __esm({
-  "node_modules/@anthropic-ai/sdk/lib/BetaMessageStream.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/BetaMessageStream.mjs"() {
     init_tslib();
     init_stainless_helper_header();
     init_error2();
@@ -31999,8 +31999,8 @@ var init_BetaMessageStream = __esm({
       }
       static createMessage(messages2, params, options, { logger } = {}) {
         const runner = new _BetaMessageStream(params, { logger });
-        for (const message of params.messages) {
-          runner._addMessageParam(message);
+        for (const message2 of params.messages) {
+          runner._addMessageParam(message2);
         }
         __classPrivateFieldSet(runner, _BetaMessageStream_params, { ...params, stream: true }, "f");
         runner._run(() => runner._createMessage(messages2, { ...params, stream: true }, { ...options, headers: { ...options?.headers, [STAINLESS_HELPER_METHOD_HEADER]: "stream" } }));
@@ -32012,13 +32012,13 @@ var init_BetaMessageStream = __esm({
           this._emit("end");
         }, __classPrivateFieldGet(this, _BetaMessageStream_handleError, "f"));
       }
-      _addMessageParam(message) {
-        this.messages.push(message);
+      _addMessageParam(message2) {
+        this.messages.push(message2);
       }
-      _addMessage(message, emit = true) {
-        this.receivedMessages.push(message);
+      _addMessage(message2, emit = true) {
+        this.receivedMessages.push(message2);
         if (emit) {
-          this._emit("message", message);
+          this._emit("message", message2);
         }
       }
       async _createMessage(messages2, params, options) {
@@ -32090,9 +32090,9 @@ var init_BetaMessageStream = __esm({
         const listeners = __classPrivateFieldGet(this, _BetaMessageStream_listeners, "f")[event];
         if (!listeners)
           return this;
-        const index = listeners.findIndex((l) => l.listener === listener);
-        if (index >= 0)
-          listeners.splice(index, 1);
+        const index2 = listeners.findIndex((l) => l.listener === listener);
+        if (index2 >= 0)
+          listeners.splice(index2, 1);
         return this;
       }
       /**
@@ -32502,10 +32502,10 @@ var init_BetaMessageStream = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/lib/tools/CompactionControl.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/tools/CompactionControl.mjs
 var DEFAULT_TOKEN_THRESHOLD, DEFAULT_SUMMARY_PROMPT;
 var init_CompactionControl = __esm({
-  "node_modules/@anthropic-ai/sdk/lib/tools/CompactionControl.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/tools/CompactionControl.mjs"() {
     DEFAULT_TOKEN_THRESHOLD = 1e5;
     DEFAULT_SUMMARY_PROMPT = `You have been working on the task described above but have not yet completed it. Write a continuation summary that will allow you (or another instance of yourself) to resume work efficiently in a future context window where the conversation history will be replaced with this summary. Your summary should be structured, concise, and actionable. Include:
 1. Task Overview
@@ -32533,7 +32533,7 @@ Wrap your summary in <summary></summary> tags.`;
   }
 });
 
-// node_modules/@anthropic-ai/sdk/lib/tools/BetaToolRunner.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/tools/BetaToolRunner.mjs
 async function generateToolResponse(params, lastMessage = params.messages.at(-1), requestOptions) {
   if (!lastMessage || lastMessage.role !== "assistant" || !lastMessage.content || typeof lastMessage.content === "string") {
     return null;
@@ -32583,7 +32583,7 @@ async function generateToolResponse(params, lastMessage = params.messages.at(-1)
 }
 var _BetaToolRunner_instances, _BetaToolRunner_consumed, _BetaToolRunner_mutated, _BetaToolRunner_state, _BetaToolRunner_options, _BetaToolRunner_message, _BetaToolRunner_toolResponse, _BetaToolRunner_completion, _BetaToolRunner_iterationCount, _BetaToolRunner_checkAndCompact, _BetaToolRunner_generateToolResponse, BetaToolRunner;
 var init_BetaToolRunner = __esm({
-  "node_modules/@anthropic-ai/sdk/lib/tools/BetaToolRunner.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/tools/BetaToolRunner.mjs"() {
     init_tslib();
     init_ToolError();
     init_error();
@@ -32634,9 +32634,9 @@ var init_BetaToolRunner = __esm({
         let tokensUsed = 0;
         if (__classPrivateFieldGet(this, _BetaToolRunner_message, "f") !== void 0) {
           try {
-            const message = await __classPrivateFieldGet(this, _BetaToolRunner_message, "f");
-            const totalInputTokens = message.usage.input_tokens + (message.usage.cache_creation_input_tokens ?? 0) + (message.usage.cache_read_input_tokens ?? 0);
-            tokensUsed = totalInputTokens + message.usage.output_tokens;
+            const message2 = await __classPrivateFieldGet(this, _BetaToolRunner_message, "f");
+            const totalInputTokens = message2.usage.input_tokens + (message2.usage.cache_creation_input_tokens ?? 0) + (message2.usage.cache_read_input_tokens ?? 0);
+            tokensUsed = totalInputTokens + message2.usage.output_tokens;
           } catch {
             return false;
           }
@@ -32721,9 +32721,9 @@ var init_BetaToolRunner = __esm({
               const isCompacted = await __classPrivateFieldGet(this, _BetaToolRunner_instances, "m", _BetaToolRunner_checkAndCompact).call(this);
               if (!isCompacted) {
                 if (!__classPrivateFieldGet(this, _BetaToolRunner_mutated, "f")) {
-                  const message = await __classPrivateFieldGet(this, _BetaToolRunner_message, "f");
-                  __classPrivateFieldGet(this, _BetaToolRunner_state, "f").params.messages.push({ role: message.role, content: message.content });
-                  if (message.stop_reason === "refusal") {
+                  const message2 = await __classPrivateFieldGet(this, _BetaToolRunner_message, "f");
+                  __classPrivateFieldGet(this, _BetaToolRunner_state, "f").params.messages.push({ role: message2.role, content: message2.content });
+                  if (message2.stop_reason === "refusal") {
                     break;
                   }
                 }
@@ -32782,11 +32782,11 @@ var init_BetaToolRunner = __esm({
        * }
        */
       async generateToolResponse(signal = __classPrivateFieldGet(this, _BetaToolRunner_options, "f").signal) {
-        const message = await __classPrivateFieldGet(this, _BetaToolRunner_message, "f") ?? this.params.messages.at(-1);
-        if (!message) {
+        const message2 = await __classPrivateFieldGet(this, _BetaToolRunner_message, "f") ?? this.params.messages.at(-1);
+        if (!message2) {
           return null;
         }
-        return __classPrivateFieldGet(this, _BetaToolRunner_instances, "m", _BetaToolRunner_generateToolResponse).call(this, message, signal);
+        return __classPrivateFieldGet(this, _BetaToolRunner_instances, "m", _BetaToolRunner_generateToolResponse).call(this, message2, signal);
       }
       /**
        * Wait for the async iterator to complete. This works even if the async iterator hasn't yet started, and
@@ -32884,7 +32884,7 @@ var init_BetaToolRunner = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/beta/messages/messages.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/messages/messages.mjs
 function transformOutputFormat(params) {
   if (!params.output_format) {
     return params;
@@ -32903,7 +32903,7 @@ function transformOutputFormat(params) {
 }
 var DEPRECATED_MODELS, MODELS_TO_WARN_WITH_THINKING_ENABLED, Messages;
 var init_messages = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/beta/messages/messages.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/messages/messages.mjs"() {
     init_error2();
     init_batches();
     init_resource();
@@ -33000,7 +33000,7 @@ Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resour
             options?.headers
           ])
         };
-        return this.create(params, options).then((message) => parseBetaMessage(message, params, { logger: this._client.logger ?? console }));
+        return this.create(params, options).then((message2) => parseBetaMessage(message2, params, { logger: this._client.logger ?? console }));
       }
       /**
        * Create a Message stream
@@ -33051,10 +33051,10 @@ Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resour
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/beta/sessions/events.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/sessions/events.mjs
 var Events;
 var init_events = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/beta/sessions/events.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/sessions/events.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -33171,10 +33171,10 @@ var init_events = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/beta/sessions/resources.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/sessions/resources.mjs
 var Resources;
 var init_resources = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/beta/sessions/resources.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/sessions/resources.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -33304,10 +33304,10 @@ var init_resources = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/beta/sessions/threads/events.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/sessions/threads/events.mjs
 var Events2;
 var init_events2 = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/beta/sessions/threads/events.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/sessions/threads/events.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -33365,10 +33365,10 @@ var init_events2 = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/beta/sessions/threads/threads.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/sessions/threads/threads.mjs
 var Threads;
 var init_threads = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/beta/sessions/threads/threads.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/sessions/threads/threads.mjs"() {
     init_resource();
     init_events2();
     init_events2();
@@ -33453,10 +33453,10 @@ var init_threads = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/beta/sessions/sessions.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/sessions/sessions.mjs
 var Sessions;
 var init_sessions = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/beta/sessions/sessions.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/sessions/sessions.mjs"() {
     init_resource();
     init_events();
     init_events();
@@ -33611,10 +33611,10 @@ var init_sessions = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/beta/skills/versions.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/skills/versions.mjs
 var Versions2;
 var init_versions2 = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/beta/skills/versions.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/skills/versions.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -33741,10 +33741,10 @@ var init_versions2 = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/beta/skills/skills.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/skills/skills.mjs
 var Skills;
 var init_skills2 = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/beta/skills/skills.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/skills/skills.mjs"() {
     init_resource();
     init_versions2();
     init_versions2();
@@ -33841,10 +33841,10 @@ var init_skills2 = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/beta/vaults/credentials.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/vaults/credentials.mjs
 var Credentials;
 var init_credentials2 = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/beta/vaults/credentials.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/vaults/credentials.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -34019,10 +34019,10 @@ var init_credentials2 = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/beta/vaults/vaults.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/vaults/vaults.mjs
 var Vaults;
 var init_vaults = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/beta/vaults/vaults.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/vaults/vaults.mjs"() {
     init_resource();
     init_credentials2();
     init_credentials2();
@@ -34168,10 +34168,10 @@ var init_vaults = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/beta/beta.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/beta.mjs
 var Beta;
 var init_beta = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/beta/beta.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/beta.mjs"() {
     init_resource();
     init_deployment_runs();
     init_deployment_runs();
@@ -34237,10 +34237,10 @@ var init_beta = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/completions.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/completions.mjs
 var Completions;
 var init_completions = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/completions.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/completions.mjs"() {
     init_resource();
     init_headers();
     Completions = class extends APIResource {
@@ -34261,16 +34261,16 @@ var init_completions = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/lib/parser.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/parser.mjs
 function getOutputFormat2(params) {
   return params?.output_config?.format;
 }
-function maybeParseMessage(message, params, opts) {
+function maybeParseMessage(message2, params, opts) {
   const outputFormat = getOutputFormat2(params);
   if (!params || !("parse" in (outputFormat ?? {}))) {
     return {
-      ...message,
-      content: message.content.map((block) => {
+      ...message2,
+      content: message2.content.map((block) => {
         if (block.type === "text") {
           const parsedBlock = Object.defineProperty({ ...block }, "parsed_output", {
             value: null,
@@ -34283,11 +34283,11 @@ function maybeParseMessage(message, params, opts) {
       parsed_output: null
     };
   }
-  return parseMessage(message, params, opts);
+  return parseMessage(message2, params, opts);
 }
-function parseMessage(message, params, opts) {
+function parseMessage(message2, params, opts) {
   let firstParsedOutput = null;
-  const content = message.content.map((block) => {
+  const content = message2.content.map((block) => {
     if (block.type === "text") {
       const parsedOutput = parseOutputFormat(params, block.text);
       if (firstParsedOutput === null) {
@@ -34302,7 +34302,7 @@ function parseMessage(message, params, opts) {
     return block;
   });
   return {
-    ...message,
+    ...message2,
     content,
     parsed_output: firstParsedOutput
   };
@@ -34322,12 +34322,12 @@ function parseOutputFormat(params, content) {
   }
 }
 var init_parser2 = __esm({
-  "node_modules/@anthropic-ai/sdk/lib/parser.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/parser.mjs"() {
     init_error();
   }
 });
 
-// node_modules/@anthropic-ai/sdk/lib/MessageStream.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/MessageStream.mjs
 function tracksToolInput2(content) {
   return content.type === "tool_use" || content.type === "server_tool_use";
 }
@@ -34335,7 +34335,7 @@ function checkNever2(x) {
 }
 var _MessageStream_instances, _MessageStream_currentMessageSnapshot, _MessageStream_params, _MessageStream_connectedPromise, _MessageStream_resolveConnectedPromise, _MessageStream_rejectConnectedPromise, _MessageStream_endPromise, _MessageStream_resolveEndPromise, _MessageStream_rejectEndPromise, _MessageStream_listeners, _MessageStream_ended, _MessageStream_errored, _MessageStream_aborted, _MessageStream_catchingPromiseCreated, _MessageStream_response, _MessageStream_request_id, _MessageStream_logger, _MessageStream_getFinalMessage, _MessageStream_getFinalText, _MessageStream_handleError, _MessageStream_beginRequest, _MessageStream_addStreamEvent, _MessageStream_endRequest, _MessageStream_accumulateMessage, MessageStream;
 var init_MessageStream = __esm({
-  "node_modules/@anthropic-ai/sdk/lib/MessageStream.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/MessageStream.mjs"() {
     init_tslib();
     init_stainless_helper_header();
     init_errors();
@@ -34445,8 +34445,8 @@ var init_MessageStream = __esm({
       }
       static createMessage(messages2, params, options, { logger } = {}) {
         const runner = new _MessageStream(params, { logger });
-        for (const message of params.messages) {
-          runner._addMessageParam(message);
+        for (const message2 of params.messages) {
+          runner._addMessageParam(message2);
         }
         __classPrivateFieldSet(runner, _MessageStream_params, { ...params, stream: true }, "f");
         runner._run(() => runner._createMessage(messages2, { ...params, stream: true }, { ...options, headers: { ...options?.headers, [STAINLESS_HELPER_METHOD_HEADER]: "stream" } }));
@@ -34458,13 +34458,13 @@ var init_MessageStream = __esm({
           this._emit("end");
         }, __classPrivateFieldGet(this, _MessageStream_handleError, "f"));
       }
-      _addMessageParam(message) {
-        this.messages.push(message);
+      _addMessageParam(message2) {
+        this.messages.push(message2);
       }
-      _addMessage(message, emit = true) {
-        this.receivedMessages.push(message);
+      _addMessage(message2, emit = true) {
+        this.receivedMessages.push(message2);
         if (emit) {
-          this._emit("message", message);
+          this._emit("message", message2);
         }
       }
       async _createMessage(messages2, params, options) {
@@ -34536,9 +34536,9 @@ var init_MessageStream = __esm({
         const listeners = __classPrivateFieldGet(this, _MessageStream_listeners, "f")[event];
         if (!listeners)
           return this;
-        const index = listeners.findIndex((l) => l.listener === listener);
-        if (index >= 0)
-          listeners.splice(index, 1);
+        const index2 = listeners.findIndex((l) => l.listener === listener);
+        if (index2 >= 0)
+          listeners.splice(index2, 1);
         return this;
       }
       /**
@@ -34907,10 +34907,10 @@ var init_MessageStream = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/messages/batches.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/messages/batches.mjs
 var Batches2;
 var init_batches2 = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/messages/batches.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/messages/batches.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -35067,10 +35067,10 @@ var init_batches2 = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/messages/messages.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/messages/messages.mjs
 var Messages2, DEPRECATED_MODELS2, MODELS_TO_WARN_WITH_THINKING_ENABLED2;
 var init_messages2 = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/messages/messages.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/messages/messages.mjs"() {
     init_resource();
     init_headers();
     init_stainless_helper_header();
@@ -35130,7 +35130,7 @@ Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resour
        * ```
        */
       parse(params, options) {
-        return this.create(params, options).then((message) => parseMessage(message, params, { logger: this._client.logger ?? console }));
+        return this.create(params, options).then((message2) => parseMessage(message2, params, { logger: this._client.logger ?? console }));
       }
       /**
        * Create a Message stream.
@@ -35213,10 +35213,10 @@ Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resour
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/models.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/models.mjs
 var Models2;
 var init_models2 = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/models.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/models.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -35259,9 +35259,9 @@ var init_models2 = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/resources/index.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/index.mjs
 var init_resources2 = __esm({
-  "node_modules/@anthropic-ai/sdk/resources/index.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/index.mjs"() {
     init_shared();
     init_beta();
     init_completions();
@@ -35270,10 +35270,10 @@ var init_resources2 = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/client.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/client.mjs
 var _BaseAnthropic_instances, _a, _BaseAnthropic_encoder, _BaseAnthropic_baseURLOverridden, HUMAN_PROMPT, AI_PROMPT, BaseAnthropic, Anthropic;
 var init_client = __esm({
-  "node_modules/@anthropic-ai/sdk/client.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/client.mjs"() {
     init_tslib();
     init_uuid();
     init_values();
@@ -35603,12 +35603,12 @@ var init_client = __esm({
       defaultIdempotencyKey() {
         return `stainless-node-retry-${uuid4()}`;
       }
-      makeStatusError(status, error, message, headers) {
-        return APIError.generate(status, error, message, headers);
+      makeStatusError(status, error, message2, headers) {
+        return APIError.generate(status, error, message2, headers);
       }
-      buildURL(path7, query, defaultBaseURL) {
+      buildURL(path8, query, defaultBaseURL) {
         const baseURL = !__classPrivateFieldGet(this, _BaseAnthropic_instances, "m", _BaseAnthropic_baseURLOverridden).call(this) && defaultBaseURL || this.baseURL;
-        const url = isAbsoluteURL(path7) ? new URL(path7) : new URL(baseURL + (baseURL.endsWith("/") && path7.startsWith("/") ? path7.slice(1) : path7));
+        const url = isAbsoluteURL(path8) ? new URL(path8) : new URL(baseURL + (baseURL.endsWith("/") && path8.startsWith("/") ? path8.slice(1) : path8));
         const defaultQuery = this.defaultQuery();
         const pathQuery = Object.fromEntries(url.searchParams);
         if (!isEmptyObj(defaultQuery) || !isEmptyObj(pathQuery)) {
@@ -35680,24 +35680,24 @@ var init_client = __esm({
       backendMiddleware() {
         return [];
       }
-      get(path7, opts) {
-        return this.methodRequest("get", path7, opts);
+      get(path8, opts) {
+        return this.methodRequest("get", path8, opts);
       }
-      post(path7, opts) {
-        return this.methodRequest("post", path7, opts);
+      post(path8, opts) {
+        return this.methodRequest("post", path8, opts);
       }
-      patch(path7, opts) {
-        return this.methodRequest("patch", path7, opts);
+      patch(path8, opts) {
+        return this.methodRequest("patch", path8, opts);
       }
-      put(path7, opts) {
-        return this.methodRequest("put", path7, opts);
+      put(path8, opts) {
+        return this.methodRequest("put", path8, opts);
       }
-      delete(path7, opts) {
-        return this.methodRequest("delete", path7, opts);
+      delete(path8, opts) {
+        return this.methodRequest("delete", path8, opts);
       }
-      methodRequest(method, path7, opts) {
+      methodRequest(method, path8, opts) {
         return this.request(Promise.resolve(opts).then((opts2) => {
-          return { method, path: path7, ...opts2 };
+          return { method, path: path8, ...opts2 };
         }));
       }
       request(options, remainingRetries = null) {
@@ -35811,8 +35811,8 @@ var init_client = __esm({
         }));
         return { response, options, controller, requestLogID, retryOfRequestLogID, startTime };
       }
-      getAPIList(path7, Page2, opts) {
-        return this.requestAPIList(Page2, opts && "then" in opts ? opts.then((opts2) => ({ method: "get", path: path7, ...opts2 })) : { method: "get", path: path7, ...opts });
+      getAPIList(path8, Page2, opts) {
+        return this.requestAPIList(Page2, opts && "then" in opts ? opts.then((opts2) => ({ method: "get", path: path8, ...opts2 })) : { method: "get", path: path8, ...opts });
       }
       requestAPIList(Page2, options) {
         const request = this.makeRequest(options, null, void 0);
@@ -35918,9 +35918,9 @@ var init_client = __esm({
         return sleepSeconds * jitter2 * 1e3;
       }
       calculateNonstreamingTimeout(maxTokens, maxNonstreamingTokens) {
-        const maxTime = 60 * 60 * 1e3;
+        const maxTime2 = 60 * 60 * 1e3;
         const defaultTime = 60 * 10 * 1e3;
-        const expectedTime = maxTime * maxTokens / 128e3;
+        const expectedTime = maxTime2 * maxTokens / 128e3;
         if (expectedTime > defaultTime || maxNonstreamingTokens != null && maxTokens > maxNonstreamingTokens) {
           throw new AnthropicError("Streaming is required for operations that may take longer than 10 minutes. See https://github.com/anthropics/anthropic-sdk-typescript#long-requests for more details");
         }
@@ -35928,14 +35928,14 @@ var init_client = __esm({
       }
       async buildRequest(inputOptions, { retryCount = 0 } = {}) {
         const options = { ...inputOptions };
-        const { method, path: path7, query, defaultBaseURL } = options;
+        const { method, path: path8, query, defaultBaseURL } = options;
         if (this._authState.resolution) {
           await this._authState.resolution;
         }
         if (!this._baseURLIsExplicit && this._authState.baseURL && this.baseURL !== this._authState.baseURL) {
           this.baseURL = this._authState.baseURL;
         }
-        const url = this.buildURL(path7, query, defaultBaseURL);
+        const url = this.buildURL(path8, query, defaultBaseURL);
         if ("timeout" in options)
           validatePositiveInteger("timeout", options.timeout);
         options.timeout = options.timeout ?? this.timeout;
@@ -36045,10 +36045,10 @@ var init_client = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/lib/middleware.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/middleware.mjs
 var encoder;
 var init_middleware2 = __esm({
-  "node_modules/@anthropic-ai/sdk/lib/middleware.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/middleware.mjs"() {
     init_error();
     init_streaming();
     init_errors();
@@ -36060,9 +36060,9 @@ var init_middleware2 = __esm({
   }
 });
 
-// node_modules/@anthropic-ai/sdk/index.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/index.mjs
 var init_sdk = __esm({
-  "node_modules/@anthropic-ai/sdk/index.mjs"() {
+  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/index.mjs"() {
     init_client();
     init_uploads2();
     init_api_promise();
@@ -36084,7 +36084,7 @@ module.exports = __toCommonJS(vercel_entry_exports);
 var import_express = __toESM(require_express2(), 1);
 var import_node_http = require("node:http");
 
-// node_modules/drizzle-orm/entity.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/entity.js
 var entityKind = Symbol.for("drizzle:entityKind");
 var hasOwnEntityKind = Symbol.for("drizzle:hasOwnEntityKind");
 function is(value, type) {
@@ -36111,7 +36111,7 @@ function is(value, type) {
   return false;
 }
 
-// node_modules/drizzle-orm/column.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/column.js
 var Column = class {
   constructor(table, config) {
     this.table = table;
@@ -36162,7 +36162,7 @@ var Column = class {
   }
 };
 
-// node_modules/drizzle-orm/column-builder.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/column-builder.js
 var ColumnBuilder = class {
   static [entityKind] = "ColumnBuilder";
   config;
@@ -36265,10 +36265,10 @@ var ColumnBuilder = class {
   }
 };
 
-// node_modules/drizzle-orm/table.utils.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/table.utils.js
 var TableName = Symbol.for("drizzle:Name");
 
-// node_modules/drizzle-orm/pg-core/foreign-keys.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/foreign-keys.js
 var ForeignKeyBuilder = class {
   static [entityKind] = "PgForeignKeyBuilder";
   /** @internal */
@@ -36325,12 +36325,12 @@ var ForeignKey = class {
   }
 };
 
-// node_modules/drizzle-orm/tracing-utils.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/tracing-utils.js
 function iife(fn, ...args) {
   return fn(...args);
 }
 
-// node_modules/drizzle-orm/pg-core/unique-constraint.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/unique-constraint.js
 function uniqueKeyName(table, columns) {
   return `${table[TableName]}_${columns.join("_")}_unique`;
 }
@@ -36380,7 +36380,7 @@ var UniqueConstraint = class {
   }
 };
 
-// node_modules/drizzle-orm/pg-core/utils/array.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/utils/array.js
 function parsePgArrayValue(arrayString, startFrom, inQuotes) {
   for (let i = startFrom; i < arrayString.length; i++) {
     const char2 = arrayString[i];
@@ -36456,7 +36456,7 @@ function makePgArray(array) {
   }).join(",")}}`;
 }
 
-// node_modules/drizzle-orm/pg-core/columns/common.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/common.js
 var PgColumnBuilder = class extends ColumnBuilder {
   foreignKeyConfigs = [];
   static [entityKind] = "PgColumnBuilder";
@@ -36640,7 +36640,7 @@ var PgArray = class _PgArray extends PgColumn {
   }
 };
 
-// node_modules/drizzle-orm/pg-core/columns/enum.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/enum.js
 var PgEnumObjectColumnBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgEnumObjectColumnBuilder";
   constructor(name, enumInstance) {
@@ -36698,7 +36698,7 @@ var PgEnumColumn = class extends PgColumn {
   }
 };
 
-// node_modules/drizzle-orm/subquery.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/subquery.js
 var Subquery = class {
   static [entityKind] = "Subquery";
   constructor(sql3, fields, alias, isWith = false, usedTables = []) {
@@ -36719,10 +36719,10 @@ var WithSubquery = class extends Subquery {
   static [entityKind] = "WithSubquery";
 };
 
-// node_modules/drizzle-orm/version.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/version.js
 var version = "0.45.2";
 
-// node_modules/drizzle-orm/tracing.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/tracing.js
 var otel;
 var rawTracer;
 var tracer = {
@@ -36757,10 +36757,10 @@ var tracer = {
   }
 };
 
-// node_modules/drizzle-orm/view-common.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/view-common.js
 var ViewBaseConfig = Symbol.for("drizzle:ViewBaseConfig");
 
-// node_modules/drizzle-orm/table.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/table.js
 var Schema = Symbol.for("drizzle:Schema");
 var Columns = Symbol.for("drizzle:Columns");
 var ExtraConfigColumns = Symbol.for("drizzle:ExtraConfigColumns");
@@ -36825,7 +36825,7 @@ function getTableUniqueName(table) {
   return `${table[Schema] ?? "public"}.${table[TableName]}`;
 }
 
-// node_modules/drizzle-orm/sql/sql.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/sql/sql.js
 var FakePrimitiveParam = class {
   static [entityKind] = "FakePrimitiveParam";
 };
@@ -37110,15 +37110,15 @@ function sql(strings, ...params) {
     return new SQL([]);
   }
   sql22.empty = empty;
-  function fromList(list) {
-    return new SQL(list);
+  function fromList(list2) {
+    return new SQL(list2);
   }
   sql22.fromList = fromList;
   function raw(str) {
     return new SQL([new StringChunk(str)]);
   }
   sql22.raw = raw;
-  function join5(chunks, separator) {
+  function join6(chunks, separator) {
     const result = [];
     for (const [i, chunk] of chunks.entries()) {
       if (i > 0 && separator !== void 0) {
@@ -37128,7 +37128,7 @@ function sql(strings, ...params) {
     }
     return new SQL(result);
   }
-  sql22.join = join5;
+  sql22.join = join6;
   function identifier(value) {
     return new Name(value);
   }
@@ -37222,7 +37222,7 @@ Subquery.prototype.getSQL = function() {
   return new SQL([this]);
 };
 
-// node_modules/drizzle-orm/alias.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/alias.js
 var ColumnAliasProxyHandler = class {
   constructor(table) {
     this.table = table;
@@ -37318,11 +37318,11 @@ function mapColumnsInSQLToAlias(query, alias) {
   }));
 }
 
-// node_modules/drizzle-orm/utils.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/utils.js
 function mapResultRow(columns, row, joinsNotNullableMap) {
   const nullifyMap = {};
   const result = columns.reduce(
-    (result2, { path: path7, field }, columnIndex) => {
+    (result2, { path: path8, field }, columnIndex) => {
       let decoder;
       if (is(field, Column)) {
         decoder = field;
@@ -37334,8 +37334,8 @@ function mapResultRow(columns, row, joinsNotNullableMap) {
         decoder = field.sql.decoder;
       }
       let node = result2;
-      for (const [pathChunkIndex, pathChunk] of path7.entries()) {
-        if (pathChunkIndex < path7.length - 1) {
+      for (const [pathChunkIndex, pathChunk] of path8.entries()) {
+        if (pathChunkIndex < path8.length - 1) {
           if (!(pathChunk in node)) {
             node[pathChunk] = {};
           }
@@ -37343,8 +37343,8 @@ function mapResultRow(columns, row, joinsNotNullableMap) {
         } else {
           const rawValue = row[columnIndex];
           const value = node[pathChunk] = rawValue === null ? null : decoder.mapFromDriverValue(rawValue);
-          if (joinsNotNullableMap && is(field, Column) && path7.length === 2) {
-            const objectName = path7[0];
+          if (joinsNotNullableMap && is(field, Column) && path8.length === 2) {
+            const objectName = path8[0];
             if (!(objectName in nullifyMap)) {
               nullifyMap[objectName] = value === null ? getTableName(field.table) : false;
             } else if (typeof nullifyMap[objectName] === "string" && nullifyMap[objectName] !== getTableName(field.table)) {
@@ -37388,8 +37388,8 @@ function haveSameKeys(left, right) {
   if (leftKeys.length !== rightKeys.length) {
     return false;
   }
-  for (const [index, key] of leftKeys.entries()) {
-    if (key !== rightKeys[index]) {
+  for (const [index2, key] of leftKeys.entries()) {
+    if (key !== rightKeys[index2]) {
       return false;
     }
   }
@@ -37472,7 +37472,7 @@ function isConfig(data) {
 }
 var textDecoder = typeof TextDecoder === "undefined" ? null : new TextDecoder();
 
-// node_modules/drizzle-orm/pg-core/columns/int.common.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/int.common.js
 var PgIntColumnBaseBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgIntColumnBaseBuilder";
   generatedAlwaysAsIdentity(sequence) {
@@ -37511,7 +37511,7 @@ var PgIntColumnBaseBuilder = class extends PgColumnBuilder {
   }
 };
 
-// node_modules/drizzle-orm/pg-core/columns/bigint.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/bigint.js
 var PgBigInt53Builder = class extends PgIntColumnBaseBuilder {
   static [entityKind] = "PgBigInt53Builder";
   constructor(name) {
@@ -37565,7 +37565,7 @@ function bigint(a, b2) {
   return new PgBigInt64Builder(name);
 }
 
-// node_modules/drizzle-orm/pg-core/columns/bigserial.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/bigserial.js
 var PgBigSerial53Builder = class extends PgColumnBuilder {
   static [entityKind] = "PgBigSerial53Builder";
   constructor(name) {
@@ -37625,7 +37625,7 @@ function bigserial(a, b2) {
   return new PgBigSerial64Builder(name);
 }
 
-// node_modules/drizzle-orm/pg-core/columns/boolean.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/boolean.js
 var PgBooleanBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgBooleanBuilder";
   constructor(name) {
@@ -37646,7 +37646,7 @@ function boolean(name) {
   return new PgBooleanBuilder(name ?? "");
 }
 
-// node_modules/drizzle-orm/pg-core/columns/char.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/char.js
 var PgCharBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgCharBuilder";
   constructor(name, config) {
@@ -37675,7 +37675,7 @@ function char(a, b2 = {}) {
   return new PgCharBuilder(name, config);
 }
 
-// node_modules/drizzle-orm/pg-core/columns/cidr.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/cidr.js
 var PgCidrBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgCidrBuilder";
   constructor(name) {
@@ -37696,7 +37696,7 @@ function cidr(name) {
   return new PgCidrBuilder(name ?? "");
 }
 
-// node_modules/drizzle-orm/pg-core/columns/custom.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/custom.js
 var PgCustomColumnBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgCustomColumnBuilder";
   constructor(name, fieldConfig, customTypeParams) {
@@ -37740,7 +37740,7 @@ function customType(customTypeParams) {
   };
 }
 
-// node_modules/drizzle-orm/pg-core/columns/date.common.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/date.common.js
 var PgDateColumnBaseBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgDateColumnBaseBuilder";
   defaultNow() {
@@ -37748,7 +37748,7 @@ var PgDateColumnBaseBuilder = class extends PgColumnBuilder {
   }
 };
 
-// node_modules/drizzle-orm/pg-core/columns/date.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/date.js
 var PgDateBuilder = class extends PgDateColumnBaseBuilder {
   static [entityKind] = "PgDateBuilder";
   constructor(name) {
@@ -37803,7 +37803,7 @@ function date(a, b2) {
   return new PgDateStringBuilder(name);
 }
 
-// node_modules/drizzle-orm/pg-core/columns/double-precision.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/double-precision.js
 var PgDoublePrecisionBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgDoublePrecisionBuilder";
   constructor(name) {
@@ -37833,7 +37833,7 @@ function doublePrecision(name) {
   return new PgDoublePrecisionBuilder(name ?? "");
 }
 
-// node_modules/drizzle-orm/pg-core/columns/inet.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/inet.js
 var PgInetBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgInetBuilder";
   constructor(name) {
@@ -37854,7 +37854,7 @@ function inet(name) {
   return new PgInetBuilder(name ?? "");
 }
 
-// node_modules/drizzle-orm/pg-core/columns/integer.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/integer.js
 var PgIntegerBuilder = class extends PgIntColumnBaseBuilder {
   static [entityKind] = "PgIntegerBuilder";
   constructor(name) {
@@ -37881,7 +37881,7 @@ function integer(name) {
   return new PgIntegerBuilder(name ?? "");
 }
 
-// node_modules/drizzle-orm/pg-core/columns/interval.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/interval.js
 var PgIntervalBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgIntervalBuilder";
   constructor(name, intervalConfig) {
@@ -37908,7 +37908,7 @@ function interval(a, b2 = {}) {
   return new PgIntervalBuilder(name, config);
 }
 
-// node_modules/drizzle-orm/pg-core/columns/json.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/json.js
 var PgJsonBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgJsonBuilder";
   constructor(name) {
@@ -37945,7 +37945,7 @@ function json(name) {
   return new PgJsonBuilder(name ?? "");
 }
 
-// node_modules/drizzle-orm/pg-core/columns/jsonb.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/jsonb.js
 var PgJsonbBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgJsonbBuilder";
   constructor(name) {
@@ -37982,7 +37982,7 @@ function jsonb(name) {
   return new PgJsonbBuilder(name ?? "");
 }
 
-// node_modules/drizzle-orm/pg-core/columns/line.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/line.js
 var PgLineBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgLineBuilder";
   constructor(name) {
@@ -38043,7 +38043,7 @@ function line(a, b2) {
   return new PgLineABCBuilder(name);
 }
 
-// node_modules/drizzle-orm/pg-core/columns/macaddr.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/macaddr.js
 var PgMacaddrBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgMacaddrBuilder";
   constructor(name) {
@@ -38064,7 +38064,7 @@ function macaddr(name) {
   return new PgMacaddrBuilder(name ?? "");
 }
 
-// node_modules/drizzle-orm/pg-core/columns/macaddr8.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/macaddr8.js
 var PgMacaddr8Builder = class extends PgColumnBuilder {
   static [entityKind] = "PgMacaddr8Builder";
   constructor(name) {
@@ -38085,7 +38085,7 @@ function macaddr8(name) {
   return new PgMacaddr8Builder(name ?? "");
 }
 
-// node_modules/drizzle-orm/pg-core/columns/numeric.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/numeric.js
 var PgNumericBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgNumericBuilder";
   constructor(name, precision, scale) {
@@ -38202,7 +38202,7 @@ function numeric(a, b2) {
   return mode === "number" ? new PgNumericNumberBuilder(name, config?.precision, config?.scale) : mode === "bigint" ? new PgNumericBigIntBuilder(name, config?.precision, config?.scale) : new PgNumericBuilder(name, config?.precision, config?.scale);
 }
 
-// node_modules/drizzle-orm/pg-core/columns/point.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/point.js
 var PgPointTupleBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgPointTupleBuilder";
   constructor(name) {
@@ -38269,11 +38269,11 @@ function point(a, b2) {
   return new PgPointObjectBuilder(name);
 }
 
-// node_modules/drizzle-orm/pg-core/columns/postgis_extension/utils.js
-function hexToBytes(hex) {
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/postgis_extension/utils.js
+function hexToBytes(hex2) {
   const bytes = [];
-  for (let c = 0; c < hex.length; c += 2) {
-    bytes.push(Number.parseInt(hex.slice(c, c + 2), 16));
+  for (let c = 0; c < hex2.length; c += 2) {
+    bytes.push(Number.parseInt(hex2.slice(c, c + 2), 16));
   }
   return new Uint8Array(bytes);
 }
@@ -38285,8 +38285,8 @@ function bytesToFloat64(bytes, offset) {
   }
   return view.getFloat64(0, true);
 }
-function parseEWKB(hex) {
-  const bytes = hexToBytes(hex);
+function parseEWKB(hex2) {
+  const bytes = hexToBytes(hex2);
   let offset = 0;
   const byteOrder = bytes[offset];
   offset += 1;
@@ -38308,7 +38308,7 @@ function parseEWKB(hex) {
   throw new Error("Unsupported geometry type");
 }
 
-// node_modules/drizzle-orm/pg-core/columns/postgis_extension/geometry.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/postgis_extension/geometry.js
 var PgGeometryBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgGeometryBuilder";
   constructor(name) {
@@ -38368,7 +38368,7 @@ function geometry(a, b2) {
   return new PgGeometryObjectBuilder(name);
 }
 
-// node_modules/drizzle-orm/pg-core/columns/real.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/real.js
 var PgRealBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgRealBuilder";
   constructor(name, length) {
@@ -38399,7 +38399,7 @@ function real(name) {
   return new PgRealBuilder(name ?? "");
 }
 
-// node_modules/drizzle-orm/pg-core/columns/serial.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/serial.js
 var PgSerialBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgSerialBuilder";
   constructor(name) {
@@ -38422,7 +38422,7 @@ function serial(name) {
   return new PgSerialBuilder(name ?? "");
 }
 
-// node_modules/drizzle-orm/pg-core/columns/smallint.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/smallint.js
 var PgSmallIntBuilder = class extends PgIntColumnBaseBuilder {
   static [entityKind] = "PgSmallIntBuilder";
   constructor(name) {
@@ -38449,7 +38449,7 @@ function smallint(name) {
   return new PgSmallIntBuilder(name ?? "");
 }
 
-// node_modules/drizzle-orm/pg-core/columns/smallserial.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/smallserial.js
 var PgSmallSerialBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgSmallSerialBuilder";
   constructor(name) {
@@ -38475,7 +38475,7 @@ function smallserial(name) {
   return new PgSmallSerialBuilder(name ?? "");
 }
 
-// node_modules/drizzle-orm/pg-core/columns/text.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/text.js
 var PgTextBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgTextBuilder";
   constructor(name, config) {
@@ -38499,7 +38499,7 @@ function text(a, b2 = {}) {
   return new PgTextBuilder(name, config);
 }
 
-// node_modules/drizzle-orm/pg-core/columns/time.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/time.js
 var PgTimeBuilder = class extends PgDateColumnBaseBuilder {
   constructor(name, withTimezone, precision) {
     super(name, "string", "PgTime");
@@ -38533,7 +38533,7 @@ function time(a, b2 = {}) {
   return new PgTimeBuilder(name, config.withTimezone ?? false, config.precision);
 }
 
-// node_modules/drizzle-orm/pg-core/columns/timestamp.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/timestamp.js
 var PgTimestampBuilder = class extends PgDateColumnBaseBuilder {
   static [entityKind] = "PgTimestampBuilder";
   constructor(name, withTimezone, precision) {
@@ -38614,7 +38614,7 @@ function timestamp(a, b2 = {}) {
   return new PgTimestampBuilder(name, config?.withTimezone ?? false, config?.precision);
 }
 
-// node_modules/drizzle-orm/pg-core/columns/uuid.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/uuid.js
 var PgUUIDBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgUUIDBuilder";
   constructor(name) {
@@ -38641,7 +38641,7 @@ function uuid(name) {
   return new PgUUIDBuilder(name ?? "");
 }
 
-// node_modules/drizzle-orm/pg-core/columns/varchar.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/varchar.js
 var PgVarcharBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgVarcharBuilder";
   constructor(name, config) {
@@ -38670,7 +38670,7 @@ function varchar(a, b2 = {}) {
   return new PgVarcharBuilder(name, config);
 }
 
-// node_modules/drizzle-orm/pg-core/columns/vector_extension/bit.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/vector_extension/bit.js
 var PgBinaryVectorBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgBinaryVectorBuilder";
   constructor(name, config) {
@@ -38697,7 +38697,7 @@ function bit(a, b2) {
   return new PgBinaryVectorBuilder(name, config);
 }
 
-// node_modules/drizzle-orm/pg-core/columns/vector_extension/halfvec.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/vector_extension/halfvec.js
 var PgHalfVectorBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgHalfVectorBuilder";
   constructor(name, config) {
@@ -38730,7 +38730,7 @@ function halfvec(a, b2) {
   return new PgHalfVectorBuilder(name, config);
 }
 
-// node_modules/drizzle-orm/pg-core/columns/vector_extension/sparsevec.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/vector_extension/sparsevec.js
 var PgSparseVectorBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgSparseVectorBuilder";
   constructor(name, config) {
@@ -38757,7 +38757,7 @@ function sparsevec(a, b2) {
   return new PgSparseVectorBuilder(name, config);
 }
 
-// node_modules/drizzle-orm/pg-core/columns/vector_extension/vector.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/vector_extension/vector.js
 var PgVectorBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgVectorBuilder";
   constructor(name, config) {
@@ -38790,7 +38790,7 @@ function vector(a, b2) {
   return new PgVectorBuilder(name, config);
 }
 
-// node_modules/drizzle-orm/query-promise.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/query-promise.js
 var QueryPromise = class {
   static [entityKind] = "QueryPromise";
   [Symbol.toStringTag] = "QueryPromise";
@@ -38814,7 +38814,7 @@ var QueryPromise = class {
   }
 };
 
-// node_modules/drizzle-orm/selection-proxy.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/selection-proxy.js
 var SelectionProxyHandler = class _SelectionProxyHandler {
   static [entityKind] = "SelectionProxyHandler";
   config;
@@ -38882,7 +38882,7 @@ var SelectionProxyHandler = class _SelectionProxyHandler {
   }
 };
 
-// node_modules/drizzle-orm/pg-core/columns/all.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/all.js
 function getPgColumnBuilders() {
   return {
     bigint,
@@ -38920,7 +38920,7 @@ function getPgColumnBuilders() {
   };
 }
 
-// node_modules/drizzle-orm/pg-core/table.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/table.js
 var InlineForeignKeys = Symbol.for("drizzle:PgInlineForeignKeys");
 var EnableRLS = Symbol.for("drizzle:EnableRLS");
 var PgTable = class extends Table {
@@ -38976,7 +38976,119 @@ var pgTable = (name, columns, extraConfig) => {
   return pgTableWithSchema(name, columns, extraConfig, void 0);
 };
 
-// node_modules/drizzle-orm/pg-core/primary-keys.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/indexes.js
+var IndexBuilderOn = class {
+  constructor(unique, name) {
+    this.unique = unique;
+    this.name = name;
+  }
+  static [entityKind] = "PgIndexBuilderOn";
+  on(...columns) {
+    return new IndexBuilder(
+      columns.map((it) => {
+        if (is(it, SQL)) {
+          return it;
+        }
+        it = it;
+        const clonedIndexedColumn = new IndexedColumn(it.name, !!it.keyAsName, it.columnType, it.indexConfig);
+        it.indexConfig = JSON.parse(JSON.stringify(it.defaultConfig));
+        return clonedIndexedColumn;
+      }),
+      this.unique,
+      false,
+      this.name
+    );
+  }
+  onOnly(...columns) {
+    return new IndexBuilder(
+      columns.map((it) => {
+        if (is(it, SQL)) {
+          return it;
+        }
+        it = it;
+        const clonedIndexedColumn = new IndexedColumn(it.name, !!it.keyAsName, it.columnType, it.indexConfig);
+        it.indexConfig = it.defaultConfig;
+        return clonedIndexedColumn;
+      }),
+      this.unique,
+      true,
+      this.name
+    );
+  }
+  /**
+   * Specify what index method to use. Choices are `btree`, `hash`, `gist`, `spgist`, `gin`, `brin`, or user-installed access methods like `bloom`. The default method is `btree.
+   *
+   * If you have the `pg_vector` extension installed in your database, you can use the `hnsw` and `ivfflat` options, which are predefined types.
+   *
+   * **You can always specify any string you want in the method, in case Drizzle doesn't have it natively in its types**
+   *
+   * @param method The name of the index method to be used
+   * @param columns
+   * @returns
+   */
+  using(method, ...columns) {
+    return new IndexBuilder(
+      columns.map((it) => {
+        if (is(it, SQL)) {
+          return it;
+        }
+        it = it;
+        const clonedIndexedColumn = new IndexedColumn(it.name, !!it.keyAsName, it.columnType, it.indexConfig);
+        it.indexConfig = JSON.parse(JSON.stringify(it.defaultConfig));
+        return clonedIndexedColumn;
+      }),
+      this.unique,
+      true,
+      this.name,
+      method
+    );
+  }
+};
+var IndexBuilder = class {
+  static [entityKind] = "PgIndexBuilder";
+  /** @internal */
+  config;
+  constructor(columns, unique, only, name, method = "btree") {
+    this.config = {
+      name,
+      columns,
+      unique,
+      only,
+      method
+    };
+  }
+  concurrently() {
+    this.config.concurrently = true;
+    return this;
+  }
+  with(obj) {
+    this.config.with = obj;
+    return this;
+  }
+  where(condition) {
+    this.config.where = condition;
+    return this;
+  }
+  /** @internal */
+  build(table) {
+    return new Index(this.config, table);
+  }
+};
+var Index = class {
+  static [entityKind] = "PgIndex";
+  config;
+  constructor(config, table) {
+    this.config = { ...config, table };
+  }
+};
+function index(name) {
+  return new IndexBuilderOn(false, name);
+}
+function uniqueIndex(name) {
+  return new IndexBuilderOn(true, name);
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/primary-keys.js
 var PrimaryKeyBuilder = class {
   static [entityKind] = "PgPrimaryKeyBuilder";
   /** @internal */
@@ -39006,7 +39118,7 @@ var PrimaryKey = class {
   }
 };
 
-// node_modules/drizzle-orm/casing.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/casing.js
 function toSnakeCase(input) {
   const words = input.replace(/['\u2019]/g, "").match(/[\da-z]+|[A-Z]+(?![a-z])|[A-Z][\da-z]+/g) ?? [];
   return words.map((word) => word.toLowerCase()).join("_");
@@ -39058,11 +39170,11 @@ var CasingCache = class {
   }
 };
 
-// node_modules/drizzle-orm/errors.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/errors.js
 var DrizzleError = class extends Error {
   static [entityKind] = "DrizzleError";
-  constructor({ message, cause }) {
-    super(message);
+  constructor({ message: message2, cause }) {
+    super(message2);
     this.name = "DrizzleError";
     this.cause = cause;
   }
@@ -39085,7 +39197,7 @@ var TransactionRollbackError = class extends DrizzleError {
   }
 };
 
-// node_modules/drizzle-orm/sql/expressions/conditions.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/sql/expressions/conditions.js
 function bindIfParam(value, column) {
   if (isDriverValueEncoder(column) && !isSQLWrapper(value) && !is(value, Param) && !is(value, Placeholder) && !is(value, Column) && !is(value, Table) && !is(value, View)) {
     return new Param(value, column);
@@ -39175,17 +39287,17 @@ function exists(subquery) {
 function notExists(subquery) {
   return sql`not exists ${subquery}`;
 }
-function between(column, min, max) {
+function between(column, min, max2) {
   return sql`${column} between ${bindIfParam(min, column)} and ${bindIfParam(
-    max,
+    max2,
     column
   )}`;
 }
-function notBetween(column, min, max) {
+function notBetween(column, min, max2) {
   return sql`${column} not between ${bindIfParam(
     min,
     column
-  )} and ${bindIfParam(max, column)}`;
+  )} and ${bindIfParam(max2, column)}`;
 }
 function like(column, value) {
   return sql`${column} like ${value}`;
@@ -39200,7 +39312,7 @@ function notIlike(column, value) {
   return sql`${column} not ilike ${value}`;
 }
 
-// node_modules/drizzle-orm/sql/expressions/select.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/sql/expressions/select.js
 function asc(column) {
   return sql`${column} asc`;
 }
@@ -39208,7 +39320,7 @@ function desc(column) {
   return sql`${column} desc`;
 }
 
-// node_modules/drizzle-orm/relations.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/relations.js
 var Relation = class {
   constructor(sourceTable, referencedTable, relationName) {
     this.sourceTable = sourceTable;
@@ -39469,12 +39581,12 @@ function mapRelationalRow(tablesConfig, tableConfig, row, buildQueryResultSelect
   return result;
 }
 
-// node_modules/drizzle-orm/pg-core/view-base.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/view-base.js
 var PgViewBase = class extends View {
   static [entityKind] = "PgViewBase";
 };
 
-// node_modules/drizzle-orm/pg-core/dialect.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/dialect.js
 var PgDialect = class {
   static [entityKind] = "PgDialect";
   /** @internal */
@@ -39634,8 +39746,8 @@ var PgDialect = class {
       return void 0;
     }
     const joinsArray = [];
-    for (const [index, joinMeta] of joins.entries()) {
-      if (index === 0) {
+    for (const [index2, joinMeta] of joins.entries()) {
+      if (index2 === 0) {
         joinsArray.push(sql` `);
       }
       const table = joinMeta.table;
@@ -39662,7 +39774,7 @@ var PgDialect = class {
           sql`${sql.raw(joinMeta.joinType)} join${lateralSql} ${table}${onSql}`
         );
       }
-      if (index < joins.length - 1) {
+      if (index2 < joins.length - 1) {
         joinsArray.push(sql` `);
       }
     }
@@ -40579,7 +40691,7 @@ var PgDialect = class {
   }
 };
 
-// node_modules/drizzle-orm/query-builders/query-builder.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/query-builders/query-builder.js
 var TypedQueryBuilder = class {
   static [entityKind] = "TypedQueryBuilder";
   /** @internal */
@@ -40588,7 +40700,7 @@ var TypedQueryBuilder = class {
   }
 };
 
-// node_modules/drizzle-orm/pg-core/query-builders/select.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/query-builders/select.js
 var PgSelectBuilder = class {
   static [entityKind] = "PgSelectBuilder";
   fields;
@@ -40685,7 +40797,7 @@ var PgSelectQueryBuilderBase = class extends TypedQueryBuilder {
       const baseTableName = this.tableName;
       const tableName = getTableLikeName(table);
       for (const item of extractUsedTable(table)) this.usedTables.add(item);
-      if (typeof tableName === "string" && this.config.joins?.some((join5) => join5.alias === tableName)) {
+      if (typeof tableName === "string" && this.config.joins?.some((join6) => join6.alias === tableName)) {
         throw new Error(`Alias "${tableName}" is already used in this query`);
       }
       if (!this.isPartialSelect) {
@@ -41404,7 +41516,7 @@ var intersectAll = createSetOperator("intersect", true);
 var except = createSetOperator("except", false);
 var exceptAll = createSetOperator("except", true);
 
-// node_modules/drizzle-orm/pg-core/query-builders/query-builder.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/query-builders/query-builder.js
 var QueryBuilder = class {
   static [entityKind] = "PgQueryBuilder";
   dialect;
@@ -41491,7 +41603,7 @@ var QueryBuilder = class {
   }
 };
 
-// node_modules/drizzle-orm/pg-core/utils.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/utils.js
 function extractUsedTable(table) {
   if (is(table, PgTable)) {
     return [table[Schema] ? `${table[Schema]}.${table[Table.Symbol.BaseName]}` : table[Table.Symbol.BaseName]];
@@ -41505,7 +41617,7 @@ function extractUsedTable(table) {
   return [];
 }
 
-// node_modules/drizzle-orm/pg-core/query-builders/delete.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/query-builders/delete.js
 var PgDeleteBase = class extends QueryPromise {
   constructor(table, session, dialect, withList) {
     super();
@@ -41601,7 +41713,7 @@ var PgDeleteBase = class extends QueryPromise {
   }
 };
 
-// node_modules/drizzle-orm/pg-core/query-builders/insert.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/query-builders/insert.js
 var PgInsertBuilder = class {
   constructor(table, session, dialect, withList, overridingSystemValue_) {
     this.table = table;
@@ -41794,7 +41906,7 @@ var PgInsertBase = class extends QueryPromise {
   }
 };
 
-// node_modules/drizzle-orm/pg-core/query-builders/refresh-materialized-view.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/query-builders/refresh-materialized-view.js
 var PgRefreshMaterializedView = class extends QueryPromise {
   constructor(view, session, dialect) {
     super();
@@ -41848,7 +41960,7 @@ var PgRefreshMaterializedView = class extends QueryPromise {
   };
 };
 
-// node_modules/drizzle-orm/pg-core/query-builders/update.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/query-builders/update.js
 var PgUpdateBuilder = class {
   constructor(table, session, dialect, withList) {
     this.table = table;
@@ -41906,7 +42018,7 @@ var PgUpdateBase = class extends QueryPromise {
   createJoin(joinType) {
     return (table, on) => {
       const tableName = getTableLikeName(table);
-      if (typeof tableName === "string" && this.config.joins.some((join5) => join5.alias === tableName)) {
+      if (typeof tableName === "string" && this.config.joins.some((join6) => join6.alias === tableName)) {
         throw new Error(`Alias "${tableName}" is already used in this query`);
       }
       if (typeof on === "function") {
@@ -42002,10 +42114,10 @@ var PgUpdateBase = class extends QueryPromise {
           const fromFields = this.getTableLikeFields(this.config.from);
           fields[tableName] = fromFields;
         }
-        for (const join5 of this.config.joins) {
-          const tableName2 = getTableLikeName(join5.table);
-          if (typeof tableName2 === "string" && !is(join5.table, SQL)) {
-            const fromFields = this.getTableLikeFields(join5.table);
+        for (const join6 of this.config.joins) {
+          const tableName2 = getTableLikeName(join6.table);
+          if (typeof tableName2 === "string" && !is(join6.table, SQL)) {
+            const fromFields = this.getTableLikeFields(join6.table);
             fields[tableName2] = fromFields;
           }
         }
@@ -42060,7 +42172,7 @@ var PgUpdateBase = class extends QueryPromise {
   }
 };
 
-// node_modules/drizzle-orm/pg-core/query-builders/count.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/query-builders/count.js
 var PgCountBuilder = class _PgCountBuilder extends SQL {
   constructor(params) {
     super(_PgCountBuilder.buildEmbeddedCount(params.source, params.filters).queryChunks);
@@ -42111,7 +42223,7 @@ var PgCountBuilder = class _PgCountBuilder extends SQL {
   }
 };
 
-// node_modules/drizzle-orm/pg-core/query-builders/query.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/query-builders/query.js
 var RelationalQueryBuilder = class {
   constructor(fullSchema, schema, tableNamesMap, table, tableConfig, dialect, session) {
     this.fullSchema = fullSchema;
@@ -42224,7 +42336,7 @@ var PgRelationalQuery = class extends QueryPromise {
   }
 };
 
-// node_modules/drizzle-orm/pg-core/query-builders/raw.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/query-builders/raw.js
 var PgRaw = class extends QueryPromise {
   constructor(execute, sql3, query, mapBatchResult) {
     super();
@@ -42253,7 +42365,7 @@ var PgRaw = class extends QueryPromise {
   }
 };
 
-// node_modules/drizzle-orm/pg-core/db.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/db.js
 var PgDatabase = class {
   constructor(dialect, session, schema) {
     this.dialect = dialect;
@@ -42532,7 +42644,7 @@ var PgDatabase = class {
   }
 };
 
-// node_modules/drizzle-orm/cache/core/cache.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/cache/core/cache.js
 var Cache = class {
   static [entityKind] = "Cache";
 };
@@ -42559,7 +42671,7 @@ async function hashQuery(sql3, params) {
   return hashHex;
 }
 
-// node_modules/drizzle-orm/pg-core/session.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/session.js
 var PgPreparedQuery = class {
   constructor(query, cache, queryMetadata, cacheConfig) {
     this.query = query;
@@ -42719,7 +42831,38 @@ var PgTransaction = class extends PgDatabase {
   }
 };
 
-// node_modules/zod/v3/external.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/logger.js
+var ConsoleLogWriter = class {
+  static [entityKind] = "ConsoleLogWriter";
+  write(message2) {
+    console.log(message2);
+  }
+};
+var DefaultLogger = class {
+  static [entityKind] = "DefaultLogger";
+  writer;
+  constructor(config) {
+    this.writer = config?.writer ?? new ConsoleLogWriter();
+  }
+  logQuery(query, params) {
+    const stringifiedParams = params.map((p) => {
+      try {
+        return JSON.stringify(p);
+      } catch {
+        return String(p);
+      }
+    });
+    const paramsStr = stringifiedParams.length ? ` -- params: [${stringifiedParams.join(", ")}]` : "";
+    this.writer.write(`Query: ${query}${paramsStr}`);
+  }
+};
+var NoopLogger = class {
+  static [entityKind] = "NoopLogger";
+  logQuery() {
+  }
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/zod/v3/external.js
 var external_exports = {};
 __export(external_exports, {
   BRAND: () => BRAND,
@@ -42831,7 +42974,7 @@ __export(external_exports, {
   void: () => voidType
 });
 
-// node_modules/zod/v3/helpers/util.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/zod/v3/helpers/util.js
 var util;
 (function(util2) {
   util2.assertEqual = (_) => {
@@ -42965,7 +43108,7 @@ var getParsedType = (data) => {
   }
 };
 
-// node_modules/zod/v3/ZodError.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/zod/v3/ZodError.js
 var ZodIssueCode = util.arrayToEnum([
   "invalid_type",
   "invalid_literal",
@@ -43083,110 +43226,110 @@ ZodError.create = (issues) => {
   return error;
 };
 
-// node_modules/zod/v3/locales/en.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/zod/v3/locales/en.js
 var errorMap = (issue, _ctx) => {
-  let message;
+  let message2;
   switch (issue.code) {
     case ZodIssueCode.invalid_type:
       if (issue.received === ZodParsedType.undefined) {
-        message = "Required";
+        message2 = "Required";
       } else {
-        message = `Expected ${issue.expected}, received ${issue.received}`;
+        message2 = `Expected ${issue.expected}, received ${issue.received}`;
       }
       break;
     case ZodIssueCode.invalid_literal:
-      message = `Invalid literal value, expected ${JSON.stringify(issue.expected, util.jsonStringifyReplacer)}`;
+      message2 = `Invalid literal value, expected ${JSON.stringify(issue.expected, util.jsonStringifyReplacer)}`;
       break;
     case ZodIssueCode.unrecognized_keys:
-      message = `Unrecognized key(s) in object: ${util.joinValues(issue.keys, ", ")}`;
+      message2 = `Unrecognized key(s) in object: ${util.joinValues(issue.keys, ", ")}`;
       break;
     case ZodIssueCode.invalid_union:
-      message = `Invalid input`;
+      message2 = `Invalid input`;
       break;
     case ZodIssueCode.invalid_union_discriminator:
-      message = `Invalid discriminator value. Expected ${util.joinValues(issue.options)}`;
+      message2 = `Invalid discriminator value. Expected ${util.joinValues(issue.options)}`;
       break;
     case ZodIssueCode.invalid_enum_value:
-      message = `Invalid enum value. Expected ${util.joinValues(issue.options)}, received '${issue.received}'`;
+      message2 = `Invalid enum value. Expected ${util.joinValues(issue.options)}, received '${issue.received}'`;
       break;
     case ZodIssueCode.invalid_arguments:
-      message = `Invalid function arguments`;
+      message2 = `Invalid function arguments`;
       break;
     case ZodIssueCode.invalid_return_type:
-      message = `Invalid function return type`;
+      message2 = `Invalid function return type`;
       break;
     case ZodIssueCode.invalid_date:
-      message = `Invalid date`;
+      message2 = `Invalid date`;
       break;
     case ZodIssueCode.invalid_string:
       if (typeof issue.validation === "object") {
         if ("includes" in issue.validation) {
-          message = `Invalid input: must include "${issue.validation.includes}"`;
+          message2 = `Invalid input: must include "${issue.validation.includes}"`;
           if (typeof issue.validation.position === "number") {
-            message = `${message} at one or more positions greater than or equal to ${issue.validation.position}`;
+            message2 = `${message2} at one or more positions greater than or equal to ${issue.validation.position}`;
           }
         } else if ("startsWith" in issue.validation) {
-          message = `Invalid input: must start with "${issue.validation.startsWith}"`;
+          message2 = `Invalid input: must start with "${issue.validation.startsWith}"`;
         } else if ("endsWith" in issue.validation) {
-          message = `Invalid input: must end with "${issue.validation.endsWith}"`;
+          message2 = `Invalid input: must end with "${issue.validation.endsWith}"`;
         } else {
           util.assertNever(issue.validation);
         }
       } else if (issue.validation !== "regex") {
-        message = `Invalid ${issue.validation}`;
+        message2 = `Invalid ${issue.validation}`;
       } else {
-        message = "Invalid";
+        message2 = "Invalid";
       }
       break;
     case ZodIssueCode.too_small:
       if (issue.type === "array")
-        message = `Array must contain ${issue.exact ? "exactly" : issue.inclusive ? `at least` : `more than`} ${issue.minimum} element(s)`;
+        message2 = `Array must contain ${issue.exact ? "exactly" : issue.inclusive ? `at least` : `more than`} ${issue.minimum} element(s)`;
       else if (issue.type === "string")
-        message = `String must contain ${issue.exact ? "exactly" : issue.inclusive ? `at least` : `over`} ${issue.minimum} character(s)`;
+        message2 = `String must contain ${issue.exact ? "exactly" : issue.inclusive ? `at least` : `over`} ${issue.minimum} character(s)`;
       else if (issue.type === "number")
-        message = `Number must be ${issue.exact ? `exactly equal to ` : issue.inclusive ? `greater than or equal to ` : `greater than `}${issue.minimum}`;
+        message2 = `Number must be ${issue.exact ? `exactly equal to ` : issue.inclusive ? `greater than or equal to ` : `greater than `}${issue.minimum}`;
       else if (issue.type === "bigint")
-        message = `Number must be ${issue.exact ? `exactly equal to ` : issue.inclusive ? `greater than or equal to ` : `greater than `}${issue.minimum}`;
+        message2 = `Number must be ${issue.exact ? `exactly equal to ` : issue.inclusive ? `greater than or equal to ` : `greater than `}${issue.minimum}`;
       else if (issue.type === "date")
-        message = `Date must be ${issue.exact ? `exactly equal to ` : issue.inclusive ? `greater than or equal to ` : `greater than `}${new Date(Number(issue.minimum))}`;
+        message2 = `Date must be ${issue.exact ? `exactly equal to ` : issue.inclusive ? `greater than or equal to ` : `greater than `}${new Date(Number(issue.minimum))}`;
       else
-        message = "Invalid input";
+        message2 = "Invalid input";
       break;
     case ZodIssueCode.too_big:
       if (issue.type === "array")
-        message = `Array must contain ${issue.exact ? `exactly` : issue.inclusive ? `at most` : `less than`} ${issue.maximum} element(s)`;
+        message2 = `Array must contain ${issue.exact ? `exactly` : issue.inclusive ? `at most` : `less than`} ${issue.maximum} element(s)`;
       else if (issue.type === "string")
-        message = `String must contain ${issue.exact ? `exactly` : issue.inclusive ? `at most` : `under`} ${issue.maximum} character(s)`;
+        message2 = `String must contain ${issue.exact ? `exactly` : issue.inclusive ? `at most` : `under`} ${issue.maximum} character(s)`;
       else if (issue.type === "number")
-        message = `Number must be ${issue.exact ? `exactly` : issue.inclusive ? `less than or equal to` : `less than`} ${issue.maximum}`;
+        message2 = `Number must be ${issue.exact ? `exactly` : issue.inclusive ? `less than or equal to` : `less than`} ${issue.maximum}`;
       else if (issue.type === "bigint")
-        message = `BigInt must be ${issue.exact ? `exactly` : issue.inclusive ? `less than or equal to` : `less than`} ${issue.maximum}`;
+        message2 = `BigInt must be ${issue.exact ? `exactly` : issue.inclusive ? `less than or equal to` : `less than`} ${issue.maximum}`;
       else if (issue.type === "date")
-        message = `Date must be ${issue.exact ? `exactly` : issue.inclusive ? `smaller than or equal to` : `smaller than`} ${new Date(Number(issue.maximum))}`;
+        message2 = `Date must be ${issue.exact ? `exactly` : issue.inclusive ? `smaller than or equal to` : `smaller than`} ${new Date(Number(issue.maximum))}`;
       else
-        message = "Invalid input";
+        message2 = "Invalid input";
       break;
     case ZodIssueCode.custom:
-      message = `Invalid input`;
+      message2 = `Invalid input`;
       break;
     case ZodIssueCode.invalid_intersection_types:
-      message = `Intersection results could not be merged`;
+      message2 = `Intersection results could not be merged`;
       break;
     case ZodIssueCode.not_multiple_of:
-      message = `Number must be a multiple of ${issue.multipleOf}`;
+      message2 = `Number must be a multiple of ${issue.multipleOf}`;
       break;
     case ZodIssueCode.not_finite:
-      message = "Number must be finite";
+      message2 = "Number must be finite";
       break;
     default:
-      message = _ctx.defaultError;
+      message2 = _ctx.defaultError;
       util.assertNever(issue);
   }
-  return { message };
+  return { message: message2 };
 };
 var en_default = errorMap;
 
-// node_modules/zod/v3/errors.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/zod/v3/errors.js
 var overrideErrorMap = en_default;
 function setErrorMap(map) {
   overrideErrorMap = map;
@@ -43195,10 +43338,10 @@ function getErrorMap() {
   return overrideErrorMap;
 }
 
-// node_modules/zod/v3/helpers/parseUtil.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/zod/v3/helpers/parseUtil.js
 var makeIssue = (params) => {
-  const { data, path: path7, errorMaps, issueData } = params;
-  const fullPath = [...path7, ...issueData.path || []];
+  const { data, path: path8, errorMaps, issueData } = params;
+  const fullPath = [...path8, ...issueData.path || []];
   const fullIssue = {
     ...issueData,
     path: fullPath
@@ -43305,20 +43448,20 @@ var isDirty = (x) => x.status === "dirty";
 var isValid = (x) => x.status === "valid";
 var isAsync = (x) => typeof Promise !== "undefined" && x instanceof Promise;
 
-// node_modules/zod/v3/helpers/errorUtil.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/zod/v3/helpers/errorUtil.js
 var errorUtil;
 (function(errorUtil2) {
-  errorUtil2.errToObj = (message) => typeof message === "string" ? { message } : message || {};
-  errorUtil2.toString = (message) => typeof message === "string" ? message : message?.message;
+  errorUtil2.errToObj = (message2) => typeof message2 === "string" ? { message: message2 } : message2 || {};
+  errorUtil2.toString = (message2) => typeof message2 === "string" ? message2 : message2?.message;
 })(errorUtil || (errorUtil = {}));
 
-// node_modules/zod/v3/types.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/zod/v3/types.js
 var ParseInputLazyPath = class {
-  constructor(parent, value, path7, key) {
+  constructor(parent, value, path8, key) {
     this._cachedPath = [];
     this.parent = parent;
     this.data = value;
-    this._path = path7;
+    this._path = path8;
     this._key = key;
   }
   get path() {
@@ -43361,16 +43504,16 @@ function processCreateParams(params) {
   if (errorMap2)
     return { errorMap: errorMap2, description };
   const customMap = (iss, ctx) => {
-    const { message } = params;
+    const { message: message2 } = params;
     if (iss.code === "invalid_enum_value") {
-      return { message: message ?? ctx.defaultError };
+      return { message: message2 ?? ctx.defaultError };
     }
     if (typeof ctx.data === "undefined") {
-      return { message: message ?? required_error ?? ctx.defaultError };
+      return { message: message2 ?? required_error ?? ctx.defaultError };
     }
     if (iss.code !== "invalid_type")
       return { message: ctx.defaultError };
-    return { message: message ?? invalid_type_error ?? ctx.defaultError };
+    return { message: message2 ?? invalid_type_error ?? ctx.defaultError };
   };
   return { errorMap: customMap, description };
 }
@@ -43496,14 +43639,14 @@ var ZodType = class {
     const result = await (isAsync(maybeAsyncResult) ? maybeAsyncResult : Promise.resolve(maybeAsyncResult));
     return handleResult(ctx, result);
   }
-  refine(check, message) {
+  refine(check, message2) {
     const getIssueProperties = (val) => {
-      if (typeof message === "string" || typeof message === "undefined") {
-        return { message };
-      } else if (typeof message === "function") {
-        return message(val);
+      if (typeof message2 === "string" || typeof message2 === "undefined") {
+        return { message: message2 };
+      } else if (typeof message2 === "function") {
+        return message2(val);
       } else {
-        return message;
+        return message2;
       }
     };
     return this._refinement((val, ctx) => {
@@ -44039,11 +44182,11 @@ var ZodString = class _ZodString extends ZodType {
     }
     return { status: status.value, value: input.data };
   }
-  _regex(regex, validation, message) {
+  _regex(regex, validation, message2) {
     return this.refinement((data) => regex.test(data), {
       validation,
       code: ZodIssueCode.invalid_string,
-      ...errorUtil.errToObj(message)
+      ...errorUtil.errToObj(message2)
     });
   }
   _addCheck(check) {
@@ -44052,37 +44195,37 @@ var ZodString = class _ZodString extends ZodType {
       checks: [...this._def.checks, check]
     });
   }
-  email(message) {
-    return this._addCheck({ kind: "email", ...errorUtil.errToObj(message) });
+  email(message2) {
+    return this._addCheck({ kind: "email", ...errorUtil.errToObj(message2) });
   }
-  url(message) {
-    return this._addCheck({ kind: "url", ...errorUtil.errToObj(message) });
+  url(message2) {
+    return this._addCheck({ kind: "url", ...errorUtil.errToObj(message2) });
   }
-  emoji(message) {
-    return this._addCheck({ kind: "emoji", ...errorUtil.errToObj(message) });
+  emoji(message2) {
+    return this._addCheck({ kind: "emoji", ...errorUtil.errToObj(message2) });
   }
-  uuid(message) {
-    return this._addCheck({ kind: "uuid", ...errorUtil.errToObj(message) });
+  uuid(message2) {
+    return this._addCheck({ kind: "uuid", ...errorUtil.errToObj(message2) });
   }
-  nanoid(message) {
-    return this._addCheck({ kind: "nanoid", ...errorUtil.errToObj(message) });
+  nanoid(message2) {
+    return this._addCheck({ kind: "nanoid", ...errorUtil.errToObj(message2) });
   }
-  cuid(message) {
-    return this._addCheck({ kind: "cuid", ...errorUtil.errToObj(message) });
+  cuid(message2) {
+    return this._addCheck({ kind: "cuid", ...errorUtil.errToObj(message2) });
   }
-  cuid2(message) {
-    return this._addCheck({ kind: "cuid2", ...errorUtil.errToObj(message) });
+  cuid2(message2) {
+    return this._addCheck({ kind: "cuid2", ...errorUtil.errToObj(message2) });
   }
-  ulid(message) {
-    return this._addCheck({ kind: "ulid", ...errorUtil.errToObj(message) });
+  ulid(message2) {
+    return this._addCheck({ kind: "ulid", ...errorUtil.errToObj(message2) });
   }
-  base64(message) {
-    return this._addCheck({ kind: "base64", ...errorUtil.errToObj(message) });
+  base64(message2) {
+    return this._addCheck({ kind: "base64", ...errorUtil.errToObj(message2) });
   }
-  base64url(message) {
+  base64url(message2) {
     return this._addCheck({
       kind: "base64url",
-      ...errorUtil.errToObj(message)
+      ...errorUtil.errToObj(message2)
     });
   }
   jwt(options) {
@@ -44112,8 +44255,8 @@ var ZodString = class _ZodString extends ZodType {
       ...errorUtil.errToObj(options?.message)
     });
   }
-  date(message) {
-    return this._addCheck({ kind: "date", message });
+  date(message2) {
+    return this._addCheck({ kind: "date", message: message2 });
   }
   time(options) {
     if (typeof options === "string") {
@@ -44129,14 +44272,14 @@ var ZodString = class _ZodString extends ZodType {
       ...errorUtil.errToObj(options?.message)
     });
   }
-  duration(message) {
-    return this._addCheck({ kind: "duration", ...errorUtil.errToObj(message) });
+  duration(message2) {
+    return this._addCheck({ kind: "duration", ...errorUtil.errToObj(message2) });
   }
-  regex(regex, message) {
+  regex(regex, message2) {
     return this._addCheck({
       kind: "regex",
       regex,
-      ...errorUtil.errToObj(message)
+      ...errorUtil.errToObj(message2)
     });
   }
   includes(value, options) {
@@ -44147,46 +44290,46 @@ var ZodString = class _ZodString extends ZodType {
       ...errorUtil.errToObj(options?.message)
     });
   }
-  startsWith(value, message) {
+  startsWith(value, message2) {
     return this._addCheck({
       kind: "startsWith",
       value,
-      ...errorUtil.errToObj(message)
+      ...errorUtil.errToObj(message2)
     });
   }
-  endsWith(value, message) {
+  endsWith(value, message2) {
     return this._addCheck({
       kind: "endsWith",
       value,
-      ...errorUtil.errToObj(message)
+      ...errorUtil.errToObj(message2)
     });
   }
-  min(minLength, message) {
+  min(minLength, message2) {
     return this._addCheck({
       kind: "min",
       value: minLength,
-      ...errorUtil.errToObj(message)
+      ...errorUtil.errToObj(message2)
     });
   }
-  max(maxLength, message) {
+  max(maxLength, message2) {
     return this._addCheck({
       kind: "max",
       value: maxLength,
-      ...errorUtil.errToObj(message)
+      ...errorUtil.errToObj(message2)
     });
   }
-  length(len, message) {
+  length(len, message2) {
     return this._addCheck({
       kind: "length",
       value: len,
-      ...errorUtil.errToObj(message)
+      ...errorUtil.errToObj(message2)
     });
   }
   /**
    * Equivalent to `.min(1)`
    */
-  nonempty(message) {
-    return this.min(1, errorUtil.errToObj(message));
+  nonempty(message2) {
+    return this.min(1, errorUtil.errToObj(message2));
   }
   trim() {
     return new _ZodString({
@@ -44265,14 +44408,14 @@ var ZodString = class _ZodString extends ZodType {
     return min;
   }
   get maxLength() {
-    let max = null;
+    let max2 = null;
     for (const ch of this._def.checks) {
       if (ch.kind === "max") {
-        if (max === null || ch.value < max)
-          max = ch.value;
+        if (max2 === null || ch.value < max2)
+          max2 = ch.value;
       }
     }
-    return max;
+    return max2;
   }
 };
 ZodString.create = (params) => {
@@ -44379,19 +44522,19 @@ var ZodNumber = class _ZodNumber extends ZodType {
     }
     return { status: status.value, value: input.data };
   }
-  gte(value, message) {
-    return this.setLimit("min", value, true, errorUtil.toString(message));
+  gte(value, message2) {
+    return this.setLimit("min", value, true, errorUtil.toString(message2));
   }
-  gt(value, message) {
-    return this.setLimit("min", value, false, errorUtil.toString(message));
+  gt(value, message2) {
+    return this.setLimit("min", value, false, errorUtil.toString(message2));
   }
-  lte(value, message) {
-    return this.setLimit("max", value, true, errorUtil.toString(message));
+  lte(value, message2) {
+    return this.setLimit("max", value, true, errorUtil.toString(message2));
   }
-  lt(value, message) {
-    return this.setLimit("max", value, false, errorUtil.toString(message));
+  lt(value, message2) {
+    return this.setLimit("max", value, false, errorUtil.toString(message2));
   }
-  setLimit(kind, value, inclusive, message) {
+  setLimit(kind, value, inclusive, message2) {
     return new _ZodNumber({
       ...this._def,
       checks: [
@@ -44400,7 +44543,7 @@ var ZodNumber = class _ZodNumber extends ZodType {
           kind,
           value,
           inclusive,
-          message: errorUtil.toString(message)
+          message: errorUtil.toString(message2)
         }
       ]
     });
@@ -44411,68 +44554,68 @@ var ZodNumber = class _ZodNumber extends ZodType {
       checks: [...this._def.checks, check]
     });
   }
-  int(message) {
+  int(message2) {
     return this._addCheck({
       kind: "int",
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     });
   }
-  positive(message) {
+  positive(message2) {
     return this._addCheck({
       kind: "min",
       value: 0,
       inclusive: false,
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     });
   }
-  negative(message) {
+  negative(message2) {
     return this._addCheck({
       kind: "max",
       value: 0,
       inclusive: false,
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     });
   }
-  nonpositive(message) {
+  nonpositive(message2) {
     return this._addCheck({
       kind: "max",
       value: 0,
       inclusive: true,
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     });
   }
-  nonnegative(message) {
+  nonnegative(message2) {
     return this._addCheck({
       kind: "min",
       value: 0,
       inclusive: true,
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     });
   }
-  multipleOf(value, message) {
+  multipleOf(value, message2) {
     return this._addCheck({
       kind: "multipleOf",
       value,
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     });
   }
-  finite(message) {
+  finite(message2) {
     return this._addCheck({
       kind: "finite",
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     });
   }
-  safe(message) {
+  safe(message2) {
     return this._addCheck({
       kind: "min",
       inclusive: true,
       value: Number.MIN_SAFE_INTEGER,
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     })._addCheck({
       kind: "max",
       inclusive: true,
       value: Number.MAX_SAFE_INTEGER,
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     });
   }
   get minValue() {
@@ -44486,20 +44629,20 @@ var ZodNumber = class _ZodNumber extends ZodType {
     return min;
   }
   get maxValue() {
-    let max = null;
+    let max2 = null;
     for (const ch of this._def.checks) {
       if (ch.kind === "max") {
-        if (max === null || ch.value < max)
-          max = ch.value;
+        if (max2 === null || ch.value < max2)
+          max2 = ch.value;
       }
     }
-    return max;
+    return max2;
   }
   get isInt() {
     return !!this._def.checks.find((ch) => ch.kind === "int" || ch.kind === "multipleOf" && util.isInteger(ch.value));
   }
   get isFinite() {
-    let max = null;
+    let max2 = null;
     let min = null;
     for (const ch of this._def.checks) {
       if (ch.kind === "finite" || ch.kind === "int" || ch.kind === "multipleOf") {
@@ -44508,11 +44651,11 @@ var ZodNumber = class _ZodNumber extends ZodType {
         if (min === null || ch.value > min)
           min = ch.value;
       } else if (ch.kind === "max") {
-        if (max === null || ch.value < max)
-          max = ch.value;
+        if (max2 === null || ch.value < max2)
+          max2 = ch.value;
       }
     }
-    return Number.isFinite(min) && Number.isFinite(max);
+    return Number.isFinite(min) && Number.isFinite(max2);
   }
 };
 ZodNumber.create = (params) => {
@@ -44595,19 +44738,19 @@ var ZodBigInt = class _ZodBigInt extends ZodType {
     });
     return INVALID;
   }
-  gte(value, message) {
-    return this.setLimit("min", value, true, errorUtil.toString(message));
+  gte(value, message2) {
+    return this.setLimit("min", value, true, errorUtil.toString(message2));
   }
-  gt(value, message) {
-    return this.setLimit("min", value, false, errorUtil.toString(message));
+  gt(value, message2) {
+    return this.setLimit("min", value, false, errorUtil.toString(message2));
   }
-  lte(value, message) {
-    return this.setLimit("max", value, true, errorUtil.toString(message));
+  lte(value, message2) {
+    return this.setLimit("max", value, true, errorUtil.toString(message2));
   }
-  lt(value, message) {
-    return this.setLimit("max", value, false, errorUtil.toString(message));
+  lt(value, message2) {
+    return this.setLimit("max", value, false, errorUtil.toString(message2));
   }
-  setLimit(kind, value, inclusive, message) {
+  setLimit(kind, value, inclusive, message2) {
     return new _ZodBigInt({
       ...this._def,
       checks: [
@@ -44616,7 +44759,7 @@ var ZodBigInt = class _ZodBigInt extends ZodType {
           kind,
           value,
           inclusive,
-          message: errorUtil.toString(message)
+          message: errorUtil.toString(message2)
         }
       ]
     });
@@ -44627,43 +44770,43 @@ var ZodBigInt = class _ZodBigInt extends ZodType {
       checks: [...this._def.checks, check]
     });
   }
-  positive(message) {
+  positive(message2) {
     return this._addCheck({
       kind: "min",
       value: BigInt(0),
       inclusive: false,
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     });
   }
-  negative(message) {
+  negative(message2) {
     return this._addCheck({
       kind: "max",
       value: BigInt(0),
       inclusive: false,
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     });
   }
-  nonpositive(message) {
+  nonpositive(message2) {
     return this._addCheck({
       kind: "max",
       value: BigInt(0),
       inclusive: true,
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     });
   }
-  nonnegative(message) {
+  nonnegative(message2) {
     return this._addCheck({
       kind: "min",
       value: BigInt(0),
       inclusive: true,
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     });
   }
-  multipleOf(value, message) {
+  multipleOf(value, message2) {
     return this._addCheck({
       kind: "multipleOf",
       value,
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     });
   }
   get minValue() {
@@ -44677,14 +44820,14 @@ var ZodBigInt = class _ZodBigInt extends ZodType {
     return min;
   }
   get maxValue() {
-    let max = null;
+    let max2 = null;
     for (const ch of this._def.checks) {
       if (ch.kind === "max") {
-        if (max === null || ch.value < max)
-          max = ch.value;
+        if (max2 === null || ch.value < max2)
+          max2 = ch.value;
       }
     }
-    return max;
+    return max2;
   }
 };
 ZodBigInt.create = (params) => {
@@ -44786,18 +44929,18 @@ var ZodDate = class _ZodDate extends ZodType {
       checks: [...this._def.checks, check]
     });
   }
-  min(minDate, message) {
+  min(minDate, message2) {
     return this._addCheck({
       kind: "min",
       value: minDate.getTime(),
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     });
   }
-  max(maxDate, message) {
+  max(maxDate, message2) {
     return this._addCheck({
       kind: "max",
       value: maxDate.getTime(),
-      message: errorUtil.toString(message)
+      message: errorUtil.toString(message2)
     });
   }
   get minDate() {
@@ -44811,14 +44954,14 @@ var ZodDate = class _ZodDate extends ZodType {
     return min != null ? new Date(min) : null;
   }
   get maxDate() {
-    let max = null;
+    let max2 = null;
     for (const ch of this._def.checks) {
       if (ch.kind === "max") {
-        if (max === null || ch.value < max)
-          max = ch.value;
+        if (max2 === null || ch.value < max2)
+          max2 = ch.value;
       }
     }
-    return max != null ? new Date(max) : null;
+    return max2 != null ? new Date(max2) : null;
   }
 };
 ZodDate.create = (params) => {
@@ -45029,26 +45172,26 @@ var ZodArray = class _ZodArray extends ZodType {
   get element() {
     return this._def.type;
   }
-  min(minLength, message) {
+  min(minLength, message2) {
     return new _ZodArray({
       ...this._def,
-      minLength: { value: minLength, message: errorUtil.toString(message) }
+      minLength: { value: minLength, message: errorUtil.toString(message2) }
     });
   }
-  max(maxLength, message) {
+  max(maxLength, message2) {
     return new _ZodArray({
       ...this._def,
-      maxLength: { value: maxLength, message: errorUtil.toString(message) }
+      maxLength: { value: maxLength, message: errorUtil.toString(message2) }
     });
   }
-  length(len, message) {
+  length(len, message2) {
     return new _ZodArray({
       ...this._def,
-      exactLength: { value: len, message: errorUtil.toString(message) }
+      exactLength: { value: len, message: errorUtil.toString(message2) }
     });
   }
-  nonempty(message) {
-    return this.min(1, message);
+  nonempty(message2) {
+    return this.min(1, message2);
   }
 };
 ZodArray.create = (schema, params) => {
@@ -45191,17 +45334,17 @@ var ZodObject = class _ZodObject extends ZodType {
   get shape() {
     return this._def.shape();
   }
-  strict(message) {
+  strict(message2) {
     errorUtil.errToObj;
     return new _ZodObject({
       ...this._def,
       unknownKeys: "strict",
-      ...message !== void 0 ? {
+      ...message2 !== void 0 ? {
         errorMap: (issue, ctx) => {
           const defaultError = this._def.errorMap?.(issue, ctx).message ?? ctx.defaultError;
           if (issue.code === "unrecognized_keys")
             return {
-              message: errorUtil.errToObj(message).message ?? defaultError
+              message: errorUtil.errToObj(message2).message ?? defaultError
             };
           return {
             message: defaultError
@@ -45324,10 +45467,10 @@ var ZodObject = class _ZodObject extends ZodType {
   //   }) as any;
   //   return merged;
   // }
-  catchall(index) {
+  catchall(index2) {
     return new _ZodObject({
       ...this._def,
-      catchall: index
+      catchall: index2
     });
   }
   pick(mask) {
@@ -45645,9 +45788,9 @@ function mergeValues(a, b2) {
       return { valid: false };
     }
     const newArray = [];
-    for (let index = 0; index < a.length; index++) {
-      const itemA = a[index];
-      const itemB = b2[index];
+    for (let index2 = 0; index2 < a.length; index2++) {
+      const itemA = a[index2];
+      const itemB = b2[index2];
       const sharedValue = mergeValues(itemA, itemB);
       if (!sharedValue.valid) {
         return { valid: false };
@@ -45853,10 +45996,10 @@ var ZodMap = class extends ZodType {
     }
     const keyType = this._def.keyType;
     const valueType = this._def.valueType;
-    const pairs = [...ctx.data.entries()].map(([key, value], index) => {
+    const pairs = [...ctx.data.entries()].map(([key, value], index2) => {
       return {
-        key: keyType._parse(new ParseInputLazyPath(ctx, key, ctx.path, [index, "key"])),
-        value: valueType._parse(new ParseInputLazyPath(ctx, value, ctx.path, [index, "value"]))
+        key: keyType._parse(new ParseInputLazyPath(ctx, key, ctx.path, [index2, "key"])),
+        value: valueType._parse(new ParseInputLazyPath(ctx, value, ctx.path, [index2, "value"]))
       };
     });
     if (ctx.common.async) {
@@ -45957,23 +46100,23 @@ var ZodSet = class _ZodSet extends ZodType {
       return finalizeSet(elements);
     }
   }
-  min(minSize, message) {
+  min(minSize, message2) {
     return new _ZodSet({
       ...this._def,
-      minSize: { value: minSize, message: errorUtil.toString(message) }
+      minSize: { value: minSize, message: errorUtil.toString(message2) }
     });
   }
-  max(maxSize, message) {
+  max(maxSize, message2) {
     return new _ZodSet({
       ...this._def,
-      maxSize: { value: maxSize, message: errorUtil.toString(message) }
+      maxSize: { value: maxSize, message: errorUtil.toString(message2) }
     });
   }
-  size(size2, message) {
-    return this.min(size2, message).max(size2, message);
+  size(size2, message2) {
+    return this.min(size2, message2).max(size2, message2);
   }
-  nonempty(message) {
-    return this.min(1, message);
+  nonempty(message2) {
+    return this.min(1, message2);
   }
 };
 ZodSet.create = (valueType, params) => {
@@ -46760,38 +46903,7 @@ var coerce = {
 };
 var NEVER = INVALID;
 
-// node_modules/drizzle-orm/logger.js
-var ConsoleLogWriter = class {
-  static [entityKind] = "ConsoleLogWriter";
-  write(message) {
-    console.log(message);
-  }
-};
-var DefaultLogger = class {
-  static [entityKind] = "DefaultLogger";
-  writer;
-  constructor(config) {
-    this.writer = config?.writer ?? new ConsoleLogWriter();
-  }
-  logQuery(query, params) {
-    const stringifiedParams = params.map((p) => {
-      try {
-        return JSON.stringify(p);
-      } catch {
-        return String(p);
-      }
-    });
-    const paramsStr = stringifiedParams.length ? ` -- params: [${stringifiedParams.join(", ")}]` : "";
-    this.writer.write(`Query: ${query}${paramsStr}`);
-  }
-};
-var NoopLogger = class {
-  static [entityKind] = "NoopLogger";
-  logQuery() {
-  }
-};
-
-// node_modules/drizzle-zod/index.mjs
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-zod/index.mjs
 var CONSTANTS = {
   INT8_MIN: -128,
   INT8_MAX: 127,
@@ -46875,11 +46987,11 @@ function columnToSchema(column, factory) {
 function numberColumnToSchema(column, z, coerce2) {
   let unsigned = column.getSQLType().includes("unsigned");
   let min;
-  let max;
+  let max2;
   let integer2 = false;
   if (isColumnType(column, ["MySqlTinyInt", "SingleStoreTinyInt"])) {
     min = unsigned ? 0 : CONSTANTS.INT8_MIN;
-    max = unsigned ? CONSTANTS.INT8_UNSIGNED_MAX : CONSTANTS.INT8_MAX;
+    max2 = unsigned ? CONSTANTS.INT8_UNSIGNED_MAX : CONSTANTS.INT8_MAX;
     integer2 = true;
   } else if (isColumnType(column, [
     "PgSmallInt",
@@ -46888,7 +47000,7 @@ function numberColumnToSchema(column, z, coerce2) {
     "SingleStoreSmallInt"
   ])) {
     min = unsigned ? 0 : CONSTANTS.INT16_MIN;
-    max = unsigned ? CONSTANTS.INT16_UNSIGNED_MAX : CONSTANTS.INT16_MAX;
+    max2 = unsigned ? CONSTANTS.INT16_UNSIGNED_MAX : CONSTANTS.INT16_MAX;
     integer2 = true;
   } else if (isColumnType(column, [
     "PgReal",
@@ -46898,7 +47010,7 @@ function numberColumnToSchema(column, z, coerce2) {
     "SingleStoreFloat"
   ])) {
     min = unsigned ? 0 : CONSTANTS.INT24_MIN;
-    max = unsigned ? CONSTANTS.INT24_UNSIGNED_MAX : CONSTANTS.INT24_MAX;
+    max2 = unsigned ? CONSTANTS.INT24_UNSIGNED_MAX : CONSTANTS.INT24_MAX;
     integer2 = isColumnType(column, ["MySqlMediumInt", "SingleStoreMediumInt"]);
   } else if (isColumnType(column, [
     "PgInteger",
@@ -46907,7 +47019,7 @@ function numberColumnToSchema(column, z, coerce2) {
     "SingleStoreInt"
   ])) {
     min = unsigned ? 0 : CONSTANTS.INT32_MIN;
-    max = unsigned ? CONSTANTS.INT32_UNSIGNED_MAX : CONSTANTS.INT32_MAX;
+    max2 = unsigned ? CONSTANTS.INT32_UNSIGNED_MAX : CONSTANTS.INT32_MAX;
     integer2 = true;
   } else if (isColumnType(column, [
     "PgDoublePrecision",
@@ -46918,7 +47030,7 @@ function numberColumnToSchema(column, z, coerce2) {
     "SQLiteReal"
   ])) {
     min = unsigned ? 0 : CONSTANTS.INT48_MIN;
-    max = unsigned ? CONSTANTS.INT48_UNSIGNED_MAX : CONSTANTS.INT48_MAX;
+    max2 = unsigned ? CONSTANTS.INT48_UNSIGNED_MAX : CONSTANTS.INT48_MAX;
   } else if (isColumnType(column, [
     "PgBigInt53",
     "PgBigSerial53",
@@ -46930,47 +47042,47 @@ function numberColumnToSchema(column, z, coerce2) {
   ])) {
     unsigned = unsigned || isColumnType(column, ["MySqlSerial", "SingleStoreSerial"]);
     min = unsigned ? 0 : Number.MIN_SAFE_INTEGER;
-    max = Number.MAX_SAFE_INTEGER;
+    max2 = Number.MAX_SAFE_INTEGER;
     integer2 = true;
   } else if (isColumnType(column, ["MySqlYear", "SingleStoreYear"])) {
     min = 1901;
-    max = 2155;
+    max2 = 2155;
     integer2 = true;
   } else {
     min = Number.MIN_SAFE_INTEGER;
-    max = Number.MAX_SAFE_INTEGER;
+    max2 = Number.MAX_SAFE_INTEGER;
   }
   let schema = coerce2 === true || coerce2?.number ? z.coerce.number() : z.number();
-  schema = schema.min(min).max(max);
+  schema = schema.min(min).max(max2);
   return integer2 ? schema.int() : schema;
 }
 function bigintColumnToSchema(column, z, coerce2) {
   const unsigned = column.getSQLType().includes("unsigned");
   const min = unsigned ? 0n : CONSTANTS.INT64_MIN;
-  const max = unsigned ? CONSTANTS.INT64_UNSIGNED_MAX : CONSTANTS.INT64_MAX;
+  const max2 = unsigned ? CONSTANTS.INT64_UNSIGNED_MAX : CONSTANTS.INT64_MAX;
   const schema = coerce2 === true || coerce2?.bigint ? z.coerce.bigint() : z.bigint();
-  return schema.min(min).max(max);
+  return schema.min(min).max(max2);
 }
 function stringColumnToSchema(column, z, coerce2) {
   if (isColumnType(column, ["PgUUID"])) {
     return z.string().uuid();
   }
-  let max;
+  let max2;
   let regex;
   let fixed = false;
   if (isColumnType(column, ["PgVarchar", "SQLiteText"])) {
-    max = column.length;
+    max2 = column.length;
   } else if (isColumnType(column, ["MySqlVarChar", "SingleStoreVarChar"])) {
-    max = column.length ?? CONSTANTS.INT16_UNSIGNED_MAX;
+    max2 = column.length ?? CONSTANTS.INT16_UNSIGNED_MAX;
   } else if (isColumnType(column, ["MySqlText", "SingleStoreText"])) {
     if (column.textType === "longtext") {
-      max = CONSTANTS.INT32_UNSIGNED_MAX;
+      max2 = CONSTANTS.INT32_UNSIGNED_MAX;
     } else if (column.textType === "mediumtext") {
-      max = CONSTANTS.INT24_UNSIGNED_MAX;
+      max2 = CONSTANTS.INT24_UNSIGNED_MAX;
     } else if (column.textType === "text") {
-      max = CONSTANTS.INT16_UNSIGNED_MAX;
+      max2 = CONSTANTS.INT16_UNSIGNED_MAX;
     } else {
-      max = CONSTANTS.INT8_UNSIGNED_MAX;
+      max2 = CONSTANTS.INT8_UNSIGNED_MAX;
     }
   }
   if (isColumnType(column, [
@@ -46978,16 +47090,16 @@ function stringColumnToSchema(column, z, coerce2) {
     "MySqlChar",
     "SingleStoreChar"
   ])) {
-    max = column.length;
+    max2 = column.length;
     fixed = true;
   }
   if (isColumnType(column, ["PgBinaryVector"])) {
     regex = /^[01]+$/;
-    max = column.dimensions;
+    max2 = column.dimensions;
   }
   let schema = coerce2 === true || coerce2?.string ? z.coerce.string() : z.string();
   schema = regex ? schema.regex(regex) : schema;
-  return max && fixed ? schema.length(max) : max ? schema.max(max) : schema;
+  return max2 && fixed ? schema.length(max2) : max2 ? schema.max(max2) : schema;
 }
 function getColumns(tableLike) {
   return isTable(tableLike) ? getTableColumns(tableLike) : getViewSelectedFields(tableLike);
@@ -47072,6 +47184,34 @@ var events = pgTable("events", {
   // design concept. Stored as a data URI, same convention as inviteArtworkUrl.
   // Empty string means no illustration has been generated yet.
   inviteIllustrationUrl: text("invite_illustration_url").notNull().default(""),
+  // "Upload my complete invitation design": a finished invite the host made or
+  // bought elsewhere, used AS-IS with no Posy border, font overlay, or palette.
+  // Distinct from inviteArtworkUrl above (which is slotted INTO a Posy
+  // template). Stored as a data URI, same convention as the other image
+  // columns. Empty string means no full-custom design has been uploaded.
+  customInviteImageUrl: text("custom_invite_image_url").notNull().default(""),
+  // Which renderer the invite/RSVP page uses. "custom" = show
+  // customInviteImageUrl full-bleed with zero Posy styling. Empty string (the
+  // default, and the value every pre-existing event has) = today's
+  // concept-driven rendering, unchanged. Toggling to "custom" and back is
+  // non-destructive — the applied concept fields are never cleared.
+  inviteRenderMode: text("invite_render_mode").notNull().default(""),
+  // Coordinated design suite — envelope, patterned liner, and stamp derived
+  // from the applied concept's Theme DNA (see shared/themeDna.ts) so the whole
+  // stationery set matches the invite. Auto-populated when a concept is
+  // applied, then overridable by the host. Empty string means "not set", in
+  // which case the suite UI and the guest-facing envelope reveal fall back to
+  // deriving values from the concept on the fly — so pre-existing events are
+  // completely unaffected.
+  envelopeColor: text("envelope_color").notNull().default(""),
+  envelopeLinerPattern: text("envelope_liner_pattern").notNull().default(""),
+  stampStyle: text("stamp_style").notNull().default(""),
+  // Custom colors for the liner pattern and stamp, overriding the derived
+  // accent/backgroundColor from the concept's Theme DNA. Empty string means
+  // "not set" — falls back to derived DNA values, so pre-existing events
+  // are unaffected.
+  linerColor: text("liner_color").notNull().default(""),
+  stampColor: text("stamp_color").notNull().default(""),
   budgetTotal: integer("budget_total"),
   // planned overall budget in whole dollars, editable by host
   // Structured venue details — separate from the short display `location` above.
@@ -47091,6 +47231,13 @@ var events = pgTable("events", {
   rsvpRestriction: text("rsvp_restriction").notNull().default("none"),
   rsvpDeadline: text("rsvp_deadline").notNull().default(""),
   // friendly display date, same format as eventDate
+  // Controls whether the public RSVP page is live. "draft" shows a
+  // "not ready yet" message; "published" shows the full RSVP form.
+  // Defaults to "published" so pre-existing events are unaffected.
+  inviteStatus: text("invite_status").notNull().default("published"),
+  // Optional phone number the host can share on the RSVP page for guests
+  // who prefer to call or text instead of using the web form.
+  rsvpPhone: text("rsvp_phone").notNull().default(""),
   // Epoch-millisecond timestamps use bigint (Postgres 4-byte integer maxes
   // out around 2.1B, well below current Date.now() values ~1.7T).
   createdAt: bigint("created_at", { mode: "number" }).notNull(),
@@ -47128,7 +47275,18 @@ var events = pgTable("events", {
   // writes this, never the generic event PATCH.
   capturedEmail: text("captured_email"),
   // nullable
-  emailCapturedAt: bigint("email_captured_at", { mode: "number" })
+  emailCapturedAt: bigint("email_captured_at", { mode: "number" }),
+  // nullable
+  /* ---- Spark one-time unlock (see server/stripe.ts, server/routes.ts) ---- */
+  // Set when a Spark one-time payment ($9.99) succeeds for this event —
+  // grants this single event its one full AI-drafted plan. System-controlled:
+  // only the checkout confirm route / Stripe webhook writes these, never the
+  // generic event PATCH.
+  sparkUnlockedAt: bigint("spark_unlocked_at", { mode: "number" }),
+  // nullable, millis
+  // The Stripe checkout session that unlocked this event, kept for
+  // idempotency so a re-confirm / replayed webhook never double-processes.
+  sparkCheckoutSessionId: text("spark_checkout_session_id")
   // nullable
 });
 var insertEventSchema = createInsertSchema(events).omit({
@@ -47139,10 +47297,13 @@ var insertEventSchema = createInsertSchema(events).omit({
   draftStatus: true,
   draftStage: true,
   capturedEmail: true,
-  emailCapturedAt: true
+  emailCapturedAt: true,
+  sparkUnlockedAt: true,
+  sparkCheckoutSessionId: true
 });
 var updateEventSchema = insertEventSchema.partial();
 var intakeSchema = external_exports.object({
+  eventName: external_exports.string().min(1).optional(),
   eventType: external_exports.string().optional(),
   eventDate: external_exports.string().optional(),
   estimatedGuestCount: external_exports.number().int().min(1).max(2e3).optional(),
@@ -47172,8 +47333,18 @@ var guests = pgTable("guests", {
   respondedAt: bigint("responded_at", { mode: "number" }),
   emailSentAt: bigint("email_sent_at", { mode: "number" }),
   // set when an automated invite email was sent via the host's Gmail
-  emailSendError: text("email_send_error")
+  emailSendError: text("email_send_error"),
   // last automated send error, if any
+  // SMS consent is separate and optional from email/RSVP (see SMS Terms).
+  // smsOptIn must be an explicit, unchecked-by-default choice — never inferred
+  // from having a phone number on file. smsConsentAt records when consent was
+  // given, which doubles as the compliance record TCPA expects.
+  smsOptIn: boolean("sms_opt_in").notNull().default(false),
+  smsConsentAt: bigint("sms_consent_at", { mode: "number" }),
+  smsSentAt: bigint("sms_sent_at", { mode: "number" }),
+  // set when an automated reminder text was sent
+  smsSendError: text("sms_send_error")
+  // last automated SMS send error, if any
 });
 var insertGuestSchema = createInsertSchema(guests).omit({
   id: true,
@@ -47379,12 +47550,133 @@ var analyticsEvents = pgTable("analytics_events", {
   metadataJson: text("metadata_json").notNull().default("{}"),
   createdAt: bigint("created_at", { mode: "number" }).notNull()
 });
+var aiFirstPreviews = pgTable("ai_first_previews", {
+  id: serial("id").primaryKey(),
+  eventId: integer("event_id").notNull(),
+  previewId: text("preview_id").notNull().unique(),
+  conceptFingerprint: text("concept_fingerprint").notNull(),
+  assetHash: text("asset_hash").notNull(),
+  // Data URI or object-store URL for the approved artwork bytes.
+  assetUrl: text("asset_url").notNull(),
+  conceptJson: text("concept_json").notNull(),
+  source: text("source").notNull().default("ai-generated"),
+  // ai-generated | adapted-studio-direction
+  // Promoted previews are the ones a host actually applied. They are never
+  // swept, which is why cleanup can be aggressive about everything else.
+  promoted: boolean("promoted").notNull().default(false),
+  promotedAt: bigint("promoted_at", { mode: "number" }),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  lastAccessedAt: bigint("last_accessed_at", { mode: "number" }).notNull()
+});
+var aiFirstImageLedger = pgTable(
+  "ai_first_image_ledger",
+  {
+    id: serial("id").primaryKey(),
+    eventId: integer("event_id").notNull(),
+    email: text("email"),
+    // nullable — normalized lowercase, for monthly caps
+    reason: text("reason").notNull(),
+    // initial | quality-retry | reuse | apply
+    // False for reuse/apply and for anything the provider never charged for.
+    billed: boolean("billed").notNull().default(true),
+    // True when the attempt was an automatic quality retry: counts against
+    // spend, never against the host's visible action allowance.
+    automatic: boolean("automatic").notNull().default(false),
+    conceptFingerprint: text("concept_fingerprint"),
+    previewId: text("preview_id"),
+    // Set on reuse rows to the previewId whose bytes were served instead.
+    reuseOf: text("reuse_of"),
+    idempotencyKey: text("idempotency_key"),
+    // Conservative image-output estimate. Prompt/input tokens are billed by
+    // the provider too, but are not available before this durable pre-call
+    // reservation is written.
+    costUsdMicros: integer("cost_usd_micros").notNull().default(0),
+    createdAt: bigint("created_at", { mode: "number" }).notNull()
+  },
+  (table) => [
+    // A REAL partial unique index, part of the generated schema (see
+    // supabase/migrations/ for the reviewed SQL produced from this schema —
+    // not a comment). Two concurrent requests inserting a ledger row for
+    // the same run+direction+attempt idempotency key now race at the
+    // database: the loser's INSERT fails with a unique-violation instead of
+    // both succeeding. `findByIdempotencyKey` followed by `record` in
+    // usage.ts is the read-then-write fast path for the common case; this
+    // index is what makes the outcome correct even when two application
+    // processes run that fast path at the same instant.
+    uniqueIndex("ai_first_image_ledger_idempotency_key_uq").on(table.idempotencyKey).where(sql`${table.idempotencyKey} is not null`)
+  ]
+);
+var aiFirstGenerationRuns = pgTable(
+  "ai_first_generation_runs",
+  {
+    id: serial("id").primaryKey(),
+    runId: text("run_id").notNull().unique(),
+    eventId: integer("event_id").notNull(),
+    ownerToken: text("owner_token").notNull(),
+    // active | completed | failed
+    status: text("status").notNull().default("active"),
+    progressMessage: text("progress_message").notNull().default(""),
+    completedCount: integer("completed_count").notNull().default(0),
+    fallbackCount: integer("fallback_count").notNull().default(0),
+    errorMessage: text("error_message"),
+    // True once the run has reached an explicit done/error/failed terminal
+    // state. A row that is merely "not active anymore" (e.g. the process
+    // died) but never reached this is exactly the unexpected-EOF case the
+    // client must treat as a failure, not a success.
+    terminal: boolean("terminal").notNull().default(false),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+    updatedAt: bigint("updated_at", { mode: "number" }).notNull()
+  },
+  (table) => [
+    // "Only one non-terminal active run per event, ever, no matter which
+    // run id got there first." A second instance's INSERT for a *different*
+    // run id on the same event now fails at the database with a
+    // unique-violation on this index, the same way a duplicate run id
+    // fails on the run_id unique index above. claim() below turns that
+    // unique-violation into an "active-elsewhere" outcome distinct from a
+    // same-runId "duplicate" outcome, so callers can tell the two apart.
+    uniqueIndex("ai_first_generation_runs_one_active_per_event_uq").on(table.eventId).where(sql`${table.status} = 'active' and ${table.terminal} = false`),
+    index("ai_first_generation_runs_event_id_idx").on(table.eventId)
+  ]
+);
+var aiFirstArtworkAttempts = pgTable(
+  "ai_first_artwork_attempts",
+  {
+    id: serial("id").primaryKey(),
+    eventId: integer("event_id").notNull(),
+    ownerToken: text("owner_token").notNull(),
+    runId: text("run_id"),
+    idempotencyKey: text("idempotency_key"),
+    directionIndex: integer("direction_index").notNull(),
+    attempt: integer("attempt").notNull(),
+    // accepted | rejected — every billed provider result, either way.
+    status: text("status").notNull(),
+    assetHash: text("asset_hash").notNull(),
+    assetBytesBase64: text("asset_bytes_base64").notNull(),
+    // Set only when status = 'accepted': the previewId ordinary routes may
+    // reference. Rejected rows have no previewId — they are not reachable
+    // through the preview store at all.
+    previewId: text("preview_id"),
+    conceptJson: text("concept_json").notNull(),
+    failureCodesJson: text("failure_codes_json").notNull(),
+    tier1FindingsJson: text("tier1_findings_json").notNull(),
+    visionScoresJson: text("vision_scores_json"),
+    model: text("model").notNull().default("gpt-image-2"),
+    quality: text("quality").notNull().default("high"),
+    // Existing protected-review rows predate provenance and cannot be
+    // assigned an honest size after the fact, so this is intentionally null.
+    size: text("size"),
+    costUsdMicros: integer("cost_usd_micros").notNull().default(0),
+    createdAt: bigint("created_at", { mode: "number" }).notNull()
+  },
+  (table) => [index("ai_first_artwork_attempts_event_id_idx").on(table.eventId)]
+);
 
-// node_modules/postgres/src/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/postgres/src/index.js
 var import_os = __toESM(require("os"), 1);
 var import_fs = __toESM(require("fs"), 1);
 
-// node_modules/postgres/src/query.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/postgres/src/query.js
 var originCache = /* @__PURE__ */ new Map();
 var originStackCache = /* @__PURE__ */ new Map();
 var originError = Symbol("OriginError");
@@ -47521,7 +47813,7 @@ function cachedError(xs) {
   return originCache.get(xs);
 }
 
-// node_modules/postgres/src/errors.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/postgres/src/errors.js
 var PostgresError = class extends Error {
   constructor(x) {
     super(x.message);
@@ -47554,8 +47846,8 @@ function postgres(x) {
   Error.captureStackTrace(error, postgres);
   return error;
 }
-function generic(code, message) {
-  const error = Object.assign(new Error(code + ": " + message), { code });
+function generic(code, message2) {
+  const error = Object.assign(new Error(code + ": " + message2), { code });
   Error.captureStackTrace(error, generic);
   return error;
 }
@@ -47571,7 +47863,7 @@ function notSupported(x) {
   return error;
 }
 
-// node_modules/postgres/src/types.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/postgres/src/types.js
 var types = {
   string: {
     to: 25,
@@ -47857,14 +48149,14 @@ fromKebab.column = { to: fromKebab };
 var kebab = { ...toKebab };
 kebab.column.to = fromKebab;
 
-// node_modules/postgres/src/connection.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/postgres/src/connection.js
 var import_net = __toESM(require("net"), 1);
 var import_tls = __toESM(require("tls"), 1);
 var import_crypto = __toESM(require("crypto"), 1);
 var import_stream = __toESM(require("stream"), 1);
 var import_perf_hooks = require("perf_hooks");
 
-// node_modules/postgres/src/result.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/postgres/src/result.js
 var Result = class extends Array {
   constructor() {
     super();
@@ -47881,34 +48173,34 @@ var Result = class extends Array {
   }
 };
 
-// node_modules/postgres/src/queue.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/postgres/src/queue.js
 var queue_default = Queue;
 function Queue(initial = []) {
   let xs = initial.slice();
-  let index = 0;
+  let index2 = 0;
   return {
     get length() {
-      return xs.length - index;
+      return xs.length - index2;
     },
     remove: (x) => {
-      const index2 = xs.indexOf(x);
-      return index2 === -1 ? null : (xs.splice(index2, 1), x);
+      const index3 = xs.indexOf(x);
+      return index3 === -1 ? null : (xs.splice(index3, 1), x);
     },
     push: (x) => (xs.push(x), x),
     shift: () => {
-      const out = xs[index++];
-      if (index === xs.length) {
-        index = 0;
+      const out = xs[index2++];
+      if (index2 === xs.length) {
+        index2 = 0;
         xs = [];
       } else {
-        xs[index - 1] = void 0;
+        xs[index2 - 1] = void 0;
       }
       return out;
     }
   };
 }
 
-// node_modules/postgres/src/bytes.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/postgres/src/bytes.js
 var size = 256;
 var buffer = Buffer.allocUnsafe(size);
 var messages = "BCcDdEFfHPpQSX".split("").reduce((acc, x) => {
@@ -47981,7 +48273,7 @@ function reset() {
   return b;
 }
 
-// node_modules/postgres/src/connection.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/postgres/src/connection.js
 var connection_default = Connection;
 var uid = 1;
 var Sync = bytes_default().S().end();
@@ -48038,12 +48330,12 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
   const {
     sslnegotiation,
     ssl,
-    max,
+    max: max2,
     user,
     host,
     port,
     database,
-    parsers: parsers2,
+    parsers: parsers3,
     transform,
     onnotice,
     onnotify,
@@ -48394,16 +48686,16 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
     ))(xs);
   }
   function DataRow(x) {
-    let index = 7;
+    let index2 = 7;
     let length2;
     let column;
     let value;
     const row = query.isRaw ? new Array(query.statement.columns.length) : {};
     for (let i = 0; i < query.statement.columns.length; i++) {
       column = query.statement.columns[i];
-      length2 = x.readInt32BE(index);
-      index += 4;
-      value = length2 === -1 ? null : query.isRaw === true ? x.subarray(index, index += length2) : column.parser === void 0 ? x.toString("utf8", index, index += length2) : column.parser.array === true ? column.parser(x.toString("utf8", index + 1, index += length2)) : column.parser(x.toString("utf8", index, index += length2));
+      length2 = x.readInt32BE(index2);
+      index2 += 4;
+      value = length2 === -1 ? null : query.isRaw === true ? x.subarray(index2, index2 += length2) : column.parser === void 0 ? x.toString("utf8", index2, index2 += length2) : column.parser.array === true ? column.parser(x.toString("utf8", index2 + 1, index2 += length2)) : column.parser(x.toString("utf8", index2, index2 += length2));
       query.isRaw ? row[i] = query.isRaw === true ? value : transform.value.from ? transform.value.from(value, column) : value : row[column.name] = transform.value.from ? transform.value.from(value, column) : value;
     }
     query.forEachFn ? query.forEachFn(transform.row.from ? transform.row.from(row) : row, result) : result[rows++] = transform.row.from ? transform.row.from(row) : row;
@@ -48463,7 +48755,7 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
       }
     }
     final && (final(), final = null);
-    if (result.command === "BEGIN" && max !== 1 && !connection2.reserved)
+    if (result.command === "BEGIN" && max2 !== 1 && !connection2.reserved)
       return errored(Errors.generic("UNSAFE_TRANSACTION", "Only use sql.begin, sql.reserved or max: 1"));
     if (query.options.simple)
       return BindComplete();
@@ -48494,23 +48786,23 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
       query.statement.columns = null;
     }
     const length2 = x.readUInt16BE(5);
-    let index = 7;
+    let index2 = 7;
     let start;
     query.statement.columns = Array(length2);
     for (let i = 0; i < length2; ++i) {
-      start = index;
-      while (x[index++] !== 0) ;
-      const table = x.readUInt32BE(index);
-      const number = x.readUInt16BE(index + 4);
-      const type = x.readUInt32BE(index + 6);
+      start = index2;
+      while (x[index2++] !== 0) ;
+      const table = x.readUInt32BE(index2);
+      const number = x.readUInt16BE(index2 + 4);
+      const type = x.readUInt32BE(index2 + 6);
       query.statement.columns[i] = {
-        name: transform.column.from ? transform.column.from(x.toString("utf8", start, index - 1)) : x.toString("utf8", start, index - 1),
-        parser: parsers2[type],
+        name: transform.column.from ? transform.column.from(x.toString("utf8", start, index2 - 1)) : x.toString("utf8", start, index2 - 1),
+        parser: parsers3[type],
         table,
         number,
         type
       };
-      index += 18;
+      index2 += 18;
     }
     result.statement = query.statement;
     if (query.onlyDescribe)
@@ -48633,11 +48925,11 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
   function NotificationResponse(x) {
     if (!onnotify)
       return;
-    let index = 9;
-    while (x[index++] !== 0) ;
+    let index2 = 9;
+    while (x[index2++] !== 0) ;
     onnotify(
-      x.toString("utf8", 9, index - 1),
-      x.toString("utf8", index, x.length - 1)
+      x.toString("utf8", 9, index2 - 1),
+      x.toString("utf8", index2, x.length - 1)
     );
   }
   async function PortalSuspended() {
@@ -48821,7 +49113,7 @@ function timer(fn, seconds) {
   }
 }
 
-// node_modules/postgres/src/subscribe.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/postgres/src/subscribe.js
 var noop2 = () => {
 };
 function Subscribe(postgres2, options) {
@@ -48910,13 +49202,13 @@ function Subscribe(postgres2, options) {
       }
     }
     function handle(a, b2) {
-      const path7 = b2.relation.schema + "." + b2.relation.table;
+      const path8 = b2.relation.schema + "." + b2.relation.table;
       call("*", a, b2);
-      call("*:" + path7, a, b2);
-      b2.relation.keys.length && call("*:" + path7 + "=" + b2.relation.keys.map((x2) => a[x2.name]), a, b2);
+      call("*:" + path8, a, b2);
+      b2.relation.keys.length && call("*:" + path8 + "=" + b2.relation.keys.map((x2) => a[x2.name]), a, b2);
       call(b2.command, a, b2);
-      call(b2.command + ":" + path7, a, b2);
-      b2.relation.keys.length && call(b2.command + ":" + path7 + "=" + b2.relation.keys.map((x2) => a[x2.name]), a, b2);
+      call(b2.command + ":" + path8, a, b2);
+      b2.relation.keys.length && call(b2.command + ":" + path8 + "=" + b2.relation.keys.map((x2) => a[x2.name]), a, b2);
     }
     function pong() {
       const x2 = Buffer.alloc(34);
@@ -48933,7 +49225,7 @@ function Subscribe(postgres2, options) {
 function Time(x) {
   return new Date(Date.UTC(2e3, 0, 1) + Number(x / BigInt(1e3)));
 }
-function parse(x, state, parsers2, handle, transform) {
+function parse(x, state, parsers3, handle, transform) {
   const char2 = (acc, [k, v]) => (acc[k.charCodeAt(0)] = v, acc);
   Object.entries({
     R: (x2) => {
@@ -48951,7 +49243,7 @@ function parse(x, state, parsers2, handle, transform) {
           key: x2[i++],
           name: transform.column.from ? transform.column.from(x2.toString("utf8", i, i = x2.indexOf(0, i))) : x2.toString("utf8", i, i = x2.indexOf(0, i)),
           type: x2.readUInt32BE(i += 1),
-          parser: parsers2[x2.readUInt32BE(i)],
+          parser: parsers3[x2.readUInt32BE(i)],
           atttypmod: x2.readUInt32BE(i += 4)
         };
         column.key && r.keys.push(column);
@@ -49029,22 +49321,22 @@ function parseEvent(x) {
   const xs = x.match(/^(\*|insert|update|delete)?:?([^.]+?\.?[^=]+)?=?(.+)?/i) || [];
   if (!xs)
     throw new Error("Malformed subscribe pattern: " + x);
-  const [, command, path7, key] = xs;
-  return (command || "*") + (path7 ? ":" + (path7.indexOf(".") === -1 ? "public." + path7 : path7) : "") + (key ? "=" + key : "");
+  const [, command, path8, key] = xs;
+  return (command || "*") + (path8 ? ":" + (path8.indexOf(".") === -1 ? "public." + path8 : path8) : "") + (key ? "=" + key : "");
 }
 
-// node_modules/postgres/src/large.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/postgres/src/large.js
 var import_stream2 = __toESM(require("stream"), 1);
 function largeObject(sql3, oid, mode = 131072 | 262144) {
   return new Promise(async (resolve4, reject) => {
     await sql3.begin(async (sql4) => {
-      let finish;
+      let finish2;
       !oid && ([{ oid }] = await sql4`select lo_creat(-1) as oid`);
       const [{ fd }] = await sql4`select lo_open(${oid}, ${mode}) as fd`;
       const lo = {
         writable,
         readable,
-        close: () => sql4`select lo_close(${fd})`.then(finish),
+        close: () => sql4`select lo_close(${fd})`.then(finish2),
         tell: () => sql4`select lo_tell64(${fd})`,
         read: (x) => sql4`select loread(${fd}, ${x}) as data`,
         write: (x) => sql4`select lowrite(${fd}, ${x})`,
@@ -49063,19 +49355,19 @@ function largeObject(sql3, oid, mode = 131072 | 262144) {
         `
       };
       resolve4(lo);
-      return new Promise(async (r) => finish = r);
+      return new Promise(async (r) => finish2 = r);
       async function readable({
         highWaterMark = 2048 * 8,
         start = 0,
         end = Infinity
       } = {}) {
-        let max = end - start;
+        let max2 = end - start;
         start && await lo.seek(start);
         return new import_stream2.default.Readable({
           highWaterMark,
           async read(size2) {
-            const l = size2 > max ? size2 - max : size2;
-            max -= size2;
+            const l = size2 > max2 ? size2 - max2 : size2;
+            max2 -= size2;
             const [{ data }] = await lo.read(l);
             this.push(data);
             if (data.length < size2)
@@ -49099,7 +49391,7 @@ function largeObject(sql3, oid, mode = 131072 | 262144) {
   });
 }
 
-// node_modules/postgres/src/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/postgres/src/index.js
 Object.assign(Postgres, {
   PostgresError,
   toPascal,
@@ -49175,10 +49467,10 @@ function Postgres(a, b2) {
       });
       return query;
     }
-    function file(path7, args = [], options2 = {}) {
+    function file(path8, args = [], options2 = {}) {
       arguments.length === 2 && !Array.isArray(args) && (options2 = args, args = []);
       const query = new Query([], args, (query2) => {
-        import_fs.default.readFile(path7, "utf8", (err, string) => {
+        import_fs.default.readFile(path8, "utf8", (err, string) => {
           if (err)
             return query2.reject(err);
           query2.strings = [string];
@@ -49231,8 +49523,8 @@ function Postgres(a, b2) {
       return sql4`unlisten ${sql4.unsafe('"' + name.replace(/"/g, '""') + '"')}`;
     }
   }
-  async function notify(channel, payload) {
-    return await sql3`select pg_notify(${channel}, ${"" + payload})`;
+  async function notify(channel2, payload) {
+    return await sql3`select pg_notify(${channel2}, ${"" + payload})`;
   }
   async function reserve() {
     const queue = queue_default();
@@ -49370,8 +49662,8 @@ function Postgres(a, b2) {
   function onopen(c) {
     if (queries.length === 0)
       return move(c, open3);
-    let max = Math.ceil(queries.length / (connecting.length + 1)), ready = true;
-    while (ready && queries.length && max-- > 0) {
+    let max2 = Math.ceil(queries.length / (connecting.length + 1)), ready = true;
+    while (ready && queries.length && max2-- > 0) {
       const query = queries.shift();
       if (query.reserve)
         return query.reserve(c);
@@ -49502,7 +49794,7 @@ function osUsername() {
   }
 }
 
-// node_modules/drizzle-orm/postgres-js/session.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/postgres-js/session.js
 var PostgresJsPreparedQuery = class extends PgPreparedQuery {
   constructor(client, queryString, params, logger, cache, queryMetadata, cacheConfig, fields, _isResponseInArrayMode, customResultMapper) {
     super({ sql: queryString, params }, cache, queryMetadata, cacheConfig);
@@ -49638,7 +49930,7 @@ var PostgresJsTransaction = class _PostgresJsTransaction extends PgTransaction {
   }
 };
 
-// node_modules/drizzle-orm/postgres-js/driver.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/postgres-js/driver.js
 var PostgresJsDatabase = class extends PgDatabase {
   static [entityKind] = "PostgresJsDatabase";
 };
@@ -49743,6 +50035,17 @@ var DatabaseStorage = class {
     if (!existing) return void 0;
     if (Object.keys(data).length === 0) return existing;
     const rows = await db.update(events).set(data).where(eq(events.id, existing.id)).returning();
+    return rows[0];
+  }
+  // Grants an event its one-time Spark unlock. Idempotent: if the event is
+  // already unlocked, returns it untouched (a replayed webhook or a
+  // success-page refresh must never re-stamp the timestamp or overwrite the
+  // originating session id).
+  async markEventSparkUnlocked(ownerToken, checkoutSessionId) {
+    const existing = await this.getEventByOwnerToken(ownerToken);
+    if (!existing) return void 0;
+    if (existing.sparkUnlockedAt) return existing;
+    const rows = await db.update(events).set({ sparkUnlockedAt: Date.now(), sparkCheckoutSessionId: checkoutSessionId }).where(eq(events.id, existing.id)).returning();
     return rows[0];
   }
   async listGuests(eventId) {
@@ -49874,6 +50177,24 @@ var DatabaseStorage = class {
     const rows = await db.update(events).set(data).where(eq(events.id, eventId)).returning();
     return rows[0];
   }
+  // Stamps the host's email onto the event (the entitlement gate resolves Plus
+  // membership through this column — see canGenerateDraft). Normalizes to
+  // trimmed lowercase. Idempotent: re-stamping the same normalized email is a
+  // no-op that leaves emailCapturedAt untouched. Callers own any
+  // don't-overwrite-a-different-email policy; this just writes what it's given.
+  async setEventCapturedEmail(eventId, email) {
+    const existing = await this.getEventById(eventId);
+    if (!existing) return void 0;
+    const normalized = email.trim().toLowerCase();
+    if (existing.capturedEmail === normalized) return existing;
+    const rows = await db.update(events).set({ capturedEmail: normalized, emailCapturedAt: Date.now() }).where(eq(events.id, eventId)).returning();
+    return rows[0];
+  }
+  async getEventsByEmail(email) {
+    const normalized = email.trim().toLowerCase();
+    const rows = await db.select().from(events).where(eq(events.capturedEmail, normalized));
+    return rows.sort((a, b2) => (b2.createdAt ?? 0) - (a.createdAt ?? 0));
+  }
   async getLatestGenerationForEvent(eventId) {
     const rows = await db.select().from(masterPlannerGenerations).where(eq(masterPlannerGenerations.eventId, eventId));
     if (rows.length === 0) return void 0;
@@ -49935,41 +50256,136 @@ var DatabaseStorage = class {
 var storage = new DatabaseStorage();
 
 // server/email.ts
-var import_node_child_process = require("node:child_process");
-function sendInviteEmail(opts) {
-  const payload = JSON.stringify({
-    source_id: "gcal",
-    tool_name: "send_email",
-    arguments: {
-      action: {
-        action: "send",
+var RESEND_API_URL = "https://api.resend.com/emails";
+var DEFAULT_FROM = "Posy <onboarding@resend.dev>";
+function escapeHtml(value) {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+function buildInviteEmailHtml(body) {
+  const urlPattern = /(https?:\/\/[^\s]+)/g;
+  const paragraphs = body.split(/\n{2,}/).map((block) => escapeHtml(block).replace(/\n/g, "<br>")).map(
+    (block) => block.replace(urlPattern, (escapedUrl) => {
+      const realUrl = escapedUrl.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+      return `<a href="${realUrl}" style="display:inline-block;margin-top:4px;padding:10px 20px;background:#5c6756;color:#ffffff;border-radius:6px;text-decoration:none;font-weight:600;">View &amp; RSVP</a>`;
+    })
+  );
+  return `<!DOCTYPE html>
+<html>
+  <body style="margin:0;padding:32px 16px;background:#f6eae4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#2f2b26;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" style="max-width:480px;background:#ffffff;border-radius:12px;padding:32px;" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="font-size:18px;font-weight:700;color:#5c6756;letter-spacing:0.02em;padding-bottom:20px;">Posy</td>
+            </tr>
+            <tr>
+              <td style="font-size:15px;line-height:1.6;">${paragraphs.map((p) => `<p style="margin:0 0 16px;">${p}</p>`).join("")}</td>
+            </tr>
+            <tr>
+              <td style="padding-top:28px;border-top:1px solid #ece8e1;margin-top:24px;font-size:12px;color:#a3a894;">
+                Sent by Posy on behalf of your host. If this wasn't meant for you, you can ignore it.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+}
+async function sendInviteEmail(opts) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    return {
+      ok: false,
+      error: "Email sending isn't set up for this event yet. Please contact support."
+    };
+  }
+  const from = process.env.RESEND_FROM_EMAIL || DEFAULT_FROM;
+  try {
+    const response = await fetch(RESEND_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        from,
         to: [opts.to],
-        cc: [],
-        bcc: [],
         subject: opts.subject,
-        body: opts.body
+        text: opts.body,
+        html: buildInviteEmailHtml(opts.body)
+      })
+    });
+    if (!response.ok) {
+      const errorBody = await response.text().catch(() => "");
+      let message2 = `Couldn't send this email (status ${response.status}).`;
+      try {
+        const parsed = JSON.parse(errorBody);
+        if (parsed.message) message2 = parsed.message;
+      } catch {
       }
+      return { ok: false, error: message2 };
     }
+    return { ok: true };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Couldn't send this email \u2014 please try again."
+    };
+  }
+}
+
+// server/sms.ts
+var TWILIO_API_BASE = "https://api.twilio.com/2010-04-01";
+async function sendReminderSms(opts) {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  const messagingServiceSid = process.env.TWILIO_MESSAGING_SERVICE_SID;
+  const fromNumber = process.env.TWILIO_FROM_NUMBER;
+  if (!accountSid || !authToken || !(messagingServiceSid || fromNumber)) {
+    return {
+      ok: false,
+      skipped: "not_configured",
+      error: "Text reminders aren't set up yet. Please contact support."
+    };
+  }
+  const params = new URLSearchParams({
+    To: opts.to,
+    Body: opts.body
   });
-  return new Promise((resolve4) => {
-    (0, import_node_child_process.execFile)(
-      "external-tool",
-      ["call", payload],
-      { timeout: 3e4 },
-      (err, stdout, stderr) => {
-        if (err) {
-          try {
-            const parsed = JSON.parse(stderr.toString() || stdout.toString());
-            resolve4({ ok: false, error: parsed.error || String(err), authUrl: parsed.auth_url });
-          } catch {
-            resolve4({ ok: false, error: stderr.toString() || String(err) });
-          }
-          return;
-        }
-        resolve4({ ok: true });
+  if (messagingServiceSid) {
+    params.set("MessagingServiceSid", messagingServiceSid);
+  } else if (fromNumber) {
+    params.set("From", fromNumber);
+  }
+  try {
+    const response = await fetch(`${TWILIO_API_BASE}/Accounts/${accountSid}/Messages.json`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: `Basic ${Buffer.from(`${accountSid}:${authToken}`).toString("base64")}`
+      },
+      body: params.toString()
+    });
+    if (!response.ok) {
+      const errorBody = await response.text().catch(() => "");
+      let message2 = `Couldn't send this text (status ${response.status}).`;
+      try {
+        const parsed = JSON.parse(errorBody);
+        if (parsed.message) message2 = parsed.message;
+      } catch {
       }
-    );
-  });
+      return { ok: false, error: message2 };
+    }
+    return { ok: true };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Couldn't send this text \u2014 please try again."
+    };
+  }
 }
 
 // server/themeLibrary.ts
@@ -50611,13 +51027,13 @@ async function generateThemeAndIdentityAi(input) {
     `Guest count: ${input.guestCount}`,
     `Host's description of the vibe: "${input.vibeDescription || "(not provided)"}"`
   ].join("\n");
-  const message = await client.messages.create({
-    model: "claude_sonnet_4_6",
+  const message2 = await client.messages.create({
+    model: "claude-sonnet-4-6",
     max_tokens: 600,
     system: THEME_AND_IDENTITY_INSTRUCTIONS,
     messages: [{ role: "user", content: userPrompt }]
   });
-  const block = message.content.find((c) => c.type === "text");
+  const block = message2.content.find((c) => c.type === "text");
   const raw = block && "text" in block ? block.text : "";
   const jsonMatch = raw.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error("AI response did not contain JSON");
@@ -50635,13 +51051,13 @@ async function generateThemeSuggestionAi(theme, eventType) {
   const client = new Anthropic();
   const userPrompt = `Theme: "${theme}"${eventType ? `
 Event type: "${eventType}"` : ""}`;
-  const message = await client.messages.create({
-    model: "claude_sonnet_4_6",
+  const message2 = await client.messages.create({
+    model: "claude-sonnet-4-6",
     max_tokens: 1500,
     system: RESPONSE_SHAPE_INSTRUCTIONS,
     messages: [{ role: "user", content: userPrompt }]
   });
-  const block = message.content.find((c) => c.type === "text");
+  const block = message2.content.find((c) => c.type === "text");
   const raw = block && "text" in block ? block.text : "";
   const jsonMatch = raw.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error("AI response did not contain JSON");
@@ -50715,13 +51131,13 @@ async function generateInviteToneAi(params) {
     params.hostNames && `Host(s): ${params.hostNames}`,
     params.themeName && `Theme: ${params.themeName}`
   ].filter(Boolean).join("\n");
-  const message = await client.messages.create({
-    model: "claude_sonnet_4_6",
+  const message2 = await client.messages.create({
+    model: "claude-sonnet-4-6",
     max_tokens: 600,
     system: RESPONSE_SHAPE_INSTRUCTIONS2,
     messages: [{ role: "user", content: userPrompt }]
   });
-  const block = message.content.find((c) => c.type === "text");
+  const block = message2.content.find((c) => c.type === "text");
   const raw = block && "text" in block ? block.text : "";
   const jsonMatch = raw.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error("AI response did not contain JSON");
@@ -50761,13 +51177,13 @@ async function generateBudgetSuggestionAi(params) {
     `Guest headcount: ${params.headcount > 0 ? params.headcount : "unknown, assume a modest gathering of about 20"}`,
     params.targetBudget ? `Target total budget: $${params.targetBudget}` : "Target total budget: not set \u2014 propose a sensible total"
   ].filter(Boolean);
-  const message = await client.messages.create({
-    model: "claude_sonnet_4_6",
+  const message2 = await client.messages.create({
+    model: "claude-sonnet-4-6",
     max_tokens: 1200,
     system: RESPONSE_SHAPE_INSTRUCTIONS3,
     messages: [{ role: "user", content: lines.join("\n") }]
   });
-  const block = message.content.find((c) => c.type === "text");
+  const block = message2.content.find((c) => c.type === "text");
   const raw = block && "text" in block ? block.text : "";
   const jsonMatch = raw.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error("AI response did not contain JSON");
@@ -50834,7 +51250,7 @@ function isFuzzyNameMatch(query, name) {
 init_sdk();
 
 // shared/inviteDesign.ts
-var FONT_PAIRINGS = [
+var LEGACY_FONT_PAIRINGS = [
   {
     id: "editorial-serif",
     label: "Editorial Serif",
@@ -50899,11 +51315,185 @@ var FONT_PAIRINGS = [
     headingWeight: 600
   }
 ];
+var CURATED_FONT_PAIRINGS = [
+  {
+    id: "garden-editorial-type",
+    label: "Garamond Editorial",
+    headingFontFamily: "'Cormorant Garamond', Georgia, serif",
+    bodyFontFamily: "'Jost', 'Lato', sans-serif",
+    headingWeight: 600,
+    headingLetterSpacing: "0.01em"
+  },
+  {
+    id: "romantic-italic",
+    label: "Romantic Italic",
+    headingFontFamily: "'Cormorant Garamond', Georgia, serif",
+    bodyFontFamily: "'Lato', sans-serif",
+    headingWeight: 500,
+    headingStyle: "italic"
+  },
+  {
+    id: "deco-luxe",
+    label: "Deco Luxe",
+    headingFontFamily: "'Cinzel', Georgia, serif",
+    bodyFontFamily: "'Jost', sans-serif",
+    headingWeight: 600,
+    headingLetterSpacing: "0.16em"
+  },
+  {
+    id: "deco-poiret",
+    label: "Poiret Deco",
+    headingFontFamily: "'Poiret One', 'Jost', sans-serif",
+    bodyFontFamily: "'Jost', sans-serif",
+    headingWeight: 400,
+    headingLetterSpacing: "0.2em"
+  },
+  {
+    id: "neon-display",
+    label: "Arena Display",
+    headingFontFamily: "'Bebas Neue', 'Space Grotesk', sans-serif",
+    bodyFontFamily: "'Space Grotesk', sans-serif",
+    headingWeight: 400,
+    headingLetterSpacing: "0.06em"
+  },
+  {
+    id: "tech-grotesk",
+    label: "Tech Grotesk",
+    headingFontFamily: "'Space Grotesk', sans-serif",
+    bodyFontFamily: "'Space Grotesk', sans-serif",
+    headingWeight: 700,
+    headingLetterSpacing: "0.02em"
+  },
+  {
+    id: "poolside-geometric",
+    label: "Poolside Geometric",
+    headingFontFamily: "'Jost', sans-serif",
+    bodyFontFamily: "'Lato', sans-serif",
+    headingWeight: 500,
+    headingLetterSpacing: "0.22em"
+  },
+  {
+    id: "storybook-garamond",
+    label: "Storybook Garamond",
+    headingFontFamily: "'EB Garamond', Georgia, serif",
+    bodyFontFamily: "'Jost', sans-serif",
+    headingWeight: 500,
+    headingStyle: "italic"
+  },
+  {
+    id: "quiet-garamond",
+    label: "Quiet Garamond",
+    headingFontFamily: "'EB Garamond', Georgia, serif",
+    bodyFontFamily: "'Lato', sans-serif",
+    headingWeight: 600,
+    headingLetterSpacing: "0.04em"
+  },
+  {
+    id: "museum-slab",
+    label: "Museum Slab",
+    headingFontFamily: "'Bitter', Georgia, serif",
+    bodyFontFamily: "'Jost', sans-serif",
+    headingWeight: 600,
+    headingLetterSpacing: "0.03em"
+  },
+  {
+    id: "disco-display",
+    label: "Disco Display",
+    headingFontFamily: "'Abril Fatface', Georgia, serif",
+    bodyFontFamily: "'Jost', sans-serif",
+    headingWeight: 400
+  },
+  {
+    id: "playfair-classic",
+    label: "Playfair Classic",
+    headingFontFamily: "'Playfair Display', Georgia, serif",
+    bodyFontFamily: "'Lato', sans-serif",
+    headingWeight: 600
+  }
+];
+var FONT_PAIRINGS = [...LEGACY_FONT_PAIRINGS, ...CURATED_FONT_PAIRINGS];
 function getFontPairing(id) {
   return FONT_PAIRINGS.find((f) => f.id === id) || FONT_PAIRINGS[0];
 }
 var BORDER_STYLES = ["none", "thin-frame", "double-frame", "dashed-frame", "corner-flourish"];
-var LAYOUT_STYLES = ["banner", "backdrop"];
+var LAYOUT_STYLES = ["banner", "backdrop", "split", "centered", "full-bleed"];
+var STYLE_LANES = [
+  {
+    id: "editorial-premium",
+    label: "Editorial Premium",
+    description: "Elegant, refined, magazine-quality with generous white space",
+    illustrationMediums: ["watercolor", "editorial illustration", "fine line art", "botanical illustration"],
+    paletteMood: "Muted, sophisticated \u2014 think dusty rose, sage, charcoal, gold. Restrained 3-4 color palette.",
+    typographyMood: "Elegant serif headings, refined body text. High contrast between heading and body weight.",
+    compositionGuidance: "Generous negative space (40%+). Single elegant focal subject. Asymmetric or off-center balance.",
+    preferredLayouts: ["centered", "banner", "split"],
+    avoid: "Cartoon characters, bright primary colors, cluttered layouts, clipart aesthetics",
+    subjectGuidance: "Choose ONE elegant botanical or abstract subject: a single flower stem, a sprig of olive branch, a pressed flower, an abstract watercolor wash, a single feather, or a minimalist botanical line drawing. NEVER use literal theme objects (no birthday cakes, no balloons, no farm animals). The subject should feel like fine art, not decoration."
+  },
+  {
+    id: "playful-illustrated",
+    label: "Playful Illustrated",
+    description: "Bright, fun, character-driven with bold colors",
+    illustrationMediums: ["flat vector illustration", "cartoon illustration", "character illustration", "sticker art"],
+    paletteMood: "Bright, saturated, joyful \u2014 think coral, teal, sunshine yellow, sky blue. 4-5 vibrant colors.",
+    typographyMood: "Rounded, friendly heading fonts. Casual, approachable body text.",
+    compositionGuidance: "Centered focal character or scene. Energetic, fills the frame. Confetti or scattered elements OK.",
+    preferredLayouts: ["banner", "full-bleed", "centered"],
+    avoid: "Muted or monochrome palettes, overly formal layouts, photorealistic illustration",
+    subjectGuidance: "Choose ONE cheerful abstract or geometric subject: scattered confetti shapes, a bunting/garland pattern, abstract balloons as geometric shapes, a festive crown, or a stylized party hat. Keep it modern and design-forward, NOT literal. Avoid realistic animals, realistic cakes, or any subject that looks like clipart."
+  },
+  {
+    id: "bold-graphic",
+    label: "Bold Graphic",
+    description: "Strong geometric shapes, high contrast, modern and striking",
+    illustrationMediums: ["flat graphic design", "geometric illustration", "typographic art", "abstract geometric"],
+    paletteMood: "High-contrast \u2014 black/white with one or two bold accents (red, electric blue, gold). Limited palette.",
+    typographyMood: "Bold condensed or geometric sans-serif. Large heading scale. Tight letter spacing.",
+    compositionGuidance: "Strong geometric grid. Diagonal or asymmetrical composition. Bold negative space as a design element.",
+    preferredLayouts: ["split", "full-bleed", "banner"],
+    avoid: "Soft pastels, hand-drawn styles, decorative flourishes, muted tones",
+    subjectGuidance: "Choose ONE bold abstract or geometric subject: geometric shapes (triangles, circles, arches), a bold typographic element, an abstract sunburst, or a modern architectural silhouette. NEVER use literal objects (no cakes, no animals, no balloons). The subject should feel like modern graphic design, not illustration."
+  },
+  {
+    id: "storybook-whimsical",
+    label: "Storybook Whimsical",
+    description: "Warm, handcrafted, fairy-tale charm with layered textures",
+    illustrationMediums: ["watercolor", "gouache", "colored pencil", "papercut illustration"],
+    paletteMood: "Warm, cozy \u2014 think terracotta, buttercream, sage, soft lavender. Warm undertones.",
+    typographyMood: "Handwritten or script headings. Warm, readable serif body text.",
+    compositionGuidance: "Layered panels or vignette style. Soft edges, organic shapes. Storybook illustration feel.",
+    preferredLayouts: ["banner", "centered", "split"],
+    avoid: "Hard geometric shapes, high-contrast palettes, sterile minimalism, flat vector art",
+    subjectGuidance: "Choose ONE dreamy, atmospheric subject: a watercolor landscape (rolling hills, a meadow, a garden scene), a whimsical tree with hanging leaves, a crescent moon with stars, or a soft floral wreath. The subject should feel like a children's book illustration \u2014 soft, warm, and magical. NEVER use cartoon animals, literal party objects, or anything that looks like clipart."
+  },
+  {
+    id: "minimal-modern",
+    label: "Minimal Modern",
+    description: "Clean, contemporary, lots of breathing room with a single accent",
+    illustrationMediums: ["minimal line art", "abstract geometric", "single-element botanical", "monoline illustration"],
+    paletteMood: "Monochromatic or duo-tone \u2014 white/off-white with one accent (navy, emerald, or blush). Extremely restrained.",
+    typographyMood: "Clean geometric sans-serif. Medium weight. Generous letter spacing.",
+    compositionGuidance: "Maximum negative space (50%+). Single small accent element. Rule-of-thirds composition.",
+    preferredLayouts: ["centered", "split", "backdrop"],
+    avoid: "Busy illustrations, multiple colors, decorative borders, ornate fonts, cluttered layouts",
+    subjectGuidance: "Choose ONE ultra-minimal subject: a single continuous-line drawing (one flower, one leaf, one abstract shape), a single geometric accent, or a small abstract mark. The subject should be small and surrounded by generous white space. NEVER use literal objects, busy scenes, or anything that fills more than 20% of the frame."
+  },
+  {
+    id: "handcrafted-rustic",
+    label: "Handcrafted Rustic",
+    description: "Earthy, organic, cozy with natural textures",
+    illustrationMediums: ["linocut", "papercut", "woodcut", "hand-drawn illustration"],
+    paletteMood: "Earthy \u2014 kraft brown, forest green, mustard, cream. Natural, grounded tones.",
+    typographyMood: "Rustic handwritten or stamp-like headings. Warm serif body text.",
+    compositionGuidance: "Organic framing, imperfect edges. Texture-forward. Cozy, filled composition with warm border treatment.",
+    preferredLayouts: ["banner", "centered", "backdrop"],
+    avoid: "Glossy digital look, bright neon colors, sterile minimalism, photorealistic illustration",
+    subjectGuidance: "Choose ONE elegant natural subject: a wildflower bouquet, a eucalyptus sprig, a pressed flower, a cotton branch, a wheat stalk, a botanical wreath, or a textured kraft paper background with organic edges. NEVER use farm animals (no roosters, pigs, cows, chickens), barns, tractors, or any literal farm objects. The subject should feel like artisan stationery, not a farm themed birthday party."
+  }
+];
+function getStyleLane(id) {
+  return STYLE_LANES.find((s) => s.id === id);
+}
 function isValidInviteDesignConcept(value) {
   if (!value || typeof value !== "object") return false;
   const v = value;
@@ -51063,6 +51653,102 @@ function dnaSummaryForPrompt(profile) {
   return profile.summary;
 }
 
+// server/conceptQualityGate.ts
+function paletteDistance(a, b2) {
+  let dist = 0;
+  for (let i = 0; i < 4; i++) {
+    const ca = parseInt(a[i].slice(1), 16);
+    const cb = parseInt(b2[i].slice(1), 16);
+    const dr = (ca >> 16 & 255) - (cb >> 16 & 255);
+    const dg = (ca >> 8 & 255) - (cb >> 8 & 255);
+    const db2 = (ca & 255) - (cb & 255);
+    dist += Math.sqrt(dr * dr + dg * dg + db2 * db2);
+  }
+  return dist;
+}
+function scorePaletteHarmony(colors) {
+  if (colors.length < 4) return 0.5;
+  const lights = colors.map((c) => {
+    const v = parseInt(c.slice(1), 16);
+    return ((v >> 16 & 255) + (v >> 8 & 255) + (v & 255)) / 3;
+  });
+  const range = Math.max(...lights) - Math.min(...lights);
+  const rangeScore = Math.min(range / 150, 1);
+  const unique = new Set(colors.map((c) => c.toLowerCase())).size;
+  const uniquenessScore = unique / 4;
+  return (rangeScore + uniquenessScore) / 2;
+}
+function scoreCompositionClarity(concept) {
+  const lane = concept.styleLaneId ? getStyleLane(concept.styleLaneId) : null;
+  if (!lane) return 0.6;
+  const layoutMatch = lane.preferredLayouts.includes(concept.layoutStyle);
+  const ad = concept.artDirection;
+  const adCompleteness = ad ? [
+    ad.illustrationMedium,
+    ad.subjectFocus,
+    ad.compositionType,
+    ad.negativeSpace,
+    ad.colorTreatment,
+    ad.texture,
+    ad.avoidList
+  ].filter((f) => f && f.length > 0).length / 7 : 0.5;
+  return (layoutMatch ? 0.6 : 0.3) + adCompleteness * 0.4;
+}
+function scoreThemeFit(concept, themePrompt) {
+  const themeWords = themePrompt.toLowerCase().split(/\s+/).filter((w) => w.length > 3);
+  if (themeWords.length === 0) return 0.7;
+  const conceptText = (concept.conceptName + " " + concept.description).toLowerCase();
+  const matches = themeWords.filter((w) => conceptText.includes(w)).length;
+  const illMatches = themeWords.filter((w) => concept.illustrationPrompt.toLowerCase().includes(w)).length;
+  return Math.min((matches + illMatches * 0.5) / Math.max(themeWords.length, 1) + 0.3, 1);
+}
+function scoreDistinctiveness(concept, others) {
+  if (others.length === 0) return 1;
+  let paletteScore = 0;
+  let layoutScore = 0;
+  let laneScore = 0;
+  for (const other of others) {
+    paletteScore += Math.min(paletteDistance(concept.paletteColors, other.paletteColors) / 400, 1);
+    layoutScore += concept.layoutStyle !== other.layoutStyle ? 1 : 0;
+    laneScore += concept.styleLaneId !== other.styleLaneId ? 1 : 0;
+  }
+  const n = others.length;
+  return (paletteScore / n + layoutScore / n + laneScore / n) / 3;
+}
+function scoreConcepts(concepts, themePrompt) {
+  return concepts.map((concept, index2) => {
+    const others = concepts.filter((_, i) => i !== index2);
+    const distinctiveness = scoreDistinctiveness(concept, others);
+    const themeFit = scoreThemeFit(concept, themePrompt);
+    const paletteHarmony = scorePaletteHarmony(concept.paletteColors);
+    const compositionClarity = scoreCompositionClarity(concept);
+    const total = distinctiveness * 0.25 + themeFit * 0.3 + paletteHarmony * 0.2 + compositionClarity * 0.25;
+    return { concept, index: index2, distinctiveness, themeFit, paletteHarmony, compositionClarity, total };
+  }).sort((a, b2) => b2.total - a.total);
+}
+function selectTopConcepts(concepts, themePrompt, count = 4) {
+  if (concepts.length <= count) return concepts;
+  const scored = scoreConcepts(concepts, themePrompt);
+  const selected = [];
+  const usedLanes = /* @__PURE__ */ new Set();
+  for (const { concept } of scored) {
+    const laneId = concept.styleLaneId ?? `unknown-${selected.length}`;
+    if (usedLanes.has(laneId)) continue;
+    usedLanes.add(laneId);
+    selected.push(concept);
+    if (selected.length >= count) break;
+  }
+  if (selected.length < count) {
+    for (const { concept } of scored) {
+      if (!selected.includes(concept)) {
+        selected.push(concept);
+        if (selected.length >= count) break;
+      }
+    }
+  }
+  return selected;
+}
+
 // server/inviteDesignAi.ts
 var FONT_PAIRING_IDS = FONT_PAIRINGS.map((f) => f.id).join(", ");
 var BORDER_STYLE_IDS = BORDER_STYLES.join(", ");
@@ -51071,38 +51757,213 @@ var DNA_HINT_AXIS_DESCRIPTIONS = CONCEPT_INFERABLE_AXES.map((axis) => {
   const def = DNA_AXES.find((a) => a.key === axis);
   return `"${axis}": -1 = fully ${def.poleA}, +1 = fully ${def.poleB}`;
 }).join("; ");
-var RESPONSE_SHAPE_INSTRUCTIONS4 = `You are a party invitation designer helping a non-professional host turn a short theme description into complete, coordinated invitation design concepts. Produce exactly 4 DISTINCT concepts as STRICT JSON only \u2014 no markdown fences, no commentary, just the JSON object.
+var STYLE_LANE_DESCRIPTIONS = STYLE_LANES.map((lane) => {
+  const layouts = lane.preferredLayouts.join(" or ");
+  return [
+    `Lane "${lane.id}" \u2014 ${lane.label}:`,
+    `  Mediums: ${lane.illustrationMediums.join(", ")}`,
+    `  Palette: ${lane.paletteMood}`,
+    `  Typography: ${lane.typographyMood}`,
+    `  Composition: ${lane.compositionGuidance}`,
+    `  Layouts: ${layouts}`,
+    `  Subject guidance: ${lane.subjectGuidance}`,
+    `  AVOID: ${lane.avoid}`
+  ].join("\n");
+}).join("\n\n");
+var FEW_SHOT_EXAMPLES = `Here are two examples of the quality bar. Your output must match this level of specificity and craft:
 
-Return exactly this shape:
+Example 1 (editorial-premium lane, theme "enchanted garden tea party"):
+{
+  "conceptName": "Twilight Bloom",
+  "description": "A moody, romantic palette of deep plum and brushed gold with a single watercolor iris \u2014 feels like a luxury garden party spread.",
+  "paletteColors": ["#4A2C3D", "#C9A961", "#E8D5C4", "#2D1B2E"],
+  "fontPairingId": "editorial-serif",
+  "borderStyle": "thin-frame",
+  "layoutStyle": "centered",
+  "styleLaneId": "editorial-premium",
+  "artDirection": {
+    "illustrationMedium": "watercolor",
+    "subjectFocus": "a single elegant iris stem with two blooms, one fully open and one budding, painted in deep plum and gold",
+    "compositionType": "centered focal with asymmetric stem",
+    "negativeSpace": "45% \u2014 generous breathing room around the single stem",
+    "colorTreatment": "muted wash with gold leaf accents on the petal edges",
+    "texture": "smooth watercolor paper texture",
+    "avoidList": "no text, no letters, no words, no numbers, no clipart, no photorealistic faces, no busy backgrounds"
+  },
+  "illustrationPrompt": "Elegant watercolor illustration of a single iris stem with two blooms, one fully open in deep plum and one budding, with delicate gold leaf accents on the petal edges. Centered composition with generous negative space around the stem. Muted watercolor wash background in soft cream. Professional editorial illustration quality, clean and refined. No text, no letters, no words, no numbers.",
+  "dnaHints": { "elegantCasual": 0.7, "traditionalModern": 0.3, "indoorOutdoor": 0.2, "formalPlayful": 0.6, "diyCatered": 0.4, "familyCorporate": 0.3 }
+}
+
+Example 2 (bold-graphic lane, theme "retro arcade birthday"):
+{
+  "conceptName": "Neon Drop",
+  "description": "High-contrast black and electric magenta with pixel-art geometry \u2014 an 80s arcade aesthetic that hits like a spotlight.",
+  "paletteColors": ["#FF006E", "#1A1A2E", "#F5F5F5", "#3A0CA3"],
+  "fontPairingId": "bold-editorial",
+  "borderStyle": "none",
+  "layoutStyle": "full-bleed",
+  "styleLaneId": "bold-graphic",
+  "artDirection": {
+    "illustrationMedium": "flat graphic design",
+    "subjectFocus": "abstract geometric arcade shapes \u2014 triangles, circles, and grid lines in electric magenta and deep purple on black",
+    "compositionType": "full-bleed geometric grid",
+    "negativeSpace": "minimal \u2014 fills the frame with bold shapes",
+    "colorTreatment": "saturated flat colors with high contrast",
+    "texture": "smooth digital, slight pixel-art feel",
+    "avoidList": "no text, no letters, no words, no numbers, no photorealistic elements, no gradients, no clipart"
+  },
+  "illustrationPrompt": "Bold flat graphic design illustration of abstract geometric arcade shapes \u2014 triangles, circles, and grid lines in electric magenta and deep purple on a black background. Full-bleed composition filling the frame. Saturated flat colors with high contrast. Pixel-art influenced but clean and modern. Professional graphic design quality. No text, no letters, no words, no numbers.",
+  "dnaHints": { "elegantCasual": -0.8, "traditionalModern": 0.7, "indoorOutdoor": -0.5, "formalPlayful": -0.7, "diyCatered": -0.3, "familyCorporate": -0.4 }
+}`;
+var RESPONSE_SHAPE_INSTRUCTIONS4 = `You are a senior art director at a premium invitation studio. A non-professional host has described their party theme, and you need to produce complete, coordinated invitation design concepts that look like they came from a professional stationery designer \u2014 not generic AI output.
+
+Your output must be STRICT JSON only \u2014 no markdown fences, no commentary.
+
+## CREATIVE DIRECTION MATRIX
+
+Each concept MUST be assigned to a DIFFERENT style lane. The lanes are:
+
+${STYLE_LANE_DESCRIPTIONS}
+
+${"```"}Always generate 6 concepts, one per style lane. If the host specified preferred style lanes below, include those lanes first, then fill remaining concepts with complementary distinct lanes. The quality gate will automatically select the best 4 to show the host.${"```"}
+
+## QUALITY BAR
+
+${FEW_SHOT_EXAMPLES}
+
+## COLOR THEORY RULES
+
+- paletteColors[0] = primary accent (used for headings, key UI elements)
+- paletteColors[1] = secondary accent (borders, dividers, small details)
+- paletteColors[2] = background or base tone (the card's overall wash)
+- paletteColors[3] = contrast tone (used sparingly for emphasis or depth)
+- Use proven color relationships:
+  - Analogous: 3 hues adjacent on the color wheel (e.g. #4A90D9, #5B5EA6, #6B4E9E)
+  - Complementary: base + opposite (e.g. #2D5F8A + #D49A3F with neutrals)
+  - Monochromatic: same hue, different lightness (e.g. #1B3A5C, #4A7BA8, #B8D4E8, #F0F5FA)
+  - Earthy tetrad: warm + cool naturals (e.g. #6B5344, #8B9D6F, #E8D5C4, #3D4A3D)
+- AVOID clashing palettes \u2014 if two colors vibrate when placed next to each other, they clash
+- AVOID using the same hue family across all 4 colors \u2014 a palette of all blues or all pinks looks flat
+- Always include one light and one dark tone for contrast range
+
+## ILLUSTRATION PROMPT RULES
+
+The illustrationPrompt is the most important field \u2014 it directly controls the AI image generator. Write it like a professional art brief:
+
+1. Start with the medium and style: "Elegant watercolor illustration" or "Bold flat vector illustration"
+2. Describe the specific subject with sensory detail: "a single iris stem with two blooms, one fully open in deep plum and one budding"
+3. Specify composition: "centered focal point with generous negative space" or "full-bleed geometric pattern"
+4. Include color treatment: "muted wash in cream and plum with gold leaf accents"
+5. End with the quality bar: "Professional illustration quality, clean and refined"
+6. ALWAYS end with: "No text, no letters, no words, no numbers."
+- Keep under 80 words but make every word count \u2014 this is an art brief, not a checkbox
+- Be specific about what TO draw, not just what NOT to draw
+
+## RESPONSE SHAPE
+
 {
   "concepts": [
     {
-      "conceptName": "short, evocative name for this look, 2-4 words",
-      "description": "one sentence selling the vibe of this concept to the host",
+      "conceptName": "short, evocative name \u2014 2-4 words that capture the mood (e.g. 'Twilight Bloom', 'Neon Drop', 'Golden Hour')",
+      "description": "one vivid sentence that sells the vibe \u2014 use sensory language, not generic adjectives. 'A moody palette of deep plum and brushed gold with a single watercolor iris' not 'An elegant design with nice colors'",
       "paletteColors": ["#RRGGBB", "#RRGGBB", "#RRGGBB", "#RRGGBB"],
       "fontPairingId": "one of: ${FONT_PAIRING_IDS}",
       "borderStyle": "one of: ${BORDER_STYLE_IDS}",
       "layoutStyle": "one of: ${LAYOUT_STYLE_IDS}",
-      "illustrationPrompt": "a detailed prompt for an image generator describing a bounded, text-free decorative illustration matching this concept",
+      "styleLaneId": "the id of the style lane (e.g. "editorial-premium", "playful-illustrated", "bold-graphic", "storybook-whimsical", "minimal-modern", "handcrafted-rustic")",
+      "artDirection": {
+        "illustrationMedium": "specific medium from this lane's options",
+        "subjectFocus": "the exact subject of the illustration with visual detail",
+        "compositionType": "how the subject is arranged in the frame",
+        "negativeSpace": "how much empty space and where",
+        "colorTreatment": "how the palette colors are applied to the illustration",
+        "texture": "surface quality \u2014 paper, smooth, grain, foil, etc.",
+        "avoidList": "what the image generator must NOT include"
+      },
+      "illustrationPrompt": "professional art brief combining all artDirection fields into one flowing description. MUST end with 'No text, no letters, no words, no numbers.'",
       "dnaHints": { ${DNA_HINT_AXIS_DESCRIPTIONS} }
     }
   ]
 }
 
-Rules:
-- Generate exactly 4 concepts, and make them genuinely different from each other \u2014 vary the font pairing, border style, layout style, and color mood across the 4 (don't repeat the same fontPairingId or borderStyle twice if you can avoid it).
-- paletteColors: exactly 4 hex colors, harmonious together, and matching the theme's mood. paletteColors[0] is the primary accent, paletteColors[1] is a secondary/border accent.
-- fontPairingId must be exactly one of the listed ids \u2014 never invent a new one.
+## RULES
+
+- CRITICAL \u2014 SUBJECT SELECTION: First classify the theme, then choose subjects accordingly. Read each lane's "Subject guidance" carefully for how to render, but WHAT to render depends on theme type:
+
+  A) SUBJECT-DRIVEN THEMES (the theme names a concrete subject that IS the party): construction, dinosaur, princess, superhero, unicorn, mermaid, space/astronaut, pirate, dragon, cars/trucks, safari/jungle, under-the-sea, farm (for kids), fairy, ninja, sports (basketball/soccer/etc.), music/rock, movie/character themes, holiday themes (halloween, christmas), etc. For these, the subject IS the point \u2014 hosts and guests EXPECT to see that subject prominently illustrated. Feature the subject in at least 3 of the 4 shown concepts, rendered in each lane's style (a construction party gets: watercolor bulldozer for editorial-premium, cartoon dump truck for playful-illustrated, bold flat hard-hat icon for bold-graphic, storybook excavator scene for storybook-whimsical, single minimal orange cone for minimal-modern, hand-drawn wooden-toy truck for handcrafted-rustic). NEVER default to generic confetti, geometric shapes, or botanicals when the theme names a specific subject. NEVER produce a concept that a host would look at and think "that has nothing to do with my theme".
+
+  B) AESTHETIC/MOOD THEMES (the theme names a vibe, era, or aesthetic \u2014 not a subject): rustic farmhouse, minimalist beach, moody garden, tropical, boho, industrial, art deco, mid-century, coastal, Tuscan, garden party (adult), cocktail party, dinner party, holiday-mood (fall, winter), etc. For these, use abstract/botanical/geometric design-forward interpretations. Rustic farmhouse \u2192 wildflowers, eucalyptus, wheat stalks (NEVER roosters, pigs, cows, barns). Minimalist beach \u2192 abstract wave lines, single shell, sand-tone gradients (NEVER literal sand castles or beach umbrellas). Garden party \u2192 botanical florals (NEVER literal picnic tables). Think like a premium stationery designer.
+
+  C) INSPIRATION IMAGES TAKE PRECEDENCE: If the host uploaded inspiration images and the extracted notes mention concrete subjects (hard hats, machinery, dinosaurs, specific characters, etc.), those subjects are the source of truth \u2014 feature them, don't override them with abstract shapes. The host chose those images to show you exactly what they want. Ignore the "aesthetic themes stay abstract" guidance when inspiration images provide concrete subject direction.
+
+  When in doubt: would a designer at Minted, Papier, or Paperless Post feature this subject on an invitation for this theme? If yes, feature it. If the theme is a kid's party naming a specific subject (construction, dinosaur, etc.), the answer is always yes.
+- Generate exactly 6 concepts, each in a DIFFERENT style lane. Use all 6 lanes. The quality gate will select the best 4 to show the host.
+- Each concept should look like it came from a different professional designer \u2014 different font pairings, different border styles, different layout styles, different color moods, different illustration mediums.
+- styleLaneId MUST be one of the lane ids listed above, and each concept MUST use a different lane.
+- artDirection is REQUIRED for every concept.
+- illustrationPrompt: write this like a professional art brief, NOT a field concatenation. Read the few-shot examples above for the quality bar.
+- paletteColors: exactly 4 hex colors using proven color relationships (see COLOR THEORY RULES). Never use the same hue family for all 4.
+- fontPairingId must be exactly one of the listed ids.
 - borderStyle must be exactly one of the listed ids.
-- layoutStyle: use "banner" when the illustration works well as a standalone top image (e.g. a scene, a character, a landscape); use "backdrop" when it works better as a soft, low-opacity full-bleed texture behind the text (e.g. a pattern, confetti, foliage).
-- illustrationPrompt: describe ONLY visual content \u2014 style, subject, color mood, composition. It MUST explicitly instruct "no text, no letters, no words, no numbers" since this image has zero tolerance for garbled AI-generated text. Keep each prompt under 60 words.
-- dnaHints: your honest read of where THIS SPECIFIC concept sits on each listed axis, as a number from -1 to 1. Every concept should read a little differently here \u2014 don't give all 4 concepts the same hints.
-- Ground every concept in the given theme and event details \u2014 don't produce generic designs unrelated to the theme.
-- If a "Host's established style so far" line is given below, treat it as useful context about this host's taste, not a hard constraint: let it influence the overall mood and at least 2 of the 4 concepts, while still keeping all 4 concepts genuinely distinct from each other.
-- If a "Guest count and scale guidance" line is given below, follow it for layoutStyle and overall formality/polish across at least 3 of the 4 concepts, while still keeping all 4 concepts genuinely distinct from each other.
+- layoutStyle: choose from the lane's preferred layouts. Use "banner" for standalone top art, "backdrop" for texture behind text, "split" for side-by-side, "centered" for small focal art with margins, "full-bleed" for art filling the card.
+- dnaHints: honest read of where THIS concept sits on each axis, -1 to 1. Vary across concepts.
+- Ground every concept in the given theme \u2014 don't produce generic designs unrelated to the party.
+- conceptName and description: use vivid, sensory language. Make the host feel excited about each concept.
+- If a "Host's established style so far" line is given below, let it influence at least 2 concepts while keeping all in different lanes.
+- If a "Guest count and scale guidance" line is given below, follow it for layoutStyle and formality across at least 3 concepts.
+- If "Previous concepts" and "Host's refinement feedback" are given below, produce NEW concepts that address the feedback while keeping the same theme.
 - Output raw JSON only.`;
+var VISION_MEDIA_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+function parseImageDataUrl(dataUrl) {
+  const match2 = /^data:([^;]+);base64,(.+)$/.exec(dataUrl);
+  if (!match2) return null;
+  const mediaType = match2[1];
+  if (!VISION_MEDIA_TYPES.includes(mediaType)) return null;
+  return { mediaType, data: match2[2] };
+}
+var INSPIRATION_EXTRACTION_SYSTEM = `You are a design analyst. You are shown 1-3 inspiration images a party host uploaded to steer the direction of their invitation. Describe the shared visual direction in two compact sentences covering BOTH:
+
+1) Subject matter \u2014 what generic objects, creatures, or scenes appear across the images (e.g. "construction vehicles and hard hats", "dinosaurs and prehistoric plants", "floral wreaths and wildflowers", "abstract geometric shapes"). Be concrete about generic subject types \u2014 the host chose these images to show you WHAT they want illustrated.
+2) Style attributes \u2014 mood/tone, color palette, textures, and style descriptors (e.g. "cartoon-style, playful, primary colors", "delicate watercolor, muted earth tones").
+
+Critical rules:
+- DO extract generic subject types (hard hats, dinosaurs, flowers, mountains, animals-by-generic-category). These guide what appears in the illustration.
+- Do NOT identify, name, or suggest copying any specific character, mascot, logo, brand, celebrity, or another party's exact invitation design/artwork. Generic "a cartoon dinosaur" is fine; naming a specific character or franchise is not.
+- Never suggest reproducing a recognizable copyrighted or trademarked element. If the image contains such elements, describe only the generic subject category and style (colors, composition, texture, mood).
+- Output plain prose, no lists, no preamble, under 60 words.`;
+async function extractInspirationNotes(inspirationImages) {
+  const images = inspirationImages.map(parseImageDataUrl).filter((x) => x !== null).slice(0, 3);
+  if (images.length === 0) return "";
+  const client = new Anthropic();
+  const message2 = await client.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 300,
+    system: INSPIRATION_EXTRACTION_SYSTEM,
+    messages: [
+      {
+        role: "user",
+        content: [
+          ...images.map((img) => ({
+            type: "image",
+            source: { type: "base64", media_type: img.mediaType, data: img.data }
+          })),
+          { type: "text", text: "Describe the shared style direction of these inspiration image(s) for a party invitation, following your rules." }
+        ]
+      }
+    ]
+  });
+  const block = message2.content.find((c) => c.type === "text");
+  return block && "text" in block ? block.text.trim() : "";
+}
 async function generateInviteDesignConcepts(params) {
   const client = new Anthropic();
+  const previousConceptsSummary = params.feedback && params.previousConcepts && params.previousConcepts.length > 0 ? [
+    "Previous concepts the host has already seen:",
+    ...params.previousConcepts.map(
+      (c, i) => `${i + 1}. "${c.conceptName}" (${c.styleLaneId ?? "unknown lane"}) \u2014 ${c.description} (palette: ${c.paletteColors.join(", ")}; layout: ${c.layoutStyle})`
+    )
+  ].join("\n") : null;
+  const preferredStyleLanesLine = params.preferredStyleLanes && params.preferredStyleLanes.length > 0 ? params.preferredStyleLanes.length === 4 ? `Host's preferred style lanes: ${params.preferredStyleLanes.join(", ")}. Generate exactly 4 concepts, one per preferred lane.` : `Host's preferred style lanes: ${params.preferredStyleLanes.join(", ")}. Generate 6 concepts: one per preferred lane (${params.preferredStyleLanes.length} lane(s)) plus one per each of the remaining lanes. The quality gate will select the best 4.` : null;
   const userPrompt = [
     `Theme prompt from host: "${params.themePrompt}"`,
     `Event name: "${params.eventName}"`,
@@ -51112,15 +51973,19 @@ async function generateInviteDesignConcepts(params) {
     params.hostNames && `Host(s): ${params.hostNames}`,
     params.themeName && `Existing app theme on file: ${params.themeName}`,
     params.dnaSummary && `Host's established style so far: ${params.dnaSummary}`,
-    params.formatGuidance && `Guest count and scale guidance: ${params.formatGuidance}`
+    params.formatGuidance && `Guest count and scale guidance: ${params.formatGuidance}`,
+    params.inspirationNotes && `Direction from the host's inspiration images \u2014 use BOTH the generic subject matter AND the style/mood/palette. The host chose these images to show you what they want illustrated. Do NOT copy any specific named character, logo, brand, or another party's exact design, but generic subjects (hard hats, dinosaurs, wildflowers, etc.) SHOULD be featured in the concepts: ${params.inspirationNotes}`,
+    preferredStyleLanesLine,
+    previousConceptsSummary,
+    params.feedback && `Host's refinement feedback: "${params.feedback}"`
   ].filter(Boolean).join("\n");
-  const message = await client.messages.create({
-    model: "claude_sonnet_4_6",
-    max_tokens: 2200,
+  const message2 = await client.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 6e3,
     system: RESPONSE_SHAPE_INSTRUCTIONS4,
     messages: [{ role: "user", content: userPrompt }]
   });
-  const block = message.content.find((c) => c.type === "text");
+  const block = message2.content.find((c) => c.type === "text");
   const raw = block && "text" in block ? block.text : "";
   const jsonMatch = raw.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error("AI response did not contain JSON");
@@ -51132,38 +51997,4415 @@ async function generateInviteDesignConcepts(params) {
   if (concepts.length === 0) {
     throw new Error("AI response did not contain any valid design concepts");
   }
+  if (concepts.length > 4) {
+    return selectTopConcepts(concepts, params.themePrompt, 4);
+  }
   return concepts;
 }
 
 // server/illustrationGen.ts
-var import_node_child_process3 = require("node:child_process");
-var import_node_path = __toESM(require("node:path"), 1);
-async function generateInviteIllustration(prompt, aspectRatio) {
-  const scriptPath = import_node_path.default.join(process.cwd(), "server", "illustration_gen.py");
-  const { stdout, stderr } = await new Promise((resolve4, reject) => {
-    (0, import_node_child_process3.execFile)(
-      "python3",
-      [scriptPath, "--prompt", prompt, "--aspect-ratio", aspectRatio],
-      { maxBuffer: 30 * 1024 * 1024, timeout: 12e4 },
-      (error, stdout2, stderr2) => {
-        if (error && !stdout2.trim()) {
-          reject(new Error(stderr2 || error.message));
-          return;
-        }
-        resolve4({ stdout: stdout2, stderr: stderr2 });
-      }
-    );
-  });
-  const lastLine = stdout.trim().split("\n").pop() || "";
-  let parsed;
-  try {
-    parsed = JSON.parse(lastLine);
-  } catch {
-    throw new Error(stderr || "Illustration generation produced no parseable output");
+init_sdk();
+function buildIllustrationPrompt(concept) {
+  const ad = concept.artDirection;
+  if (!ad) {
+    return concept.illustrationPrompt;
   }
-  if (parsed.error) throw new Error(parsed.error);
-  if (typeof parsed.b64 !== "string" || !parsed.b64) throw new Error("Illustration generation returned no image data");
-  return `data:image/png;base64,${parsed.b64}`;
+  const QUALITY_MODIFIERS = "professional illustration, high quality, elegant, sophisticated, premium stationery quality, clean composition, intentional design, print-ready decorative illustration, not AI-looking, no clipart, no stock photo look, no amateur art, no watermark, no fake text, no stock icon";
+  const STYLE_REFERENCES = {
+    watercolor: "in the style of fine editorial watercolor illustration",
+    "editorial illustration": "in the style of high-end magazine editorial illustration",
+    "fine line art": "in the style of delicate botanical line art",
+    "botanical illustration": "in the style of vintage botanical scientific illustration",
+    "flat vector illustration": "in the style of modern flat design illustration",
+    "cartoon illustration": "in the style of polished character illustration",
+    "character illustration": "in the style of polished character illustration",
+    "sticker art": "in the style of modern sticker design",
+    "flat graphic design": "in the style of bold contemporary graphic design",
+    "geometric illustration": "in the style of modern geometric art",
+    "typographic art": "in the style of abstract typographic art",
+    "abstract geometric": "in the style of modern abstract geometric art",
+    "minimal line art": "in the style of elegant minimal line illustration",
+    "single-element botanical": "in the style of minimal botanical illustration",
+    "monoline illustration": "in the style of clean monoline illustration",
+    gouache: "in the style of warm gouache storybook illustration",
+    "colored pencil": "in the style of textured colored pencil illustration",
+    "papercut illustration": "in the style of layered papercut art",
+    linocut: "in the style of bold linocut print",
+    papercut: "in the style of layered papercut art",
+    woodcut: "in the style of traditional woodcut print",
+    "hand-drawn illustration": "in the style of warm hand-drawn illustration"
+  };
+  const styleRef = STYLE_REFERENCES[ad.illustrationMedium.toLowerCase()] || "in the style of professional illustration";
+  const parts = [
+    `${ad.illustrationMedium} illustration`,
+    ad.subjectFocus,
+    `${ad.compositionType}`,
+    `with ${ad.negativeSpace} negative space`,
+    `${ad.colorTreatment}`,
+    `${ad.texture}`,
+    styleRef,
+    QUALITY_MODIFIERS,
+    concept.illustrationPrompt,
+    // includes the "no text" guardrail from the LLM
+    ad.avoidList
+  ].filter(Boolean);
+  return parts.join(". ");
+}
+async function generateInviteIllustration(concept, aspectRatio, quality = "high") {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error("OPENAI_API_KEY is not configured \u2014 illustration generation is unavailable.");
+  }
+  const size2 = aspectRatio === "16:9" ? "1536x1024" : aspectRatio === "9:16" ? "1024x1536" : "1024x1024";
+  const prompt = buildIllustrationPrompt(concept);
+  const response = await fetch("https://api.openai.com/v1/images/generations", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: "gpt-image-1",
+      prompt,
+      size: size2,
+      quality,
+      n: 1,
+      // Request opaque background so the PNG has a proper (non-transparent)
+      // alpha channel. Without this, gpt-image-1 can return PNGs with
+      // alpha=0 everywhere, making the illustration invisible on the page
+      // even though the RGB data is present.
+      background: "opaque"
+    })
+  });
+  if (!response.ok) {
+    const errorBody = await response.text().catch(() => "");
+    throw new Error(`OpenAI image generation failed (${response.status}): ${errorBody.slice(0, 500)}`);
+  }
+  const data = await response.json();
+  const b64 = data.data?.[0]?.b64_json;
+  if (!b64) {
+    throw new Error("OpenAI image generation returned no image data");
+  }
+  return `data:image/png;base64,${b64}`;
+}
+var ART_CRITIC_SYSTEM = `You are an art director evaluating AI-generated party invitation illustrations. You will be shown an image and asked to score it. Be strict but fair \u2014 these illustrations appear on invitations that hosts send to their guests.
+
+Evaluate on 4 criteria, each 1-5:
+1. text_free: No garbled text, letters, numbers, or fake writing in the image. Score 1 if any text-like artifacts appear, 5 if completely text-free.
+2. composition: Is the composition clear, balanced, and intentional? Score 1 for muddy or cluttered composition, 5 for clear, well-balanced layout.
+3. premium_feel: Does this look like premium, professional illustration \u2014 not cheap clipart? Score 1 for generic/clipart-like, 5 for premium quality.
+4. theme_fit: Does the illustration match the described concept? Score 1 for irrelevant, 5 for perfect match.
+
+Respond as STRICT JSON only: {"text_free": N, "composition": N, "premium_feel": N, "theme_fit": N, "overall": N, "issues": "brief description of any problems, or 'none'"}
+The overall score should be the average of the 4 criteria.`;
+async function evaluateIllustrationQuality(imageDataUrl, concept) {
+  const client = new Anthropic();
+  const laneLabel = concept.styleLaneId ?? "unknown";
+  const prompt = `Evaluate this invitation illustration for a "${concept.conceptName}" concept in the "${laneLabel}" style lane. The illustration should depict: ${concept.illustrationPrompt}`;
+  const message2 = await client.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 300,
+    system: ART_CRITIC_SYSTEM,
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "image",
+            source: { type: "base64", media_type: "image/png", data: imageDataUrl.split(",")[1] }
+          },
+          { type: "text", text: prompt }
+        ]
+      }
+    ]
+  });
+  const block = message2.content.find((c) => c.type === "text");
+  const raw = block && "text" in block ? block.text : "";
+  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    return { text_free: 3, composition: 3, premium_feel: 3, theme_fit: 3, overall: 3, issues: "evaluation failed" };
+  }
+  try {
+    return JSON.parse(jsonMatch[0]);
+  } catch {
+    return { text_free: 3, composition: 3, premium_feel: 3, theme_fit: 3, overall: 3, issues: "evaluation failed" };
+  }
+}
+var QUALITY_THRESHOLD = 3;
+var TEXT_FAILURE_THRESHOLD = 2;
+function tightenIllustrationPrompt(originalPrompt, score) {
+  const fixes = [];
+  if (score.text_free <= TEXT_FAILURE_THRESHOLD) {
+    fixes.push("absolutely no text, no letters, no numbers, no fake writing, no garbled characters anywhere in the image");
+  }
+  if (score.composition <= 3) {
+    fixes.push("clean balanced composition with clear focal point, generous negative space, no cluttered or muddy layout");
+  }
+  if (score.premium_feel <= 3) {
+    fixes.push("premium professional stationery illustration quality, polished and refined, not generic clipart or stock icon look, sophisticated color palette");
+  }
+  if (score.theme_fit <= 3) {
+    fixes.push(`closely matching the concept theme, subject matter must be clearly and accurately depicted`);
+  }
+  if (fixes.length === 0) {
+    fixes.push("refined professional illustration with cleaner composition and higher polish");
+  }
+  return `${originalPrompt}. CRITICAL IMPROVEMENTS: ${fixes.join(". ")}`;
+}
+async function generateInviteIllustrationWithQualityGate(concept, aspectRatio) {
+  let illustrationUrl = await generateInviteIllustration(concept, aspectRatio, "high");
+  try {
+    const score = await evaluateIllustrationQuality(illustrationUrl, concept);
+    const hasTextArtifacts = score.text_free <= TEXT_FAILURE_THRESHOLD;
+    const belowThreshold = score.overall < QUALITY_THRESHOLD;
+    if (hasTextArtifacts || belowThreshold) {
+      console.log(`[quality-gate] Illustration scored ${score.overall.toFixed(1)} (${score.issues}). Regenerating with tightened prompt...`);
+      const tightenedConcept = {
+        ...concept,
+        illustrationPrompt: tightenIllustrationPrompt(concept.illustrationPrompt, score)
+      };
+      illustrationUrl = await generateInviteIllustration(tightenedConcept, aspectRatio, "high");
+    }
+  } catch (err) {
+    console.error("[quality-gate] Evaluation failed, using first generation:", err);
+  }
+  return illustrationUrl;
+}
+
+// shared/themeDna.ts
+var LINER_PATTERNS = [
+  "solid",
+  "dots",
+  "stripes",
+  "chevron",
+  "floral",
+  "waves",
+  "lattice",
+  "confetti",
+  "stars",
+  "hearts",
+  "diamonds",
+  "scallops"
+];
+var STAMP_STYLES = [
+  "classic",
+  "seal",
+  "postmark",
+  "motif",
+  "wax-seal",
+  "heart",
+  "star",
+  "floral",
+  "bow",
+  "monogram"
+];
+var FALLBACK_PALETTE = ["#7c3aed", "#c4b5fd", "#f5f3ff", "#4c1d95"];
+function luminance(hex2) {
+  const m = /^#([0-9a-fA-F]{6})$/.exec(hex2);
+  if (!m) return 0.5;
+  const int = parseInt(m[1], 16);
+  const r = (int >> 16 & 255) / 255;
+  const g = (int >> 8 & 255) / 255;
+  const b2 = (int & 255) / 255;
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b2;
+}
+var MOTIF_KEYWORDS = [
+  "construction equipment",
+  "construction",
+  "dinosaur",
+  "unicorn",
+  "mermaid",
+  "pirate",
+  "superhero",
+  "space",
+  "rocket",
+  "astronaut",
+  "safari",
+  "jungle",
+  "dragon",
+  "castle",
+  "princess",
+  "fairy",
+  "butterfly",
+  "rainbow",
+  "balloon",
+  "confetti",
+  "streamer",
+  "floral",
+  "flower",
+  "botanical",
+  "foliage",
+  "leaf",
+  "garden",
+  "tropical",
+  "palm",
+  "woodland",
+  "forest",
+  "mountain",
+  "ocean",
+  "wave",
+  "nautical",
+  "anchor",
+  "beach",
+  "star",
+  "moon",
+  "celestial",
+  "sparkle",
+  "geometric",
+  "stripe",
+  "polka dot",
+  "plaid",
+  "vintage",
+  "retro",
+  "art deco",
+  "watercolor",
+  "marble",
+  "terrazzo",
+  "cake",
+  "cupcake",
+  "donut",
+  "ice cream",
+  "candy",
+  "picnic",
+  "tea party",
+  "train",
+  "race car",
+  "car",
+  "airplane",
+  "boat",
+  "robot",
+  "video game",
+  "animal",
+  "cat",
+  "dog",
+  "bear",
+  "fox",
+  "bunny",
+  "farm",
+  "tractor",
+  "snow",
+  "winter",
+  "autumn",
+  "pumpkin",
+  "holiday"
+];
+function deriveMotifDescriptor(concept) {
+  const prompt = (concept.illustrationPrompt || "").toLowerCase();
+  const name = (concept.conceptName || "").toLowerCase();
+  const description = (concept.description || "").toLowerCase();
+  for (const keyword of MOTIF_KEYWORDS) {
+    if (prompt.includes(keyword) || name.includes(keyword) || description.includes(keyword)) {
+      return keyword;
+    }
+  }
+  if (concept.conceptName?.trim()) return concept.conceptName.trim().toLowerCase();
+  const stopWords = /* @__PURE__ */ new Set(["a", "an", "the", "of", "with", "and", "in", "on", "for", "no", "text", "letters", "words", "numbers"]);
+  const words = prompt.replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter((w) => w && !stopWords.has(w)).slice(0, 3);
+  return words.length > 0 ? words.join(" ") : "decorative";
+}
+var ELEGANT_FONTS = /* @__PURE__ */ new Set(["editorial-serif", "flowing-script", "classic-formal", "bold-editorial"]);
+var PLAYFUL_FONTS = /* @__PURE__ */ new Set(["playful-rounded", "rustic-handwritten"]);
+var PLAYFUL_NAME_WORDS = ["party", "fun", "playful", "whimsical", "confetti", "bright", "silly", "pop", "carnival", "circus"];
+var ELEGANT_NAME_WORDS = ["elegant", "classic", "timeless", "refined", "formal", "luxe", "golden", "vintage", "romantic"];
+function deriveFormality(concept) {
+  const border = concept.borderStyle;
+  const font = concept.fontPairingId;
+  const name = (concept.conceptName || "").toLowerCase();
+  if (border === "double-frame" || border === "corner-flourish") return "elegant";
+  if (border === "dashed-frame") return "playful";
+  if (ELEGANT_FONTS.has(font)) return "elegant";
+  if (PLAYFUL_FONTS.has(font)) return "playful";
+  if (PLAYFUL_NAME_WORDS.some((w) => name.includes(w))) return "playful";
+  if (ELEGANT_NAME_WORDS.some((w) => name.includes(w))) return "elegant";
+  return "casual";
+}
+var LINER_BY_BORDER = {
+  "none": "solid",
+  "thin-frame": "stripes",
+  "double-frame": "chevron",
+  "dashed-frame": "dots",
+  "corner-flourish": "floral"
+};
+function deriveStampStyle(formality, border) {
+  if (formality === "elegant") return "seal";
+  if (formality === "playful") return "motif";
+  return border === "none" ? "postmark" : "classic";
+}
+function deriveThemeDna(concept) {
+  const paletteColors = Array.isArray(concept.paletteColors) && concept.paletteColors.length > 0 ? concept.paletteColors : FALLBACK_PALETTE;
+  const primaryColor = paletteColors[0];
+  const backgroundColor = paletteColors.reduce((lightest, c) => luminance(c) > luminance(lightest) ? c : lightest, paletteColors[0]);
+  const accentColor = paletteColors.reduce(
+    (best, c) => Math.abs(luminance(c) - luminance(backgroundColor)) > Math.abs(luminance(best) - luminance(backgroundColor)) ? c : best,
+    paletteColors[0]
+  );
+  const formality = deriveFormality(concept);
+  const linerPattern = LINER_BY_BORDER[concept.borderStyle] ?? "solid";
+  return {
+    paletteColors,
+    primaryColor,
+    accentColor,
+    backgroundColor,
+    fontHeadingId: concept.fontPairingId,
+    fontBodyId: concept.fontPairingId,
+    motifDescriptor: deriveMotifDescriptor(concept),
+    formality,
+    linerPattern,
+    stampStyle: deriveStampStyle(formality, concept.borderStyle)
+  };
+}
+function isLinerPattern(value) {
+  return typeof value === "string" && LINER_PATTERNS.includes(value);
+}
+function isStampStyle(value) {
+  return typeof value === "string" && STAMP_STYLES.includes(value);
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/toDate.mjs
+function toDate(argument) {
+  const argStr = Object.prototype.toString.call(argument);
+  if (argument instanceof Date || typeof argument === "object" && argStr === "[object Date]") {
+    return new argument.constructor(+argument);
+  } else if (typeof argument === "number" || argStr === "[object Number]" || typeof argument === "string" || argStr === "[object String]") {
+    return new Date(argument);
+  } else {
+    return /* @__PURE__ */ new Date(NaN);
+  }
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/constructFrom.mjs
+function constructFrom(date2, value) {
+  if (date2 instanceof Date) {
+    return new date2.constructor(value);
+  } else {
+    return new Date(value);
+  }
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/addDays.mjs
+function addDays(date2, amount) {
+  const _date = toDate(date2);
+  if (isNaN(amount)) return constructFrom(date2, NaN);
+  if (!amount) {
+    return _date;
+  }
+  _date.setDate(_date.getDate() + amount);
+  return _date;
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/constants.mjs
+var daysInYear = 365.2425;
+var maxTime = Math.pow(10, 8) * 24 * 60 * 60 * 1e3;
+var minTime = -maxTime;
+var millisecondsInWeek = 6048e5;
+var millisecondsInDay = 864e5;
+var millisecondsInMinute = 6e4;
+var millisecondsInHour = 36e5;
+var millisecondsInSecond = 1e3;
+var secondsInHour = 3600;
+var secondsInDay = secondsInHour * 24;
+var secondsInWeek = secondsInDay * 7;
+var secondsInYear = secondsInDay * daysInYear;
+var secondsInMonth = secondsInYear / 12;
+var secondsInQuarter = secondsInMonth * 3;
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/_lib/defaultOptions.mjs
+var defaultOptions = {};
+function getDefaultOptions() {
+  return defaultOptions;
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/startOfWeek.mjs
+function startOfWeek(date2, options) {
+  const defaultOptions2 = getDefaultOptions();
+  const weekStartsOn = options?.weekStartsOn ?? options?.locale?.options?.weekStartsOn ?? defaultOptions2.weekStartsOn ?? defaultOptions2.locale?.options?.weekStartsOn ?? 0;
+  const _date = toDate(date2);
+  const day = _date.getDay();
+  const diff = (day < weekStartsOn ? 7 : 0) + day - weekStartsOn;
+  _date.setDate(_date.getDate() - diff);
+  _date.setHours(0, 0, 0, 0);
+  return _date;
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/startOfISOWeek.mjs
+function startOfISOWeek(date2) {
+  return startOfWeek(date2, { weekStartsOn: 1 });
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/getISOWeekYear.mjs
+function getISOWeekYear(date2) {
+  const _date = toDate(date2);
+  const year = _date.getFullYear();
+  const fourthOfJanuaryOfNextYear = constructFrom(date2, 0);
+  fourthOfJanuaryOfNextYear.setFullYear(year + 1, 0, 4);
+  fourthOfJanuaryOfNextYear.setHours(0, 0, 0, 0);
+  const startOfNextYear = startOfISOWeek(fourthOfJanuaryOfNextYear);
+  const fourthOfJanuaryOfThisYear = constructFrom(date2, 0);
+  fourthOfJanuaryOfThisYear.setFullYear(year, 0, 4);
+  fourthOfJanuaryOfThisYear.setHours(0, 0, 0, 0);
+  const startOfThisYear = startOfISOWeek(fourthOfJanuaryOfThisYear);
+  if (_date.getTime() >= startOfNextYear.getTime()) {
+    return year + 1;
+  } else if (_date.getTime() >= startOfThisYear.getTime()) {
+    return year;
+  } else {
+    return year - 1;
+  }
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/startOfDay.mjs
+function startOfDay(date2) {
+  const _date = toDate(date2);
+  _date.setHours(0, 0, 0, 0);
+  return _date;
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/_lib/getTimezoneOffsetInMilliseconds.mjs
+function getTimezoneOffsetInMilliseconds(date2) {
+  const _date = toDate(date2);
+  const utcDate = new Date(
+    Date.UTC(
+      _date.getFullYear(),
+      _date.getMonth(),
+      _date.getDate(),
+      _date.getHours(),
+      _date.getMinutes(),
+      _date.getSeconds(),
+      _date.getMilliseconds()
+    )
+  );
+  utcDate.setUTCFullYear(_date.getFullYear());
+  return +date2 - +utcDate;
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/differenceInCalendarDays.mjs
+function differenceInCalendarDays(dateLeft, dateRight) {
+  const startOfDayLeft = startOfDay(dateLeft);
+  const startOfDayRight = startOfDay(dateRight);
+  const timestampLeft = +startOfDayLeft - getTimezoneOffsetInMilliseconds(startOfDayLeft);
+  const timestampRight = +startOfDayRight - getTimezoneOffsetInMilliseconds(startOfDayRight);
+  return Math.round((timestampLeft - timestampRight) / millisecondsInDay);
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/startOfISOWeekYear.mjs
+function startOfISOWeekYear(date2) {
+  const year = getISOWeekYear(date2);
+  const fourthOfJanuary = constructFrom(date2, 0);
+  fourthOfJanuary.setFullYear(year, 0, 4);
+  fourthOfJanuary.setHours(0, 0, 0, 0);
+  return startOfISOWeek(fourthOfJanuary);
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/max.mjs
+function max(dates) {
+  let result;
+  dates.forEach(function(dirtyDate) {
+    const currentDate = toDate(dirtyDate);
+    if (result === void 0 || result < currentDate || isNaN(Number(currentDate))) {
+      result = currentDate;
+    }
+  });
+  return result || /* @__PURE__ */ new Date(NaN);
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/isDate.mjs
+function isDate(value) {
+  return value instanceof Date || typeof value === "object" && Object.prototype.toString.call(value) === "[object Date]";
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/isValid.mjs
+function isValid2(date2) {
+  if (!isDate(date2) && typeof date2 !== "number") {
+    return false;
+  }
+  const _date = toDate(date2);
+  return !isNaN(Number(_date));
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/startOfYear.mjs
+function startOfYear(date2) {
+  const cleanDate = toDate(date2);
+  const _date = constructFrom(date2, 0);
+  _date.setFullYear(cleanDate.getFullYear(), 0, 1);
+  _date.setHours(0, 0, 0, 0);
+  return _date;
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/locale/en-US/_lib/formatDistance.mjs
+var formatDistanceLocale = {
+  lessThanXSeconds: {
+    one: "less than a second",
+    other: "less than {{count}} seconds"
+  },
+  xSeconds: {
+    one: "1 second",
+    other: "{{count}} seconds"
+  },
+  halfAMinute: "half a minute",
+  lessThanXMinutes: {
+    one: "less than a minute",
+    other: "less than {{count}} minutes"
+  },
+  xMinutes: {
+    one: "1 minute",
+    other: "{{count}} minutes"
+  },
+  aboutXHours: {
+    one: "about 1 hour",
+    other: "about {{count}} hours"
+  },
+  xHours: {
+    one: "1 hour",
+    other: "{{count}} hours"
+  },
+  xDays: {
+    one: "1 day",
+    other: "{{count}} days"
+  },
+  aboutXWeeks: {
+    one: "about 1 week",
+    other: "about {{count}} weeks"
+  },
+  xWeeks: {
+    one: "1 week",
+    other: "{{count}} weeks"
+  },
+  aboutXMonths: {
+    one: "about 1 month",
+    other: "about {{count}} months"
+  },
+  xMonths: {
+    one: "1 month",
+    other: "{{count}} months"
+  },
+  aboutXYears: {
+    one: "about 1 year",
+    other: "about {{count}} years"
+  },
+  xYears: {
+    one: "1 year",
+    other: "{{count}} years"
+  },
+  overXYears: {
+    one: "over 1 year",
+    other: "over {{count}} years"
+  },
+  almostXYears: {
+    one: "almost 1 year",
+    other: "almost {{count}} years"
+  }
+};
+var formatDistance = (token, count, options) => {
+  let result;
+  const tokenValue = formatDistanceLocale[token];
+  if (typeof tokenValue === "string") {
+    result = tokenValue;
+  } else if (count === 1) {
+    result = tokenValue.one;
+  } else {
+    result = tokenValue.other.replace("{{count}}", count.toString());
+  }
+  if (options?.addSuffix) {
+    if (options.comparison && options.comparison > 0) {
+      return "in " + result;
+    } else {
+      return result + " ago";
+    }
+  }
+  return result;
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/locale/_lib/buildFormatLongFn.mjs
+function buildFormatLongFn(args) {
+  return (options = {}) => {
+    const width = options.width ? String(options.width) : args.defaultWidth;
+    const format2 = args.formats[width] || args.formats[args.defaultWidth];
+    return format2;
+  };
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/locale/en-US/_lib/formatLong.mjs
+var dateFormats = {
+  full: "EEEE, MMMM do, y",
+  long: "MMMM do, y",
+  medium: "MMM d, y",
+  short: "MM/dd/yyyy"
+};
+var timeFormats = {
+  full: "h:mm:ss a zzzz",
+  long: "h:mm:ss a z",
+  medium: "h:mm:ss a",
+  short: "h:mm a"
+};
+var dateTimeFormats = {
+  full: "{{date}} 'at' {{time}}",
+  long: "{{date}} 'at' {{time}}",
+  medium: "{{date}}, {{time}}",
+  short: "{{date}}, {{time}}"
+};
+var formatLong = {
+  date: buildFormatLongFn({
+    formats: dateFormats,
+    defaultWidth: "full"
+  }),
+  time: buildFormatLongFn({
+    formats: timeFormats,
+    defaultWidth: "full"
+  }),
+  dateTime: buildFormatLongFn({
+    formats: dateTimeFormats,
+    defaultWidth: "full"
+  })
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/locale/en-US/_lib/formatRelative.mjs
+var formatRelativeLocale = {
+  lastWeek: "'last' eeee 'at' p",
+  yesterday: "'yesterday at' p",
+  today: "'today at' p",
+  tomorrow: "'tomorrow at' p",
+  nextWeek: "eeee 'at' p",
+  other: "P"
+};
+var formatRelative = (token, _date, _baseDate, _options) => formatRelativeLocale[token];
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/locale/_lib/buildLocalizeFn.mjs
+function buildLocalizeFn(args) {
+  return (value, options) => {
+    const context = options?.context ? String(options.context) : "standalone";
+    let valuesArray;
+    if (context === "formatting" && args.formattingValues) {
+      const defaultWidth = args.defaultFormattingWidth || args.defaultWidth;
+      const width = options?.width ? String(options.width) : defaultWidth;
+      valuesArray = args.formattingValues[width] || args.formattingValues[defaultWidth];
+    } else {
+      const defaultWidth = args.defaultWidth;
+      const width = options?.width ? String(options.width) : args.defaultWidth;
+      valuesArray = args.values[width] || args.values[defaultWidth];
+    }
+    const index2 = args.argumentCallback ? args.argumentCallback(value) : value;
+    return valuesArray[index2];
+  };
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/locale/en-US/_lib/localize.mjs
+var eraValues = {
+  narrow: ["B", "A"],
+  abbreviated: ["BC", "AD"],
+  wide: ["Before Christ", "Anno Domini"]
+};
+var quarterValues = {
+  narrow: ["1", "2", "3", "4"],
+  abbreviated: ["Q1", "Q2", "Q3", "Q4"],
+  wide: ["1st quarter", "2nd quarter", "3rd quarter", "4th quarter"]
+};
+var monthValues = {
+  narrow: ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"],
+  abbreviated: [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec"
+  ],
+  wide: [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December"
+  ]
+};
+var dayValues = {
+  narrow: ["S", "M", "T", "W", "T", "F", "S"],
+  short: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
+  abbreviated: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+  wide: [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday"
+  ]
+};
+var dayPeriodValues = {
+  narrow: {
+    am: "a",
+    pm: "p",
+    midnight: "mi",
+    noon: "n",
+    morning: "morning",
+    afternoon: "afternoon",
+    evening: "evening",
+    night: "night"
+  },
+  abbreviated: {
+    am: "AM",
+    pm: "PM",
+    midnight: "midnight",
+    noon: "noon",
+    morning: "morning",
+    afternoon: "afternoon",
+    evening: "evening",
+    night: "night"
+  },
+  wide: {
+    am: "a.m.",
+    pm: "p.m.",
+    midnight: "midnight",
+    noon: "noon",
+    morning: "morning",
+    afternoon: "afternoon",
+    evening: "evening",
+    night: "night"
+  }
+};
+var formattingDayPeriodValues = {
+  narrow: {
+    am: "a",
+    pm: "p",
+    midnight: "mi",
+    noon: "n",
+    morning: "in the morning",
+    afternoon: "in the afternoon",
+    evening: "in the evening",
+    night: "at night"
+  },
+  abbreviated: {
+    am: "AM",
+    pm: "PM",
+    midnight: "midnight",
+    noon: "noon",
+    morning: "in the morning",
+    afternoon: "in the afternoon",
+    evening: "in the evening",
+    night: "at night"
+  },
+  wide: {
+    am: "a.m.",
+    pm: "p.m.",
+    midnight: "midnight",
+    noon: "noon",
+    morning: "in the morning",
+    afternoon: "in the afternoon",
+    evening: "in the evening",
+    night: "at night"
+  }
+};
+var ordinalNumber = (dirtyNumber, _options) => {
+  const number = Number(dirtyNumber);
+  const rem100 = number % 100;
+  if (rem100 > 20 || rem100 < 10) {
+    switch (rem100 % 10) {
+      case 1:
+        return number + "st";
+      case 2:
+        return number + "nd";
+      case 3:
+        return number + "rd";
+    }
+  }
+  return number + "th";
+};
+var localize = {
+  ordinalNumber,
+  era: buildLocalizeFn({
+    values: eraValues,
+    defaultWidth: "wide"
+  }),
+  quarter: buildLocalizeFn({
+    values: quarterValues,
+    defaultWidth: "wide",
+    argumentCallback: (quarter) => quarter - 1
+  }),
+  month: buildLocalizeFn({
+    values: monthValues,
+    defaultWidth: "wide"
+  }),
+  day: buildLocalizeFn({
+    values: dayValues,
+    defaultWidth: "wide"
+  }),
+  dayPeriod: buildLocalizeFn({
+    values: dayPeriodValues,
+    defaultWidth: "wide",
+    formattingValues: formattingDayPeriodValues,
+    defaultFormattingWidth: "wide"
+  })
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/locale/_lib/buildMatchFn.mjs
+function buildMatchFn(args) {
+  return (string, options = {}) => {
+    const width = options.width;
+    const matchPattern = width && args.matchPatterns[width] || args.matchPatterns[args.defaultMatchWidth];
+    const matchResult = string.match(matchPattern);
+    if (!matchResult) {
+      return null;
+    }
+    const matchedString = matchResult[0];
+    const parsePatterns = width && args.parsePatterns[width] || args.parsePatterns[args.defaultParseWidth];
+    const key = Array.isArray(parsePatterns) ? findIndex(parsePatterns, (pattern) => pattern.test(matchedString)) : (
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- I challange you to fix the type
+      findKey(parsePatterns, (pattern) => pattern.test(matchedString))
+    );
+    let value;
+    value = args.valueCallback ? args.valueCallback(key) : key;
+    value = options.valueCallback ? (
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- I challange you to fix the type
+      options.valueCallback(value)
+    ) : value;
+    const rest = string.slice(matchedString.length);
+    return { value, rest };
+  };
+}
+function findKey(object, predicate) {
+  for (const key in object) {
+    if (Object.prototype.hasOwnProperty.call(object, key) && predicate(object[key])) {
+      return key;
+    }
+  }
+  return void 0;
+}
+function findIndex(array, predicate) {
+  for (let key = 0; key < array.length; key++) {
+    if (predicate(array[key])) {
+      return key;
+    }
+  }
+  return void 0;
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/locale/_lib/buildMatchPatternFn.mjs
+function buildMatchPatternFn(args) {
+  return (string, options = {}) => {
+    const matchResult = string.match(args.matchPattern);
+    if (!matchResult) return null;
+    const matchedString = matchResult[0];
+    const parseResult = string.match(args.parsePattern);
+    if (!parseResult) return null;
+    let value = args.valueCallback ? args.valueCallback(parseResult[0]) : parseResult[0];
+    value = options.valueCallback ? options.valueCallback(value) : value;
+    const rest = string.slice(matchedString.length);
+    return { value, rest };
+  };
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/locale/en-US/_lib/match.mjs
+var matchOrdinalNumberPattern = /^(\d+)(th|st|nd|rd)?/i;
+var parseOrdinalNumberPattern = /\d+/i;
+var matchEraPatterns = {
+  narrow: /^(b|a)/i,
+  abbreviated: /^(b\.?\s?c\.?|b\.?\s?c\.?\s?e\.?|a\.?\s?d\.?|c\.?\s?e\.?)/i,
+  wide: /^(before christ|before common era|anno domini|common era)/i
+};
+var parseEraPatterns = {
+  any: [/^b/i, /^(a|c)/i]
+};
+var matchQuarterPatterns = {
+  narrow: /^[1234]/i,
+  abbreviated: /^q[1234]/i,
+  wide: /^[1234](th|st|nd|rd)? quarter/i
+};
+var parseQuarterPatterns = {
+  any: [/1/i, /2/i, /3/i, /4/i]
+};
+var matchMonthPatterns = {
+  narrow: /^[jfmasond]/i,
+  abbreviated: /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i,
+  wide: /^(january|february|march|april|may|june|july|august|september|october|november|december)/i
+};
+var parseMonthPatterns = {
+  narrow: [
+    /^j/i,
+    /^f/i,
+    /^m/i,
+    /^a/i,
+    /^m/i,
+    /^j/i,
+    /^j/i,
+    /^a/i,
+    /^s/i,
+    /^o/i,
+    /^n/i,
+    /^d/i
+  ],
+  any: [
+    /^ja/i,
+    /^f/i,
+    /^mar/i,
+    /^ap/i,
+    /^may/i,
+    /^jun/i,
+    /^jul/i,
+    /^au/i,
+    /^s/i,
+    /^o/i,
+    /^n/i,
+    /^d/i
+  ]
+};
+var matchDayPatterns = {
+  narrow: /^[smtwf]/i,
+  short: /^(su|mo|tu|we|th|fr|sa)/i,
+  abbreviated: /^(sun|mon|tue|wed|thu|fri|sat)/i,
+  wide: /^(sunday|monday|tuesday|wednesday|thursday|friday|saturday)/i
+};
+var parseDayPatterns = {
+  narrow: [/^s/i, /^m/i, /^t/i, /^w/i, /^t/i, /^f/i, /^s/i],
+  any: [/^su/i, /^m/i, /^tu/i, /^w/i, /^th/i, /^f/i, /^sa/i]
+};
+var matchDayPeriodPatterns = {
+  narrow: /^(a|p|mi|n|(in the|at) (morning|afternoon|evening|night))/i,
+  any: /^([ap]\.?\s?m\.?|midnight|noon|(in the|at) (morning|afternoon|evening|night))/i
+};
+var parseDayPeriodPatterns = {
+  any: {
+    am: /^a/i,
+    pm: /^p/i,
+    midnight: /^mi/i,
+    noon: /^no/i,
+    morning: /morning/i,
+    afternoon: /afternoon/i,
+    evening: /evening/i,
+    night: /night/i
+  }
+};
+var match = {
+  ordinalNumber: buildMatchPatternFn({
+    matchPattern: matchOrdinalNumberPattern,
+    parsePattern: parseOrdinalNumberPattern,
+    valueCallback: (value) => parseInt(value, 10)
+  }),
+  era: buildMatchFn({
+    matchPatterns: matchEraPatterns,
+    defaultMatchWidth: "wide",
+    parsePatterns: parseEraPatterns,
+    defaultParseWidth: "any"
+  }),
+  quarter: buildMatchFn({
+    matchPatterns: matchQuarterPatterns,
+    defaultMatchWidth: "wide",
+    parsePatterns: parseQuarterPatterns,
+    defaultParseWidth: "any",
+    valueCallback: (index2) => index2 + 1
+  }),
+  month: buildMatchFn({
+    matchPatterns: matchMonthPatterns,
+    defaultMatchWidth: "wide",
+    parsePatterns: parseMonthPatterns,
+    defaultParseWidth: "any"
+  }),
+  day: buildMatchFn({
+    matchPatterns: matchDayPatterns,
+    defaultMatchWidth: "wide",
+    parsePatterns: parseDayPatterns,
+    defaultParseWidth: "any"
+  }),
+  dayPeriod: buildMatchFn({
+    matchPatterns: matchDayPeriodPatterns,
+    defaultMatchWidth: "any",
+    parsePatterns: parseDayPeriodPatterns,
+    defaultParseWidth: "any"
+  })
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/locale/en-US.mjs
+var enUS = {
+  code: "en-US",
+  formatDistance,
+  formatLong,
+  formatRelative,
+  localize,
+  match,
+  options: {
+    weekStartsOn: 0,
+    firstWeekContainsDate: 1
+  }
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/getDayOfYear.mjs
+function getDayOfYear(date2) {
+  const _date = toDate(date2);
+  const diff = differenceInCalendarDays(_date, startOfYear(_date));
+  const dayOfYear = diff + 1;
+  return dayOfYear;
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/getISOWeek.mjs
+function getISOWeek(date2) {
+  const _date = toDate(date2);
+  const diff = +startOfISOWeek(_date) - +startOfISOWeekYear(_date);
+  return Math.round(diff / millisecondsInWeek) + 1;
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/getWeekYear.mjs
+function getWeekYear(date2, options) {
+  const _date = toDate(date2);
+  const year = _date.getFullYear();
+  const defaultOptions2 = getDefaultOptions();
+  const firstWeekContainsDate = options?.firstWeekContainsDate ?? options?.locale?.options?.firstWeekContainsDate ?? defaultOptions2.firstWeekContainsDate ?? defaultOptions2.locale?.options?.firstWeekContainsDate ?? 1;
+  const firstWeekOfNextYear = constructFrom(date2, 0);
+  firstWeekOfNextYear.setFullYear(year + 1, 0, firstWeekContainsDate);
+  firstWeekOfNextYear.setHours(0, 0, 0, 0);
+  const startOfNextYear = startOfWeek(firstWeekOfNextYear, options);
+  const firstWeekOfThisYear = constructFrom(date2, 0);
+  firstWeekOfThisYear.setFullYear(year, 0, firstWeekContainsDate);
+  firstWeekOfThisYear.setHours(0, 0, 0, 0);
+  const startOfThisYear = startOfWeek(firstWeekOfThisYear, options);
+  if (_date.getTime() >= startOfNextYear.getTime()) {
+    return year + 1;
+  } else if (_date.getTime() >= startOfThisYear.getTime()) {
+    return year;
+  } else {
+    return year - 1;
+  }
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/startOfWeekYear.mjs
+function startOfWeekYear(date2, options) {
+  const defaultOptions2 = getDefaultOptions();
+  const firstWeekContainsDate = options?.firstWeekContainsDate ?? options?.locale?.options?.firstWeekContainsDate ?? defaultOptions2.firstWeekContainsDate ?? defaultOptions2.locale?.options?.firstWeekContainsDate ?? 1;
+  const year = getWeekYear(date2, options);
+  const firstWeek = constructFrom(date2, 0);
+  firstWeek.setFullYear(year, 0, firstWeekContainsDate);
+  firstWeek.setHours(0, 0, 0, 0);
+  const _date = startOfWeek(firstWeek, options);
+  return _date;
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/getWeek.mjs
+function getWeek(date2, options) {
+  const _date = toDate(date2);
+  const diff = +startOfWeek(_date, options) - +startOfWeekYear(_date, options);
+  return Math.round(diff / millisecondsInWeek) + 1;
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/_lib/addLeadingZeros.mjs
+function addLeadingZeros(number, targetLength) {
+  const sign = number < 0 ? "-" : "";
+  const output = Math.abs(number).toString().padStart(targetLength, "0");
+  return sign + output;
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/_lib/format/lightFormatters.mjs
+var lightFormatters = {
+  // Year
+  y(date2, token) {
+    const signedYear = date2.getFullYear();
+    const year = signedYear > 0 ? signedYear : 1 - signedYear;
+    return addLeadingZeros(token === "yy" ? year % 100 : year, token.length);
+  },
+  // Month
+  M(date2, token) {
+    const month = date2.getMonth();
+    return token === "M" ? String(month + 1) : addLeadingZeros(month + 1, 2);
+  },
+  // Day of the month
+  d(date2, token) {
+    return addLeadingZeros(date2.getDate(), token.length);
+  },
+  // AM or PM
+  a(date2, token) {
+    const dayPeriodEnumValue = date2.getHours() / 12 >= 1 ? "pm" : "am";
+    switch (token) {
+      case "a":
+      case "aa":
+        return dayPeriodEnumValue.toUpperCase();
+      case "aaa":
+        return dayPeriodEnumValue;
+      case "aaaaa":
+        return dayPeriodEnumValue[0];
+      case "aaaa":
+      default:
+        return dayPeriodEnumValue === "am" ? "a.m." : "p.m.";
+    }
+  },
+  // Hour [1-12]
+  h(date2, token) {
+    return addLeadingZeros(date2.getHours() % 12 || 12, token.length);
+  },
+  // Hour [0-23]
+  H(date2, token) {
+    return addLeadingZeros(date2.getHours(), token.length);
+  },
+  // Minute
+  m(date2, token) {
+    return addLeadingZeros(date2.getMinutes(), token.length);
+  },
+  // Second
+  s(date2, token) {
+    return addLeadingZeros(date2.getSeconds(), token.length);
+  },
+  // Fraction of second
+  S(date2, token) {
+    const numberOfDigits = token.length;
+    const milliseconds = date2.getMilliseconds();
+    const fractionalSeconds = Math.trunc(
+      milliseconds * Math.pow(10, numberOfDigits - 3)
+    );
+    return addLeadingZeros(fractionalSeconds, token.length);
+  }
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/_lib/format/formatters.mjs
+var dayPeriodEnum = {
+  am: "am",
+  pm: "pm",
+  midnight: "midnight",
+  noon: "noon",
+  morning: "morning",
+  afternoon: "afternoon",
+  evening: "evening",
+  night: "night"
+};
+var formatters2 = {
+  // Era
+  G: function(date2, token, localize2) {
+    const era = date2.getFullYear() > 0 ? 1 : 0;
+    switch (token) {
+      // AD, BC
+      case "G":
+      case "GG":
+      case "GGG":
+        return localize2.era(era, { width: "abbreviated" });
+      // A, B
+      case "GGGGG":
+        return localize2.era(era, { width: "narrow" });
+      // Anno Domini, Before Christ
+      case "GGGG":
+      default:
+        return localize2.era(era, { width: "wide" });
+    }
+  },
+  // Year
+  y: function(date2, token, localize2) {
+    if (token === "yo") {
+      const signedYear = date2.getFullYear();
+      const year = signedYear > 0 ? signedYear : 1 - signedYear;
+      return localize2.ordinalNumber(year, { unit: "year" });
+    }
+    return lightFormatters.y(date2, token);
+  },
+  // Local week-numbering year
+  Y: function(date2, token, localize2, options) {
+    const signedWeekYear = getWeekYear(date2, options);
+    const weekYear = signedWeekYear > 0 ? signedWeekYear : 1 - signedWeekYear;
+    if (token === "YY") {
+      const twoDigitYear = weekYear % 100;
+      return addLeadingZeros(twoDigitYear, 2);
+    }
+    if (token === "Yo") {
+      return localize2.ordinalNumber(weekYear, { unit: "year" });
+    }
+    return addLeadingZeros(weekYear, token.length);
+  },
+  // ISO week-numbering year
+  R: function(date2, token) {
+    const isoWeekYear = getISOWeekYear(date2);
+    return addLeadingZeros(isoWeekYear, token.length);
+  },
+  // Extended year. This is a single number designating the year of this calendar system.
+  // The main difference between `y` and `u` localizers are B.C. years:
+  // | Year | `y` | `u` |
+  // |------|-----|-----|
+  // | AC 1 |   1 |   1 |
+  // | BC 1 |   1 |   0 |
+  // | BC 2 |   2 |  -1 |
+  // Also `yy` always returns the last two digits of a year,
+  // while `uu` pads single digit years to 2 characters and returns other years unchanged.
+  u: function(date2, token) {
+    const year = date2.getFullYear();
+    return addLeadingZeros(year, token.length);
+  },
+  // Quarter
+  Q: function(date2, token, localize2) {
+    const quarter = Math.ceil((date2.getMonth() + 1) / 3);
+    switch (token) {
+      // 1, 2, 3, 4
+      case "Q":
+        return String(quarter);
+      // 01, 02, 03, 04
+      case "QQ":
+        return addLeadingZeros(quarter, 2);
+      // 1st, 2nd, 3rd, 4th
+      case "Qo":
+        return localize2.ordinalNumber(quarter, { unit: "quarter" });
+      // Q1, Q2, Q3, Q4
+      case "QQQ":
+        return localize2.quarter(quarter, {
+          width: "abbreviated",
+          context: "formatting"
+        });
+      // 1, 2, 3, 4 (narrow quarter; could be not numerical)
+      case "QQQQQ":
+        return localize2.quarter(quarter, {
+          width: "narrow",
+          context: "formatting"
+        });
+      // 1st quarter, 2nd quarter, ...
+      case "QQQQ":
+      default:
+        return localize2.quarter(quarter, {
+          width: "wide",
+          context: "formatting"
+        });
+    }
+  },
+  // Stand-alone quarter
+  q: function(date2, token, localize2) {
+    const quarter = Math.ceil((date2.getMonth() + 1) / 3);
+    switch (token) {
+      // 1, 2, 3, 4
+      case "q":
+        return String(quarter);
+      // 01, 02, 03, 04
+      case "qq":
+        return addLeadingZeros(quarter, 2);
+      // 1st, 2nd, 3rd, 4th
+      case "qo":
+        return localize2.ordinalNumber(quarter, { unit: "quarter" });
+      // Q1, Q2, Q3, Q4
+      case "qqq":
+        return localize2.quarter(quarter, {
+          width: "abbreviated",
+          context: "standalone"
+        });
+      // 1, 2, 3, 4 (narrow quarter; could be not numerical)
+      case "qqqqq":
+        return localize2.quarter(quarter, {
+          width: "narrow",
+          context: "standalone"
+        });
+      // 1st quarter, 2nd quarter, ...
+      case "qqqq":
+      default:
+        return localize2.quarter(quarter, {
+          width: "wide",
+          context: "standalone"
+        });
+    }
+  },
+  // Month
+  M: function(date2, token, localize2) {
+    const month = date2.getMonth();
+    switch (token) {
+      case "M":
+      case "MM":
+        return lightFormatters.M(date2, token);
+      // 1st, 2nd, ..., 12th
+      case "Mo":
+        return localize2.ordinalNumber(month + 1, { unit: "month" });
+      // Jan, Feb, ..., Dec
+      case "MMM":
+        return localize2.month(month, {
+          width: "abbreviated",
+          context: "formatting"
+        });
+      // J, F, ..., D
+      case "MMMMM":
+        return localize2.month(month, {
+          width: "narrow",
+          context: "formatting"
+        });
+      // January, February, ..., December
+      case "MMMM":
+      default:
+        return localize2.month(month, { width: "wide", context: "formatting" });
+    }
+  },
+  // Stand-alone month
+  L: function(date2, token, localize2) {
+    const month = date2.getMonth();
+    switch (token) {
+      // 1, 2, ..., 12
+      case "L":
+        return String(month + 1);
+      // 01, 02, ..., 12
+      case "LL":
+        return addLeadingZeros(month + 1, 2);
+      // 1st, 2nd, ..., 12th
+      case "Lo":
+        return localize2.ordinalNumber(month + 1, { unit: "month" });
+      // Jan, Feb, ..., Dec
+      case "LLL":
+        return localize2.month(month, {
+          width: "abbreviated",
+          context: "standalone"
+        });
+      // J, F, ..., D
+      case "LLLLL":
+        return localize2.month(month, {
+          width: "narrow",
+          context: "standalone"
+        });
+      // January, February, ..., December
+      case "LLLL":
+      default:
+        return localize2.month(month, { width: "wide", context: "standalone" });
+    }
+  },
+  // Local week of year
+  w: function(date2, token, localize2, options) {
+    const week = getWeek(date2, options);
+    if (token === "wo") {
+      return localize2.ordinalNumber(week, { unit: "week" });
+    }
+    return addLeadingZeros(week, token.length);
+  },
+  // ISO week of year
+  I: function(date2, token, localize2) {
+    const isoWeek = getISOWeek(date2);
+    if (token === "Io") {
+      return localize2.ordinalNumber(isoWeek, { unit: "week" });
+    }
+    return addLeadingZeros(isoWeek, token.length);
+  },
+  // Day of the month
+  d: function(date2, token, localize2) {
+    if (token === "do") {
+      return localize2.ordinalNumber(date2.getDate(), { unit: "date" });
+    }
+    return lightFormatters.d(date2, token);
+  },
+  // Day of year
+  D: function(date2, token, localize2) {
+    const dayOfYear = getDayOfYear(date2);
+    if (token === "Do") {
+      return localize2.ordinalNumber(dayOfYear, { unit: "dayOfYear" });
+    }
+    return addLeadingZeros(dayOfYear, token.length);
+  },
+  // Day of week
+  E: function(date2, token, localize2) {
+    const dayOfWeek = date2.getDay();
+    switch (token) {
+      // Tue
+      case "E":
+      case "EE":
+      case "EEE":
+        return localize2.day(dayOfWeek, {
+          width: "abbreviated",
+          context: "formatting"
+        });
+      // T
+      case "EEEEE":
+        return localize2.day(dayOfWeek, {
+          width: "narrow",
+          context: "formatting"
+        });
+      // Tu
+      case "EEEEEE":
+        return localize2.day(dayOfWeek, {
+          width: "short",
+          context: "formatting"
+        });
+      // Tuesday
+      case "EEEE":
+      default:
+        return localize2.day(dayOfWeek, {
+          width: "wide",
+          context: "formatting"
+        });
+    }
+  },
+  // Local day of week
+  e: function(date2, token, localize2, options) {
+    const dayOfWeek = date2.getDay();
+    const localDayOfWeek = (dayOfWeek - options.weekStartsOn + 8) % 7 || 7;
+    switch (token) {
+      // Numerical value (Nth day of week with current locale or weekStartsOn)
+      case "e":
+        return String(localDayOfWeek);
+      // Padded numerical value
+      case "ee":
+        return addLeadingZeros(localDayOfWeek, 2);
+      // 1st, 2nd, ..., 7th
+      case "eo":
+        return localize2.ordinalNumber(localDayOfWeek, { unit: "day" });
+      case "eee":
+        return localize2.day(dayOfWeek, {
+          width: "abbreviated",
+          context: "formatting"
+        });
+      // T
+      case "eeeee":
+        return localize2.day(dayOfWeek, {
+          width: "narrow",
+          context: "formatting"
+        });
+      // Tu
+      case "eeeeee":
+        return localize2.day(dayOfWeek, {
+          width: "short",
+          context: "formatting"
+        });
+      // Tuesday
+      case "eeee":
+      default:
+        return localize2.day(dayOfWeek, {
+          width: "wide",
+          context: "formatting"
+        });
+    }
+  },
+  // Stand-alone local day of week
+  c: function(date2, token, localize2, options) {
+    const dayOfWeek = date2.getDay();
+    const localDayOfWeek = (dayOfWeek - options.weekStartsOn + 8) % 7 || 7;
+    switch (token) {
+      // Numerical value (same as in `e`)
+      case "c":
+        return String(localDayOfWeek);
+      // Padded numerical value
+      case "cc":
+        return addLeadingZeros(localDayOfWeek, token.length);
+      // 1st, 2nd, ..., 7th
+      case "co":
+        return localize2.ordinalNumber(localDayOfWeek, { unit: "day" });
+      case "ccc":
+        return localize2.day(dayOfWeek, {
+          width: "abbreviated",
+          context: "standalone"
+        });
+      // T
+      case "ccccc":
+        return localize2.day(dayOfWeek, {
+          width: "narrow",
+          context: "standalone"
+        });
+      // Tu
+      case "cccccc":
+        return localize2.day(dayOfWeek, {
+          width: "short",
+          context: "standalone"
+        });
+      // Tuesday
+      case "cccc":
+      default:
+        return localize2.day(dayOfWeek, {
+          width: "wide",
+          context: "standalone"
+        });
+    }
+  },
+  // ISO day of week
+  i: function(date2, token, localize2) {
+    const dayOfWeek = date2.getDay();
+    const isoDayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek;
+    switch (token) {
+      // 2
+      case "i":
+        return String(isoDayOfWeek);
+      // 02
+      case "ii":
+        return addLeadingZeros(isoDayOfWeek, token.length);
+      // 2nd
+      case "io":
+        return localize2.ordinalNumber(isoDayOfWeek, { unit: "day" });
+      // Tue
+      case "iii":
+        return localize2.day(dayOfWeek, {
+          width: "abbreviated",
+          context: "formatting"
+        });
+      // T
+      case "iiiii":
+        return localize2.day(dayOfWeek, {
+          width: "narrow",
+          context: "formatting"
+        });
+      // Tu
+      case "iiiiii":
+        return localize2.day(dayOfWeek, {
+          width: "short",
+          context: "formatting"
+        });
+      // Tuesday
+      case "iiii":
+      default:
+        return localize2.day(dayOfWeek, {
+          width: "wide",
+          context: "formatting"
+        });
+    }
+  },
+  // AM or PM
+  a: function(date2, token, localize2) {
+    const hours = date2.getHours();
+    const dayPeriodEnumValue = hours / 12 >= 1 ? "pm" : "am";
+    switch (token) {
+      case "a":
+      case "aa":
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "abbreviated",
+          context: "formatting"
+        });
+      case "aaa":
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "abbreviated",
+          context: "formatting"
+        }).toLowerCase();
+      case "aaaaa":
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "narrow",
+          context: "formatting"
+        });
+      case "aaaa":
+      default:
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "wide",
+          context: "formatting"
+        });
+    }
+  },
+  // AM, PM, midnight, noon
+  b: function(date2, token, localize2) {
+    const hours = date2.getHours();
+    let dayPeriodEnumValue;
+    if (hours === 12) {
+      dayPeriodEnumValue = dayPeriodEnum.noon;
+    } else if (hours === 0) {
+      dayPeriodEnumValue = dayPeriodEnum.midnight;
+    } else {
+      dayPeriodEnumValue = hours / 12 >= 1 ? "pm" : "am";
+    }
+    switch (token) {
+      case "b":
+      case "bb":
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "abbreviated",
+          context: "formatting"
+        });
+      case "bbb":
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "abbreviated",
+          context: "formatting"
+        }).toLowerCase();
+      case "bbbbb":
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "narrow",
+          context: "formatting"
+        });
+      case "bbbb":
+      default:
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "wide",
+          context: "formatting"
+        });
+    }
+  },
+  // in the morning, in the afternoon, in the evening, at night
+  B: function(date2, token, localize2) {
+    const hours = date2.getHours();
+    let dayPeriodEnumValue;
+    if (hours >= 17) {
+      dayPeriodEnumValue = dayPeriodEnum.evening;
+    } else if (hours >= 12) {
+      dayPeriodEnumValue = dayPeriodEnum.afternoon;
+    } else if (hours >= 4) {
+      dayPeriodEnumValue = dayPeriodEnum.morning;
+    } else {
+      dayPeriodEnumValue = dayPeriodEnum.night;
+    }
+    switch (token) {
+      case "B":
+      case "BB":
+      case "BBB":
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "abbreviated",
+          context: "formatting"
+        });
+      case "BBBBB":
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "narrow",
+          context: "formatting"
+        });
+      case "BBBB":
+      default:
+        return localize2.dayPeriod(dayPeriodEnumValue, {
+          width: "wide",
+          context: "formatting"
+        });
+    }
+  },
+  // Hour [1-12]
+  h: function(date2, token, localize2) {
+    if (token === "ho") {
+      let hours = date2.getHours() % 12;
+      if (hours === 0) hours = 12;
+      return localize2.ordinalNumber(hours, { unit: "hour" });
+    }
+    return lightFormatters.h(date2, token);
+  },
+  // Hour [0-23]
+  H: function(date2, token, localize2) {
+    if (token === "Ho") {
+      return localize2.ordinalNumber(date2.getHours(), { unit: "hour" });
+    }
+    return lightFormatters.H(date2, token);
+  },
+  // Hour [0-11]
+  K: function(date2, token, localize2) {
+    const hours = date2.getHours() % 12;
+    if (token === "Ko") {
+      return localize2.ordinalNumber(hours, { unit: "hour" });
+    }
+    return addLeadingZeros(hours, token.length);
+  },
+  // Hour [1-24]
+  k: function(date2, token, localize2) {
+    let hours = date2.getHours();
+    if (hours === 0) hours = 24;
+    if (token === "ko") {
+      return localize2.ordinalNumber(hours, { unit: "hour" });
+    }
+    return addLeadingZeros(hours, token.length);
+  },
+  // Minute
+  m: function(date2, token, localize2) {
+    if (token === "mo") {
+      return localize2.ordinalNumber(date2.getMinutes(), { unit: "minute" });
+    }
+    return lightFormatters.m(date2, token);
+  },
+  // Second
+  s: function(date2, token, localize2) {
+    if (token === "so") {
+      return localize2.ordinalNumber(date2.getSeconds(), { unit: "second" });
+    }
+    return lightFormatters.s(date2, token);
+  },
+  // Fraction of second
+  S: function(date2, token) {
+    return lightFormatters.S(date2, token);
+  },
+  // Timezone (ISO-8601. If offset is 0, output is always `'Z'`)
+  X: function(date2, token, _localize) {
+    const timezoneOffset = date2.getTimezoneOffset();
+    if (timezoneOffset === 0) {
+      return "Z";
+    }
+    switch (token) {
+      // Hours and optional minutes
+      case "X":
+        return formatTimezoneWithOptionalMinutes(timezoneOffset);
+      // Hours, minutes and optional seconds without `:` delimiter
+      // Note: neither ISO-8601 nor JavaScript supports seconds in timezone offsets
+      // so this token always has the same output as `XX`
+      case "XXXX":
+      case "XX":
+        return formatTimezone(timezoneOffset);
+      // Hours, minutes and optional seconds with `:` delimiter
+      // Note: neither ISO-8601 nor JavaScript supports seconds in timezone offsets
+      // so this token always has the same output as `XXX`
+      case "XXXXX":
+      case "XXX":
+      // Hours and minutes with `:` delimiter
+      default:
+        return formatTimezone(timezoneOffset, ":");
+    }
+  },
+  // Timezone (ISO-8601. If offset is 0, output is `'+00:00'` or equivalent)
+  x: function(date2, token, _localize) {
+    const timezoneOffset = date2.getTimezoneOffset();
+    switch (token) {
+      // Hours and optional minutes
+      case "x":
+        return formatTimezoneWithOptionalMinutes(timezoneOffset);
+      // Hours, minutes and optional seconds without `:` delimiter
+      // Note: neither ISO-8601 nor JavaScript supports seconds in timezone offsets
+      // so this token always has the same output as `xx`
+      case "xxxx":
+      case "xx":
+        return formatTimezone(timezoneOffset);
+      // Hours, minutes and optional seconds with `:` delimiter
+      // Note: neither ISO-8601 nor JavaScript supports seconds in timezone offsets
+      // so this token always has the same output as `xxx`
+      case "xxxxx":
+      case "xxx":
+      // Hours and minutes with `:` delimiter
+      default:
+        return formatTimezone(timezoneOffset, ":");
+    }
+  },
+  // Timezone (GMT)
+  O: function(date2, token, _localize) {
+    const timezoneOffset = date2.getTimezoneOffset();
+    switch (token) {
+      // Short
+      case "O":
+      case "OO":
+      case "OOO":
+        return "GMT" + formatTimezoneShort(timezoneOffset, ":");
+      // Long
+      case "OOOO":
+      default:
+        return "GMT" + formatTimezone(timezoneOffset, ":");
+    }
+  },
+  // Timezone (specific non-location)
+  z: function(date2, token, _localize) {
+    const timezoneOffset = date2.getTimezoneOffset();
+    switch (token) {
+      // Short
+      case "z":
+      case "zz":
+      case "zzz":
+        return "GMT" + formatTimezoneShort(timezoneOffset, ":");
+      // Long
+      case "zzzz":
+      default:
+        return "GMT" + formatTimezone(timezoneOffset, ":");
+    }
+  },
+  // Seconds timestamp
+  t: function(date2, token, _localize) {
+    const timestamp2 = Math.trunc(date2.getTime() / 1e3);
+    return addLeadingZeros(timestamp2, token.length);
+  },
+  // Milliseconds timestamp
+  T: function(date2, token, _localize) {
+    const timestamp2 = date2.getTime();
+    return addLeadingZeros(timestamp2, token.length);
+  }
+};
+function formatTimezoneShort(offset, delimiter2 = "") {
+  const sign = offset > 0 ? "-" : "+";
+  const absOffset = Math.abs(offset);
+  const hours = Math.trunc(absOffset / 60);
+  const minutes = absOffset % 60;
+  if (minutes === 0) {
+    return sign + String(hours);
+  }
+  return sign + String(hours) + delimiter2 + addLeadingZeros(minutes, 2);
+}
+function formatTimezoneWithOptionalMinutes(offset, delimiter2) {
+  if (offset % 60 === 0) {
+    const sign = offset > 0 ? "-" : "+";
+    return sign + addLeadingZeros(Math.abs(offset) / 60, 2);
+  }
+  return formatTimezone(offset, delimiter2);
+}
+function formatTimezone(offset, delimiter2 = "") {
+  const sign = offset > 0 ? "-" : "+";
+  const absOffset = Math.abs(offset);
+  const hours = addLeadingZeros(Math.trunc(absOffset / 60), 2);
+  const minutes = addLeadingZeros(absOffset % 60, 2);
+  return sign + hours + delimiter2 + minutes;
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/_lib/format/longFormatters.mjs
+var dateLongFormatter = (pattern, formatLong2) => {
+  switch (pattern) {
+    case "P":
+      return formatLong2.date({ width: "short" });
+    case "PP":
+      return formatLong2.date({ width: "medium" });
+    case "PPP":
+      return formatLong2.date({ width: "long" });
+    case "PPPP":
+    default:
+      return formatLong2.date({ width: "full" });
+  }
+};
+var timeLongFormatter = (pattern, formatLong2) => {
+  switch (pattern) {
+    case "p":
+      return formatLong2.time({ width: "short" });
+    case "pp":
+      return formatLong2.time({ width: "medium" });
+    case "ppp":
+      return formatLong2.time({ width: "long" });
+    case "pppp":
+    default:
+      return formatLong2.time({ width: "full" });
+  }
+};
+var dateTimeLongFormatter = (pattern, formatLong2) => {
+  const matchResult = pattern.match(/(P+)(p+)?/) || [];
+  const datePattern = matchResult[1];
+  const timePattern = matchResult[2];
+  if (!timePattern) {
+    return dateLongFormatter(pattern, formatLong2);
+  }
+  let dateTimeFormat;
+  switch (datePattern) {
+    case "P":
+      dateTimeFormat = formatLong2.dateTime({ width: "short" });
+      break;
+    case "PP":
+      dateTimeFormat = formatLong2.dateTime({ width: "medium" });
+      break;
+    case "PPP":
+      dateTimeFormat = formatLong2.dateTime({ width: "long" });
+      break;
+    case "PPPP":
+    default:
+      dateTimeFormat = formatLong2.dateTime({ width: "full" });
+      break;
+  }
+  return dateTimeFormat.replace("{{date}}", dateLongFormatter(datePattern, formatLong2)).replace("{{time}}", timeLongFormatter(timePattern, formatLong2));
+};
+var longFormatters = {
+  p: timeLongFormatter,
+  P: dateTimeLongFormatter
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/_lib/protectedTokens.mjs
+var dayOfYearTokenRE = /^D+$/;
+var weekYearTokenRE = /^Y+$/;
+var throwTokens = ["D", "DD", "YY", "YYYY"];
+function isProtectedDayOfYearToken(token) {
+  return dayOfYearTokenRE.test(token);
+}
+function isProtectedWeekYearToken(token) {
+  return weekYearTokenRE.test(token);
+}
+function warnOrThrowProtectedError(token, format2, input) {
+  const _message = message(token, format2, input);
+  console.warn(_message);
+  if (throwTokens.includes(token)) throw new RangeError(_message);
+}
+function message(token, format2, input) {
+  const subject = token[0] === "Y" ? "years" : "days of the month";
+  return `Use \`${token.toLowerCase()}\` instead of \`${token}\` (in \`${format2}\`) for formatting ${subject} to the input \`${input}\`; see: https://github.com/date-fns/date-fns/blob/master/docs/unicodeTokens.md`;
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/format.mjs
+var formattingTokensRegExp = /[yYQqMLwIdDecihHKkms]o|(\w)\1*|''|'(''|[^'])+('|$)|./g;
+var longFormattingTokensRegExp = /P+p+|P+|p+|''|'(''|[^'])+('|$)|./g;
+var escapedStringRegExp = /^'([^]*?)'?$/;
+var doubleQuoteRegExp = /''/g;
+var unescapedLatinCharacterRegExp = /[a-zA-Z]/;
+function format(date2, formatStr, options) {
+  const defaultOptions2 = getDefaultOptions();
+  const locale = options?.locale ?? defaultOptions2.locale ?? enUS;
+  const firstWeekContainsDate = options?.firstWeekContainsDate ?? options?.locale?.options?.firstWeekContainsDate ?? defaultOptions2.firstWeekContainsDate ?? defaultOptions2.locale?.options?.firstWeekContainsDate ?? 1;
+  const weekStartsOn = options?.weekStartsOn ?? options?.locale?.options?.weekStartsOn ?? defaultOptions2.weekStartsOn ?? defaultOptions2.locale?.options?.weekStartsOn ?? 0;
+  const originalDate = toDate(date2);
+  if (!isValid2(originalDate)) {
+    throw new RangeError("Invalid time value");
+  }
+  let parts = formatStr.match(longFormattingTokensRegExp).map((substring) => {
+    const firstCharacter = substring[0];
+    if (firstCharacter === "p" || firstCharacter === "P") {
+      const longFormatter = longFormatters[firstCharacter];
+      return longFormatter(substring, locale.formatLong);
+    }
+    return substring;
+  }).join("").match(formattingTokensRegExp).map((substring) => {
+    if (substring === "''") {
+      return { isToken: false, value: "'" };
+    }
+    const firstCharacter = substring[0];
+    if (firstCharacter === "'") {
+      return { isToken: false, value: cleanEscapedString(substring) };
+    }
+    if (formatters2[firstCharacter]) {
+      return { isToken: true, value: substring };
+    }
+    if (firstCharacter.match(unescapedLatinCharacterRegExp)) {
+      throw new RangeError(
+        "Format string contains an unescaped latin alphabet character `" + firstCharacter + "`"
+      );
+    }
+    return { isToken: false, value: substring };
+  });
+  if (locale.localize.preprocessor) {
+    parts = locale.localize.preprocessor(originalDate, parts);
+  }
+  const formatterOptions = {
+    firstWeekContainsDate,
+    weekStartsOn,
+    locale
+  };
+  return parts.map((part) => {
+    if (!part.isToken) return part.value;
+    const token = part.value;
+    if (!options?.useAdditionalWeekYearTokens && isProtectedWeekYearToken(token) || !options?.useAdditionalDayOfYearTokens && isProtectedDayOfYearToken(token)) {
+      warnOrThrowProtectedError(token, formatStr, String(date2));
+    }
+    const formatter = formatters2[token[0]];
+    return formatter(originalDate, token, locale.localize, formatterOptions);
+  }).join("");
+}
+function cleanEscapedString(input) {
+  const matched = input.match(escapedStringRegExp);
+  if (!matched) {
+    return input;
+  }
+  return matched[1].replace(doubleQuoteRegExp, "'");
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/getDefaultOptions.mjs
+function getDefaultOptions2() {
+  return Object.assign({}, getDefaultOptions());
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/getISODay.mjs
+function getISODay(date2) {
+  const _date = toDate(date2);
+  let day = _date.getDay();
+  if (day === 0) {
+    day = 7;
+  }
+  return day;
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/transpose.mjs
+function transpose(fromDate, constructor) {
+  const date2 = constructor instanceof Date ? constructFrom(constructor, 0) : new constructor(0);
+  date2.setFullYear(
+    fromDate.getFullYear(),
+    fromDate.getMonth(),
+    fromDate.getDate()
+  );
+  date2.setHours(
+    fromDate.getHours(),
+    fromDate.getMinutes(),
+    fromDate.getSeconds(),
+    fromDate.getMilliseconds()
+  );
+  return date2;
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/Setter.mjs
+var TIMEZONE_UNIT_PRIORITY = 10;
+var Setter = class {
+  subPriority = 0;
+  validate(_utcDate, _options) {
+    return true;
+  }
+};
+var ValueSetter = class extends Setter {
+  constructor(value, validateValue, setValue, priority, subPriority) {
+    super();
+    this.value = value;
+    this.validateValue = validateValue;
+    this.setValue = setValue;
+    this.priority = priority;
+    if (subPriority) {
+      this.subPriority = subPriority;
+    }
+  }
+  validate(date2, options) {
+    return this.validateValue(date2, this.value, options);
+  }
+  set(date2, flags, options) {
+    return this.setValue(date2, flags, this.value, options);
+  }
+};
+var DateToSystemTimezoneSetter = class extends Setter {
+  priority = TIMEZONE_UNIT_PRIORITY;
+  subPriority = -1;
+  set(date2, flags) {
+    if (flags.timestampIsSet) return date2;
+    return constructFrom(date2, transpose(date2, Date));
+  }
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/Parser.mjs
+var Parser = class {
+  run(dateString, token, match2, options) {
+    const result = this.parse(dateString, token, match2, options);
+    if (!result) {
+      return null;
+    }
+    return {
+      setter: new ValueSetter(
+        result.value,
+        this.validate,
+        this.set,
+        this.priority,
+        this.subPriority
+      ),
+      rest: result.rest
+    };
+  }
+  validate(_utcDate, _value, _options) {
+    return true;
+  }
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/EraParser.mjs
+var EraParser = class extends Parser {
+  priority = 140;
+  parse(dateString, token, match2) {
+    switch (token) {
+      // AD, BC
+      case "G":
+      case "GG":
+      case "GGG":
+        return match2.era(dateString, { width: "abbreviated" }) || match2.era(dateString, { width: "narrow" });
+      // A, B
+      case "GGGGG":
+        return match2.era(dateString, { width: "narrow" });
+      // Anno Domini, Before Christ
+      case "GGGG":
+      default:
+        return match2.era(dateString, { width: "wide" }) || match2.era(dateString, { width: "abbreviated" }) || match2.era(dateString, { width: "narrow" });
+    }
+  }
+  set(date2, flags, value) {
+    flags.era = value;
+    date2.setFullYear(value, 0, 1);
+    date2.setHours(0, 0, 0, 0);
+    return date2;
+  }
+  incompatibleTokens = ["R", "u", "t", "T"];
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/constants.mjs
+var numericPatterns = {
+  month: /^(1[0-2]|0?\d)/,
+  // 0 to 12
+  date: /^(3[0-1]|[0-2]?\d)/,
+  // 0 to 31
+  dayOfYear: /^(36[0-6]|3[0-5]\d|[0-2]?\d?\d)/,
+  // 0 to 366
+  week: /^(5[0-3]|[0-4]?\d)/,
+  // 0 to 53
+  hour23h: /^(2[0-3]|[0-1]?\d)/,
+  // 0 to 23
+  hour24h: /^(2[0-4]|[0-1]?\d)/,
+  // 0 to 24
+  hour11h: /^(1[0-1]|0?\d)/,
+  // 0 to 11
+  hour12h: /^(1[0-2]|0?\d)/,
+  // 0 to 12
+  minute: /^[0-5]?\d/,
+  // 0 to 59
+  second: /^[0-5]?\d/,
+  // 0 to 59
+  singleDigit: /^\d/,
+  // 0 to 9
+  twoDigits: /^\d{1,2}/,
+  // 0 to 99
+  threeDigits: /^\d{1,3}/,
+  // 0 to 999
+  fourDigits: /^\d{1,4}/,
+  // 0 to 9999
+  anyDigitsSigned: /^-?\d+/,
+  singleDigitSigned: /^-?\d/,
+  // 0 to 9, -0 to -9
+  twoDigitsSigned: /^-?\d{1,2}/,
+  // 0 to 99, -0 to -99
+  threeDigitsSigned: /^-?\d{1,3}/,
+  // 0 to 999, -0 to -999
+  fourDigitsSigned: /^-?\d{1,4}/
+  // 0 to 9999, -0 to -9999
+};
+var timezonePatterns = {
+  basicOptionalMinutes: /^([+-])(\d{2})(\d{2})?|Z/,
+  basic: /^([+-])(\d{2})(\d{2})|Z/,
+  basicOptionalSeconds: /^([+-])(\d{2})(\d{2})((\d{2}))?|Z/,
+  extended: /^([+-])(\d{2}):(\d{2})|Z/,
+  extendedOptionalSeconds: /^([+-])(\d{2}):(\d{2})(:(\d{2}))?|Z/
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/utils.mjs
+function mapValue(parseFnResult, mapFn) {
+  if (!parseFnResult) {
+    return parseFnResult;
+  }
+  return {
+    value: mapFn(parseFnResult.value),
+    rest: parseFnResult.rest
+  };
+}
+function parseNumericPattern(pattern, dateString) {
+  const matchResult = dateString.match(pattern);
+  if (!matchResult) {
+    return null;
+  }
+  return {
+    value: parseInt(matchResult[0], 10),
+    rest: dateString.slice(matchResult[0].length)
+  };
+}
+function parseTimezonePattern(pattern, dateString) {
+  const matchResult = dateString.match(pattern);
+  if (!matchResult) {
+    return null;
+  }
+  if (matchResult[0] === "Z") {
+    return {
+      value: 0,
+      rest: dateString.slice(1)
+    };
+  }
+  const sign = matchResult[1] === "+" ? 1 : -1;
+  const hours = matchResult[2] ? parseInt(matchResult[2], 10) : 0;
+  const minutes = matchResult[3] ? parseInt(matchResult[3], 10) : 0;
+  const seconds = matchResult[5] ? parseInt(matchResult[5], 10) : 0;
+  return {
+    value: sign * (hours * millisecondsInHour + minutes * millisecondsInMinute + seconds * millisecondsInSecond),
+    rest: dateString.slice(matchResult[0].length)
+  };
+}
+function parseAnyDigitsSigned(dateString) {
+  return parseNumericPattern(numericPatterns.anyDigitsSigned, dateString);
+}
+function parseNDigits(n, dateString) {
+  switch (n) {
+    case 1:
+      return parseNumericPattern(numericPatterns.singleDigit, dateString);
+    case 2:
+      return parseNumericPattern(numericPatterns.twoDigits, dateString);
+    case 3:
+      return parseNumericPattern(numericPatterns.threeDigits, dateString);
+    case 4:
+      return parseNumericPattern(numericPatterns.fourDigits, dateString);
+    default:
+      return parseNumericPattern(new RegExp("^\\d{1," + n + "}"), dateString);
+  }
+}
+function parseNDigitsSigned(n, dateString) {
+  switch (n) {
+    case 1:
+      return parseNumericPattern(numericPatterns.singleDigitSigned, dateString);
+    case 2:
+      return parseNumericPattern(numericPatterns.twoDigitsSigned, dateString);
+    case 3:
+      return parseNumericPattern(numericPatterns.threeDigitsSigned, dateString);
+    case 4:
+      return parseNumericPattern(numericPatterns.fourDigitsSigned, dateString);
+    default:
+      return parseNumericPattern(new RegExp("^-?\\d{1," + n + "}"), dateString);
+  }
+}
+function dayPeriodEnumToHours(dayPeriod) {
+  switch (dayPeriod) {
+    case "morning":
+      return 4;
+    case "evening":
+      return 17;
+    case "pm":
+    case "noon":
+    case "afternoon":
+      return 12;
+    case "am":
+    case "midnight":
+    case "night":
+    default:
+      return 0;
+  }
+}
+function normalizeTwoDigitYear(twoDigitYear, currentYear) {
+  const isCommonEra = currentYear > 0;
+  const absCurrentYear = isCommonEra ? currentYear : 1 - currentYear;
+  let result;
+  if (absCurrentYear <= 50) {
+    result = twoDigitYear || 100;
+  } else {
+    const rangeEnd = absCurrentYear + 50;
+    const rangeEndCentury = Math.trunc(rangeEnd / 100) * 100;
+    const isPreviousCentury = twoDigitYear >= rangeEnd % 100;
+    result = twoDigitYear + rangeEndCentury - (isPreviousCentury ? 100 : 0);
+  }
+  return isCommonEra ? result : 1 - result;
+}
+function isLeapYearIndex(year) {
+  return year % 400 === 0 || year % 4 === 0 && year % 100 !== 0;
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/YearParser.mjs
+var YearParser = class extends Parser {
+  priority = 130;
+  incompatibleTokens = ["Y", "R", "u", "w", "I", "i", "e", "c", "t", "T"];
+  parse(dateString, token, match2) {
+    const valueCallback = (year) => ({
+      year,
+      isTwoDigitYear: token === "yy"
+    });
+    switch (token) {
+      case "y":
+        return mapValue(parseNDigits(4, dateString), valueCallback);
+      case "yo":
+        return mapValue(
+          match2.ordinalNumber(dateString, {
+            unit: "year"
+          }),
+          valueCallback
+        );
+      default:
+        return mapValue(parseNDigits(token.length, dateString), valueCallback);
+    }
+  }
+  validate(_date, value) {
+    return value.isTwoDigitYear || value.year > 0;
+  }
+  set(date2, flags, value) {
+    const currentYear = date2.getFullYear();
+    if (value.isTwoDigitYear) {
+      const normalizedTwoDigitYear = normalizeTwoDigitYear(
+        value.year,
+        currentYear
+      );
+      date2.setFullYear(normalizedTwoDigitYear, 0, 1);
+      date2.setHours(0, 0, 0, 0);
+      return date2;
+    }
+    const year = !("era" in flags) || flags.era === 1 ? value.year : 1 - value.year;
+    date2.setFullYear(year, 0, 1);
+    date2.setHours(0, 0, 0, 0);
+    return date2;
+  }
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/LocalWeekYearParser.mjs
+var LocalWeekYearParser = class extends Parser {
+  priority = 130;
+  parse(dateString, token, match2) {
+    const valueCallback = (year) => ({
+      year,
+      isTwoDigitYear: token === "YY"
+    });
+    switch (token) {
+      case "Y":
+        return mapValue(parseNDigits(4, dateString), valueCallback);
+      case "Yo":
+        return mapValue(
+          match2.ordinalNumber(dateString, {
+            unit: "year"
+          }),
+          valueCallback
+        );
+      default:
+        return mapValue(parseNDigits(token.length, dateString), valueCallback);
+    }
+  }
+  validate(_date, value) {
+    return value.isTwoDigitYear || value.year > 0;
+  }
+  set(date2, flags, value, options) {
+    const currentYear = getWeekYear(date2, options);
+    if (value.isTwoDigitYear) {
+      const normalizedTwoDigitYear = normalizeTwoDigitYear(
+        value.year,
+        currentYear
+      );
+      date2.setFullYear(
+        normalizedTwoDigitYear,
+        0,
+        options.firstWeekContainsDate
+      );
+      date2.setHours(0, 0, 0, 0);
+      return startOfWeek(date2, options);
+    }
+    const year = !("era" in flags) || flags.era === 1 ? value.year : 1 - value.year;
+    date2.setFullYear(year, 0, options.firstWeekContainsDate);
+    date2.setHours(0, 0, 0, 0);
+    return startOfWeek(date2, options);
+  }
+  incompatibleTokens = [
+    "y",
+    "R",
+    "u",
+    "Q",
+    "q",
+    "M",
+    "L",
+    "I",
+    "d",
+    "D",
+    "i",
+    "t",
+    "T"
+  ];
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/ISOWeekYearParser.mjs
+var ISOWeekYearParser = class extends Parser {
+  priority = 130;
+  parse(dateString, token) {
+    if (token === "R") {
+      return parseNDigitsSigned(4, dateString);
+    }
+    return parseNDigitsSigned(token.length, dateString);
+  }
+  set(date2, _flags, value) {
+    const firstWeekOfYear = constructFrom(date2, 0);
+    firstWeekOfYear.setFullYear(value, 0, 4);
+    firstWeekOfYear.setHours(0, 0, 0, 0);
+    return startOfISOWeek(firstWeekOfYear);
+  }
+  incompatibleTokens = [
+    "G",
+    "y",
+    "Y",
+    "u",
+    "Q",
+    "q",
+    "M",
+    "L",
+    "w",
+    "d",
+    "D",
+    "e",
+    "c",
+    "t",
+    "T"
+  ];
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/ExtendedYearParser.mjs
+var ExtendedYearParser = class extends Parser {
+  priority = 130;
+  parse(dateString, token) {
+    if (token === "u") {
+      return parseNDigitsSigned(4, dateString);
+    }
+    return parseNDigitsSigned(token.length, dateString);
+  }
+  set(date2, _flags, value) {
+    date2.setFullYear(value, 0, 1);
+    date2.setHours(0, 0, 0, 0);
+    return date2;
+  }
+  incompatibleTokens = ["G", "y", "Y", "R", "w", "I", "i", "e", "c", "t", "T"];
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/QuarterParser.mjs
+var QuarterParser = class extends Parser {
+  priority = 120;
+  parse(dateString, token, match2) {
+    switch (token) {
+      // 1, 2, 3, 4
+      case "Q":
+      case "QQ":
+        return parseNDigits(token.length, dateString);
+      // 1st, 2nd, 3rd, 4th
+      case "Qo":
+        return match2.ordinalNumber(dateString, { unit: "quarter" });
+      // Q1, Q2, Q3, Q4
+      case "QQQ":
+        return match2.quarter(dateString, {
+          width: "abbreviated",
+          context: "formatting"
+        }) || match2.quarter(dateString, {
+          width: "narrow",
+          context: "formatting"
+        });
+      // 1, 2, 3, 4 (narrow quarter; could be not numerical)
+      case "QQQQQ":
+        return match2.quarter(dateString, {
+          width: "narrow",
+          context: "formatting"
+        });
+      // 1st quarter, 2nd quarter, ...
+      case "QQQQ":
+      default:
+        return match2.quarter(dateString, {
+          width: "wide",
+          context: "formatting"
+        }) || match2.quarter(dateString, {
+          width: "abbreviated",
+          context: "formatting"
+        }) || match2.quarter(dateString, {
+          width: "narrow",
+          context: "formatting"
+        });
+    }
+  }
+  validate(_date, value) {
+    return value >= 1 && value <= 4;
+  }
+  set(date2, _flags, value) {
+    date2.setMonth((value - 1) * 3, 1);
+    date2.setHours(0, 0, 0, 0);
+    return date2;
+  }
+  incompatibleTokens = [
+    "Y",
+    "R",
+    "q",
+    "M",
+    "L",
+    "w",
+    "I",
+    "d",
+    "D",
+    "i",
+    "e",
+    "c",
+    "t",
+    "T"
+  ];
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/StandAloneQuarterParser.mjs
+var StandAloneQuarterParser = class extends Parser {
+  priority = 120;
+  parse(dateString, token, match2) {
+    switch (token) {
+      // 1, 2, 3, 4
+      case "q":
+      case "qq":
+        return parseNDigits(token.length, dateString);
+      // 1st, 2nd, 3rd, 4th
+      case "qo":
+        return match2.ordinalNumber(dateString, { unit: "quarter" });
+      // Q1, Q2, Q3, Q4
+      case "qqq":
+        return match2.quarter(dateString, {
+          width: "abbreviated",
+          context: "standalone"
+        }) || match2.quarter(dateString, {
+          width: "narrow",
+          context: "standalone"
+        });
+      // 1, 2, 3, 4 (narrow quarter; could be not numerical)
+      case "qqqqq":
+        return match2.quarter(dateString, {
+          width: "narrow",
+          context: "standalone"
+        });
+      // 1st quarter, 2nd quarter, ...
+      case "qqqq":
+      default:
+        return match2.quarter(dateString, {
+          width: "wide",
+          context: "standalone"
+        }) || match2.quarter(dateString, {
+          width: "abbreviated",
+          context: "standalone"
+        }) || match2.quarter(dateString, {
+          width: "narrow",
+          context: "standalone"
+        });
+    }
+  }
+  validate(_date, value) {
+    return value >= 1 && value <= 4;
+  }
+  set(date2, _flags, value) {
+    date2.setMonth((value - 1) * 3, 1);
+    date2.setHours(0, 0, 0, 0);
+    return date2;
+  }
+  incompatibleTokens = [
+    "Y",
+    "R",
+    "Q",
+    "M",
+    "L",
+    "w",
+    "I",
+    "d",
+    "D",
+    "i",
+    "e",
+    "c",
+    "t",
+    "T"
+  ];
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/MonthParser.mjs
+var MonthParser = class extends Parser {
+  incompatibleTokens = [
+    "Y",
+    "R",
+    "q",
+    "Q",
+    "L",
+    "w",
+    "I",
+    "D",
+    "i",
+    "e",
+    "c",
+    "t",
+    "T"
+  ];
+  priority = 110;
+  parse(dateString, token, match2) {
+    const valueCallback = (value) => value - 1;
+    switch (token) {
+      // 1, 2, ..., 12
+      case "M":
+        return mapValue(
+          parseNumericPattern(numericPatterns.month, dateString),
+          valueCallback
+        );
+      // 01, 02, ..., 12
+      case "MM":
+        return mapValue(parseNDigits(2, dateString), valueCallback);
+      // 1st, 2nd, ..., 12th
+      case "Mo":
+        return mapValue(
+          match2.ordinalNumber(dateString, {
+            unit: "month"
+          }),
+          valueCallback
+        );
+      // Jan, Feb, ..., Dec
+      case "MMM":
+        return match2.month(dateString, {
+          width: "abbreviated",
+          context: "formatting"
+        }) || match2.month(dateString, { width: "narrow", context: "formatting" });
+      // J, F, ..., D
+      case "MMMMM":
+        return match2.month(dateString, {
+          width: "narrow",
+          context: "formatting"
+        });
+      // January, February, ..., December
+      case "MMMM":
+      default:
+        return match2.month(dateString, { width: "wide", context: "formatting" }) || match2.month(dateString, {
+          width: "abbreviated",
+          context: "formatting"
+        }) || match2.month(dateString, { width: "narrow", context: "formatting" });
+    }
+  }
+  validate(_date, value) {
+    return value >= 0 && value <= 11;
+  }
+  set(date2, _flags, value) {
+    date2.setMonth(value, 1);
+    date2.setHours(0, 0, 0, 0);
+    return date2;
+  }
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/StandAloneMonthParser.mjs
+var StandAloneMonthParser = class extends Parser {
+  priority = 110;
+  parse(dateString, token, match2) {
+    const valueCallback = (value) => value - 1;
+    switch (token) {
+      // 1, 2, ..., 12
+      case "L":
+        return mapValue(
+          parseNumericPattern(numericPatterns.month, dateString),
+          valueCallback
+        );
+      // 01, 02, ..., 12
+      case "LL":
+        return mapValue(parseNDigits(2, dateString), valueCallback);
+      // 1st, 2nd, ..., 12th
+      case "Lo":
+        return mapValue(
+          match2.ordinalNumber(dateString, {
+            unit: "month"
+          }),
+          valueCallback
+        );
+      // Jan, Feb, ..., Dec
+      case "LLL":
+        return match2.month(dateString, {
+          width: "abbreviated",
+          context: "standalone"
+        }) || match2.month(dateString, { width: "narrow", context: "standalone" });
+      // J, F, ..., D
+      case "LLLLL":
+        return match2.month(dateString, {
+          width: "narrow",
+          context: "standalone"
+        });
+      // January, February, ..., December
+      case "LLLL":
+      default:
+        return match2.month(dateString, { width: "wide", context: "standalone" }) || match2.month(dateString, {
+          width: "abbreviated",
+          context: "standalone"
+        }) || match2.month(dateString, { width: "narrow", context: "standalone" });
+    }
+  }
+  validate(_date, value) {
+    return value >= 0 && value <= 11;
+  }
+  set(date2, _flags, value) {
+    date2.setMonth(value, 1);
+    date2.setHours(0, 0, 0, 0);
+    return date2;
+  }
+  incompatibleTokens = [
+    "Y",
+    "R",
+    "q",
+    "Q",
+    "M",
+    "w",
+    "I",
+    "D",
+    "i",
+    "e",
+    "c",
+    "t",
+    "T"
+  ];
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/setWeek.mjs
+function setWeek(date2, week, options) {
+  const _date = toDate(date2);
+  const diff = getWeek(_date, options) - week;
+  _date.setDate(_date.getDate() - diff * 7);
+  return _date;
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/LocalWeekParser.mjs
+var LocalWeekParser = class extends Parser {
+  priority = 100;
+  parse(dateString, token, match2) {
+    switch (token) {
+      case "w":
+        return parseNumericPattern(numericPatterns.week, dateString);
+      case "wo":
+        return match2.ordinalNumber(dateString, { unit: "week" });
+      default:
+        return parseNDigits(token.length, dateString);
+    }
+  }
+  validate(_date, value) {
+    return value >= 1 && value <= 53;
+  }
+  set(date2, _flags, value, options) {
+    return startOfWeek(setWeek(date2, value, options), options);
+  }
+  incompatibleTokens = [
+    "y",
+    "R",
+    "u",
+    "q",
+    "Q",
+    "M",
+    "L",
+    "I",
+    "d",
+    "D",
+    "i",
+    "t",
+    "T"
+  ];
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/setISOWeek.mjs
+function setISOWeek(date2, week) {
+  const _date = toDate(date2);
+  const diff = getISOWeek(_date) - week;
+  _date.setDate(_date.getDate() - diff * 7);
+  return _date;
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/ISOWeekParser.mjs
+var ISOWeekParser = class extends Parser {
+  priority = 100;
+  parse(dateString, token, match2) {
+    switch (token) {
+      case "I":
+        return parseNumericPattern(numericPatterns.week, dateString);
+      case "Io":
+        return match2.ordinalNumber(dateString, { unit: "week" });
+      default:
+        return parseNDigits(token.length, dateString);
+    }
+  }
+  validate(_date, value) {
+    return value >= 1 && value <= 53;
+  }
+  set(date2, _flags, value) {
+    return startOfISOWeek(setISOWeek(date2, value));
+  }
+  incompatibleTokens = [
+    "y",
+    "Y",
+    "u",
+    "q",
+    "Q",
+    "M",
+    "L",
+    "w",
+    "d",
+    "D",
+    "e",
+    "c",
+    "t",
+    "T"
+  ];
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/DateParser.mjs
+var DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+var DAYS_IN_MONTH_LEAP_YEAR = [
+  31,
+  29,
+  31,
+  30,
+  31,
+  30,
+  31,
+  31,
+  30,
+  31,
+  30,
+  31
+];
+var DateParser = class extends Parser {
+  priority = 90;
+  subPriority = 1;
+  parse(dateString, token, match2) {
+    switch (token) {
+      case "d":
+        return parseNumericPattern(numericPatterns.date, dateString);
+      case "do":
+        return match2.ordinalNumber(dateString, { unit: "date" });
+      default:
+        return parseNDigits(token.length, dateString);
+    }
+  }
+  validate(date2, value) {
+    const year = date2.getFullYear();
+    const isLeapYear = isLeapYearIndex(year);
+    const month = date2.getMonth();
+    if (isLeapYear) {
+      return value >= 1 && value <= DAYS_IN_MONTH_LEAP_YEAR[month];
+    } else {
+      return value >= 1 && value <= DAYS_IN_MONTH[month];
+    }
+  }
+  set(date2, _flags, value) {
+    date2.setDate(value);
+    date2.setHours(0, 0, 0, 0);
+    return date2;
+  }
+  incompatibleTokens = [
+    "Y",
+    "R",
+    "q",
+    "Q",
+    "w",
+    "I",
+    "D",
+    "i",
+    "e",
+    "c",
+    "t",
+    "T"
+  ];
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/DayOfYearParser.mjs
+var DayOfYearParser = class extends Parser {
+  priority = 90;
+  subpriority = 1;
+  parse(dateString, token, match2) {
+    switch (token) {
+      case "D":
+      case "DD":
+        return parseNumericPattern(numericPatterns.dayOfYear, dateString);
+      case "Do":
+        return match2.ordinalNumber(dateString, { unit: "date" });
+      default:
+        return parseNDigits(token.length, dateString);
+    }
+  }
+  validate(date2, value) {
+    const year = date2.getFullYear();
+    const isLeapYear = isLeapYearIndex(year);
+    if (isLeapYear) {
+      return value >= 1 && value <= 366;
+    } else {
+      return value >= 1 && value <= 365;
+    }
+  }
+  set(date2, _flags, value) {
+    date2.setMonth(0, value);
+    date2.setHours(0, 0, 0, 0);
+    return date2;
+  }
+  incompatibleTokens = [
+    "Y",
+    "R",
+    "q",
+    "Q",
+    "M",
+    "L",
+    "w",
+    "I",
+    "d",
+    "E",
+    "i",
+    "e",
+    "c",
+    "t",
+    "T"
+  ];
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/setDay.mjs
+function setDay(date2, day, options) {
+  const defaultOptions2 = getDefaultOptions();
+  const weekStartsOn = options?.weekStartsOn ?? options?.locale?.options?.weekStartsOn ?? defaultOptions2.weekStartsOn ?? defaultOptions2.locale?.options?.weekStartsOn ?? 0;
+  const _date = toDate(date2);
+  const currentDay = _date.getDay();
+  const remainder = day % 7;
+  const dayIndex = (remainder + 7) % 7;
+  const delta = 7 - weekStartsOn;
+  const diff = day < 0 || day > 6 ? day - (currentDay + delta) % 7 : (dayIndex + delta) % 7 - (currentDay + delta) % 7;
+  return addDays(_date, diff);
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/DayParser.mjs
+var DayParser = class extends Parser {
+  priority = 90;
+  parse(dateString, token, match2) {
+    switch (token) {
+      // Tue
+      case "E":
+      case "EE":
+      case "EEE":
+        return match2.day(dateString, {
+          width: "abbreviated",
+          context: "formatting"
+        }) || match2.day(dateString, { width: "short", context: "formatting" }) || match2.day(dateString, { width: "narrow", context: "formatting" });
+      // T
+      case "EEEEE":
+        return match2.day(dateString, {
+          width: "narrow",
+          context: "formatting"
+        });
+      // Tu
+      case "EEEEEE":
+        return match2.day(dateString, { width: "short", context: "formatting" }) || match2.day(dateString, { width: "narrow", context: "formatting" });
+      // Tuesday
+      case "EEEE":
+      default:
+        return match2.day(dateString, { width: "wide", context: "formatting" }) || match2.day(dateString, {
+          width: "abbreviated",
+          context: "formatting"
+        }) || match2.day(dateString, { width: "short", context: "formatting" }) || match2.day(dateString, { width: "narrow", context: "formatting" });
+    }
+  }
+  validate(_date, value) {
+    return value >= 0 && value <= 6;
+  }
+  set(date2, _flags, value, options) {
+    date2 = setDay(date2, value, options);
+    date2.setHours(0, 0, 0, 0);
+    return date2;
+  }
+  incompatibleTokens = ["D", "i", "e", "c", "t", "T"];
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/LocalDayParser.mjs
+var LocalDayParser = class extends Parser {
+  priority = 90;
+  parse(dateString, token, match2, options) {
+    const valueCallback = (value) => {
+      const wholeWeekDays = Math.floor((value - 1) / 7) * 7;
+      return (value + options.weekStartsOn + 6) % 7 + wholeWeekDays;
+    };
+    switch (token) {
+      // 3
+      case "e":
+      case "ee":
+        return mapValue(parseNDigits(token.length, dateString), valueCallback);
+      // 3rd
+      case "eo":
+        return mapValue(
+          match2.ordinalNumber(dateString, {
+            unit: "day"
+          }),
+          valueCallback
+        );
+      // Tue
+      case "eee":
+        return match2.day(dateString, {
+          width: "abbreviated",
+          context: "formatting"
+        }) || match2.day(dateString, { width: "short", context: "formatting" }) || match2.day(dateString, { width: "narrow", context: "formatting" });
+      // T
+      case "eeeee":
+        return match2.day(dateString, {
+          width: "narrow",
+          context: "formatting"
+        });
+      // Tu
+      case "eeeeee":
+        return match2.day(dateString, { width: "short", context: "formatting" }) || match2.day(dateString, { width: "narrow", context: "formatting" });
+      // Tuesday
+      case "eeee":
+      default:
+        return match2.day(dateString, { width: "wide", context: "formatting" }) || match2.day(dateString, {
+          width: "abbreviated",
+          context: "formatting"
+        }) || match2.day(dateString, { width: "short", context: "formatting" }) || match2.day(dateString, { width: "narrow", context: "formatting" });
+    }
+  }
+  validate(_date, value) {
+    return value >= 0 && value <= 6;
+  }
+  set(date2, _flags, value, options) {
+    date2 = setDay(date2, value, options);
+    date2.setHours(0, 0, 0, 0);
+    return date2;
+  }
+  incompatibleTokens = [
+    "y",
+    "R",
+    "u",
+    "q",
+    "Q",
+    "M",
+    "L",
+    "I",
+    "d",
+    "D",
+    "E",
+    "i",
+    "c",
+    "t",
+    "T"
+  ];
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/StandAloneLocalDayParser.mjs
+var StandAloneLocalDayParser = class extends Parser {
+  priority = 90;
+  parse(dateString, token, match2, options) {
+    const valueCallback = (value) => {
+      const wholeWeekDays = Math.floor((value - 1) / 7) * 7;
+      return (value + options.weekStartsOn + 6) % 7 + wholeWeekDays;
+    };
+    switch (token) {
+      // 3
+      case "c":
+      case "cc":
+        return mapValue(parseNDigits(token.length, dateString), valueCallback);
+      // 3rd
+      case "co":
+        return mapValue(
+          match2.ordinalNumber(dateString, {
+            unit: "day"
+          }),
+          valueCallback
+        );
+      // Tue
+      case "ccc":
+        return match2.day(dateString, {
+          width: "abbreviated",
+          context: "standalone"
+        }) || match2.day(dateString, { width: "short", context: "standalone" }) || match2.day(dateString, { width: "narrow", context: "standalone" });
+      // T
+      case "ccccc":
+        return match2.day(dateString, {
+          width: "narrow",
+          context: "standalone"
+        });
+      // Tu
+      case "cccccc":
+        return match2.day(dateString, { width: "short", context: "standalone" }) || match2.day(dateString, { width: "narrow", context: "standalone" });
+      // Tuesday
+      case "cccc":
+      default:
+        return match2.day(dateString, { width: "wide", context: "standalone" }) || match2.day(dateString, {
+          width: "abbreviated",
+          context: "standalone"
+        }) || match2.day(dateString, { width: "short", context: "standalone" }) || match2.day(dateString, { width: "narrow", context: "standalone" });
+    }
+  }
+  validate(_date, value) {
+    return value >= 0 && value <= 6;
+  }
+  set(date2, _flags, value, options) {
+    date2 = setDay(date2, value, options);
+    date2.setHours(0, 0, 0, 0);
+    return date2;
+  }
+  incompatibleTokens = [
+    "y",
+    "R",
+    "u",
+    "q",
+    "Q",
+    "M",
+    "L",
+    "I",
+    "d",
+    "D",
+    "E",
+    "i",
+    "e",
+    "t",
+    "T"
+  ];
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/setISODay.mjs
+function setISODay(date2, day) {
+  const _date = toDate(date2);
+  const currentDay = getISODay(_date);
+  const diff = day - currentDay;
+  return addDays(_date, diff);
+}
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/ISODayParser.mjs
+var ISODayParser = class extends Parser {
+  priority = 90;
+  parse(dateString, token, match2) {
+    const valueCallback = (value) => {
+      if (value === 0) {
+        return 7;
+      }
+      return value;
+    };
+    switch (token) {
+      // 2
+      case "i":
+      case "ii":
+        return parseNDigits(token.length, dateString);
+      // 2nd
+      case "io":
+        return match2.ordinalNumber(dateString, { unit: "day" });
+      // Tue
+      case "iii":
+        return mapValue(
+          match2.day(dateString, {
+            width: "abbreviated",
+            context: "formatting"
+          }) || match2.day(dateString, {
+            width: "short",
+            context: "formatting"
+          }) || match2.day(dateString, {
+            width: "narrow",
+            context: "formatting"
+          }),
+          valueCallback
+        );
+      // T
+      case "iiiii":
+        return mapValue(
+          match2.day(dateString, {
+            width: "narrow",
+            context: "formatting"
+          }),
+          valueCallback
+        );
+      // Tu
+      case "iiiiii":
+        return mapValue(
+          match2.day(dateString, {
+            width: "short",
+            context: "formatting"
+          }) || match2.day(dateString, {
+            width: "narrow",
+            context: "formatting"
+          }),
+          valueCallback
+        );
+      // Tuesday
+      case "iiii":
+      default:
+        return mapValue(
+          match2.day(dateString, {
+            width: "wide",
+            context: "formatting"
+          }) || match2.day(dateString, {
+            width: "abbreviated",
+            context: "formatting"
+          }) || match2.day(dateString, {
+            width: "short",
+            context: "formatting"
+          }) || match2.day(dateString, {
+            width: "narrow",
+            context: "formatting"
+          }),
+          valueCallback
+        );
+    }
+  }
+  validate(_date, value) {
+    return value >= 1 && value <= 7;
+  }
+  set(date2, _flags, value) {
+    date2 = setISODay(date2, value);
+    date2.setHours(0, 0, 0, 0);
+    return date2;
+  }
+  incompatibleTokens = [
+    "y",
+    "Y",
+    "u",
+    "q",
+    "Q",
+    "M",
+    "L",
+    "w",
+    "d",
+    "D",
+    "E",
+    "e",
+    "c",
+    "t",
+    "T"
+  ];
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/AMPMParser.mjs
+var AMPMParser = class extends Parser {
+  priority = 80;
+  parse(dateString, token, match2) {
+    switch (token) {
+      case "a":
+      case "aa":
+      case "aaa":
+        return match2.dayPeriod(dateString, {
+          width: "abbreviated",
+          context: "formatting"
+        }) || match2.dayPeriod(dateString, {
+          width: "narrow",
+          context: "formatting"
+        });
+      case "aaaaa":
+        return match2.dayPeriod(dateString, {
+          width: "narrow",
+          context: "formatting"
+        });
+      case "aaaa":
+      default:
+        return match2.dayPeriod(dateString, {
+          width: "wide",
+          context: "formatting"
+        }) || match2.dayPeriod(dateString, {
+          width: "abbreviated",
+          context: "formatting"
+        }) || match2.dayPeriod(dateString, {
+          width: "narrow",
+          context: "formatting"
+        });
+    }
+  }
+  set(date2, _flags, value) {
+    date2.setHours(dayPeriodEnumToHours(value), 0, 0, 0);
+    return date2;
+  }
+  incompatibleTokens = ["b", "B", "H", "k", "t", "T"];
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/AMPMMidnightParser.mjs
+var AMPMMidnightParser = class extends Parser {
+  priority = 80;
+  parse(dateString, token, match2) {
+    switch (token) {
+      case "b":
+      case "bb":
+      case "bbb":
+        return match2.dayPeriod(dateString, {
+          width: "abbreviated",
+          context: "formatting"
+        }) || match2.dayPeriod(dateString, {
+          width: "narrow",
+          context: "formatting"
+        });
+      case "bbbbb":
+        return match2.dayPeriod(dateString, {
+          width: "narrow",
+          context: "formatting"
+        });
+      case "bbbb":
+      default:
+        return match2.dayPeriod(dateString, {
+          width: "wide",
+          context: "formatting"
+        }) || match2.dayPeriod(dateString, {
+          width: "abbreviated",
+          context: "formatting"
+        }) || match2.dayPeriod(dateString, {
+          width: "narrow",
+          context: "formatting"
+        });
+    }
+  }
+  set(date2, _flags, value) {
+    date2.setHours(dayPeriodEnumToHours(value), 0, 0, 0);
+    return date2;
+  }
+  incompatibleTokens = ["a", "B", "H", "k", "t", "T"];
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/DayPeriodParser.mjs
+var DayPeriodParser = class extends Parser {
+  priority = 80;
+  parse(dateString, token, match2) {
+    switch (token) {
+      case "B":
+      case "BB":
+      case "BBB":
+        return match2.dayPeriod(dateString, {
+          width: "abbreviated",
+          context: "formatting"
+        }) || match2.dayPeriod(dateString, {
+          width: "narrow",
+          context: "formatting"
+        });
+      case "BBBBB":
+        return match2.dayPeriod(dateString, {
+          width: "narrow",
+          context: "formatting"
+        });
+      case "BBBB":
+      default:
+        return match2.dayPeriod(dateString, {
+          width: "wide",
+          context: "formatting"
+        }) || match2.dayPeriod(dateString, {
+          width: "abbreviated",
+          context: "formatting"
+        }) || match2.dayPeriod(dateString, {
+          width: "narrow",
+          context: "formatting"
+        });
+    }
+  }
+  set(date2, _flags, value) {
+    date2.setHours(dayPeriodEnumToHours(value), 0, 0, 0);
+    return date2;
+  }
+  incompatibleTokens = ["a", "b", "t", "T"];
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/Hour1to12Parser.mjs
+var Hour1to12Parser = class extends Parser {
+  priority = 70;
+  parse(dateString, token, match2) {
+    switch (token) {
+      case "h":
+        return parseNumericPattern(numericPatterns.hour12h, dateString);
+      case "ho":
+        return match2.ordinalNumber(dateString, { unit: "hour" });
+      default:
+        return parseNDigits(token.length, dateString);
+    }
+  }
+  validate(_date, value) {
+    return value >= 1 && value <= 12;
+  }
+  set(date2, _flags, value) {
+    const isPM = date2.getHours() >= 12;
+    if (isPM && value < 12) {
+      date2.setHours(value + 12, 0, 0, 0);
+    } else if (!isPM && value === 12) {
+      date2.setHours(0, 0, 0, 0);
+    } else {
+      date2.setHours(value, 0, 0, 0);
+    }
+    return date2;
+  }
+  incompatibleTokens = ["H", "K", "k", "t", "T"];
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/Hour0to23Parser.mjs
+var Hour0to23Parser = class extends Parser {
+  priority = 70;
+  parse(dateString, token, match2) {
+    switch (token) {
+      case "H":
+        return parseNumericPattern(numericPatterns.hour23h, dateString);
+      case "Ho":
+        return match2.ordinalNumber(dateString, { unit: "hour" });
+      default:
+        return parseNDigits(token.length, dateString);
+    }
+  }
+  validate(_date, value) {
+    return value >= 0 && value <= 23;
+  }
+  set(date2, _flags, value) {
+    date2.setHours(value, 0, 0, 0);
+    return date2;
+  }
+  incompatibleTokens = ["a", "b", "h", "K", "k", "t", "T"];
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/Hour0To11Parser.mjs
+var Hour0To11Parser = class extends Parser {
+  priority = 70;
+  parse(dateString, token, match2) {
+    switch (token) {
+      case "K":
+        return parseNumericPattern(numericPatterns.hour11h, dateString);
+      case "Ko":
+        return match2.ordinalNumber(dateString, { unit: "hour" });
+      default:
+        return parseNDigits(token.length, dateString);
+    }
+  }
+  validate(_date, value) {
+    return value >= 0 && value <= 11;
+  }
+  set(date2, _flags, value) {
+    const isPM = date2.getHours() >= 12;
+    if (isPM && value < 12) {
+      date2.setHours(value + 12, 0, 0, 0);
+    } else {
+      date2.setHours(value, 0, 0, 0);
+    }
+    return date2;
+  }
+  incompatibleTokens = ["h", "H", "k", "t", "T"];
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/Hour1To24Parser.mjs
+var Hour1To24Parser = class extends Parser {
+  priority = 70;
+  parse(dateString, token, match2) {
+    switch (token) {
+      case "k":
+        return parseNumericPattern(numericPatterns.hour24h, dateString);
+      case "ko":
+        return match2.ordinalNumber(dateString, { unit: "hour" });
+      default:
+        return parseNDigits(token.length, dateString);
+    }
+  }
+  validate(_date, value) {
+    return value >= 1 && value <= 24;
+  }
+  set(date2, _flags, value) {
+    const hours = value <= 24 ? value % 24 : value;
+    date2.setHours(hours, 0, 0, 0);
+    return date2;
+  }
+  incompatibleTokens = ["a", "b", "h", "H", "K", "t", "T"];
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/MinuteParser.mjs
+var MinuteParser = class extends Parser {
+  priority = 60;
+  parse(dateString, token, match2) {
+    switch (token) {
+      case "m":
+        return parseNumericPattern(numericPatterns.minute, dateString);
+      case "mo":
+        return match2.ordinalNumber(dateString, { unit: "minute" });
+      default:
+        return parseNDigits(token.length, dateString);
+    }
+  }
+  validate(_date, value) {
+    return value >= 0 && value <= 59;
+  }
+  set(date2, _flags, value) {
+    date2.setMinutes(value, 0, 0);
+    return date2;
+  }
+  incompatibleTokens = ["t", "T"];
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/SecondParser.mjs
+var SecondParser = class extends Parser {
+  priority = 50;
+  parse(dateString, token, match2) {
+    switch (token) {
+      case "s":
+        return parseNumericPattern(numericPatterns.second, dateString);
+      case "so":
+        return match2.ordinalNumber(dateString, { unit: "second" });
+      default:
+        return parseNDigits(token.length, dateString);
+    }
+  }
+  validate(_date, value) {
+    return value >= 0 && value <= 59;
+  }
+  set(date2, _flags, value) {
+    date2.setSeconds(value, 0);
+    return date2;
+  }
+  incompatibleTokens = ["t", "T"];
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/FractionOfSecondParser.mjs
+var FractionOfSecondParser = class extends Parser {
+  priority = 30;
+  parse(dateString, token) {
+    const valueCallback = (value) => Math.trunc(value * Math.pow(10, -token.length + 3));
+    return mapValue(parseNDigits(token.length, dateString), valueCallback);
+  }
+  set(date2, _flags, value) {
+    date2.setMilliseconds(value);
+    return date2;
+  }
+  incompatibleTokens = ["t", "T"];
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/ISOTimezoneWithZParser.mjs
+var ISOTimezoneWithZParser = class extends Parser {
+  priority = 10;
+  parse(dateString, token) {
+    switch (token) {
+      case "X":
+        return parseTimezonePattern(
+          timezonePatterns.basicOptionalMinutes,
+          dateString
+        );
+      case "XX":
+        return parseTimezonePattern(timezonePatterns.basic, dateString);
+      case "XXXX":
+        return parseTimezonePattern(
+          timezonePatterns.basicOptionalSeconds,
+          dateString
+        );
+      case "XXXXX":
+        return parseTimezonePattern(
+          timezonePatterns.extendedOptionalSeconds,
+          dateString
+        );
+      case "XXX":
+      default:
+        return parseTimezonePattern(timezonePatterns.extended, dateString);
+    }
+  }
+  set(date2, flags, value) {
+    if (flags.timestampIsSet) return date2;
+    return constructFrom(
+      date2,
+      date2.getTime() - getTimezoneOffsetInMilliseconds(date2) - value
+    );
+  }
+  incompatibleTokens = ["t", "T", "x"];
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/ISOTimezoneParser.mjs
+var ISOTimezoneParser = class extends Parser {
+  priority = 10;
+  parse(dateString, token) {
+    switch (token) {
+      case "x":
+        return parseTimezonePattern(
+          timezonePatterns.basicOptionalMinutes,
+          dateString
+        );
+      case "xx":
+        return parseTimezonePattern(timezonePatterns.basic, dateString);
+      case "xxxx":
+        return parseTimezonePattern(
+          timezonePatterns.basicOptionalSeconds,
+          dateString
+        );
+      case "xxxxx":
+        return parseTimezonePattern(
+          timezonePatterns.extendedOptionalSeconds,
+          dateString
+        );
+      case "xxx":
+      default:
+        return parseTimezonePattern(timezonePatterns.extended, dateString);
+    }
+  }
+  set(date2, flags, value) {
+    if (flags.timestampIsSet) return date2;
+    return constructFrom(
+      date2,
+      date2.getTime() - getTimezoneOffsetInMilliseconds(date2) - value
+    );
+  }
+  incompatibleTokens = ["t", "T", "X"];
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/TimestampSecondsParser.mjs
+var TimestampSecondsParser = class extends Parser {
+  priority = 40;
+  parse(dateString) {
+    return parseAnyDigitsSigned(dateString);
+  }
+  set(date2, _flags, value) {
+    return [constructFrom(date2, value * 1e3), { timestampIsSet: true }];
+  }
+  incompatibleTokens = "*";
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/TimestampMillisecondsParser.mjs
+var TimestampMillisecondsParser = class extends Parser {
+  priority = 20;
+  parse(dateString) {
+    return parseAnyDigitsSigned(dateString);
+  }
+  set(date2, _flags, value) {
+    return [constructFrom(date2, value), { timestampIsSet: true }];
+  }
+  incompatibleTokens = "*";
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers.mjs
+var parsers2 = {
+  G: new EraParser(),
+  y: new YearParser(),
+  Y: new LocalWeekYearParser(),
+  R: new ISOWeekYearParser(),
+  u: new ExtendedYearParser(),
+  Q: new QuarterParser(),
+  q: new StandAloneQuarterParser(),
+  M: new MonthParser(),
+  L: new StandAloneMonthParser(),
+  w: new LocalWeekParser(),
+  I: new ISOWeekParser(),
+  d: new DateParser(),
+  D: new DayOfYearParser(),
+  E: new DayParser(),
+  e: new LocalDayParser(),
+  c: new StandAloneLocalDayParser(),
+  i: new ISODayParser(),
+  a: new AMPMParser(),
+  b: new AMPMMidnightParser(),
+  B: new DayPeriodParser(),
+  h: new Hour1to12Parser(),
+  H: new Hour0to23Parser(),
+  K: new Hour0To11Parser(),
+  k: new Hour1To24Parser(),
+  m: new MinuteParser(),
+  s: new SecondParser(),
+  S: new FractionOfSecondParser(),
+  X: new ISOTimezoneWithZParser(),
+  x: new ISOTimezoneParser(),
+  t: new TimestampSecondsParser(),
+  T: new TimestampMillisecondsParser()
+};
+
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse.mjs
+var formattingTokensRegExp2 = /[yYQqMLwIdDecihHKkms]o|(\w)\1*|''|'(''|[^'])+('|$)|./g;
+var longFormattingTokensRegExp2 = /P+p+|P+|p+|''|'(''|[^'])+('|$)|./g;
+var escapedStringRegExp2 = /^'([^]*?)'?$/;
+var doubleQuoteRegExp2 = /''/g;
+var notWhitespaceRegExp = /\S/;
+var unescapedLatinCharacterRegExp2 = /[a-zA-Z]/;
+function parse3(dateStr, formatStr, referenceDate, options) {
+  const defaultOptions2 = getDefaultOptions2();
+  const locale = options?.locale ?? defaultOptions2.locale ?? enUS;
+  const firstWeekContainsDate = options?.firstWeekContainsDate ?? options?.locale?.options?.firstWeekContainsDate ?? defaultOptions2.firstWeekContainsDate ?? defaultOptions2.locale?.options?.firstWeekContainsDate ?? 1;
+  const weekStartsOn = options?.weekStartsOn ?? options?.locale?.options?.weekStartsOn ?? defaultOptions2.weekStartsOn ?? defaultOptions2.locale?.options?.weekStartsOn ?? 0;
+  if (formatStr === "") {
+    if (dateStr === "") {
+      return toDate(referenceDate);
+    } else {
+      return constructFrom(referenceDate, NaN);
+    }
+  }
+  const subFnOptions = {
+    firstWeekContainsDate,
+    weekStartsOn,
+    locale
+  };
+  const setters = [new DateToSystemTimezoneSetter()];
+  const tokens = formatStr.match(longFormattingTokensRegExp2).map((substring) => {
+    const firstCharacter = substring[0];
+    if (firstCharacter in longFormatters) {
+      const longFormatter = longFormatters[firstCharacter];
+      return longFormatter(substring, locale.formatLong);
+    }
+    return substring;
+  }).join("").match(formattingTokensRegExp2);
+  const usedTokens = [];
+  for (let token of tokens) {
+    if (!options?.useAdditionalWeekYearTokens && isProtectedWeekYearToken(token)) {
+      warnOrThrowProtectedError(token, formatStr, dateStr);
+    }
+    if (!options?.useAdditionalDayOfYearTokens && isProtectedDayOfYearToken(token)) {
+      warnOrThrowProtectedError(token, formatStr, dateStr);
+    }
+    const firstCharacter = token[0];
+    const parser = parsers2[firstCharacter];
+    if (parser) {
+      const { incompatibleTokens } = parser;
+      if (Array.isArray(incompatibleTokens)) {
+        const incompatibleToken = usedTokens.find(
+          (usedToken) => incompatibleTokens.includes(usedToken.token) || usedToken.token === firstCharacter
+        );
+        if (incompatibleToken) {
+          throw new RangeError(
+            `The format string mustn't contain \`${incompatibleToken.fullToken}\` and \`${token}\` at the same time`
+          );
+        }
+      } else if (parser.incompatibleTokens === "*" && usedTokens.length > 0) {
+        throw new RangeError(
+          `The format string mustn't contain \`${token}\` and any other token at the same time`
+        );
+      }
+      usedTokens.push({ token: firstCharacter, fullToken: token });
+      const parseResult = parser.run(
+        dateStr,
+        token,
+        locale.match,
+        subFnOptions
+      );
+      if (!parseResult) {
+        return constructFrom(referenceDate, NaN);
+      }
+      setters.push(parseResult.setter);
+      dateStr = parseResult.rest;
+    } else {
+      if (firstCharacter.match(unescapedLatinCharacterRegExp2)) {
+        throw new RangeError(
+          "Format string contains an unescaped latin alphabet character `" + firstCharacter + "`"
+        );
+      }
+      if (token === "''") {
+        token = "'";
+      } else if (firstCharacter === "'") {
+        token = cleanEscapedString2(token);
+      }
+      if (dateStr.indexOf(token) === 0) {
+        dateStr = dateStr.slice(token.length);
+      } else {
+        return constructFrom(referenceDate, NaN);
+      }
+    }
+  }
+  if (dateStr.length > 0 && notWhitespaceRegExp.test(dateStr)) {
+    return constructFrom(referenceDate, NaN);
+  }
+  const uniquePrioritySetters = setters.map((setter) => setter.priority).sort((a, b2) => b2 - a).filter((priority, index2, array) => array.indexOf(priority) === index2).map(
+    (priority) => setters.filter((setter) => setter.priority === priority).sort((a, b2) => b2.subPriority - a.subPriority)
+  ).map((setterArray) => setterArray[0]);
+  let date2 = toDate(referenceDate);
+  if (isNaN(date2.getTime())) {
+    return constructFrom(referenceDate, NaN);
+  }
+  const flags = {};
+  for (const setter of uniquePrioritySetters) {
+    if (!setter.validate(date2, subFnOptions)) {
+      return constructFrom(referenceDate, NaN);
+    }
+    const result = setter.set(date2, flags, subFnOptions);
+    if (Array.isArray(result)) {
+      date2 = result[0];
+      Object.assign(flags, result[1]);
+    } else {
+      date2 = result;
+    }
+  }
+  return constructFrom(referenceDate, date2);
+}
+function cleanEscapedString2(input) {
+  return input.match(escapedStringRegExp2)[1].replace(doubleQuoteRegExp2, "'");
+}
+
+// shared/rsvpDeadline.ts
+var DISPLAY_FORMAT = "EEE, MMM d, yyyy";
+var PARSE_FORMATS = [
+  DISPLAY_FORMAT,
+  "MMMM d, yyyy",
+  "MMM d, yyyy",
+  "d MMMM yyyy",
+  "d MMM yyyy",
+  "M/d/yyyy",
+  "MM/dd/yyyy",
+  "yyyy-MM-dd"
+];
+function parseEventDate(value, referenceDate = /* @__PURE__ */ new Date()) {
+  if (!value) return null;
+  for (const fmt of PARSE_FORMATS) {
+    const parsed = parse3(value, fmt, referenceDate);
+    if (isValid2(parsed)) return parsed;
+  }
+  return null;
+}
+function lagDaysFor(daysUntilEvent) {
+  if (daysUntilEvent >= 21) return 14;
+  if (daysUntilEvent >= 10) return 7;
+  if (daysUntilEvent >= 4) return 2;
+  return null;
+}
+function suggestRsvpDeadline(eventDate, now = /* @__PURE__ */ new Date()) {
+  const parsedEventDate = parseEventDate(eventDate, now);
+  if (!parsedEventDate) return null;
+  const daysUntilEvent = differenceInCalendarDays(parsedEventDate, now);
+  if (daysUntilEvent < 0) return null;
+  const lagDays = lagDaysFor(daysUntilEvent);
+  if (lagDays === null) return null;
+  const suggestedDate = max([addDays(parsedEventDate, -lagDays), now]);
+  return format(suggestedDate, DISPLAY_FORMAT);
+}
+
+// shared/themeCatalog.ts
+var OVERLAY_TREATMENTS = ["none", "veil", "plate", "gradient"];
+var LOCAL_TYPE_SURFACE_ALPHA = {
+  none: 0,
+  veil: 0.88,
+  plate: 0.94,
+  gradient: 0
+};
+var THEME_ART_IDS = [
+  "rose-corner",
+  "botanical-sprig",
+  "art-deco-fan",
+  "confetti-scatter",
+  "terrazzo",
+  "sunburst-rays",
+  "bunting-garland",
+  "starry-night"
+];
+var ART_PLACEMENTS = ["corner-mirrored", "side-mirrored", "band", "asymmetric", "scatter"];
+var TEXTURE_STYLES = ["none", "cotton", "laid", "grain", "gloss"];
+var DIVIDER_STYLES = ["none", "rule", "diamond-rule", "dots"];
+function paletteVariantColors(variant) {
+  return [variant.ink, variant.accent, variant.surface, variant.body];
+}
+var LAUNCH_THEMES = [
+  {
+    id: "garden-editorial",
+    name: "Garden Editorial",
+    tagline: "Painted roses on deckled cotton",
+    description: "Watercolour garden roses drift across two corners of soft deckled paper, leaving a quiet centre for beautifully set type.",
+    style: "elegant",
+    occasions: ["dinner-party", "shower", "milestone-birthday", "celebration"],
+    artwork: {
+      fullUrl: "/themes/garden-editorial.webp",
+      thumbUrl: "/themes/garden-editorial-thumb.webp",
+      alt: "Watercolour garden roses in plum and blush painted across the corners of deckled cream paper",
+      width: 896,
+      height: 1200
+    },
+    artFocus: "center",
+    // The sheet is already painted with roses in its corners — a second rose in
+    // each corner read as translucent blobs. Fine sprigs down the outer margins
+    // add the palette-responsive botanical detail without competing.
+    art: { id: "botanical-sprig", placement: "side-mirrored", opacity: 0.5, scale: 0.85 },
+    // The sheet is painted as a full floral frame with a clear centre — the
+    // composition the artist drew is the whole page, so cropping it to a band
+    // would throw away three of the four corners.
+    layoutStyle: "full-bleed",
+    texture: { style: "cotton", intensity: 0.9 },
+    divider: "diamond-rule",
+    palettes: [
+      { id: "plum-garden", label: "Plum Garden", ink: "#6d3f52", accent: "#8d6335", surface: "#f7f0e6", body: "#4a3b3f" },
+      { id: "sage-linen", label: "Sage Linen", ink: "#4f5f49", accent: "#846747", surface: "#f6f2e8", body: "#43483f" },
+      { id: "ink-charcoal", label: "Charcoal Ink", ink: "#33292c", accent: "#8c5c6d", surface: "#f8f2e9", body: "#3d3639" }
+    ],
+    fontPairingIds: ["garden-editorial-type", "romantic-italic", "playfair-classic"],
+    placements: [
+      // Held inside the clear centre the artist left: the painted roses hang to
+      // roughly a third of the sheet at the top corners.
+      { id: "centre", label: "Centred", box: { top: 32, left: 21, width: 58, height: 40 }, align: "center", justify: "center" },
+      { id: "high", label: "Raised", box: { top: 28, left: 21, width: 58, height: 40 }, align: "center", justify: "start" },
+      { id: "left-column", label: "Left column", box: { top: 30, left: 20, width: 52, height: 42 }, align: "left", justify: "center" }
+    ],
+    // A soft wash of the paper colour under the type — the eyebrow sat over
+    // painted foliage and lost too much contrast without it.
+    defaultOverlay: "veil",
+    overlayOptions: ["none", "veil", "plate"],
+    envelope: {
+      papers: [
+        { id: "cotton", label: "Cotton Cream", color: "#efe4d3" },
+        { id: "plum", label: "Deep Plum", color: "#6d3f52" },
+        { id: "sage", label: "Garden Sage", color: "#7c8f6b" }
+      ],
+      liners: [
+        { id: "floral", label: "Pressed floral", pattern: "floral", color: "#a8763f" },
+        { id: "solid", label: "Plain plum", pattern: "solid", color: "#6d3f52" },
+        { id: "lattice", label: "Garden lattice", pattern: "lattice", color: "#8a9a7b" }
+      ],
+      seals: [
+        { id: "wax", label: "Gold wax seal", style: "wax-seal", color: "#a8763f" },
+        { id: "monogram", label: "Monogram seal", style: "seal", color: "#6d3f52" },
+        { id: "botanical", label: "Botanical stamp", style: "motif", color: "#7c8f6b" }
+      ],
+      stamps: [
+        { id: "rose", label: "Painted rose", motif: "floral", inkColor: "#6d3f52", paperColor: "#f5ece0", denomination: "45", caption: "GARDEN" },
+        { id: "botanical", label: "Botanical study", motif: "motif", inkColor: "#4f5f49", paperColor: "#eef0e4", denomination: "60", caption: "IN BLOOM" },
+        { id: "monogram", label: "Engraved monogram", motif: "monogram", inkColor: "#7a552c", paperColor: "#f7f0e6", denomination: "85", caption: "POSY POST" }
+      ]
+    },
+    sample: {
+      eyebrow: "You are warmly invited to",
+      headline: "The Summer Garden Dinner",
+      dateLine: "Saturday, the fourteenth of June",
+      timeLine: "Half past six in the evening",
+      locationLine: "The Rosewood Terrace \xB7 Charleston",
+      rsvpLine: "Kindly reply by the first of June"
+    },
+    borderStyle: "thin-frame",
+    styleLaneId: "editorial-premium"
+  },
+  {
+    id: "deco-midnight",
+    name: "Deco Midnight",
+    tagline: "Gilded lines on midnight navy",
+    description: "A fine gold deco frame and a rising sunburst on deep navy \u2014 the most formal thing in the catalogue, and the most confident.",
+    style: "elegant",
+    occasions: ["milestone-birthday", "dinner-party", "holiday-party", "celebration"],
+    artwork: {
+      fullUrl: "/themes/deco-midnight.webp",
+      thumbUrl: "/themes/deco-midnight-thumb.webp",
+      alt: "A thin gold Art Deco border and rising sunburst motif on a deep midnight navy field",
+      width: 896,
+      height: 1200
+    },
+    artFocus: "center",
+    art: { id: "art-deco-fan", placement: "corner-mirrored", opacity: 0.55, scale: 1.05 },
+    layoutStyle: "full-bleed",
+    texture: { style: "gloss", intensity: 0.35 },
+    divider: "diamond-rule",
+    palettes: [
+      { id: "gilt", label: "Gilt", ink: "#d8b45f", accent: "#c9a227", surface: "#16233d", body: "#e8ddc4" },
+      { id: "ivory", label: "Ivory", ink: "#f2e6cc", accent: "#c9a227", surface: "#16233d", body: "#d7cdb6" },
+      { id: "platinum", label: "Platinum", ink: "#dfe4ec", accent: "#9fb0c9", surface: "#141f36", body: "#c3cbd9" }
+    ],
+    fontPairingIds: ["deco-luxe", "deco-poiret", "quiet-garamond"],
+    placements: [
+      { id: "centre", label: "Centred", box: { top: 28, left: 17, width: 66, height: 40 }, align: "center", justify: "center" },
+      { id: "high", label: "Raised", box: { top: 20, left: 17, width: 66, height: 38 }, align: "center", justify: "start" },
+      { id: "low", label: "Above the sunburst", box: { top: 40, left: 17, width: 66, height: 38 }, align: "center", justify: "end" }
+    ],
+    defaultOverlay: "none",
+    overlayOptions: ["none", "gradient"],
+    envelope: {
+      papers: [
+        { id: "midnight", label: "Midnight", color: "#16233d" },
+        { id: "champagne", label: "Champagne", color: "#e3d3ab" },
+        { id: "onyx", label: "Onyx", color: "#1b1b22" }
+      ],
+      liners: [
+        { id: "diamonds", label: "Deco diamonds", pattern: "diamonds", color: "#c9a227" },
+        { id: "chevron", label: "Gold chevron", pattern: "chevron", color: "#c9a227" },
+        { id: "solid", label: "Plain champagne", pattern: "solid", color: "#e3d3ab" }
+      ],
+      seals: [
+        { id: "wax", label: "Gold wax seal", style: "wax-seal", color: "#c9a227" },
+        { id: "crest", label: "Deco crest", style: "seal", color: "#c9a227" },
+        { id: "star", label: "Starburst stamp", style: "star", color: "#d8b45f" }
+      ],
+      stamps: [
+        { id: "sunburst", label: "Gold sunburst", motif: "star", inkColor: "#c9a227", paperColor: "#132747", denomination: "50", caption: "MIDNIGHT" },
+        { id: "crest", label: "Deco crest", motif: "seal", inkColor: "#0f2140", paperColor: "#d8b45f", denomination: "75", caption: "SOCIETY" },
+        { id: "chevron", label: "Chevron postmark", motif: "postmark", inkColor: "#c9a227", paperColor: "#1b3358", denomination: "90", caption: "DECO" }
+      ]
+    },
+    sample: {
+      eyebrow: "Cocktails & celebration",
+      headline: "Margaret's Sixtieth",
+      dateLine: "Friday, the eleventh of October",
+      timeLine: "Eight o'clock in the evening",
+      locationLine: "The Astor Room \xB7 220 Fifth Avenue",
+      rsvpLine: "Black tie \xB7 Kindly reply by October first"
+    },
+    borderStyle: "double-frame",
+    styleLaneId: "bold-graphic"
+  },
+  {
+    id: "neon-arena",
+    name: "Neon Arena",
+    tagline: "Electric geometry after dark",
+    description: "Magenta and cyan light traces cut a hard-edged frame through a dark skyline. Built for teenagers who would be embarrassed by anything sweet.",
+    style: "kids",
+    occasions: ["teen-birthday", "celebration", "milestone-birthday"],
+    artwork: {
+      fullUrl: "/themes/neon-arena.webp",
+      thumbUrl: "/themes/neon-arena-thumb.webp",
+      alt: "Magenta and cyan neon light trails forming an angular frame over a dark violet skyline",
+      width: 896,
+      height: 1200
+    },
+    artFocus: "center",
+    art: { id: "terrazzo", placement: "scatter", opacity: 0.3, scale: 1 },
+    layoutStyle: "full-bleed",
+    texture: { style: "gloss", intensity: 0.25 },
+    divider: "rule",
+    palettes: [
+      { id: "magenta", label: "Magenta", ink: "#ff4fa3", accent: "#22d3ee", surface: "#140a26", body: "#e9defb" },
+      { id: "cyan", label: "Cyan", ink: "#3fe0f5", accent: "#ff4fa3", surface: "#120a24", body: "#dcecfb" },
+      { id: "chrome", label: "Chrome", ink: "#f4f6ff", accent: "#a97bff", surface: "#150c28", body: "#cfc9e6" }
+    ],
+    fontPairingIds: ["neon-display", "tech-grotesk", "poolside-geometric"],
+    placements: [
+      { id: "centre", label: "Centred", box: { top: 30, left: 18, width: 64, height: 40 }, align: "center", justify: "center" },
+      { id: "stacked", label: "Stacked left", box: { top: 28, left: 18, width: 60, height: 44 }, align: "left", justify: "center" },
+      { id: "low", label: "Lower block", box: { top: 42, left: 18, width: 64, height: 38 }, align: "center", justify: "end" }
+    ],
+    defaultOverlay: "veil",
+    overlayOptions: ["none", "veil", "gradient"],
+    envelope: {
+      papers: [
+        { id: "midnight", label: "Midnight violet", color: "#1d1033" },
+        { id: "magenta", label: "Hot magenta", color: "#b02576" },
+        { id: "graphite", label: "Graphite", color: "#232634" }
+      ],
+      liners: [
+        { id: "chevron", label: "Neon chevron", pattern: "chevron", color: "#22d3ee" },
+        { id: "dots", label: "Pixel dots", pattern: "dots", color: "#ff4fa3" },
+        { id: "stripes", label: "Light stripes", pattern: "stripes", color: "#a97bff" }
+      ],
+      seals: [
+        { id: "star", label: "Neon star", style: "star", color: "#22d3ee" },
+        { id: "motif", label: "Circuit mark", style: "motif", color: "#ff4fa3" },
+        { id: "seal", label: "Chrome seal", style: "seal", color: "#c9d4ff" }
+      ],
+      stamps: [
+        { id: "arcade", label: "Arcade star", motif: "star", inkColor: "#22d3ee", paperColor: "#171a3a", denomination: "10", caption: "ARCADE" },
+        { id: "circuit", label: "Circuit mark", motif: "motif", inkColor: "#ff4fa3", paperColor: "#1d1140", denomination: "25", caption: "LEVEL UP" },
+        { id: "chrome", label: "Chrome postmark", motif: "postmark", inkColor: "#c9d4ff", paperColor: "#101436", denomination: "99", caption: "ARENA" }
+      ]
+    },
+    sample: {
+      eyebrow: "Level up",
+      headline: "Jordan Turns Fifteen",
+      dateLine: "Friday, November 8",
+      timeLine: "7:00 PM until 11:00 PM",
+      locationLine: "Voltage Arena \xB7 44 Mill Street",
+      rsvpLine: "Tap to RSVP by November 1"
+    },
+    borderStyle: "dashed-frame",
+    styleLaneId: "bold-graphic"
+  },
+  {
+    id: "pool-editorial",
+    name: "Poolside",
+    tagline: "Sunlight on turquoise water",
+    description: "Afternoon light breaking across a swimming pool, with a single ring float holding the lower corner. Refined rather than inflatable.",
+    style: "modern",
+    occasions: ["summer-party", "celebration", "milestone-birthday", "teen-birthday"],
+    artwork: {
+      fullUrl: "/themes/pool-editorial.webp",
+      thumbUrl: "/themes/pool-editorial-thumb.webp",
+      alt: "Sunlit turquoise swimming pool water with a coral and white ring float in the lower corner",
+      width: 896,
+      height: 1200
+    },
+    artFocus: "center",
+    art: { id: "sunburst-rays", placement: "asymmetric", opacity: 0.34, scale: 0.92 },
+    layoutStyle: "banner",
+    texture: { style: "gloss", intensity: 0.2 },
+    divider: "rule",
+    palettes: [
+      { id: "chlorine", label: "Chlorine White", ink: "#ffffff", accent: "#ffd9c4", surface: "#0d5f86", body: "#eef7fb" },
+      { id: "coral", label: "Coral", ink: "#ffe9dd", accent: "#f7a997", surface: "#0b5175", body: "#f4f9fc" },
+      { id: "deep-blue", label: "Deep Water", ink: "#06344b", accent: "#0d5f86", surface: "#e9f6fb", body: "#124f6b" }
+    ],
+    fontPairingIds: ["poolside-geometric", "tech-grotesk", "playfair-classic"],
+    placements: [
+      { id: "high", label: "Raised", box: { top: 13, left: 13, width: 68, height: 40 }, align: "left", justify: "start" },
+      { id: "centre", label: "Centred", box: { top: 20, left: 15, width: 66, height: 40 }, align: "center", justify: "center" },
+      { id: "left-column", label: "Left column", box: { top: 16, left: 12, width: 55, height: 50 }, align: "left", justify: "center" }
+    ],
+    defaultOverlay: "gradient",
+    overlayOptions: ["none", "veil", "gradient", "plate"],
+    envelope: {
+      papers: [
+        { id: "pool", label: "Pool Blue", color: "#0d5f86" },
+        { id: "sand", label: "Warm Sand", color: "#e8d9c2" },
+        { id: "coral", label: "Coral", color: "#e0664a" }
+      ],
+      liners: [
+        { id: "waves", label: "Ripple", pattern: "waves", color: "#7fd3ec" },
+        { id: "stripes", label: "Cabana stripe", pattern: "stripes", color: "#f0603f" },
+        { id: "scallops", label: "Scallop", pattern: "scallops", color: "#ffd9c4" }
+      ],
+      seals: [
+        { id: "motif", label: "Sun mark", style: "motif", color: "#f0603f" },
+        { id: "seal", label: "Wave seal", style: "seal", color: "#0d5f86" },
+        { id: "star", label: "Sunburst", style: "star", color: "#f2b134" }
+      ],
+      stamps: [
+        { id: "sun", label: "Sun disc", motif: "motif", inkColor: "#c2542c", paperColor: "#fdf4e8", denomination: "35", caption: "POOLSIDE" },
+        { id: "wave", label: "Wave postmark", motif: "postmark", inkColor: "#0d5f86", paperColor: "#e7f3f8", denomination: "50", caption: "HIGH SUMMER" },
+        { id: "citrus", label: "Citrus star", motif: "star", inkColor: "#8a6110", paperColor: "#fcf1dc", denomination: "80", caption: "SUNDECK" }
+      ]
+    },
+    sample: {
+      eyebrow: "Swim \xB7 Sun \xB7 Supper",
+      headline: "The Poolside Social",
+      dateLine: "Saturday, July 19",
+      timeLine: "Four in the afternoon",
+      locationLine: "18 Alameda Drive",
+      rsvpLine: "RSVP by July 10"
+    },
+    borderStyle: "thin-frame",
+    styleLaneId: "minimal-modern"
+  },
+  {
+    id: "meadow-storybook",
+    name: "Meadow Storybook",
+    tagline: "Wildflowers and two quiet hares",
+    description: "A hand-painted meadow of grasses and buttercups under a soft morning sky, with all the space in the world above it for your words.",
+    style: "storybook",
+    occasions: ["shower", "kids-birthday", "celebration", "dinner-party"],
+    artwork: {
+      fullUrl: "/themes/meadow-storybook.webp",
+      thumbUrl: "/themes/meadow-storybook-thumb.webp",
+      alt: "A painted wildflower meadow with grasses, buttercups, and two hares beneath a pale morning sky",
+      width: 896,
+      height: 1200
+    },
+    artFocus: "center bottom",
+    art: { id: "botanical-sprig", placement: "side-mirrored", opacity: 0.5, scale: 1 },
+    // All the painting is in the bottom third, so an inset vignette of that
+    // band reads as a storybook plate with the type set beneath it.
+    layoutStyle: "centered",
+    texture: { style: "laid", intensity: 0.7 },
+    divider: "dots",
+    palettes: [
+      { id: "meadow-sage", label: "Meadow Sage", ink: "#4a5a42", accent: "#866922", surface: "#f4f1e6", body: "#4f5850" },
+      { id: "buttercup", label: "Buttercup", ink: "#7a6320", accent: "#627354", surface: "#f6f3e8", body: "#54513f" },
+      { id: "soft-ink", label: "Soft Ink", ink: "#3a4048", accent: "#66725b", surface: "#f5f3ea", body: "#4b5158" }
+    ],
+    fontPairingIds: ["storybook-garamond", "quiet-garamond", "garden-editorial-type"],
+    placements: [
+      { id: "high", label: "Raised", box: { top: 13, left: 14, width: 72, height: 40 }, align: "center", justify: "start" },
+      { id: "centre", label: "Centred", box: { top: 18, left: 15, width: 70, height: 40 }, align: "center", justify: "center" },
+      { id: "left-column", label: "Left column", box: { top: 15, left: 13, width: 58, height: 44 }, align: "left", justify: "start" }
+    ],
+    defaultOverlay: "none",
+    overlayOptions: ["none", "veil"],
+    envelope: {
+      papers: [
+        { id: "oat", label: "Oat", color: "#e7e0cd" },
+        { id: "sage", label: "Meadow Sage", color: "#7d8f6e" },
+        { id: "clay", label: "Soft Clay", color: "#c9a68a" }
+      ],
+      liners: [
+        { id: "floral", label: "Wildflower", pattern: "floral", color: "#b8902f" },
+        { id: "solid", label: "Plain oat", pattern: "solid", color: "#e7e0cd" },
+        { id: "dots", label: "Seed dots", pattern: "dots", color: "#6f8360" }
+      ],
+      seals: [
+        { id: "motif", label: "Pressed leaf", style: "motif", color: "#6f8360" },
+        { id: "seal", label: "Wax seal", style: "seal", color: "#b8902f" },
+        { id: "bow", label: "Ribbon", style: "bow", color: "#c9a68a" }
+      ],
+      stamps: [
+        { id: "buttercup", label: "Buttercup", motif: "floral", inkColor: "#7a5f1e", paperColor: "#f7f4e7", denomination: "20", caption: "MEADOW" },
+        { id: "leaf", label: "Pressed leaf", motif: "motif", inkColor: "#4e5c43", paperColor: "#eef1e4", denomination: "40", caption: "WILDFLOWER" },
+        { id: "ribbon", label: "Ribbon mark", motif: "bow", inkColor: "#8a6647", paperColor: "#f6efe2", denomination: "65", caption: "STORYBOOK" }
+      ]
+    },
+    sample: {
+      eyebrow: "A gentle morning for",
+      headline: "Baby Wren",
+      dateLine: "Sunday, the fourth of May",
+      timeLine: "Ten in the morning",
+      locationLine: "The Old Meadow House \xB7 Hillsdale",
+      rsvpLine: "Kindly reply by the twenty-fifth of April"
+    },
+    borderStyle: "corner-flourish",
+    styleLaneId: "storybook-whimsical"
+  },
+  {
+    id: "celestial-heirloom",
+    name: "Celestial Heirloom",
+    tagline: "Gold constellations on watercolour night",
+    description: "Hand-painted indigo washes scattered with gilded stars and a crescent moon. Formal without being stiff.",
+    style: "elegant",
+    occasions: ["milestone-birthday", "dinner-party", "holiday-party", "celebration"],
+    artwork: {
+      fullUrl: "/themes/celestial-heirloom.webp",
+      thumbUrl: "/themes/celestial-heirloom-thumb.webp",
+      alt: "Indigo watercolour night sky with gold-leaf constellations, stars, and a crescent moon",
+      width: 896,
+      height: 1200
+    },
+    artFocus: "center",
+    art: { id: "starry-night", placement: "scatter", opacity: 0.42, scale: 1 },
+    layoutStyle: "full-bleed",
+    texture: { style: "cotton", intensity: 0.55 },
+    divider: "diamond-rule",
+    palettes: [
+      { id: "gold-leaf", label: "Gold Leaf", ink: "#e2b455", accent: "#d9a441", surface: "#132a52", body: "#e7e3d5" },
+      { id: "moonlight", label: "Moonlight", ink: "#f5efe1", accent: "#d9a441", surface: "#12294f", body: "#dcd8ca" },
+      { id: "starlight", label: "Starlight", ink: "#e8eefc", accent: "#9db6e0", surface: "#10224a", body: "#cdd8ee" }
+    ],
+    fontPairingIds: ["playfair-classic", "quiet-garamond", "deco-luxe"],
+    placements: [
+      { id: "centre", label: "Centred", box: { top: 30, left: 16, width: 68, height: 40 }, align: "center", justify: "center" },
+      { id: "high", label: "Raised", box: { top: 22, left: 17, width: 66, height: 38 }, align: "center", justify: "start" },
+      { id: "low", label: "Lower block", box: { top: 40, left: 17, width: 66, height: 38 }, align: "center", justify: "end" }
+    ],
+    defaultOverlay: "veil",
+    overlayOptions: ["none", "veil", "gradient"],
+    envelope: {
+      papers: [
+        { id: "indigo", label: "Indigo", color: "#1c3564" },
+        { id: "parchment", label: "Parchment", color: "#efe6d2" },
+        { id: "slate", label: "Night Slate", color: "#26324a" }
+      ],
+      liners: [
+        { id: "stars", label: "Star map", pattern: "stars", color: "#d9a441" },
+        { id: "diamonds", label: "Gilt diamonds", pattern: "diamonds", color: "#d9a441" },
+        { id: "solid", label: "Plain parchment", pattern: "solid", color: "#efe6d2" }
+      ],
+      seals: [
+        { id: "wax", label: "Gold wax seal", style: "wax-seal", color: "#d9a441" },
+        { id: "star", label: "Star stamp", style: "star", color: "#e2b455" },
+        { id: "seal", label: "Crescent seal", style: "seal", color: "#c8dbff" }
+      ],
+      stamps: [
+        { id: "crescent", label: "Crescent moon", motif: "motif", inkColor: "#d9a441", paperColor: "#12294f", denomination: "45", caption: "CELESTIAL" },
+        { id: "constellation", label: "Constellation", motif: "star", inkColor: "#e2b455", paperColor: "#0f2244", denomination: "60", caption: "NIGHT SKY" },
+        { id: "observatory", label: "Observatory mark", motif: "postmark", inkColor: "#1a2f56", paperColor: "#e8dfc4", denomination: "95", caption: "HEIRLOOM" }
+      ]
+    },
+    sample: {
+      eyebrow: "Under the winter stars",
+      headline: "Amelia & Theo",
+      dateLine: "Saturday, the thirteenth of December",
+      timeLine: "Seven in the evening",
+      locationLine: "The Observatory \xB7 Hudson, New York",
+      rsvpLine: "Kindly reply by the twentieth of November"
+    },
+    borderStyle: "double-frame",
+    styleLaneId: "editorial-premium"
+  },
+  {
+    id: "dinosaur-museum",
+    name: "Field Museum",
+    tagline: "A block-printed brontosaurus",
+    description: "A natural-history print on textured cotton: sauropod, palms, and ochre hills. Genuinely exciting for a six-year-old, and no cartoon in sight.",
+    style: "kids",
+    occasions: ["kids-birthday", "celebration"],
+    artwork: {
+      fullUrl: "/themes/dinosaur-museum.webp",
+      thumbUrl: "/themes/dinosaur-museum-thumb.webp",
+      alt: "Block-print illustration of a brontosaurus among palms and ochre hills on textured cream paper",
+      width: 896,
+      height: 1200
+    },
+    artFocus: "center bottom",
+    art: { id: "bunting-garland", placement: "band", opacity: 0.6, scale: 1 },
+    // The block print sits in the lower half of the sheet; lifting it into a
+    // banner puts the dinosaur at the top and gives the party details a clean
+    // cream panel of their own.
+    layoutStyle: "banner",
+    texture: { style: "grain", intensity: 1 },
+    divider: "dots",
+    palettes: [
+      { id: "field-green", label: "Field Green", ink: "#34503f", accent: "#a35131", surface: "#f2ebdc", body: "#4a5347" },
+      { id: "terracotta", label: "Terracotta", ink: "#a4502f", accent: "#34503f", surface: "#f3ecdd", body: "#5b4a3d" },
+      { id: "ochre", label: "Ochre", ink: "#8a6320", accent: "#3f6b4f", surface: "#f4eede", body: "#55503f" }
+    ],
+    fontPairingIds: ["museum-slab", "tech-grotesk", "quiet-garamond"],
+    placements: [
+      { id: "high", label: "Raised", box: { top: 8, left: 12, width: 76, height: 33 }, align: "center", justify: "start" },
+      { id: "left-column", label: "Left column", box: { top: 9, left: 11, width: 60, height: 34 }, align: "left", justify: "start" },
+      { id: "centre", label: "Centred", box: { top: 10, left: 13, width: 74, height: 32 }, align: "center", justify: "center" }
+    ],
+    defaultOverlay: "none",
+    overlayOptions: ["none", "veil"],
+    envelope: {
+      papers: [
+        { id: "kraft", label: "Kraft", color: "#d7c3a1" },
+        { id: "forest", label: "Forest", color: "#34503f" },
+        { id: "clay", label: "Clay", color: "#b95c38" }
+      ],
+      liners: [
+        { id: "lattice", label: "Fern lattice", pattern: "lattice", color: "#3f6b4f" },
+        { id: "dots", label: "Fossil dots", pattern: "dots", color: "#b95c38" },
+        { id: "stripes", label: "Field stripe", pattern: "stripes", color: "#d29b3f" }
+      ],
+      seals: [
+        { id: "motif", label: "Fossil stamp", style: "motif", color: "#34503f" },
+        { id: "seal", label: "Museum seal", style: "seal", color: "#b95c38" },
+        { id: "star", label: "Expedition star", style: "star", color: "#d29b3f" }
+      ],
+      stamps: [
+        { id: "fossil", label: "Fossil study", motif: "motif", inkColor: "#34503f", paperColor: "#f3ecdc", denomination: "15", caption: "FIELD MUSEUM" },
+        { id: "expedition", label: "Expedition star", motif: "star", inkColor: "#8f4529", paperColor: "#f6efe0", denomination: "30", caption: "EXPEDITION" },
+        { id: "survey", label: "Survey postmark", motif: "postmark", inkColor: "#6a4e1f", paperColor: "#efe7d4", denomination: "55", caption: "NAT HISTORY" }
+      ]
+    },
+    sample: {
+      eyebrow: "A prehistoric expedition for",
+      headline: "Felix is Six",
+      dateLine: "Saturday, March 22",
+      timeLine: "10:30 in the morning",
+      locationLine: "Natural History Museum \xB7 Hall of Fossils",
+      rsvpLine: "RSVP to Dana by March 15"
+    },
+    borderStyle: "dashed-frame",
+    styleLaneId: "handcrafted-rustic"
+  },
+  {
+    id: "roller-editorial",
+    name: "Roller Disco",
+    tagline: "Seventies swirls and a white skate",
+    description: "Concentric maroon, rust, and blue arcs sweep around a cream disc, with a single roller skate anchoring the base. Retro poster art, properly typeset.",
+    style: "bold",
+    occasions: ["teen-birthday", "milestone-birthday", "celebration", "kids-birthday"],
+    artwork: {
+      fullUrl: "/themes/roller-editorial.webp",
+      thumbUrl: "/themes/roller-editorial-thumb.webp",
+      alt: "Retro seventies poster of concentric maroon, rust and blue arcs around a cream disc with a white roller skate below",
+      width: 896,
+      height: 1200
+    },
+    artFocus: "center",
+    art: { id: "confetti-scatter", placement: "scatter", opacity: 0.3, scale: 1 },
+    layoutStyle: "full-bleed",
+    texture: { style: "grain", intensity: 0.75 },
+    divider: "rule",
+    palettes: [
+      { id: "maroon", label: "Maroon", ink: "#7c2338", accent: "#ac4b22", surface: "#f4e7c8", body: "#5a3a30" },
+      { id: "rust", label: "Rust", ink: "#b7431d", accent: "#2f5c8a", surface: "#f5e9cd", body: "#6a3b26" },
+      { id: "midnight-blue", label: "Midnight Blue", ink: "#2f5c8a", accent: "#b2411d", surface: "#f3e6c6", body: "#3f4a5c" }
+    ],
+    fontPairingIds: ["disco-display", "neon-display", "tech-grotesk"],
+    placements: [
+      { id: "disc", label: "In the disc", box: { top: 22, left: 25, width: 58, height: 30 }, align: "center", justify: "center" },
+      { id: "disc-high", label: "Top of disc", box: { top: 19, left: 24, width: 59, height: 28 }, align: "center", justify: "start" },
+      { id: "disc-wide", label: "Wide disc", box: { top: 22, left: 21, width: 64, height: 30 }, align: "center", justify: "center" }
+    ],
+    // The retro arcs sweep dark maroon straight through the type column, so the
+    // eyebrow and RSVP lines need the cream disc washed back in behind them.
+    defaultOverlay: "veil",
+    overlayOptions: ["none", "veil"],
+    envelope: {
+      papers: [
+        { id: "cream", label: "Disco Cream", color: "#f0e2be" },
+        { id: "maroon", label: "Maroon", color: "#7c2338" },
+        { id: "rust", label: "Rust", color: "#c1471f" }
+      ],
+      liners: [
+        { id: "stripes", label: "Rainbow stripe", pattern: "stripes", color: "#e0622c" },
+        { id: "scallops", label: "Arc scallop", pattern: "scallops", color: "#2f5c8a" },
+        { id: "confetti", label: "Confetti", pattern: "confetti", color: "#7c2338" }
+      ],
+      seals: [
+        { id: "star", label: "Disco star", style: "star", color: "#e0622c" },
+        { id: "motif", label: "Skate mark", style: "motif", color: "#7c2338" },
+        { id: "seal", label: "Retro seal", style: "seal", color: "#2f5c8a" }
+      ],
+      stamps: [
+        { id: "disco", label: "Disco star", motif: "star", inkColor: "#a83c19", paperColor: "#f7ecd2", denomination: "25", caption: "ROLLER DISCO" },
+        { id: "skate", label: "Skate mark", motif: "motif", inkColor: "#7c2338", paperColor: "#f4e7c8", denomination: "45", caption: "RINK NIGHT" },
+        { id: "retro", label: "Retro postmark", motif: "postmark", inkColor: "#2f5c8a", paperColor: "#eef0e0", denomination: "70", caption: "SKATE CLUB" }
+      ]
+    },
+    sample: {
+      eyebrow: "Lace up for",
+      headline: "Nina's Roller Disco",
+      dateLine: "Saturday, September 6",
+      timeLine: "Eight until late",
+      locationLine: "The Starlight Rollerdrome",
+      rsvpLine: "RSVP by August 30 \xB7 Skates provided"
+    },
+    borderStyle: "corner-flourish",
+    styleLaneId: "bold-graphic"
+  }
+];
+function getLaunchTheme(id) {
+  return LAUNCH_THEMES.find((t) => t.id === id);
+}
+function isLaunchThemeId(id) {
+  return typeof id === "string" && LAUNCH_THEMES.some((t) => t.id === id);
+}
+function getPaletteVariant(theme, id) {
+  return theme.palettes.find((p) => p.id === id) ?? theme.palettes[0];
+}
+function getPlacement(theme, id) {
+  return theme.placements.find((p) => p.id === id) ?? theme.placements[0];
+}
+function getPostageStamp(theme, id) {
+  return theme.envelope.stamps.find((s) => s.id === id) ?? theme.envelope.stamps[0];
+}
+function getOverlay(theme, value) {
+  return theme.overlayOptions.includes(value) ? value : theme.defaultOverlay;
+}
+function getFontPairingIdFor(theme, id) {
+  return id && theme.fontPairingIds.includes(id) ? id : theme.fontPairingIds[0];
+}
+function defaultThemeCopy(theme) {
+  return {
+    eyebrow: theme.sample.eyebrow,
+    dateLine: theme.sample.dateLine,
+    timeLine: theme.sample.timeLine,
+    locationLine: theme.sample.locationLine,
+    rsvpLine: theme.sample.rsvpLine
+  };
+}
+function themeCopyForEvent(theme, event) {
+  const eventDate = event.eventDate?.trim() ?? "";
+  const requestedDeadline = event.rsvpDeadline?.trim() ?? "";
+  const parsedEvent = parseEventDate(eventDate);
+  const parsedDeadline = parseEventDate(requestedDeadline);
+  const manualDeadlineIsSafe = requestedDeadline.length > 0 && (!parsedEvent || !parsedDeadline || parsedDeadline.getTime() < parsedEvent.getTime());
+  const rsvpDeadline = manualDeadlineIsSafe ? requestedDeadline : suggestRsvpDeadline(eventDate) ?? "";
+  return {
+    eyebrow: event.hostNames?.trim() ? `Hosted by ${event.hostNames.trim()}` : "Please join us",
+    dateLine: eventDate,
+    timeLine: event.eventTime?.trim() ?? "",
+    locationLine: event.location?.trim() ?? "",
+    rsvpLine: rsvpDeadline ? `Kindly reply by ${rsvpDeadline}` : ""
+  };
+}
+function isThemeCopy(value) {
+  if (!value || typeof value !== "object") return false;
+  const v = value;
+  return typeof v.eyebrow === "string" && typeof v.dateLine === "string" && typeof v.timeLine === "string" && typeof v.locationLine === "string" && typeof v.rsvpLine === "string";
+}
+function curatedThemeById(themeId) {
+  return isLaunchThemeId(themeId) ? getLaunchTheme(themeId) : void 0;
+}
+function readThemeSelection(concept, resolveTheme = curatedThemeById) {
+  if (!concept || typeof concept !== "object") return null;
+  const raw = concept.theme;
+  if (!raw || typeof raw !== "object") return null;
+  const t = raw;
+  const theme = typeof t.themeId === "string" ? resolveTheme(t.themeId) : void 0;
+  if (!theme) return null;
+  return {
+    themeId: theme.id,
+    artworkUrl: typeof t.artworkUrl === "string" && t.artworkUrl ? t.artworkUrl : theme.artwork.fullUrl,
+    artworkThumbUrl: typeof t.artworkThumbUrl === "string" && t.artworkThumbUrl ? t.artworkThumbUrl : theme.artwork.thumbUrl,
+    paletteVariantId: getPaletteVariant(theme, t.paletteVariantId).id,
+    placementId: getPlacement(theme, t.placementId).id,
+    overlay: getOverlay(theme, t.overlay),
+    postageStampId: getPostageStamp(theme, t.postageStampId).id,
+    copy: isThemeCopy(t.copy) ? t.copy : defaultThemeCopy(theme)
+  };
+}
+function buildThemedConcept(theme, options = {}) {
+  const palette = getPaletteVariant(theme, options.paletteVariantId);
+  const placement = getPlacement(theme, options.placementId);
+  const postage = getPostageStamp(theme, options.postageStampId);
+  return {
+    conceptName: theme.name,
+    description: theme.tagline,
+    paletteColors: paletteVariantColors(palette),
+    fontPairingId: getFontPairingIdFor(theme, options.fontPairingId),
+    borderStyle: theme.borderStyle,
+    layoutStyle: theme.layoutStyle,
+    illustrationPrompt: theme.description,
+    styleLaneId: theme.styleLaneId,
+    theme: {
+      themeId: theme.id,
+      artworkUrl: theme.artwork.fullUrl,
+      artworkThumbUrl: theme.artwork.thumbUrl,
+      paletteVariantId: palette.id,
+      placementId: placement.id,
+      overlay: getOverlay(theme, options.overlay ?? theme.defaultOverlay),
+      copy: options.copy ?? defaultThemeCopy(theme),
+      postageStampId: postage.id
+    }
+  };
+}
+function defaultEnvelopeForTheme(theme) {
+  return {
+    envelopeColor: theme.envelope.papers[0].color,
+    envelopeLinerPattern: theme.envelope.liners[0].pattern,
+    linerColor: theme.envelope.liners[0].color,
+    stampStyle: theme.envelope.seals[0].style,
+    stampColor: theme.envelope.seals[0].color
+  };
 }
 
 // shared/inviteFormatRecommendation.ts
@@ -51517,9 +56759,9 @@ function parseQuantity(raw) {
   const text2 = raw.trim().toLowerCase();
   if (!text2) return null;
   if (AMBIGUOUS_QUANTITY_WORDS.some((word) => text2.includes(word))) return null;
-  const match = text2.match(/^(\d+)/);
-  if (!match) return null;
-  return parseInt(match[1], 10);
+  const match2 = text2.match(/^(\d+)/);
+  if (!match2) return null;
+  return parseInt(match2[1], 10);
 }
 function detectMissingItems(input) {
   const { shoppingItems, guests: guests2 } = input;
@@ -51742,6 +56984,18 @@ function safeParseStages(raw) {
     return [];
   }
 }
+async function canGenerateDraft(eventId) {
+  const event = await storage.getEventById(eventId);
+  if (!event) return { ok: false, reason: "needs_payment" };
+  if (event.sparkUnlockedAt) return { ok: true };
+  const entitlement = event.capturedEmail ? await storage.getEmailEntitlement(event.capturedEmail) : void 0;
+  const planTier = entitlement?.planTier;
+  if (planTier === "plus_active") return { ok: true };
+  if (planTier === "plus_trial" && !!entitlement?.trialEndsAt && entitlement.trialEndsAt > Date.now()) {
+    return { ok: true };
+  }
+  return { ok: false, reason: "needs_payment" };
+}
 async function getEntitlementSummary(eventId) {
   const event = await storage.getEventById(eventId);
   if (!event) return void 0;
@@ -51749,12 +57003,16 @@ async function getEntitlementSummary(eventId) {
   const planTier = entitlement?.planTier ?? "spark";
   const trialEndsAt = entitlement?.trialEndsAt ?? null;
   const gatedActionsAvailable = planTier === "plus_active" || planTier === "plus_trial" && !!trialEndsAt && trialEndsAt > Date.now();
+  const sparkUnlocked = !!event.sparkUnlockedAt;
   return {
+    eventId: event.id,
     freeDraftState: event.draftStatus,
     emailCaptured: !!event.capturedEmail,
     planTier,
     trialEndsAt,
-    gatedActionsAvailable
+    gatedActionsAvailable,
+    sparkUnlocked,
+    canGenerate: sparkUnlocked || gatedActionsAvailable
   };
 }
 
@@ -51786,13 +57044,13 @@ async function generateMenuAi(params) {
     params.vibeDescription ? `Host's own description of the vibe: "${params.vibeDescription}"` : null,
     `Guest headcount: ${params.guestCount > 0 ? params.guestCount : "unknown, assume a modest gathering of about 20"}`
   ].filter(Boolean);
-  const message = await client.messages.create({
-    model: "claude_sonnet_4_6",
+  const message2 = await client.messages.create({
+    model: "claude-sonnet-4-6",
     max_tokens: 1500,
     system: RESPONSE_SHAPE_INSTRUCTIONS5,
     messages: [{ role: "user", content: lines.join("\n") }]
   });
-  const block = message.content.find((c) => c.type === "text");
+  const block = message2.content.find((c) => c.type === "text");
   const raw = block && "text" in block ? block.text : "";
   const jsonMatch = raw.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error("AI response did not contain JSON");
@@ -51842,13 +57100,13 @@ async function generateShoppingAi(params) {
     `Guest headcount: ${params.guestCount > 0 ? params.guestCount : "unknown, assume a modest gathering of about 20"}`,
     `Menu already planned: ${menuSummary}`
   ].filter(Boolean);
-  const message = await client.messages.create({
-    model: "claude_sonnet_4_6",
+  const message2 = await client.messages.create({
+    model: "claude-sonnet-4-6",
     max_tokens: 1500,
     system: RESPONSE_SHAPE_INSTRUCTIONS6,
     messages: [{ role: "user", content: lines.join("\n") }]
   });
-  const block = message.content.find((c) => c.type === "text");
+  const block = message2.content.find((c) => c.type === "text");
   const raw = block && "text" in block ? block.text : "";
   const jsonMatch = raw.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error("AI response did not contain JSON");
@@ -51965,9 +57223,9 @@ var BASE_TEMPLATES = {
 };
 var FALLBACK_TEMPLATE_KEY = "Other Celebration";
 function parseHoursBefore(raw) {
-  const match = raw.trim().toLowerCase().match(/^([\d.]+)\s*hr before$/);
-  if (!match) return null;
-  const hours = parseFloat(match[1]);
+  const match2 = raw.trim().toLowerCase().match(/^([\d.]+)\s*hr before$/);
+  if (!match2) return null;
+  const hours = parseFloat(match2[1]);
   return Number.isFinite(hours) ? hours : null;
 }
 function formatHoursBefore(hours) {
@@ -52019,7 +57277,7 @@ function generateTimeline(input) {
       inserted = true;
     }
   }
-  return result.map((item, index) => ({ ...item, sortOrder: index }));
+  return result.map((item, index2) => ({ ...item, sortOrder: index2 }));
 }
 
 // shared/guestCount.ts
@@ -52043,7 +57301,7 @@ var defaultDeps = {
   generateMenu: generateMenuAi,
   generateShopping: generateShoppingAi,
   generateInviteConcepts: generateInviteDesignConcepts,
-  generateIllustration: generateInviteIllustration
+  generateIllustration: generateInviteIllustrationWithQualityGate
 };
 async function setDraftStage(eventId, stage) {
   await storage.updateEventById(eventId, { draftStage: stage });
@@ -52235,8 +57493,8 @@ async function runMasterPlannerOrchestration(eventId, generationId, deps = defau
         formatGuidance: formatRecommendation?.conceptGuidance ?? null
       });
       const chosen = selectRecommendedConcept(concepts, dnaProfile);
-      const aspectRatio = chosen.layoutStyle === "banner" ? "16:9" : "1:1";
-      const illustrationUrl = await deps.generateIllustration(chosen.illustrationPrompt, aspectRatio);
+      const aspectRatio = chosen.layoutStyle === "banner" ? "16:9" : chosen.layoutStyle === "full-bleed" ? "9:16" : "1:1";
+      const illustrationUrl = await deps.generateIllustration(chosen, aspectRatio);
       await storage.updateEventById(eventId, {
         inviteDesignConceptJson: JSON.stringify(chosen),
         inviteIllustrationUrl: illustrationUrl
@@ -52319,7 +57577,7 @@ function serializeConsentCookie(value) {
   return `pp_consent=${encodeURIComponent(value)}; Path=/; Max-Age=${ONE_YEAR_SECONDS}; SameSite=Lax`;
 }
 
-// node_modules/stripe/esm/Error.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/Error.js
 var Error_exports = {};
 __export(Error_exports, {
   RateLimitError: () => RateLimitError2,
@@ -52527,13 +57785,13 @@ var TemporarySessionExpiredError = class extends StripeError {
   }
 };
 
-// node_modules/stripe/esm/net/HttpClient.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/net/HttpClient.js
 var HttpClient = class _HttpClient {
   /** The client name used for diagnostics. */
   getClientName() {
     throw new Error("getClientName not implemented.");
   }
-  makeRequest(host, port, path7, method, headers, requestData, protocol, timeout) {
+  makeRequest(host, port, path8, method, headers, requestData, protocol, timeout) {
     throw new Error("makeRequest not implemented.");
   }
   /** Helper to make a consistent timeout error across implementations. */
@@ -52567,7 +57825,7 @@ var HttpClientResponse = class {
   }
 };
 
-// node_modules/stripe/esm/Types.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/Types.js
 var DEFAULT_BASE_ADDRESSES = {
   api: "api.stripe.com",
   files: "files.stripe.com",
@@ -52575,7 +57833,7 @@ var DEFAULT_BASE_ADDRESSES = {
   meter_events: "meter-events.stripe.com"
 };
 
-// node_modules/stripe/esm/utils.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/utils.js
 function queryStringifyRequestData(data) {
   return stringifyRequestData(data);
 }
@@ -52807,11 +58065,11 @@ function dateTimeReplacer(key, value) {
 function jsonStringifyRequestData(data) {
   return JSON.stringify(data, dateTimeReplacer);
 }
-function getAPIMode(path7) {
-  if (!path7) {
+function getAPIMode(path8) {
+  if (!path8) {
     return "v1";
   }
-  return path7.startsWith("/v2") ? "v2" : "v1";
+  return path8.startsWith("/v2") ? "v2" : "v1";
 }
 function parseHttpHeaderAsString(header) {
   if (Array.isArray(header)) {
@@ -52836,7 +58094,7 @@ function attachCallSiteToError(err, callSiteStack) {
 ${callerFrames}`;
 }
 
-// node_modules/stripe/esm/RequestSender.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/RequestSender.js
 var RequestSender = class _RequestSender {
   constructor(stripe, maxBufferedRequestMetric) {
     this._stripe = stripe;
@@ -53083,7 +58341,7 @@ var RequestSender = class _RequestSender {
       }
     }
   }
-  _rawRequest(method, path7, params, options, usage) {
+  _rawRequest(method, path8, params, options, usage) {
     return new Promise((resolve4, reject) => {
       try {
         const requestMethod = method.toUpperCase();
@@ -53097,7 +58355,7 @@ var RequestSender = class _RequestSender {
         }
         const apiBase = processed.apiBase || (options?.apiBase ?? null);
         const host = apiBase ? this._stripe.resolveBaseAddress(apiBase) : null;
-        this._request(requestMethod, host, path7, data, processed.authenticator, {
+        this._request(requestMethod, host, path8, data, processed.authenticator, {
           headers: processed.headers,
           settings: processed.settings,
           streaming: processed.streaming
@@ -53119,10 +58377,10 @@ var RequestSender = class _RequestSender {
   /**
    * This is the main HTTP method that all resources eventually call
    */
-  _request(method, host, path7, data, authenticator, options, usage = [], callback, requestDataProcessor = null) {
+  _request(method, host, path8, data, authenticator, options, usage = [], callback, requestDataProcessor = null) {
     let requestData;
     authenticator = authenticator ?? this._stripe._authenticator;
-    const apiMode = getAPIMode(path7);
+    const apiMode = getAPIMode(path8);
     const retryRequest = (requestFn, apiVersion, headers, requestRetries) => {
       return setTimeout(requestFn, this._getSleepTimeInMS(requestRetries), apiVersion, headers, requestRetries + 1);
     };
@@ -53131,7 +58389,7 @@ var RequestSender = class _RequestSender {
       const request = {
         host: host || this._stripe.getApiField("host"),
         port: this._stripe.getApiField("port"),
-        path: path7,
+        path: path8,
         method,
         headers: Object.assign({}, headers),
         body: requestData,
@@ -53148,7 +58406,7 @@ var RequestSender = class _RequestSender {
           account: parseHttpHeaderAsString(headers["Stripe-Account"]),
           idempotency_key: parseHttpHeaderAsString(headers["Idempotency-Key"]),
           method,
-          path: path7,
+          path: path8,
           body: this._stripe.getEmitEventBodiesEnabled() ? data ?? void 0 : void 0,
           request_start_time: requestStartTime
         });
@@ -53218,7 +58476,7 @@ var RequestSender = class _RequestSender {
   }
 };
 
-// node_modules/stripe/esm/Decimal.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/Decimal.js
 var ROUNDING_PRESETS = {
   "ubb-usage-count": { mode: "significant-figures", value: 15 },
   "v1-api": { mode: "decimal-places", value: 12 }
@@ -53891,16 +59149,16 @@ var Decimal = {
     if (trimmed === "") {
       throw new Error("Cannot parse empty string as Decimal");
     }
-    const match = /^([+-]?)(\d+)(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/.exec(trimmed);
-    if (!match) {
+    const match2 = /^([+-]?)(\d+)(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/.exec(trimmed);
+    if (!match2) {
       throw new Error(`Invalid decimal string: ${value}`);
     }
-    const sign = match[1] === "-" ? -1n : 1n;
-    const integerPart = match[2] ?? "";
-    const fractionalPart = match[3] ?? "";
-    const exponentPart = match[4] ? Number(match[4]) : 0;
+    const sign = match2[1] === "-" ? -1n : 1n;
+    const integerPart = match2[2] ?? "";
+    const fractionalPart = match2[3] ?? "";
+    const exponentPart = match2[4] ? Number(match2[4]) : 0;
     if (!Number.isSafeInteger(exponentPart) || exponentPart > MAX_EXPONENT || exponentPart < -MAX_EXPONENT) {
-      throw new Error(`Exponent out of range: ${String(match[4])} exceeds safe integer bounds`);
+      throw new Error(`Exponent out of range: ${String(match2[4])} exceeds safe integer bounds`);
     }
     const coefficientStr = integerPart + fractionalPart;
     const coefficient = sign * BigInt(coefficientStr);
@@ -53922,7 +59180,7 @@ var Decimal = {
   zero: new DecimalImpl(0n, 0)
 };
 
-// node_modules/stripe/esm/V2Coercion.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/V2Coercion.js
 var coerceV2RequestData = (data, schema) => {
   if (data == null) {
     return data;
@@ -54003,16 +59261,16 @@ var coerceV2ResponseData = (data, schema) => {
   }
 };
 
-// node_modules/stripe/esm/autoPagination.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/autoPagination.js
 var V1Iterator = class {
-  constructor(firstPagePromise, params, options, method, path7, spec, stripeResource) {
+  constructor(firstPagePromise, params, options, method, path8, spec, stripeResource) {
     this.index = 0;
     this.pagePromise = firstPagePromise;
     this.promiseCache = { currentPromise: null };
     this.params = params;
     this.options = options;
     this.method = method;
-    this.path = path7;
+    this.path = path8;
     this.spec = spec;
     this.stripeResource = stripeResource;
   }
@@ -54137,14 +59395,14 @@ var V2ListIterator = class {
     return nextPromise;
   }
 };
-var makeAutoPaginationMethods = (stripeResource, params, options, method, path7, spec, firstPagePromise) => {
-  const apiMode = getAPIMode(path7);
+var makeAutoPaginationMethods = (stripeResource, params, options, method, path8, spec, firstPagePromise) => {
+  const apiMode = getAPIMode(path8);
   const methodType = spec?.methodType;
   if (apiMode !== "v2" && methodType === "search") {
-    return makeAutoPaginationMethodsFromIterator(new V1SearchIterator(firstPagePromise, params, options, method, path7, spec, stripeResource));
+    return makeAutoPaginationMethodsFromIterator(new V1SearchIterator(firstPagePromise, params, options, method, path8, spec, stripeResource));
   }
   if (apiMode !== "v2" && methodType === "list") {
-    return makeAutoPaginationMethodsFromIterator(new V1ListIterator(firstPagePromise, params, options, method, path7, spec, stripeResource));
+    return makeAutoPaginationMethodsFromIterator(new V1ListIterator(firstPagePromise, params, options, method, path8, spec, stripeResource));
   }
   if (apiMode === "v2" && methodType === "list") {
     return makeAutoPaginationMethodsFromIterator(new V2ListIterator(firstPagePromise, options, spec, stripeResource));
@@ -54287,7 +59545,7 @@ function wrapAsyncIteratorWithCallback(asyncIteratorNext, onItem) {
   });
 }
 
-// node_modules/stripe/esm/StripeResource.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/StripeResource.js
 var StripeResource = class {
   constructor(stripe, deprecatedUrlData) {
     this.resourcePath = "";
@@ -54307,7 +59565,7 @@ var StripeResource = class {
   }
   initialize(_stripe, _deprecatedUrlData) {
   }
-  _makeRequest(method, path7, params, options, spec) {
+  _makeRequest(method, path8, params, options, spec) {
     const requestMethod = method.toUpperCase();
     const encode2 = spec?.encode || ((data2) => data2);
     const data = encode2(params ? { ...params } : {});
@@ -54349,7 +59607,7 @@ var StripeResource = class {
       }
       const emptyQuery = Object.keys(queryData).length === 0;
       const fullPath = [
-        path7,
+        path8,
         emptyQuery ? "" : "?",
         queryStringifyRequestData(queryData)
       ].join("");
@@ -54360,14 +59618,14 @@ var StripeResource = class {
       }, usage, requestCallback, this.requestDataProcessor?.bind(this));
     });
     if (spec?.methodType) {
-      Object.assign(innerPromise, makeAutoPaginationMethods(this, params ? { ...params } : {}, options, requestMethod, path7, spec, innerPromise));
+      Object.assign(innerPromise, makeAutoPaginationMethods(this, params ? { ...params } : {}, options, requestMethod, path8, spec, innerPromise));
     }
     return innerPromise;
   }
 };
 StripeResource.MAX_BUFFERED_REQUEST_METRICS = 100;
 
-// node_modules/stripe/esm/StripeContext.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/StripeContext.js
 var StripeContext = class _StripeContext {
   /**
    * Creates a new StripeContext with the given segments.
@@ -54417,17 +59675,17 @@ var StripeContext = class _StripeContext {
   }
 };
 
-// node_modules/stripe/esm/platform/NodePlatformFunctions.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/platform/NodePlatformFunctions.js
 var crypto5 = __toESM(require("crypto"), 1);
 var fs5 = __toESM(require("fs"), 1);
 var os2 = __toESM(require("os"), 1);
-var path6 = __toESM(require("path"), 1);
+var path5 = __toESM(require("path"), 1);
 var import_events3 = require("events");
 
-// node_modules/stripe/esm/crypto/NodeCryptoProvider.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/crypto/NodeCryptoProvider.js
 var crypto4 = __toESM(require("crypto"), 1);
 
-// node_modules/stripe/esm/crypto/CryptoProvider.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/crypto/CryptoProvider.js
 var CryptoProvider = class {
   /**
    * Computes a SHA-256 HMAC given a secret and a payload (encoded in UTF-8).
@@ -54464,7 +59722,7 @@ var CryptoProvider = class {
 var CryptoProviderOnlySupportsAsyncError = class extends Error {
 };
 
-// node_modules/stripe/esm/crypto/NodeCryptoProvider.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/crypto/NodeCryptoProvider.js
 var NodeCryptoProvider = class extends CryptoProvider {
   /** @override */
   computeHMACSignature(payload, secret) {
@@ -54481,7 +59739,7 @@ var NodeCryptoProvider = class extends CryptoProvider {
   }
 };
 
-// node_modules/stripe/esm/net/NodeHttpClient.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/net/NodeHttpClient.js
 var http_ = __toESM(require("http"), 1);
 var https_ = __toESM(require("https"), 1);
 var http = http_.default || http_;
@@ -54497,7 +59755,7 @@ var NodeHttpClient = class extends HttpClient {
   getClientName() {
     return "node";
   }
-  makeRequest(host, port, path7, method, headers, requestData, protocol, timeout) {
+  makeRequest(host, port, path8, method, headers, requestData, protocol, timeout) {
     const isInsecureConnection = protocol === "http";
     let agent = this._agent;
     if (!agent) {
@@ -54507,7 +59765,7 @@ var NodeHttpClient = class extends HttpClient {
       const req = (isInsecureConnection ? http : https).request({
         host,
         port,
-        path: path7,
+        path: path8,
         method,
         agent,
         headers,
@@ -54570,7 +59828,7 @@ var NodeHttpClientResponse = class extends HttpClientResponse {
   }
 };
 
-// node_modules/stripe/esm/net/FetchHttpClient.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/net/FetchHttpClient.js
 var FetchHttpClient = class _FetchHttpClient extends HttpClient {
   constructor(fetchFn) {
     super();
@@ -54632,12 +59890,12 @@ var FetchHttpClient = class _FetchHttpClient extends HttpClient {
   getClientName() {
     return "fetch";
   }
-  async makeRequest(host, port, path7, method, headers, requestData, protocol, timeout) {
+  async makeRequest(host, port, path8, method, headers, requestData, protocol, timeout) {
     const isInsecureConnection = protocol === "http";
-    if (!path7.startsWith("/")) {
-      throw new Error(`Only relative paths are supported, got: "${path7}"`);
+    if (!path8.startsWith("/")) {
+      throw new Error(`Only relative paths are supported, got: "${path8}"`);
     }
-    const url = new URL(`${isInsecureConnection ? "http" : "https"}://${host}${path7}`);
+    const url = new URL(`${isInsecureConnection ? "http" : "https"}://${host}${path8}`);
     url.port = port;
     const methodHasPayload = method == "POST" || method == "PUT" || method == "PATCH";
     const body = requestData || (methodHasPayload ? "" : void 0);
@@ -54685,7 +59943,7 @@ var FetchHttpClientResponse = class _FetchHttpClientResponse extends HttpClientR
   }
 };
 
-// node_modules/stripe/esm/crypto/SubtleCryptoProvider.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/crypto/SubtleCryptoProvider.js
 var SubtleCryptoProvider = class extends CryptoProvider {
   constructor(subtleCrypto) {
     super();
@@ -54720,7 +59978,7 @@ for (let i = 0; i < byteHexMapping.length; i++) {
   byteHexMapping[i] = i.toString(16).padStart(2, "0");
 }
 
-// node_modules/stripe/esm/platform/PlatformFunctions.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/platform/PlatformFunctions.js
 var PlatformFunctions = class {
   constructor() {
     this._fetchFn = null;
@@ -54831,7 +60089,7 @@ var PlatformFunctions = class {
   }
 };
 
-// node_modules/stripe/esm/platform/NodePlatformFunctions.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/platform/NodePlatformFunctions.js
 var StreamProcessingError = class extends StripeError {
 };
 var NodePlatformFunctions = class extends PlatformFunctions {
@@ -54886,7 +60144,7 @@ var NodePlatformFunctions = class extends PlatformFunctions {
     }
     const newId = crypto5.randomBytes(16).toString("hex");
     try {
-      fs5.mkdirSync(path6.dirname(filePath), { recursive: true });
+      fs5.mkdirSync(path5.dirname(filePath), { recursive: true });
       fs5.writeFileSync(filePath, newId, "utf8");
     } catch {
       this._telemetryId = null;
@@ -54900,16 +60158,16 @@ var NodePlatformFunctions = class extends PlatformFunctions {
       const appData = process.env.APPDATA;
       if (!appData)
         return null;
-      return path6.join(appData, "Stripe", "telemetry_id");
+      return path5.join(appData, "Stripe", "telemetry_id");
     }
     const xdg = process.env.XDG_CONFIG_HOME;
     if (xdg) {
-      return path6.join(xdg, "stripe", "telemetry_id");
+      return path5.join(xdg, "stripe", "telemetry_id");
     }
     const home = os2.homedir();
     if (!home)
       return null;
-    return path6.join(home, ".config", "stripe", "telemetry_id");
+    return path5.join(home, ".config", "stripe", "telemetry_id");
   }
   /**
    * @override
@@ -54972,7 +60230,7 @@ var NodePlatformFunctions = class extends PlatformFunctions {
   }
 };
 
-// node_modules/stripe/esm/Webhooks.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/Webhooks.js
 function createWebhooks(platformFunctions) {
   const Webhook2 = {
     DEFAULT_TOLERANCE: 300,
@@ -55161,10 +60419,10 @@ function createWebhooks(platformFunctions) {
   return Webhook2;
 }
 
-// node_modules/stripe/esm/apiVersion.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/apiVersion.js
 var ApiVersion = "2026-06-24.dahlia";
 
-// node_modules/stripe/esm/resources.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources.js
 var resources_exports3 = {};
 __export(resources_exports3, {
   Account: () => AccountResource3,
@@ -55245,7 +60503,7 @@ __export(resources_exports3, {
   WebhookEndpoints: () => WebhookEndpointResource
 });
 
-// node_modules/stripe/esm/ResourceNamespace.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/ResourceNamespace.js
 function ResourceNamespace(stripe, resources) {
   for (const name in resources) {
     if (!Object.prototype.hasOwnProperty.call(resources, name)) {
@@ -55262,7 +60520,7 @@ function resourceNamespace(namespace, resources) {
   };
 }
 
-// node_modules/stripe/esm/resources/V2/Core/AccountLinks.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Core/AccountLinks.js
 var AccountLinkResource = class extends StripeResource {
   /**
    * Creates an AccountLink object that includes a single-use URL that an account can use to access a Stripe-hosted flow for collecting or updating required information.
@@ -55273,7 +60531,7 @@ var AccountLinkResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/V2/Core/AccountTokens.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Core/AccountTokens.js
 var AccountTokenResource = class extends StripeResource {
   /**
    * Create an account token with a publishable key and pass it to the Accounts v2 API to
@@ -55315,7 +60573,7 @@ var AccountTokenResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/FinancialConnections/Accounts.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/FinancialConnections/Accounts.js
 var AccountResource = class extends StripeResource {
   /**
    * Returns a list of Financial Connections Account objects.
@@ -55365,7 +60623,7 @@ var AccountResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/V2/Core/Accounts/Persons.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Core/Accounts/Persons.js
 var PersonResource = class extends StripeResource {
   /**
    * Returns a paginated list of Persons associated with an Account.
@@ -55471,7 +60729,7 @@ var PersonResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/V2/Core/Accounts/PersonTokens.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Core/Accounts/PersonTokens.js
 var PersonTokenResource = class extends StripeResource {
   /**
    * Creates a single-use token that represents the details for a person. Use this when you create or update persons associated with an Account v2. Learn more about [account tokens](https://docs.stripe.com/connect/account-tokens).
@@ -55500,7 +60758,7 @@ var PersonTokenResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/V2/Core/Accounts.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Core/Accounts.js
 var AccountResource2 = class extends StripeResource {
   constructor(stripe) {
     super(stripe);
@@ -55692,7 +60950,7 @@ var AccountResource2 = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Entitlements/ActiveEntitlements.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Entitlements/ActiveEntitlements.js
 var ActiveEntitlementResource = class extends StripeResource {
   /**
    * Retrieve a list of active entitlements for a customer
@@ -55710,7 +60968,7 @@ var ActiveEntitlementResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Billing/Alerts.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Billing/Alerts.js
 var AlertResource = class extends StripeResource {
   /**
    * Lists billing active and inactive alerts
@@ -55752,7 +61010,7 @@ var AlertResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Tax/Associations.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Tax/Associations.js
 var AssociationResource = class extends StripeResource {
   /**
    * Finds a tax association object by PaymentIntent id.
@@ -55762,7 +61020,7 @@ var AssociationResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Issuing/Authorizations.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Issuing/Authorizations.js
 var AuthorizationResource = class extends StripeResource {
   /**
    * Returns a list of Issuing Authorization objects. The objects are sorted in descending order by creation date, with the most recently created object appearing first.
@@ -56632,7 +61890,7 @@ var AuthorizationResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/TestHelpers/Issuing/Authorizations.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/Issuing/Authorizations.js
 var AuthorizationResource2 = class extends StripeResource {
   /**
    * Create a test-mode authorization.
@@ -57946,7 +63204,7 @@ var AuthorizationResource2 = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Tax/Calculations.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Tax/Calculations.js
 var CalculationResource = class extends StripeResource {
   /**
    * Retrieves a Tax Calculation object, if the calculation hasn't expired.
@@ -57970,7 +63228,7 @@ var CalculationResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Issuing/Cardholders.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Issuing/Cardholders.js
 var CardholderResource = class extends StripeResource {
   /**
    * Returns a list of Issuing Cardholder objects. The objects are sorted in descending order by creation date, with the most recently created object appearing first.
@@ -58000,7 +63258,7 @@ var CardholderResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Issuing/Cards.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Issuing/Cards.js
 var CardResource = class extends StripeResource {
   /**
    * Returns a list of Issuing Card objects. The objects are sorted in descending order by creation date, with the most recently created object appearing first.
@@ -58030,7 +63288,7 @@ var CardResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/TestHelpers/Issuing/Cards.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/Issuing/Cards.js
 var CardResource2 = class extends StripeResource {
   /**
    * Updates the shipping status of the specified Issuing Card object to delivered.
@@ -58064,7 +63322,7 @@ var CardResource2 = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/BillingPortal/Configurations.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/BillingPortal/Configurations.js
 var ConfigurationResource = class extends StripeResource {
   /**
    * Returns a list of configurations that describe the functionality of the customer portal.
@@ -58094,7 +63352,7 @@ var ConfigurationResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Terminal/Configurations.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Terminal/Configurations.js
 var ConfigurationResource2 = class extends StripeResource {
   /**
    * Deletes a Configuration object.
@@ -58130,7 +63388,7 @@ var ConfigurationResource2 = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/TestHelpers/ConfirmationTokens.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/ConfirmationTokens.js
 var ConfirmationTokenResource = class extends StripeResource {
   /**
    * Creates a test mode Confirmation Token server side for your integration tests.
@@ -58140,7 +63398,7 @@ var ConfirmationTokenResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Terminal/ConnectionTokens.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Terminal/ConnectionTokens.js
 var ConnectionTokenResource = class extends StripeResource {
   /**
    * To connect to a reader the Stripe Terminal SDK needs to retrieve a short-lived connection token from Stripe, proxied through your server. On your backend, add an endpoint that creates and returns a connection token.
@@ -58150,7 +63408,7 @@ var ConnectionTokenResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Billing/CreditBalanceSummary.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Billing/CreditBalanceSummary.js
 var CreditBalanceSummaryResource = class extends StripeResource {
   /**
    * Retrieves the credit balance summary for a customer.
@@ -58160,7 +63418,7 @@ var CreditBalanceSummaryResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Billing/CreditBalanceTransactions.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Billing/CreditBalanceTransactions.js
 var CreditBalanceTransactionResource = class extends StripeResource {
   /**
    * Retrieve a list of credit balance transactions.
@@ -58178,7 +63436,7 @@ var CreditBalanceTransactionResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Billing/CreditGrants.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Billing/CreditGrants.js
 var CreditGrantResource = class extends StripeResource {
   /**
    * Retrieve a list of credit grants.
@@ -58220,7 +63478,7 @@ var CreditGrantResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Treasury/CreditReversals.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Treasury/CreditReversals.js
 var CreditReversalResource = class extends StripeResource {
   /**
    * Returns a list of CreditReversals.
@@ -58244,7 +63502,7 @@ var CreditReversalResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/TestHelpers/Customers.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/Customers.js
 var CustomerResource = class extends StripeResource {
   /**
    * Create an incoming testmode bank transfer
@@ -58254,7 +63512,7 @@ var CustomerResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Treasury/DebitReversals.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Treasury/DebitReversals.js
 var DebitReversalResource = class extends StripeResource {
   /**
    * Returns a list of DebitReversals.
@@ -58278,7 +63536,7 @@ var DebitReversalResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Issuing/Disputes.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Issuing/Disputes.js
 var DisputeResource = class extends StripeResource {
   /**
    * Returns a list of Issuing Dispute objects. The objects are sorted in descending order by creation date, with the most recently created object appearing first.
@@ -58314,7 +63572,7 @@ var DisputeResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Radar/EarlyFraudWarnings.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Radar/EarlyFraudWarnings.js
 var EarlyFraudWarningResource = class extends StripeResource {
   /**
    * Returns a list of early fraud warnings.
@@ -58334,7 +63592,7 @@ var EarlyFraudWarningResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/V2/Core/EventDestinations.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Core/EventDestinations.js
 var EventDestinationResource = class extends StripeResource {
   /**
    * Lists all event destinations.
@@ -58388,7 +63646,7 @@ var EventDestinationResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/V2/Core/Events.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Core/Events.js
 var EventResource = class extends StripeResource {
   /**
    * List events, going back up to 30 days.
@@ -58442,7 +63700,7 @@ var EventResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Entitlements/Features.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Entitlements/Features.js
 var FeatureResource = class extends StripeResource {
   /**
    * Retrieve a list of features
@@ -58472,7 +63730,7 @@ var FeatureResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Treasury/FinancialAccounts.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Treasury/FinancialAccounts.js
 var FinancialAccountResource = class extends StripeResource {
   /**
    * Returns a list of FinancialAccounts.
@@ -58520,7 +63778,7 @@ var FinancialAccountResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/V2/Commerce/ProductCatalog/Imports.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Commerce/ProductCatalog/Imports.js
 var ImportResource = class extends StripeResource {
   /**
    * Returns a list of ProductCatalogImport objects.
@@ -58671,7 +63929,7 @@ var ImportResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/TestHelpers/Treasury/InboundTransfers.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/Treasury/InboundTransfers.js
 var InboundTransferResource = class extends StripeResource {
   /**
    * Transitions a test mode created InboundTransfer to the failed status. The InboundTransfer must already be in the processing state.
@@ -58693,7 +63951,7 @@ var InboundTransferResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Treasury/InboundTransfers.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Treasury/InboundTransfers.js
 var InboundTransferResource2 = class extends StripeResource {
   /**
    * Returns a list of InboundTransfers sent from the specified FinancialAccount.
@@ -58723,7 +63981,7 @@ var InboundTransferResource2 = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Terminal/Locations.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Terminal/Locations.js
 var LocationResource = class extends StripeResource {
   /**
    * Deletes a Location object.
@@ -58760,7 +64018,7 @@ var LocationResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Billing/MeterEventAdjustments.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Billing/MeterEventAdjustments.js
 var MeterEventAdjustmentResource = class extends StripeResource {
   /**
    * Creates a billing meter event adjustment.
@@ -58770,7 +64028,7 @@ var MeterEventAdjustmentResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/V2/Billing/MeterEventAdjustments.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Billing/MeterEventAdjustments.js
 var MeterEventAdjustmentResource2 = class extends StripeResource {
   /**
    * Creates a meter event adjustment to cancel a previously sent meter event.
@@ -58780,7 +64038,7 @@ var MeterEventAdjustmentResource2 = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/V2/Billing/MeterEventSession.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Billing/MeterEventSession.js
 var MeterEventSessionResource = class extends StripeResource {
   /**
    * Creates a meter event session to send usage on the high-throughput meter event stream. Authentication tokens are only valid for 15 minutes, so you need to create a new meter event session when your token expires.
@@ -58790,7 +64048,7 @@ var MeterEventSessionResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/V2/Billing/MeterEventStream.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Billing/MeterEventStream.js
 var MeterEventStreamResource = class extends StripeResource {
   /**
    * Creates meter events. Events are processed asynchronously, including validation. Requires a meter event session for authentication. Supports up to 10,000 requests per second in livemode. For even higher rate-limits, contact sales.
@@ -58803,7 +64061,7 @@ var MeterEventStreamResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Billing/MeterEvents.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Billing/MeterEvents.js
 var MeterEventResource = class extends StripeResource {
   /**
    * Creates a billing meter event.
@@ -58813,7 +64071,7 @@ var MeterEventResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/V2/Billing/MeterEvents.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Billing/MeterEvents.js
 var MeterEventResource2 = class extends StripeResource {
   /**
    * Creates a meter event. Events are validated synchronously, but are processed asynchronously. Supports up to 1,000 events per second in livemode. For higher rate-limits, please use meter event streams instead.
@@ -58823,7 +64081,7 @@ var MeterEventResource2 = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Billing/Meters.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Billing/Meters.js
 var MeterResource = class extends StripeResource {
   /**
    * Retrieve a list of billing meters.
@@ -58873,7 +64131,7 @@ var MeterResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Terminal/OnboardingLinks.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Terminal/OnboardingLinks.js
 var OnboardingLinkResource = class extends StripeResource {
   /**
    * Creates a new OnboardingLink object that contains a redirect_url used for onboarding onto Tap to Pay on iPhone.
@@ -58883,7 +64141,7 @@ var OnboardingLinkResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Climate/Orders.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Climate/Orders.js
 var OrderResource = class extends StripeResource {
   /**
    * Lists all Climate order objects. The orders are returned sorted by creation date, with the
@@ -58960,7 +64218,7 @@ var OrderResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/TestHelpers/Treasury/OutboundPayments.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/Treasury/OutboundPayments.js
 var OutboundPaymentResource = class extends StripeResource {
   /**
    * Updates a test mode created OutboundPayment with tracking details. The OutboundPayment must not be cancelable, and cannot be in the canceled or failed states.
@@ -58988,7 +64246,7 @@ var OutboundPaymentResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Treasury/OutboundPayments.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Treasury/OutboundPayments.js
 var OutboundPaymentResource2 = class extends StripeResource {
   /**
    * Returns a list of OutboundPayments sent from the specified FinancialAccount.
@@ -59018,7 +64276,7 @@ var OutboundPaymentResource2 = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/TestHelpers/Treasury/OutboundTransfers.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/Treasury/OutboundTransfers.js
 var OutboundTransferResource = class extends StripeResource {
   /**
    * Updates a test mode created OutboundTransfer with tracking details. The OutboundTransfer must not be cancelable, and cannot be in the canceled or failed states.
@@ -59046,7 +64304,7 @@ var OutboundTransferResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Treasury/OutboundTransfers.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Treasury/OutboundTransfers.js
 var OutboundTransferResource2 = class extends StripeResource {
   /**
    * Returns a list of OutboundTransfers sent from the specified FinancialAccount.
@@ -59076,7 +64334,7 @@ var OutboundTransferResource2 = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Radar/PaymentEvaluations.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Radar/PaymentEvaluations.js
 var PaymentEvaluationResource = class extends StripeResource {
   /**
    * Request a Radar API fraud risk score from Stripe for a payment before sending it for external processor authorization.
@@ -59086,7 +64344,7 @@ var PaymentEvaluationResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Issuing/PersonalizationDesigns.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Issuing/PersonalizationDesigns.js
 var PersonalizationDesignResource = class extends StripeResource {
   /**
    * Returns a list of personalization design objects. The objects are sorted in descending order by creation date, with the most recently created object appearing first.
@@ -59116,7 +64374,7 @@ var PersonalizationDesignResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/TestHelpers/Issuing/PersonalizationDesigns.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/Issuing/PersonalizationDesigns.js
 var PersonalizationDesignResource2 = class extends StripeResource {
   /**
    * Updates the status of the specified testmode personalization design object to active.
@@ -59138,7 +64396,7 @@ var PersonalizationDesignResource2 = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Issuing/PhysicalBundles.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Issuing/PhysicalBundles.js
 var PhysicalBundleResource = class extends StripeResource {
   /**
    * Returns a list of physical bundle objects. The objects are sorted in descending order by creation date, with the most recently created object appearing first.
@@ -59156,7 +64414,7 @@ var PhysicalBundleResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Climate/Products.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Climate/Products.js
 var ProductResource = class extends StripeResource {
   /**
    * Lists all available Climate product objects.
@@ -59191,7 +64449,7 @@ var ProductResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Terminal/Readers.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Terminal/Readers.js
 var ReaderResource = class extends StripeResource {
   /**
    * Deletes a Reader object.
@@ -59275,7 +64533,7 @@ var ReaderResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/TestHelpers/Terminal/Readers.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/Terminal/Readers.js
 var ReaderResource2 = class extends StripeResource {
   /**
    * Presents a payment method on a simulated reader. Can be used to simulate accepting a payment, saving a card or refunding a transaction.
@@ -59297,7 +64555,7 @@ var ReaderResource2 = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/TestHelpers/Treasury/ReceivedCredits.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/Treasury/ReceivedCredits.js
 var ReceivedCreditResource = class extends StripeResource {
   /**
    * Use this endpoint to simulate a test mode ReceivedCredit initiated by a third party. In live mode, you can't directly create ReceivedCredits initiated by third parties.
@@ -59307,7 +64565,7 @@ var ReceivedCreditResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Treasury/ReceivedCredits.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Treasury/ReceivedCredits.js
 var ReceivedCreditResource2 = class extends StripeResource {
   /**
    * Returns a list of ReceivedCredits.
@@ -59325,7 +64583,7 @@ var ReceivedCreditResource2 = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/TestHelpers/Treasury/ReceivedDebits.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/Treasury/ReceivedDebits.js
 var ReceivedDebitResource = class extends StripeResource {
   /**
    * Use this endpoint to simulate a test mode ReceivedDebit initiated by a third party. In live mode, you can't directly create ReceivedDebits initiated by third parties.
@@ -59335,7 +64593,7 @@ var ReceivedDebitResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Treasury/ReceivedDebits.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Treasury/ReceivedDebits.js
 var ReceivedDebitResource2 = class extends StripeResource {
   /**
    * Returns a list of ReceivedDebits.
@@ -59353,7 +64611,7 @@ var ReceivedDebitResource2 = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/TestHelpers/Refunds.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/Refunds.js
 var RefundResource = class extends StripeResource {
   /**
    * Expire a refund with a status of requires_action.
@@ -59363,7 +64621,7 @@ var RefundResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Tax/Registrations.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Tax/Registrations.js
 var RegistrationResource = class extends StripeResource {
   /**
    * Returns a list of Tax Registration objects.
@@ -59395,7 +64653,7 @@ var RegistrationResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Reporting/ReportRuns.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Reporting/ReportRuns.js
 var ReportRunResource = class extends StripeResource {
   /**
    * Returns a list of Report Runs, with the most recent appearing first.
@@ -59419,7 +64677,7 @@ var ReportRunResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Reporting/ReportTypes.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Reporting/ReportTypes.js
 var ReportTypeResource = class extends StripeResource {
   /**
    * Returns a full list of Report Types.
@@ -59437,7 +64695,7 @@ var ReportTypeResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Forwarding/Requests.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Forwarding/Requests.js
 var RequestResource = class extends StripeResource {
   /**
    * Lists all ForwardingRequest objects.
@@ -59461,7 +64719,7 @@ var RequestResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Sigma/ScheduledQueryRuns.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Sigma/ScheduledQueryRuns.js
 var ScheduledQueryRunResource = class extends StripeResource {
   /**
    * Returns a list of scheduled query runs.
@@ -59479,7 +64737,7 @@ var ScheduledQueryRunResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Apps/Secrets.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Apps/Secrets.js
 var SecretResource = class extends StripeResource {
   /**
    * List all secrets stored on the given scope.
@@ -59509,7 +64767,7 @@ var SecretResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/BillingPortal/Sessions.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/BillingPortal/Sessions.js
 var SessionResource = class extends StripeResource {
   /**
    * Creates a session of the customer portal.
@@ -59519,7 +64777,7 @@ var SessionResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Checkout/Sessions.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Checkout/Sessions.js
 var SessionResource2 = class extends StripeResource {
   /**
    * Returns a list of Checkout Sessions.
@@ -60087,7 +65345,7 @@ var SessionResource2 = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/FinancialConnections/Sessions.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/FinancialConnections/Sessions.js
 var SessionResource3 = class extends StripeResource {
   /**
    * Retrieves the details of a Financial Connections Session
@@ -60103,7 +65361,7 @@ var SessionResource3 = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Tax/Settings.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Tax/Settings.js
 var SettingResource = class extends StripeResource {
   /**
    * Retrieves Tax Settings for a merchant.
@@ -60119,7 +65377,7 @@ var SettingResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Climate/Suppliers.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Climate/Suppliers.js
 var SupplierResource = class extends StripeResource {
   /**
    * Lists all available Climate supplier objects.
@@ -60137,7 +65395,7 @@ var SupplierResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/TestHelpers/TestClocks.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/TestClocks.js
 var TestClockResource = class extends StripeResource {
   /**
    * Deletes a test clock.
@@ -60173,7 +65431,7 @@ var TestClockResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Issuing/Tokens.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Issuing/Tokens.js
 var TokenResource = class extends StripeResource {
   /**
    * Lists all Issuing Token objects for a given card.
@@ -60197,7 +65455,7 @@ var TokenResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Treasury/TransactionEntries.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Treasury/TransactionEntries.js
 var TransactionEntryResource = class extends StripeResource {
   /**
    * Retrieves a list of TransactionEntry objects.
@@ -60594,7 +65852,7 @@ var TransactionEntryResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/FinancialConnections/Transactions.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/FinancialConnections/Transactions.js
 var TransactionResource = class extends StripeResource {
   /**
    * Returns a list of Financial Connections Transaction objects.
@@ -60612,7 +65870,7 @@ var TransactionResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Issuing/Transactions.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Issuing/Transactions.js
 var TransactionResource2 = class extends StripeResource {
   /**
    * Returns a list of Issuing Transaction objects. The objects are sorted in descending order by creation date, with the most recently created object appearing first.
@@ -60892,7 +66150,7 @@ var TransactionResource2 = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Tax/Transactions.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Tax/Transactions.js
 var TransactionResource3 = class extends StripeResource {
   /**
    * Retrieves a Tax Transaction object.
@@ -60922,7 +66180,7 @@ var TransactionResource3 = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/TestHelpers/Issuing/Transactions.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/Issuing/Transactions.js
 var TransactionResource4 = class extends StripeResource {
   /**
    * Refund a test-mode Transaction.
@@ -61299,7 +66557,7 @@ var TransactionResource4 = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Treasury/Transactions.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Treasury/Transactions.js
 var TransactionResource5 = class extends StripeResource {
   /**
    * Retrieves a list of Transaction objects.
@@ -61748,7 +67006,7 @@ var TransactionResource5 = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Radar/ValueListItems.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Radar/ValueListItems.js
 var ValueListItemResource = class extends StripeResource {
   /**
    * Deletes a ValueListItem object, removing it from its parent value list.
@@ -61778,7 +67036,7 @@ var ValueListItemResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Radar/ValueLists.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Radar/ValueLists.js
 var ValueListResource = class extends StripeResource {
   /**
    * Deletes a ValueList object, also deleting any items contained within the value list. To be deleted, a value list must not be referenced in any rules.
@@ -61814,7 +67072,7 @@ var ValueListResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Identity/VerificationReports.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Identity/VerificationReports.js
 var VerificationReportResource = class extends StripeResource {
   /**
    * List all verification reports.
@@ -61832,7 +67090,7 @@ var VerificationReportResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Identity/VerificationSessions.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Identity/VerificationSessions.js
 var VerificationSessionResource = class extends StripeResource {
   /**
    * Returns a list of VerificationSessions
@@ -61906,7 +67164,7 @@ var VerificationSessionResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Accounts.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Accounts.js
 var AccountResource3 = class extends StripeResource {
   /**
    * With [Connect](https://docs.stripe.com/connect), you can delete accounts you manage.
@@ -62082,7 +67340,7 @@ var AccountResource3 = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/AccountLinks.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/AccountLinks.js
 var AccountLinkResource2 = class extends StripeResource {
   /**
    * Creates an AccountLink object that includes a single-use Stripe URL that the platform can redirect their user to in order to take them through the Connect Onboarding flow.
@@ -62092,7 +67350,7 @@ var AccountLinkResource2 = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/AccountSessions.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/AccountSessions.js
 var AccountSessionResource = class extends StripeResource {
   /**
    * Creates a AccountSession object that includes a single-use token that the platform can use on their front-end to grant client-side API access.
@@ -62102,7 +67360,7 @@ var AccountSessionResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/ApplePayDomains.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/ApplePayDomains.js
 var ApplePayDomainResource = class extends StripeResource {
   /**
    * Delete an apple pay domain.
@@ -62132,7 +67390,7 @@ var ApplePayDomainResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/ApplicationFees.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/ApplicationFees.js
 var ApplicationFeeResource = class extends StripeResource {
   /**
    * Returns a list of application fees you've previously collected. The application fees are returned in sorted order, with the most recent fees appearing first.
@@ -62186,7 +67444,7 @@ var ApplicationFeeResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Balance.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Balance.js
 var BalanceResource = class extends StripeResource {
   /**
    * Retrieves the current account balance, based on the authentication that was used to make the request.
@@ -62197,7 +67455,7 @@ var BalanceResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/BalanceSettings.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/BalanceSettings.js
 var BalanceSettingResource = class extends StripeResource {
   /**
    * Retrieves balance settings for a given connected account.
@@ -62215,7 +67473,7 @@ var BalanceSettingResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/BalanceTransactions.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/BalanceTransactions.js
 var BalanceTransactionResource = class extends StripeResource {
   /**
    * Returns a list of transactions that have contributed to the Stripe account balance (for example, charges, transfers, and so on). The transactions return in sorted order, with the most recent transactions appearing first.
@@ -62237,7 +67495,7 @@ var BalanceTransactionResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Charges.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Charges.js
 var ChargeResource = class extends StripeResource {
   /**
    * Returns a list of charges you've previously created. The charges are returned in sorted order, with the most recent charges appearing first.
@@ -62290,7 +67548,7 @@ var ChargeResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/ConfirmationTokens.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/ConfirmationTokens.js
 var ConfirmationTokenResource2 = class extends StripeResource {
   /**
    * Retrieves an existing ConfirmationToken object
@@ -62300,7 +67558,7 @@ var ConfirmationTokenResource2 = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/CountrySpecs.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/CountrySpecs.js
 var CountrySpecResource = class extends StripeResource {
   /**
    * Lists all Country Spec objects available in the API.
@@ -62318,7 +67576,7 @@ var CountrySpecResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Coupons.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Coupons.js
 var CouponResource = class extends StripeResource {
   /**
    * You can delete coupons via the [coupon management](https://dashboard.stripe.com/coupons) page of the Stripe dashboard. However, deleting a coupon does not affect any customers who have already applied the coupon; it means that new customers can't redeem the coupon. You can also delete coupons via the API.
@@ -62356,7 +67614,7 @@ var CouponResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/CreditNotes.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/CreditNotes.js
 var CreditNoteResource = class extends StripeResource {
   /**
    * Returns a list of credit notes.
@@ -62643,7 +67901,7 @@ var CreditNoteResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Customers.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Customers.js
 var CustomerResource2 = class extends StripeResource {
   /**
    * Permanently deletes a customer. It cannot be undone. Also immediately cancels any active subscriptions on the customer.
@@ -63306,7 +68564,7 @@ var CustomerResource2 = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/CustomerSessions.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/CustomerSessions.js
 var CustomerSessionResource = class extends StripeResource {
   /**
    * Creates a Customer Session object that includes a single-use client secret that you can use on your front-end to grant client-side API access for certain customer resources.
@@ -63316,7 +68574,7 @@ var CustomerSessionResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Disputes.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Disputes.js
 var DisputeResource2 = class extends StripeResource {
   /**
    * Returns a list of your disputes.
@@ -63350,7 +68608,7 @@ var DisputeResource2 = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/EphemeralKeys.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/EphemeralKeys.js
 var EphemeralKeyResource = class extends StripeResource {
   /**
    * Invalidates a short-lived API key for a given resource.
@@ -63369,7 +68627,7 @@ var EphemeralKeyResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Events.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Events.js
 var EventResource2 = class extends StripeResource {
   /**
    * List events, going back up to 30 days. Each event data is rendered according to Stripe API version at its creation time, specified in [event object](https://docs.stripe.com/api/events/object) api_version attribute (not according to your current Stripe API version or Stripe-Version header).
@@ -63387,7 +68645,7 @@ var EventResource2 = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/ExchangeRates.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/ExchangeRates.js
 var ExchangeRateResource = class extends StripeResource {
   /**
    * [Deprecated] The ExchangeRate APIs are deprecated. Please use the [FX Quotes API](https://docs.stripe.com/payments/currencies/localize-prices/fx-quotes-api) instead.
@@ -63411,7 +68669,7 @@ var ExchangeRateResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/multipart.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/multipart.js
 var multipartDataGenerator = (method, data, headers) => {
   const segno = (Math.round(Math.random() * 1e16) + Math.round(Math.random() * 1e16)).toString();
   headers["Content-Type"] = `multipart/form-data; boundary=${segno}`;
@@ -63462,7 +68720,7 @@ function multipartRequestDataProcessor(method, data, headers, callback) {
   }).catch((err) => callback(err, null));
 }
 
-// node_modules/stripe/esm/resources/Files.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Files.js
 var FileResource = class extends StripeResource {
   constructor() {
     super(...arguments);
@@ -63497,7 +68755,7 @@ var FileResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/FileLinks.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/FileLinks.js
 var FileLinkResource = class extends StripeResource {
   /**
    * Returns a list of file links.
@@ -63527,7 +68785,7 @@ var FileLinkResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Invoices.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Invoices.js
 var InvoiceResource = class extends StripeResource {
   /**
    * Permanently deletes a one-off invoice draft. This cannot be undone. Attempts to delete invoices that are no longer in a draft state will fail; once an invoice has been finalized or if an invoice is for a subscription, it must be [voided](https://docs.stripe.com/api/invoices/void).
@@ -64390,7 +69648,7 @@ var InvoiceResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/InvoiceItems.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/InvoiceItems.js
 var InvoiceItemResource = class extends StripeResource {
   /**
    * Deletes an invoice item, removing it from an invoice. Deleting invoice items is only possible when they're not attached to invoices, or if it's attached to a draft invoice.
@@ -64531,7 +69789,7 @@ var InvoiceItemResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/InvoicePayments.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/InvoicePayments.js
 var InvoicePaymentResource = class extends StripeResource {
   /**
    * When retrieving an invoice, there is an includable payments property containing the first handful of those items. There is also a URL where you can retrieve the full (paginated) list of payments.
@@ -64549,7 +69807,7 @@ var InvoicePaymentResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/InvoiceRenderingTemplates.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/InvoiceRenderingTemplates.js
 var InvoiceRenderingTemplateResource = class extends StripeResource {
   /**
    * List all templates, ordered by creation date, with the most recently created template appearing first.
@@ -64579,7 +69837,7 @@ var InvoiceRenderingTemplateResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Mandates.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Mandates.js
 var MandateResource = class extends StripeResource {
   /**
    * Retrieves a Mandate object.
@@ -64589,7 +69847,7 @@ var MandateResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/OAuth.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/OAuth.js
 var OAuthResource = class extends StripeResource {
   constructor() {
     super(...arguments);
@@ -64598,9 +69856,9 @@ var OAuthResource = class extends StripeResource {
   authorizeUrl(params, options) {
     params = params || {};
     options = options || {};
-    let path7 = "oauth/authorize";
+    let path8 = "oauth/authorize";
     if (options.express) {
-      path7 = `express/${path7}`;
+      path8 = `express/${path8}`;
     }
     if (!params.response_type) {
       params.response_type = "code";
@@ -64612,7 +69870,7 @@ var OAuthResource = class extends StripeResource {
       params.scope = "read_write";
     }
     const connectHost = this._stripe.resolveBaseAddress("connect");
-    return `https://${connectHost}/${path7}?${queryStringifyRequestData(params)}`;
+    return `https://${connectHost}/${path8}?${queryStringifyRequestData(params)}`;
   }
   token(params, options) {
     return this._makeRequest("POST", "/oauth/token", params, options, {
@@ -64629,7 +69887,7 @@ var OAuthResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/PaymentAttemptRecords.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/PaymentAttemptRecords.js
 var PaymentAttemptRecordResource = class extends StripeResource {
   /**
    * List all the Payment Attempt Records attached to the specified Payment Record.
@@ -64647,7 +69905,7 @@ var PaymentAttemptRecordResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/PaymentIntents.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/PaymentIntents.js
 var PaymentIntentResource = class extends StripeResource {
   /**
    * Returns a list of PaymentIntents.
@@ -64813,7 +70071,7 @@ var PaymentIntentResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/PaymentLinks.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/PaymentLinks.js
 var PaymentLinkResource = class extends StripeResource {
   /**
    * Returns a list of your payment links.
@@ -65244,7 +70502,7 @@ var PaymentLinkResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/PaymentMethods.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/PaymentMethods.js
 var PaymentMethodResource = class extends StripeResource {
   /**
    * Returns a list of all PaymentMethods.
@@ -65300,7 +70558,7 @@ var PaymentMethodResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/PaymentMethodConfigurations.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/PaymentMethodConfigurations.js
 var PaymentMethodConfigurationResource = class extends StripeResource {
   /**
    * List payment method configurations
@@ -65330,7 +70588,7 @@ var PaymentMethodConfigurationResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/PaymentMethodDomains.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/PaymentMethodDomains.js
 var PaymentMethodDomainResource = class extends StripeResource {
   /**
    * Lists the details of existing payment method domains.
@@ -65371,7 +70629,7 @@ var PaymentMethodDomainResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/PaymentRecords.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/PaymentRecords.js
 var PaymentRecordResource = class extends StripeResource {
   /**
    * Retrieves a Payment Record with the given ID
@@ -65430,7 +70688,7 @@ var PaymentRecordResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Payouts.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Payouts.js
 var PayoutResource = class extends StripeResource {
   /**
    * Returns a list of existing payouts sent to third-party bank accounts or payouts that Stripe sent to you. The payouts return in sorted order, with the most recently created payouts appearing first.
@@ -65478,7 +70736,7 @@ var PayoutResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Plans.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Plans.js
 var PlanResource = class extends StripeResource {
   /**
    * Deleting plans means new subscribers can't be added. Existing subscribers aren't affected.
@@ -65632,7 +70890,7 @@ var PlanResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Prices.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Prices.js
 var PriceResource = class extends StripeResource {
   /**
    * Returns a list of your active prices, excluding [inline prices](https://docs.stripe.com/docs/products-prices/pricing-models#inline-pricing). For the list of inactive prices, set active to false.
@@ -65992,7 +71250,7 @@ var PriceResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Products.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Products.js
 var ProductResource2 = class extends StripeResource {
   /**
    * Delete a product. Deleting a product is only possible if it has no prices associated with it. Additionally, deleting a product with type=good is only possible if it has no SKUs associated with it.
@@ -66096,7 +71354,7 @@ var ProductResource2 = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/PromotionCodes.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/PromotionCodes.js
 var PromotionCodeResource = class extends StripeResource {
   /**
    * Returns a list of your promotion codes.
@@ -66126,7 +71384,7 @@ var PromotionCodeResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Quotes.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Quotes.js
 var QuoteResource = class extends StripeResource {
   /**
    * Returns a list of your quotes.
@@ -66997,7 +72255,7 @@ var QuoteResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Refunds.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Refunds.js
 var RefundResource2 = class extends StripeResource {
   /**
    * Returns a list of all refunds you created. We return the refunds in sorted order, with the most recent refunds appearing first. The 10 most recent refunds are always available by default on the Charge object.
@@ -67047,7 +72305,7 @@ var RefundResource2 = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Reviews.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Reviews.js
 var ReviewResource = class extends StripeResource {
   /**
    * Returns a list of Review objects that have open set to true. The objects are sorted in descending order by creation date, with the most recently created object appearing first.
@@ -67071,7 +72329,7 @@ var ReviewResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/SetupAttempts.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/SetupAttempts.js
 var SetupAttemptResource = class extends StripeResource {
   /**
    * Returns a list of SetupAttempts that associate with a provided SetupIntent.
@@ -67083,7 +72341,7 @@ var SetupAttemptResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/SetupIntents.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/SetupIntents.js
 var SetupIntentResource = class extends StripeResource {
   /**
    * Returns a list of SetupIntents.
@@ -67153,7 +72411,7 @@ var SetupIntentResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/ShippingRates.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/ShippingRates.js
 var ShippingRateResource = class extends StripeResource {
   /**
    * Returns a list of your shipping rates.
@@ -67183,7 +72441,7 @@ var ShippingRateResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Sources.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Sources.js
 var SourceResource = class extends StripeResource {
   /**
    * Retrieves an existing source object. Supply the unique source ID from a source creation request and Stripe will return the corresponding up-to-date source object information.
@@ -67221,7 +72479,7 @@ var SourceResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Subscriptions.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Subscriptions.js
 var SubscriptionResource = class extends StripeResource {
   /**
    * Cancels a customer's subscription immediately. The customer won't be charged again for the subscription. After it's canceled, the subscription is largely immutable. You can still update its [metadata](https://docs.stripe.com/metadata) and cancellation_details.
@@ -68164,7 +73422,7 @@ var SubscriptionResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/SubscriptionItems.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/SubscriptionItems.js
 var SubscriptionItemResource = class extends StripeResource {
   /**
    * Deletes an item from the subscription. Removing a subscription item from a subscription will not cancel the subscription.
@@ -68561,7 +73819,7 @@ var SubscriptionItemResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/SubscriptionSchedules.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/SubscriptionSchedules.js
 var SubscriptionScheduleResource = class extends StripeResource {
   /**
    * Retrieves the list of your subscription schedules.
@@ -68687,7 +73945,7 @@ var SubscriptionScheduleResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/TaxCodes.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TaxCodes.js
 var TaxCodeResource = class extends StripeResource {
   /**
    * A list of [all tax codes available](https://stripe.com/docs/tax/tax-categories) to add to Products in order to allow specific tax calculations.
@@ -68705,7 +73963,7 @@ var TaxCodeResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/TaxIds.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TaxIds.js
 var TaxIdResource = class extends StripeResource {
   /**
    * Deletes an existing account or customer tax_id object.
@@ -68735,7 +73993,7 @@ var TaxIdResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/TaxRates.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TaxRates.js
 var TaxRateResource = class extends StripeResource {
   /**
    * Returns a list of your tax rates. Tax rates are returned sorted by creation date, with the most recently created tax rates appearing first.
@@ -68765,7 +74023,7 @@ var TaxRateResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Tokens.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Tokens.js
 var TokenResource2 = class extends StripeResource {
   /**
    * Retrieves the token with the given ID.
@@ -68782,7 +74040,7 @@ var TokenResource2 = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Topups.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Topups.js
 var TopupResource = class extends StripeResource {
   /**
    * Returns a list of top-ups.
@@ -68818,7 +74076,7 @@ var TopupResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/Transfers.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Transfers.js
 var TransferResource = class extends StripeResource {
   /**
    * Returns a list of existing transfers sent to connected accounts. The transfers are returned in sorted order, with the most recently created transfers appearing first.
@@ -68882,7 +74140,7 @@ var TransferResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources/WebhookEndpoints.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/WebhookEndpoints.js
 var WebhookEndpointResource = class extends StripeResource {
   /**
    * You can also delete webhook endpoints via the [webhook endpoint management](https://dashboard.stripe.com/account/webhooks) page of the Stripe dashboard.
@@ -68918,7 +74176,7 @@ var WebhookEndpointResource = class extends StripeResource {
   }
 };
 
-// node_modules/stripe/esm/resources.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources.js
 var Apps = resourceNamespace("apps", { Secrets: SecretResource });
 var Billing = resourceNamespace("billing", {
   Alerts: AlertResource,
@@ -69049,7 +74307,7 @@ var V2 = resourceNamespace("v2", {
   })
 });
 
-// node_modules/stripe/esm/resources/Apps/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Apps/index.js
 var Apps2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -69057,7 +74315,7 @@ var Apps2 = class {
   }
 };
 
-// node_modules/stripe/esm/resources/Billing/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Billing/index.js
 var Billing2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -69071,7 +74329,7 @@ var Billing2 = class {
   }
 };
 
-// node_modules/stripe/esm/resources/BillingPortal/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/BillingPortal/index.js
 var BillingPortal2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -69080,7 +74338,7 @@ var BillingPortal2 = class {
   }
 };
 
-// node_modules/stripe/esm/resources/Checkout/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Checkout/index.js
 var Checkout2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -69088,7 +74346,7 @@ var Checkout2 = class {
   }
 };
 
-// node_modules/stripe/esm/resources/Climate/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Climate/index.js
 var Climate2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -69098,7 +74356,7 @@ var Climate2 = class {
   }
 };
 
-// node_modules/stripe/esm/resources/Entitlements/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Entitlements/index.js
 var Entitlements2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -69107,7 +74365,7 @@ var Entitlements2 = class {
   }
 };
 
-// node_modules/stripe/esm/resources/FinancialConnections/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/FinancialConnections/index.js
 var FinancialConnections2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -69117,7 +74375,7 @@ var FinancialConnections2 = class {
   }
 };
 
-// node_modules/stripe/esm/resources/Forwarding/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Forwarding/index.js
 var Forwarding2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -69125,7 +74383,7 @@ var Forwarding2 = class {
   }
 };
 
-// node_modules/stripe/esm/resources/Identity/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Identity/index.js
 var Identity2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -69134,7 +74392,7 @@ var Identity2 = class {
   }
 };
 
-// node_modules/stripe/esm/resources/Issuing/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Issuing/index.js
 var Issuing2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -69149,7 +74407,7 @@ var Issuing2 = class {
   }
 };
 
-// node_modules/stripe/esm/resources/Radar/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Radar/index.js
 var Radar2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -69160,7 +74418,7 @@ var Radar2 = class {
   }
 };
 
-// node_modules/stripe/esm/resources/Reporting/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Reporting/index.js
 var Reporting2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -69169,7 +74427,7 @@ var Reporting2 = class {
   }
 };
 
-// node_modules/stripe/esm/resources/Sigma/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Sigma/index.js
 var Sigma2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -69177,7 +74435,7 @@ var Sigma2 = class {
   }
 };
 
-// node_modules/stripe/esm/resources/Tax/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Tax/index.js
 var Tax2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -69189,7 +74447,7 @@ var Tax2 = class {
   }
 };
 
-// node_modules/stripe/esm/resources/Terminal/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Terminal/index.js
 var Terminal2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -69201,7 +74459,7 @@ var Terminal2 = class {
   }
 };
 
-// node_modules/stripe/esm/resources/TestHelpers/Issuing/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/Issuing/index.js
 var Issuing3 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -69212,7 +74470,7 @@ var Issuing3 = class {
   }
 };
 
-// node_modules/stripe/esm/resources/TestHelpers/Terminal/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/Terminal/index.js
 var Terminal3 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -69220,7 +74478,7 @@ var Terminal3 = class {
   }
 };
 
-// node_modules/stripe/esm/resources/TestHelpers/Treasury/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/Treasury/index.js
 var Treasury2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -69232,7 +74490,7 @@ var Treasury2 = class {
   }
 };
 
-// node_modules/stripe/esm/resources/TestHelpers/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/index.js
 var TestHelpers2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -69246,7 +74504,7 @@ var TestHelpers2 = class {
   }
 };
 
-// node_modules/stripe/esm/resources/Treasury/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Treasury/index.js
 var Treasury3 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -69263,7 +74521,7 @@ var Treasury3 = class {
   }
 };
 
-// node_modules/stripe/esm/resources/V2/Billing/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Billing/index.js
 var Billing3 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -69274,7 +74532,7 @@ var Billing3 = class {
   }
 };
 
-// node_modules/stripe/esm/resources/V2/Commerce/ProductCatalog/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Commerce/ProductCatalog/index.js
 var ProductCatalog = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -69282,7 +74540,7 @@ var ProductCatalog = class {
   }
 };
 
-// node_modules/stripe/esm/resources/V2/Commerce/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Commerce/index.js
 var Commerce = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -69290,7 +74548,7 @@ var Commerce = class {
   }
 };
 
-// node_modules/stripe/esm/resources/V2/Core/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Core/index.js
 var Core = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -69302,7 +74560,7 @@ var Core = class {
   }
 };
 
-// node_modules/stripe/esm/resources/V2/index.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/index.js
 var V22 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -69312,7 +74570,7 @@ var V22 = class {
   }
 };
 
-// node_modules/stripe/esm/stripe.esm.node.js
+// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/stripe.esm.node.js
 var DEFAULT_HOST = "api.stripe.com";
 var DEFAULT_PORT = "443";
 var DEFAULT_BASE_PATH = "/v1/";
@@ -69495,8 +74753,8 @@ var Stripe = class _Stripe {
    * @param params - The parameters to include in the request body.
    * @param options - Additional request options.
    */
-  rawRequest(method, path7, params, options) {
-    return this._requestSender._rawRequest(method, path7, params, options);
+  rawRequest(method, path8, params, options) {
+    return this._requestSender._rawRequest(method, path8, params, options);
   }
   /**
    * @private
@@ -69800,6 +75058,14 @@ Stripe.initialize(new NodePlatformFunctions());
 var stripe_esm_node_default = Stripe;
 
 // server/stripe.ts
+var CHECKOUT_PRICES = {
+  spark: 9.99,
+  plusMonthly: 11.99,
+  plusAnnual: 99
+};
+function plusPriceValue(interval2) {
+  return interval2 === "monthly" ? CHECKOUT_PRICES.plusMonthly : CHECKOUT_PRICES.plusAnnual;
+}
 var stripeClient = null;
 var cachedKey;
 function getStripe() {
@@ -69814,8 +75080,11 @@ function getStripe() {
 function getPriceId(billingInterval) {
   return billingInterval === "annual" ? process.env.STRIPE_PRICE_ID_ANNUAL : process.env.STRIPE_PRICE_ID_MONTHLY;
 }
+function getSparkPriceId() {
+  return process.env.STRIPE_PRICE_ID_SPARK;
+}
 function isStripeConfigured() {
-  return !!getStripe() && !!getPriceId("annual") && !!getPriceId("monthly");
+  return !!getStripe() && !!getSparkPriceId() && !!getPriceId("annual") && !!getPriceId("monthly");
 }
 function getWebhookSecret() {
   return process.env.STRIPE_WEBHOOK_SECRET;
@@ -69826,17 +75095,4460 @@ function planTierFromSubscriptionStatus(status) {
   return "plus_expired";
 }
 
+// server/metaCapi.ts
+var import_node_crypto2 = require("node:crypto");
+var META_GRAPH_VERSION = "v19.0";
+var FALLBACK_PIXEL_ID = "1595662201929479";
+function pixelId() {
+  return process.env.META_PIXEL_ID || FALLBACK_PIXEL_ID;
+}
+function accessToken() {
+  return process.env.META_CAPI_ACCESS_TOKEN;
+}
+function hashPii(value, digitsOnly = false) {
+  if (!value) return void 0;
+  let normalized = value.trim().toLowerCase();
+  if (digitsOnly) normalized = normalized.replace(/\D/g, "");
+  if (!normalized) return void 0;
+  return (0, import_node_crypto2.createHash)("sha256").update(normalized).digest("hex");
+}
+async function sendMetaPurchaseEvent(params) {
+  const token = accessToken();
+  const id = pixelId();
+  if (!token || !id) {
+    console.debug("[metaCapi] skipped \u2014 META_CAPI_ACCESS_TOKEN or pixel id not configured");
+    return;
+  }
+  try {
+    const em = hashPii(params.email);
+    const ph = hashPii(params.phone, true);
+    const userData = {};
+    if (em) userData.em = [em];
+    if (ph) userData.ph = [ph];
+    const payload = {
+      data: [
+        {
+          event_name: "Purchase",
+          event_time: Math.floor(Date.now() / 1e3),
+          event_id: params.eventId,
+          action_source: params.actionSource || "website",
+          ...params.eventSourceUrl ? { event_source_url: params.eventSourceUrl } : {},
+          user_data: userData,
+          custom_data: {
+            value: params.value,
+            currency: params.currency
+          }
+        }
+      ]
+    };
+    const res = await fetch(
+      `https://graph.facebook.com/${META_GRAPH_VERSION}/${id}/events?access_token=${encodeURIComponent(token)}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      }
+    );
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      console.error(`[metaCapi] Purchase event rejected (${res.status}):`, body);
+    }
+  } catch (err) {
+    console.error("[metaCapi] Failed to send Purchase event:", err);
+  }
+}
+
+// shared/featureFlags.ts
+var FEATURE_FLAG_IDS = [
+  // The AI-first invitation experience: four automatically generated,
+  // quality-gated directions shown before the curated collection.
+  "aiFirstInvitations",
+  // Global kill switch for *new* image generation. Independent of the flag
+  // above: when this is on, reuse of existing previews, applying a saved
+  // design, and the whole curated studio keep working.
+  "invitationGenerationKillSwitch",
+  // Next-proof safety setting: disables the automatic paid quality retry.
+  // With this on, a direction gets exactly one billed image call — if it
+  // fails the gate, it goes straight to the adapted studio fallback instead
+  // of spending a second time on the same direction. Off by default so the
+  // existing one-retry behaviour (MAX_ARTWORK_ATTEMPTS = 2) is unchanged
+  // until this is explicitly turned on.
+  "aiFirstDisableAutomaticRetry"
+];
+var DEFAULT_FEATURE_FLAGS = {
+  aiFirstInvitations: false,
+  invitationGenerationKillSwitch: false,
+  aiFirstDisableAutomaticRetry: false
+};
+var ENV_VAR = {
+  aiFirstInvitations: "POSY_FLAG_AI_FIRST_INVITATIONS",
+  invitationGenerationKillSwitch: "POSY_FLAG_INVITE_GENERATION_KILL_SWITCH",
+  aiFirstDisableAutomaticRetry: "POSY_FLAG_AI_FIRST_DISABLE_AUTOMATIC_RETRY"
+};
+function isTruthy(raw) {
+  if (!raw) return false;
+  const v = raw.trim().toLowerCase();
+  return v === "1" || v === "true" || v === "on" || v === "yes";
+}
+function readFeatureFlags(env) {
+  const flags = { ...DEFAULT_FEATURE_FLAGS };
+  for (const id of FEATURE_FLAG_IDS) {
+    flags[id] = isTruthy(env[ENV_VAR[id]]);
+  }
+  return flags;
+}
+
+// shared/aiFirstPalette.ts
+function channel(v) {
+  const c = v / 255;
+  return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+}
+function rgbOf(hex2) {
+  const n = parseInt(hex2.replace("#", ""), 16);
+  return [n >> 16 & 255, n >> 8 & 255, n & 255];
+}
+function luminance2(hex2) {
+  const [r, g, b2] = rgbOf(hex2);
+  return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b2);
+}
+function contrastRatio(a, b2) {
+  const [lo, hi] = [luminance2(a), luminance2(b2)].sort((p, q) => p - q);
+  return (hi + 0.05) / (lo + 0.05);
+}
+function rgbDistance(a, b2) {
+  const [r1, g1, b1] = rgbOf(a);
+  const [r2, g2, b22] = rgbOf(b2);
+  return Math.hypot(r1 - r2, g1 - g2, b1 - b22);
+}
+var ROLE_MINIMUM_CONTRAST = {
+  /** The display headline — large text. */
+  headlineColor: 3,
+  /** Date / time / location / host note — body text. */
+  bodyColor: 4.5,
+  /** Eyebrow, divider and the RSVP cue — small caps text. It is ALSO the
+   *  card frame, which only needs 1.6:1; the stricter text floor governs. */
+  accentColor: 4.5
+};
+var FRAME_MINIMUM_CONTRAST = 1.6;
+function round2(n) {
+  return Math.round(n * 100) / 100;
+}
+function normalizeRole(role, palette) {
+  const surface = palette.textSurface;
+  const before = palette[role];
+  const required = ROLE_MINIMUM_CONTRAST[role];
+  const beforeRatio = contrastRatio(before, surface);
+  if (beforeRatio >= required) {
+    return {
+      role,
+      before,
+      after: before,
+      beforeRatio: round2(beforeRatio),
+      afterRatio: round2(beforeRatio),
+      required,
+      changed: false,
+      reason: `passes: ${beforeRatio.toFixed(2)}:1 >= ${required}:1 against textSurface`
+    };
+  }
+  const own = Array.from(new Set(Object.values(palette).map((h) => h.toUpperCase()))).filter(
+    (h) => h !== before.toUpperCase()
+  );
+  const viable = own.filter((h) => contrastRatio(h, surface) >= required).sort((a, b2) => rgbDistance(a, before) - rgbDistance(b2, before) || a.localeCompare(b2));
+  if (viable.length > 0) {
+    const after2 = viable[0];
+    return {
+      role,
+      before,
+      after: after2,
+      beforeRatio: round2(beforeRatio),
+      afterRatio: round2(contrastRatio(after2, surface)),
+      required,
+      changed: true,
+      reason: `fails at ${beforeRatio.toFixed(2)}:1 (needs ${required}:1); replaced with the nearest colour in the concept's own palette that clears the floor`
+    };
+  }
+  const after = luminance2(surface) > 0.5 ? "#000000" : "#FFFFFF";
+  return {
+    role,
+    before,
+    after,
+    beforeRatio: round2(beforeRatio),
+    afterRatio: round2(contrastRatio(after, surface)),
+    required,
+    changed: true,
+    reason: `fails at ${beforeRatio.toFixed(2)}:1 (needs ${required}:1) and no colour the concept declared clears the floor; fell back to role-safe ${after}`
+  };
+}
+function normalizeSemanticPalette(palette) {
+  const fixes = Object.keys(ROLE_MINIMUM_CONTRAST).map(
+    (role) => normalizeRole(role, palette)
+  );
+  const [ink, body, accent] = [
+    fixes.find((f) => f.role === "headlineColor").after,
+    fixes.find((f) => f.role === "bodyColor").after,
+    fixes.find((f) => f.role === "accentColor").after
+  ];
+  const frameContrast = contrastRatio(accent, palette.textSurface);
+  return {
+    variant: {
+      id: "ai-semantic",
+      label: "Custom",
+      ink,
+      accent,
+      surface: palette.textSurface,
+      body
+    },
+    fixes,
+    frameContrast: round2(frameContrast),
+    framePasses: frameContrast >= FRAME_MINIMUM_CONTRAST
+  };
+}
+
+// shared/aiFirstTheme.ts
+var AI_THEME_ID_PREFIX = "ai-";
+function buildAiFirstTheme(concept, options) {
+  const base = getLaunchTheme(concept.baseThemeId);
+  if (!base) throw new Error(`buildAiFirstTheme: unknown baseThemeId "${concept.baseThemeId}"`);
+  const { variant } = normalizeSemanticPalette(concept.semanticPalette);
+  const layoutStyle = options.layoutStyle ?? concept.layoutStyle;
+  const theme = {
+    ...base,
+    id: options.themeId,
+    name: concept.conceptName,
+    tagline: concept.description,
+    description: concept.description,
+    artwork: {
+      fullUrl: options.artwork.url,
+      thumbUrl: options.artwork.url,
+      alt: concept.description,
+      width: options.artwork.width,
+      height: options.artwork.height
+    },
+    layoutStyle,
+    borderStyle: concept.borderStyle,
+    styleLaneId: concept.styleLaneId,
+    fontPairingIds: [concept.fontPairingId, ...base.fontPairingIds.filter((id) => id !== concept.fontPairingId)],
+    palettes: [variant, ...base.palettes],
+    texture: { style: concept.texture.style, intensity: concept.texture.intensity },
+    divider: concept.dividerStyle,
+    art: { ...base.art, id: concept.motif.id, placement: concept.motif.placement },
+    defaultOverlay: options.overlay,
+    overlayOptions: Array.from(/* @__PURE__ */ new Set([options.overlay, ...base.overlayOptions]))
+  };
+  return { theme, palette: variant };
+}
+var AI_FIRST_CONCEPT_KEY = "aiFirst";
+function themeFromSnapshot(snapshot) {
+  return buildAiFirstTheme(snapshot.concept, {
+    themeId: `${AI_THEME_ID_PREFIX}${snapshot.previewId}`,
+    artwork: { url: snapshot.artworkUrl, width: 1024, height: 1024 },
+    overlay: snapshot.concept.minOverlay
+  });
+}
+
+// server/aiFirst/brief.ts
+var MONTH_SEASON = {
+  january: "winter",
+  february: "winter",
+  december: "winter",
+  march: "spring",
+  april: "spring",
+  may: "spring",
+  june: "summer",
+  july: "summer",
+  august: "summer",
+  september: "autumn",
+  october: "autumn",
+  november: "autumn"
+};
+function seasonFromDate(dateLine) {
+  const lower = (dateLine || "").toLowerCase();
+  for (const [month, season] of Object.entries(MONTH_SEASON)) {
+    if (lower.includes(month)) return season;
+  }
+  return "";
+}
+function milestoneFrom(eventName, eventType, vibe) {
+  const haystack = `${eventName} ${eventType} ${vibe}`;
+  const ordinal = /\b(\d{1,3})(st|nd|rd|th)\b/i.exec(haystack);
+  if (ordinal) return `${ordinal[1]}${ordinal[2].toLowerCase()}`;
+  const words = {
+    first: "1st",
+    second: "2nd",
+    third: "3rd",
+    fourth: "4th",
+    fifth: "5th",
+    sixth: "6th",
+    seventh: "7th",
+    eighth: "8th",
+    ninth: "9th",
+    tenth: "10th",
+    thirteenth: "13th",
+    sixteenth: "16th",
+    eighteenth: "18th",
+    twentieth: "20th",
+    thirtieth: "30th",
+    fortieth: "40th",
+    fiftieth: "50th",
+    sixtieth: "60th",
+    seventieth: "70th",
+    eightieth: "80th",
+    ninetieth: "90th",
+    hundredth: "100th"
+  };
+  for (const [word, value] of Object.entries(words)) {
+    if (new RegExp(`\\b${word}\\b`, "i").test(haystack)) return value;
+  }
+  if (/\bbirthday\b/i.test(`${eventType} ${vibe}`)) {
+    const agePhrase = /\b(?:i['’]?m|turning|turns?|is)\s+(\d{1,3})\b/i.exec(`${eventName} ${vibe}`);
+    const themedLeadingAge = /^\s*(\d{1,3})\s*(?:&|and)\b/i.exec(eventName);
+    const age = Number(agePhrase?.[1] ?? themedLeadingAge?.[1]);
+    if (Number.isInteger(age) && age > 0 && age <= 120) {
+      const mod100 = age % 100;
+      const suffix = mod100 >= 11 && mod100 <= 13 ? "th" : age % 10 === 1 ? "st" : age % 10 === 2 ? "nd" : age % 10 === 3 ? "rd" : "th";
+      return `${age}${suffix}`;
+    }
+  }
+  return "";
+}
+function ageFromMilestone(milestone) {
+  const m = /^(\d{1,3})/.exec(milestone);
+  if (!m) return null;
+  return parseInt(m[1], 10);
+}
+function venueTypeFrom(event) {
+  const text2 = `${event.venueName || ""} ${event.location || ""}`.toLowerCase();
+  if (/\b(home|house|backyard|garden|yard|apartment)\b/.test(text2)) return "private home";
+  if (/\b(park|beach|farm|orchard|vineyard|outdoor)\b/.test(text2)) return "outdoor venue";
+  if (/\b(restaurant|bistro|dining|supper|kitchen)\b/.test(text2)) return "restaurant";
+  if (/\b(hall|ballroom|hotel|club|loft|gallery|studio|venue|space|centre|center)\b/.test(text2)) {
+    return "indoor event space";
+  }
+  return text2.trim() ? "venue" : "";
+}
+function formalityFrom(dna, milestone) {
+  const elegant = dna.elegantCasual ?? 0;
+  const playful = dna.formalPlayful ?? 0;
+  const age = ageFromMilestone(milestone);
+  if (age !== null && age <= 12) return playful > 0.2 ? "playful and celebratory" : "refined-playful";
+  if (elegant < -0.3) return "formal and elegant";
+  if (elegant > 0.3) return "relaxed and casual";
+  return "elevated but unstuffy";
+}
+function parseColors(raw) {
+  try {
+    const parsed = JSON.parse(raw || "[]");
+    return Array.isArray(parsed) ? parsed.filter((c) => typeof c === "string") : [];
+  } catch {
+    return [];
+  }
+}
+var UNIVERSAL_EXCLUSIONS = [
+  "generated text, letters, words or numbers",
+  "logos, signatures or watermarks",
+  "clip art or generic template graphics",
+  "stock photography",
+  "plastic-looking 3D render objects",
+  "printed paper margins, mats or card frames inside the artwork"
+];
+var CHILD_EXCLUSIONS = ["babyish or infantile imagery", "repetitive rounded cartoon shapes", "visual kitsch"];
+var ADULT_EXCLUSIONS = ["cartoon characters", "childish motifs", "novelty party imagery"];
+var MOTIF_STOPWORDS = /* @__PURE__ */ new Set([
+  "a",
+  "an",
+  "and",
+  "the",
+  "with",
+  "for",
+  "of",
+  "in",
+  "on",
+  "at",
+  "to",
+  "very",
+  "really",
+  "party",
+  "birthday",
+  "themed",
+  "theme",
+  "celebration",
+  "vibe",
+  "feel",
+  "want",
+  "like"
+]);
+function motifsFrom(vibe, themeName) {
+  const source = `${themeName} ${vibe}`.toLowerCase();
+  const words = source.replace(/[^a-z0-9\s-]/g, " ").split(/\s+/).filter((w) => w.length > 3 && !MOTIF_STOPWORDS.has(w));
+  return Array.from(new Set(words)).slice(0, 6);
+}
+function classifyRequirements(input) {
+  const required = [];
+  const preferred = [];
+  const age = ageFromMilestone(input.milestone);
+  const themeIdentity = input.themeName.trim() || input.vibe.trim();
+  if (themeIdentity) required.push(`the ${themeIdentity} visual identity, unmistakably present`);
+  if (input.colors.length > 0) required.push(`the stated colour family: ${input.colors.join(", ")}`);
+  if (input.milestone) {
+    required.push(
+      age !== null && age <= 12 ? `age-appropriate celebratory character for a ${input.milestone} birthday` : `a ${input.milestone} milestone that reads as grown-up, not novelty`
+    );
+  }
+  for (const motif of motifsFrom(input.vibe, input.themeName)) {
+    preferred.push(`a restrained interpretation of "${motif}"`);
+  }
+  preferred.push(`${input.formality} styling`, "modern stationery finish");
+  const excluded = [...UNIVERSAL_EXCLUSIONS];
+  if (age !== null && age <= 12) excluded.push(...CHILD_EXCLUSIONS);
+  else if (age !== null) excluded.push(...ADULT_EXCLUSIONS);
+  return { required, preferred, excluded };
+}
+function buildEventBrief(input) {
+  const { event } = input;
+  const vibe = (input.vibeAnswer?.trim() || event.vibeDescription || "").trim();
+  const milestone = milestoneFrom(event.eventName, event.eventType, vibe);
+  const formality = formalityFrom(input.dna, milestone);
+  const colors = parseColors(event.paletteColors);
+  return {
+    eventName: event.eventName || "",
+    eventType: event.eventType || "",
+    milestone,
+    vibe,
+    themeName: event.themeName || "",
+    colors,
+    formality,
+    dateLine: event.eventDate || "",
+    season: seasonFromDate(event.eventDate || ""),
+    venueType: venueTypeFrom(event),
+    guestCount: input.guestCount,
+    dna: input.dna,
+    inspirationNotes: (input.inspirationNotes || "").trim(),
+    requirements: classifyRequirements({
+      themeName: event.themeName || "",
+      vibe,
+      colors,
+      milestone,
+      formality
+    })
+  };
+}
+function briefIsSufficient(event) {
+  const direction = [event.vibeDescription, event.themeName].map((v) => (v || "").trim()).filter(Boolean);
+  return direction.join(" ").length >= 8;
+}
+var SINGLE_BRIEF_QUESTION = "What should this celebration feel like?";
+function briefToPromptBlock(brief) {
+  const dnaLine = DNA_AXES.map((axis) => {
+    const value = brief.dna[axis.key];
+    return value === void 0 ? null : `${axis.key} ${value > 0 ? axis.poleB : axis.poleA} (${value.toFixed(2)})`;
+  }).filter(Boolean).join(", ");
+  const lines = [
+    `Event: ${brief.eventName || "(unnamed)"}${brief.eventType ? ` \xB7 ${brief.eventType}` : ""}`
+  ];
+  if (brief.milestone) lines.push(`Milestone: ${brief.milestone}`);
+  if (brief.vibe) lines.push(`Host's words: ${brief.vibe}`);
+  if (brief.themeName) lines.push(`Theme: ${brief.themeName}`);
+  if (brief.colors.length) lines.push(`Colours: ${brief.colors.join(", ")}`);
+  lines.push(`Formality: ${brief.formality}`);
+  if (brief.dateLine) lines.push(`Date: ${brief.dateLine}${brief.season ? ` (${brief.season})` : ""}`);
+  if (brief.venueType) lines.push(`Venue: ${brief.venueType}`);
+  if (brief.guestCount !== null) lines.push(`Guests: ${brief.guestCount}`);
+  if (dnaLine) lines.push(`Event DNA: ${dnaLine}`);
+  if (brief.inspirationNotes) lines.push(`Inspiration: ${brief.inspirationNotes}`);
+  lines.push("", `REQUIRED (every concept must deliver all of these):`);
+  brief.requirements.required.forEach((r) => lines.push(`- ${r}`));
+  if (brief.requirements.preferred.length) {
+    lines.push("", "PREFERRED (deliver where it strengthens the concept):");
+    brief.requirements.preferred.forEach((r) => lines.push(`- ${r}`));
+  }
+  lines.push("", "EXCLUDED (must not appear):");
+  brief.requirements.excluded.forEach((r) => lines.push(`- ${r}`));
+  return lines.join("\n");
+}
+
+// shared/inviteLayout.ts
+var LAYOUT_FRAMES = {
+  "full-bleed": {
+    art: { top: 0, left: 0, width: 100, height: 100 },
+    type: { top: 0, left: 0, width: 100, height: 100 },
+    artOpacity: 1
+  },
+  backdrop: {
+    art: { top: 0, left: 0, width: 100, height: 100 },
+    type: { top: 0, left: 0, width: 100, height: 100 },
+    artOpacity: 0.3
+  },
+  banner: {
+    art: { top: 0, left: 0, width: 100, height: 44 },
+    type: { top: 46, left: 6, width: 88, height: 50 },
+    artOpacity: 1
+  },
+  split: {
+    art: { top: 0, left: 0, width: 40, height: 100 },
+    type: { top: 4, left: 44, width: 52, height: 92 },
+    artOpacity: 1
+  },
+  centered: {
+    art: { top: 6, left: 12, width: 76, height: 34 },
+    type: { top: 44, left: 8, width: 84, height: 52 },
+    artOpacity: 1
+  }
+};
+function projectPlacement(box, frame) {
+  return {
+    top: frame.top + box.top * frame.height / 100,
+    left: frame.left + box.left * frame.width / 100,
+    width: box.width * frame.width / 100,
+    height: box.height * frame.height / 100
+  };
+}
+var SAFE_INSET = { x: 8, y: 7 };
+function withinSafeArea(frame) {
+  const top = Math.max(frame.top, SAFE_INSET.y);
+  const left = Math.max(frame.left, SAFE_INSET.x);
+  const bottom = Math.min(frame.top + frame.height, 100 - SAFE_INSET.y);
+  const right = Math.min(frame.left + frame.width, 100 - SAFE_INSET.x);
+  return { top, left, width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
+}
+function objectCoverSourceRect(source, destination, objectPosition = { x: 0.5, y: 0.5 }) {
+  if (source.width <= 0 || source.height <= 0 || destination.width <= 0 || destination.height <= 0) {
+    return { x: 0, y: 0, width: 1, height: 1 };
+  }
+  const sourceAspect = source.width / source.height;
+  const destAspect = destination.width / destination.height;
+  if (sourceAspect > destAspect) {
+    const visibleWidth = destAspect / sourceAspect;
+    return { x: (1 - visibleWidth) * objectPosition.x, y: 0, width: visibleWidth, height: 1 };
+  }
+  const visibleHeight = sourceAspect / destAspect;
+  return { x: 0, y: (1 - visibleHeight) * objectPosition.y, width: 1, height: visibleHeight };
+}
+
+// shared/aiFirstLayout.ts
+var FOCAL_COMPOSITION = /\b(focal|single|centred|centered|portrait|subject|hero|silhouette|emblem|crest|motif)\b/i;
+var FIELD_COMPOSITION = /\b(scatter|scattered|field|pattern|repeat|allover|all-over|texture|wash|tile)\b/i;
+var BACKDROP_RESCUE_OPACITY = 0.62;
+var OVERLAY_STRENGTH = { none: 0, gradient: 1, veil: 2, plate: 3 };
+function strongerOverlay(a, b2) {
+  return OVERLAY_STRENGTH[a] >= OVERLAY_STRENGTH[b2] ? a : b2;
+}
+var OVERLAY_COVERAGE = {
+  none: 0,
+  veil: 0.28,
+  gradient: 0.34,
+  plate: 0.4
+};
+var MAX_OVERLAY_COVERAGE = 0.4;
+var REGION_BOX = {
+  "upper-third": { top: 0, left: 0, width: 100, height: 34 },
+  center: { top: 33, left: 0, width: 100, height: 34 },
+  "lower-third": { top: 66, left: 0, width: 100, height: 34 },
+  "left-panel": { top: 0, left: 0, width: 46, height: 100 },
+  "right-panel": { top: 0, left: 54, width: 46, height: 100 }
+};
+var MIN_SAFE_TYPE_PLACEMENT_COVERAGE = 0.6;
+function overlaps(a, b2) {
+  const x = Math.max(0, Math.min(a.left + a.width, b2.left + b2.width) - Math.max(a.left, b2.left));
+  const y = Math.max(0, Math.min(a.top + a.height, b2.top + b2.height) - Math.max(a.top, b2.top));
+  return x * y;
+}
+function typePlacementFrame(concept, layoutStyle = concept.layoutStyle) {
+  const theme = getLaunchTheme(concept.baseThemeId);
+  if (!theme) return withinSafeArea(LAYOUT_FRAMES[layoutStyle].type);
+  const placement = getPlacement(theme, concept.placementId);
+  return withinSafeArea(projectPlacement(placement.box, LAYOUT_FRAMES[layoutStyle].type));
+}
+function safeTypographyPlacementCoverage(concept, layoutStyle = concept.layoutStyle) {
+  const typeBox = typePlacementFrame(concept, layoutStyle);
+  const area = typeBox.width * typeBox.height;
+  if (area <= 0) return 0;
+  return overlaps(REGION_BOX[concept.safeTypographyRegion], typeBox) / area;
+}
+function canonicalSafeTypographyRegion(concept, layoutStyle = concept.layoutStyle) {
+  if (safeTypographyPlacementCoverage(concept, layoutStyle) >= MIN_SAFE_TYPE_PLACEMENT_COVERAGE) {
+    return concept.safeTypographyRegion;
+  }
+  return Object.keys(REGION_BOX).reduce((best, candidate) => {
+    const bestCoverage = safeTypographyPlacementCoverage({ ...concept, safeTypographyRegion: best }, layoutStyle);
+    const candidateCoverage = safeTypographyPlacementCoverage(
+      { ...concept, safeTypographyRegion: candidate },
+      layoutStyle
+    );
+    return candidateCoverage > bestCoverage ? candidate : best;
+  }, concept.safeTypographyRegion);
+}
+function canonicalTypeGeometry(concept, layoutStyle = concept.layoutStyle) {
+  const safeTypographyRegion = canonicalSafeTypographyRegion(concept, layoutStyle);
+  const canonicalRegionConcept = { ...concept, safeTypographyRegion };
+  if (safeTypographyPlacementCoverage(canonicalRegionConcept, layoutStyle) >= MIN_SAFE_TYPE_PLACEMENT_COVERAGE) {
+    return { placementId: concept.placementId, safeTypographyRegion };
+  }
+  const theme = getLaunchTheme(concept.baseThemeId);
+  if (!theme) return { placementId: concept.placementId, safeTypographyRegion };
+  let best = {
+    placementId: concept.placementId,
+    safeTypographyRegion,
+    coverage: safeTypographyPlacementCoverage(canonicalRegionConcept, layoutStyle)
+  };
+  for (const placement of theme.placements) {
+    for (const region of Object.keys(REGION_BOX)) {
+      const coverage = safeTypographyPlacementCoverage(
+        { ...concept, placementId: placement.id, safeTypographyRegion: region },
+        layoutStyle
+      );
+      if (coverage > best.coverage) best = { placementId: placement.id, safeTypographyRegion: region, coverage };
+    }
+  }
+  return { placementId: best.placementId, safeTypographyRegion: best.safeTypographyRegion };
+}
+function validateLayoutBeforeGeneration(concept) {
+  const issues = [];
+  let layoutStyle = concept.layoutStyle;
+  let overlay = concept.minOverlay;
+  let artworkOpacity;
+  const composition = `${concept.art.composition} ${concept.art.prompt}`;
+  const isFocal = FOCAL_COMPOSITION.test(composition) && !FIELD_COMPOSITION.test(composition);
+  const isField = FIELD_COMPOSITION.test(composition);
+  if (layoutStyle === "backdrop" && isFocal) {
+    issues.push({
+      code: "backdrop-erases-focal-subject",
+      message: "backdrop renders artwork at 30% opacity, which would wash out this concept's primary focal subject",
+      repair: "raise-artwork-opacity"
+    });
+    artworkOpacity = BACKDROP_RESCUE_OPACITY;
+  }
+  if (layoutStyle === "split" && /\b(wide|panoramic|landscape|horizon|banner)\b/i.test(composition)) {
+    issues.push({
+      code: "split-art-not-panel-shaped",
+      message: "split renders artwork into a tall 40%-wide panel; this composition is authored wide",
+      repair: "change-layout"
+    });
+    layoutStyle = "banner";
+  }
+  if (layoutStyle === "banner" && /\b(mat|matted|paper margin|border|frame|inset panel)\b/i.test(composition)) {
+    issues.push({
+      code: "banner-internal-mat",
+      message: "banner artwork must not draw its own mat or frame \u2014 the renderer already frames the card",
+      repair: "regenerate"
+    });
+  }
+  if (isField && overlay === "none") {
+    issues.push({
+      code: "busy-scatter-without-quiet-region",
+      message: "an all-over composition needs at least a restrained local veil behind the type",
+      repair: "strengthen-overlay"
+    });
+    overlay = strongerOverlay(overlay, "veil");
+  }
+  if (layoutStyle === "full-bleed" && concept.focalStrategy === "narrative-scene" && overlay !== "plate") {
+    issues.push({
+      code: "art-behind-type-needs-local-surface",
+      message: "a full-bleed narrative scene requires a solid local paper panel behind live type",
+      repair: "strengthen-overlay"
+    });
+    overlay = "plate";
+  }
+  if ((layoutStyle === "full-bleed" || layoutStyle === "backdrop") && (overlay === "none" || overlay === "gradient")) {
+    issues.push({
+      code: "art-behind-type-needs-local-surface",
+      message: `${layoutStyle} artwork behind live type requires a local veil or plate`,
+      repair: "strengthen-overlay"
+    });
+    overlay = "veil";
+  }
+  if (OVERLAY_COVERAGE[overlay] > MAX_OVERLAY_COVERAGE) {
+    issues.push({
+      code: "overlay-obscures-artwork",
+      message: `overlay "${overlay}" covers more than ${Math.round(MAX_OVERLAY_COVERAGE * 100)}% of the card`,
+      repair: "strengthen-overlay"
+    });
+    overlay = "veil";
+  }
+  const safeCoverage = safeTypographyPlacementCoverage(concept, layoutStyle);
+  if (safeCoverage < MIN_SAFE_TYPE_PLACEMENT_COVERAGE) {
+    issues.push({
+      code: "safe-region-outside-type-area",
+      message: `safeTypographyRegion "${concept.safeTypographyRegion}" covers only ${Math.round(safeCoverage * 100)}% of placement "${concept.placementId}" in the ${layoutStyle} layout (minimum ${Math.round(MIN_SAFE_TYPE_PLACEMENT_COVERAGE * 100)}%)`,
+      repair: "regenerate"
+    });
+  }
+  return { layoutStyle, overlay, artworkOpacity, issues, clean: issues.length === 0 };
+}
+var MAX_SALIENT_CROP_FRACTION = 0.25;
+function evaluateCropSafety(layoutStyle, artwork, salientRegions, objectPosition = { x: 0.5, y: 0.5 }) {
+  const frame = LAYOUT_FRAMES[layoutStyle].art;
+  const destination = { width: frame.width, height: frame.height * (4 / 3) };
+  const visible = objectCoverSourceRect(artwork, destination, objectPosition);
+  let worst = 0;
+  for (const region of salientRegions) {
+    const area = region.width * region.height;
+    if (area <= 0) continue;
+    const overlapW = Math.max(
+      0,
+      Math.min(region.x + region.width, visible.x + visible.width) - Math.max(region.x, visible.x)
+    );
+    const overlapH = Math.max(
+      0,
+      Math.min(region.y + region.height, visible.y + visible.height) - Math.max(region.y, visible.y)
+    );
+    const cropped = 1 - overlapW * overlapH / area;
+    if (cropped > worst) worst = cropped;
+  }
+  const safe = worst <= MAX_SALIENT_CROP_FRACTION;
+  return {
+    worstCroppedFraction: Math.round(worst * 1e3) / 1e3,
+    safe,
+    issues: safe ? [] : [
+      {
+        code: "full-bleed-crop-unsafe",
+        message: `the ${layoutStyle} crop removes ${Math.round(worst * 100)}% of a salient region (limit ${Math.round(
+          MAX_SALIENT_CROP_FRACTION * 100
+        )}%)`,
+        repair: "change-layout"
+      }
+    ]
+  };
+}
+var MIN_FOCAL_VISIBILITY_RATIO = 1.3;
+
+// shared/aiFirstInvite.ts
+var SAFE_TYPOGRAPHY_REGIONS = [
+  "upper-third",
+  "center",
+  "lower-third",
+  "left-panel",
+  "right-panel"
+];
+var FOCAL_STRATEGIES = [
+  "narrative-scene",
+  "iconic-detail",
+  "graphic-world",
+  "tactile-still-life"
+];
+var VISUAL_MOODS = [
+  "cinematic-narrative",
+  "sculptural-editorial",
+  "graphic-modernist",
+  "tactile-artisanal"
+];
+var HEX = /^#[0-9a-fA-F]{6}$/;
+var hex = external_exports.string().regex(HEX, "must be a 6-digit hex colour");
+var semanticPaletteSchema = external_exports.object({
+  textSurface: hex,
+  headlineColor: hex,
+  bodyColor: hex,
+  accentColor: hex
+});
+var artDirectionSchema = external_exports.object({
+  /** e.g. "watercolor", "linocut", "flat vector illustration". */
+  medium: external_exports.string().min(3).max(60),
+  /** e.g. "single off-centre focal subject", "full-bleed scattered field". */
+  composition: external_exports.string().min(3).max(120),
+  /**
+   * The art-only image prompt. The server appends the canvas-edge and
+   * no-text guardrails, so the model must not spend tokens restating them.
+   */
+  prompt: external_exports.string().min(40).max(1200)
+});
+var dnaHintsSchema = external_exports.object(
+  Object.fromEntries(DNA_AXES.map((a) => [a.key, external_exports.number().min(-1).max(1).optional()]))
+).partial();
+var aiFirstConceptSchema = external_exports.object({
+  conceptName: external_exports.string().min(2).max(60),
+  /** One sentence a host reads on the card. Not a design rationale. */
+  description: external_exports.string().min(10).max(220),
+  /**
+   * Required for newly generated quartets and audited before artwork spend.
+   * Optional at the storage boundary so previews saved before this field was
+   * introduced remain readable and applicable.
+   */
+  focalStrategy: external_exports.enum(FOCAL_STRATEGIES).optional(),
+  visualMood: external_exports.enum(VISUAL_MOODS).optional(),
+  styleLaneId: external_exports.string().refine((v) => STYLE_LANES.some((l) => l.id === v), "unknown styleLaneId"),
+  layoutStyle: external_exports.enum(LAYOUT_STYLES),
+  borderStyle: external_exports.enum(BORDER_STYLES),
+  fontPairingId: external_exports.string().refine((v) => FONT_PAIRINGS.some((f) => f.id === v), "unknown fontPairingId"),
+  /** The curated theme this concept inherits its uncustomised furniture from. */
+  baseThemeId: external_exports.string().refine((v) => LAUNCH_THEMES.some((t) => t.id === v), "unknown baseThemeId"),
+  /** Must be a placement the base theme actually ships. Cross-checked below. */
+  placementId: external_exports.string().min(1),
+  texture: external_exports.object({
+    style: external_exports.enum(TEXTURE_STYLES),
+    intensity: external_exports.number().min(0).max(1)
+  }),
+  dividerStyle: external_exports.enum(DIVIDER_STYLES),
+  motif: external_exports.object({
+    id: external_exports.enum(THEME_ART_IDS),
+    placement: external_exports.enum(ART_PLACEMENTS)
+  }),
+  semanticPalette: semanticPaletteSchema,
+  art: artDirectionSchema,
+  safeTypographyRegion: external_exports.enum(SAFE_TYPOGRAPHY_REGIONS),
+  /** The least overlay that keeps type legible. The gate may strengthen it. */
+  minOverlay: external_exports.enum(OVERLAY_TREATMENTS),
+  /** Only the axes the brief actually carried. Optional throughout. */
+  dnaHints: dnaHintsSchema.optional()
+});
+var TEXT_CAPS = [
+  [["conceptName"], aiFirstConceptSchema.shape.conceptName.maxLength],
+  [["description"], aiFirstConceptSchema.shape.description.maxLength],
+  [["art", "medium"], artDirectionSchema.shape.medium.maxLength],
+  [["art", "composition"], artDirectionSchema.shape.composition.maxLength],
+  [["art", "prompt"], artDirectionSchema.shape.prompt.maxLength]
+];
+function clampText(value, max2) {
+  if (value.length <= max2) return value;
+  const cut = value.slice(0, max2);
+  const space = cut.lastIndexOf(" ");
+  return (space > max2 * 0.6 ? cut.slice(0, space) : cut).replace(/[\s,;:—–-]+$/, "");
+}
+function normalizeConceptDraft(value) {
+  if (typeof value !== "object" || value === null) return { value, notes: [] };
+  const draft = structuredClone(value);
+  const notes = [];
+  for (const [path8, max2] of TEXT_CAPS) {
+    const parent = path8.length === 1 ? draft : draft[path8[0]];
+    const key = path8[path8.length - 1];
+    const text2 = parent?.[key];
+    if (typeof text2 !== "string" || text2.length <= max2) continue;
+    parent[key] = clampText(text2, max2);
+    notes.push(`${path8.join(".")} trimmed from ${text2.length} to ${max2} characters`);
+  }
+  const hints = draft.dnaHints;
+  if (typeof hints === "object" && hints !== null) {
+    for (const [key, hint] of Object.entries(hints)) {
+      if (typeof hint === "number" && Number.isFinite(hint) && hint >= -1 && hint <= 1) continue;
+      delete hints[key];
+      notes.push(`dnaHints.${key} dropped \u2014 ${JSON.stringify(hint)} is not a number in [-1, 1]`);
+    }
+  }
+  return { value: draft, notes };
+}
+function parseAiFirstConcept(value) {
+  const draft = normalizeConceptDraft(value);
+  const parsed = aiFirstConceptSchema.safeParse(draft.value);
+  if (!parsed.success) {
+    return { ok: false, errors: parsed.error.issues.map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`) };
+  }
+  const theme = getLaunchTheme(parsed.data.baseThemeId);
+  if (!theme) return { ok: false, errors: [`baseThemeId: unknown theme ${parsed.data.baseThemeId}`] };
+  if (!theme.placements.some((p) => p.id === parsed.data.placementId)) {
+    return {
+      ok: false,
+      errors: [
+        `placementId: "${parsed.data.placementId}" is not a placement of "${theme.id}" (valid: ${theme.placements.map((p) => p.id).join(", ")})`
+      ]
+    };
+  }
+  return { ok: true, concept: parsed.data, normalized: draft.notes };
+}
+var AI_FIRST_QUALITY_GATE_VERSION = 3;
+function conceptImageFingerprintInput(concept) {
+  const imageFields = [
+    concept.art.medium.trim().toLowerCase(),
+    concept.art.composition.trim().toLowerCase(),
+    concept.art.prompt.trim(),
+    concept.layoutStyle,
+    concept.styleLaneId,
+    concept.baseThemeId,
+    concept.placementId,
+    concept.safeTypographyRegion
+  ];
+  return JSON.stringify(
+    concept.focalStrategy && concept.visualMood ? [AI_FIRST_QUALITY_GATE_VERSION, concept.focalStrategy, concept.visualMood, ...imageFields] : [AI_FIRST_QUALITY_GATE_VERSION, ...imageFields]
+  );
+}
+function aspectRatioForLayout(layout) {
+  if (layout === "banner") return "16:9";
+  if (layout === "full-bleed" || layout === "backdrop" || layout === "split") return "9:16";
+  return "1:1";
+}
+var ARTWORK_EDGE_REQUIREMENT = "Artwork extends fully to every canvas edge. No paper margin, mat, card border, printed frame or blank perimeter.";
+var ARTWORK_TEXT_REQUIREMENT = "No text, no letters, no words, no numbers, no logos, no watermarks.";
+var FRAMING_ADVICE_THRESHOLD = 0.8;
+function visibleFractionForLayout(layout) {
+  const frame = LAYOUT_FRAMES[layout].art;
+  const destination = frame.width / (frame.height * (4 / 3));
+  const source = EXPECTED_SOURCE_ASPECT[aspectRatioForLayout(layout)];
+  return destination > source ? { x: 1, y: source / destination } : { x: destination / source, y: 1 };
+}
+var EXPECTED_SOURCE_ASPECT = {
+  "16:9": 1536 / 1024,
+  "1:1": 1,
+  "9:16": 1024 / 1536
+};
+function safeFramingRequirement(layout) {
+  const visible = visibleFractionForLayout(layout);
+  const clauses = [];
+  if (visible.x < FRAMING_ADVICE_THRESHOLD) {
+    clauses.push(`the central ${Math.round(visible.x * 100)}% of the width`);
+  }
+  if (visible.y < FRAMING_ADVICE_THRESHOLD) {
+    clauses.push(`the central ${Math.round(visible.y * 100)}% of the height`);
+  }
+  if (clauses.length === 0) return "";
+  return `Compose so the subject and every important detail sit within ${clauses.join(
+    " and "
+  )} \u2014 the rest is cropped away. Background texture still reaches every edge.`;
+}
+function typographySafetyRequirement(concept) {
+  if (concept.layoutStyle !== "full-bleed" && concept.layoutStyle !== "backdrop") return "";
+  const frame = typePlacementFrame(concept);
+  const left = Math.round(frame.left);
+  const right = Math.round(frame.left + frame.width);
+  const top = Math.round(frame.top);
+  const bottom = Math.round(frame.top + frame.height);
+  return `Reserve the rectangle from ${left}% to ${right}% of canvas width and ${top}% to ${bottom}% of canvas height as a visually quiet typography zone. Keep every face, person, hero object, required subject and high-contrast detail entirely outside this box; only low-detail background texture may pass through it. This exact box overrides any conflicting quiet-region wording earlier in the brief.`;
+}
+function buildArtworkPrompt(concept) {
+  return [
+    `${concept.art.medium} illustration.`,
+    `${concept.art.composition}.`,
+    concept.art.prompt.trim().replace(/\s+$/, ""),
+    safeFramingRequirement(concept.layoutStyle),
+    typographySafetyRequirement(concept),
+    ARTWORK_EDGE_REQUIREMENT,
+    ARTWORK_TEXT_REQUIREMENT
+  ].join(" ").replace(/\s+/g, " ").trim();
+}
+
+// shared/aiFirstStream.ts
+var TARGET_DIRECTION_COUNT = 4;
+var PROGRESS_MESSAGES = {
+  understanding: "Understanding the event's visual direction\u2026",
+  reviewingConcepts: "Comparing four creative directions before artwork\u2026",
+  firstDirection: "Creating the first invitation direction\u2026",
+  anotherDirection: "Building another interpretation\u2026",
+  finishing: "Checking the finishing details\u2026",
+  ready: "Four directions are ready."
+};
+var MIN_DIMENSION_SCORE = 4;
+var QUALITY_REJECTION_MESSAGE = "Posy rejected this artwork because it didn't clearly deliver your theme at the required quality. Nothing was applied, and no automatic retry was made.";
+function hostFacingGenerationError(message2) {
+  if (/generated artwork did not meet Posy's quality standard/i.test(message2) || /invitation generation delivered 0 of \d+ promised directions/i.test(message2)) {
+    return QUALITY_REJECTION_MESSAGE;
+  }
+  return message2;
+}
+
+// server/aiFirst/conceptPreflight.ts
+var SUBJECT_FAMILIES = [
+  {
+    id: "construction",
+    label: "construction / little-builder",
+    trigger: /\b(construction|builder|building site|job ?site|digging|digger|excavat|bulldoz|dump truck|hard hat)\b/i,
+    // "Blueprint" by itself is deliberately not enough. It is a legitimate
+    // graphic-world cue, but the whole-quartet gate still requires a second
+    // coherent construction cue plus the full celebration identity.
+    artworkCue: /\b(excavator|bulldozer|dump truck|backhoe|front loader|digger|crane|hard hat|safety vest|traffic cone|construction vehicle|building site|job ?site|cement mixer|concrete mixer|scaffold|shovel|tool belt|lumber|concrete blocks?|caution stripe|site plan|blueprint|survey grid|builder tools?)\b/i,
+    identityCue: /\b(construction|builder|building site|job ?site|digging|digger|excavator|bulldozer|dump truck|backhoe|front loader|cement mixer|crane|hard hat)\b/i,
+    bindingRequirements: [
+      "The construction / little-builder identity must be unmistakable through at least two coherent builder cues suited to the direction \u2014 machinery, machine details, jobsite materials, tools, safety gear, or blueprint/site-plan language",
+      "Do not make a full construction machine mandatory unless the direction's focal strategy is narrative-scene or iconic-detail",
+      "Keep every important builder and celebration cue fully visible within the central 70% of the frame so the invitation layout cannot crop it away",
+      "Flowers, botanicals, abstract geometry, paper texture and colour alone do not satisfy or replace the construction identity"
+    ],
+    // Only positive, binary visual facts belong in the critic's
+    // requiredPresent checklist. Framing instructions and negative prompt
+    // rules remain binding on generation, but they are not objects a critic
+    // can truthfully mark "visibly present" in the finished pixels.
+    reviewRequirements: [
+      "The construction / little-builder identity is unmistakably visible through at least two coherent builder or jobsite cues"
+    ],
+    compatibleThemeIds: [],
+    // A dump truck is a construction cue, not evidence that the host also
+    // requested a separate vehicles/racing theme. Specific identities win
+    // over broader keyword families so compound-theme validation is real,
+    // not an artefact of overlapping regular expressions.
+    suppresses: ["vehicles"]
+  },
+  {
+    id: "dinosaur",
+    label: "dinosaur",
+    trigger: /\b(dinosaur|dino|jurassic|prehistoric|fossil)\b/i,
+    artworkCue: /\b(dinosaur|dino|tyrannosaur|t-?rex|triceratops|stegosaur|brontosaur|raptor|fossil|prehistoric)\b/i,
+    compatibleThemeIds: ["dinosaur-museum"]
+  },
+  {
+    id: "space",
+    label: "space / celestial",
+    trigger: /\b(space|astronaut|rocket|planet|galaxy|cosmic|celestial|moon|stars?)\b/i,
+    artworkCue: /\b(astronaut|rocket|planet|orbit|galaxy|cosmic|celestial|moon|constellation|stars?)\b/i,
+    compatibleThemeIds: ["celestial-heirloom"]
+  },
+  {
+    id: "western",
+    label: "western / cowgirl",
+    trigger: /\b(cowgirl|cowboy|western|rodeo|ranch|lariat|lasso)\b/i,
+    artworkCue: /\b(cowgirl|cowboy|western|rodeo|ranch|boot|hat|lariat|lasso|horse|sheriff)\b/i,
+    compatibleThemeIds: []
+  },
+  {
+    id: "princess",
+    label: "princess / royal",
+    trigger: /\b(princess|royal|castle|fairytale|fairy tale)\b/i,
+    artworkCue: /\b(princess|crown|tiara|castle|royal|carriage|turret|palace)\b/i,
+    compatibleThemeIds: []
+  },
+  {
+    id: "superhero",
+    label: "superhero",
+    trigger: /\b(superhero|super hero|comic book|caped)\b/i,
+    artworkCue: /\b(superhero|hero|cape|mask|comic|lightning bolt|city skyline|shield)\b/i,
+    compatibleThemeIds: []
+  },
+  {
+    id: "unicorn",
+    label: "unicorn",
+    trigger: /\b(unicorn|rainbow magic)\b/i,
+    artworkCue: /\b(unicorn|horn|rainbow|magical horse)\b/i,
+    compatibleThemeIds: []
+  },
+  {
+    id: "mermaid",
+    label: "mermaid / under-the-sea",
+    trigger: /\b(mermaid|under the sea|undersea|ocean|sea life)\b/i,
+    artworkCue: /\b(mermaid|seashell|coral|ocean|undersea|seaweed|pearl|fish|wave)\b/i,
+    compatibleThemeIds: ["pool-editorial"]
+  },
+  {
+    id: "pirate",
+    label: "pirate",
+    trigger: /\b(pirate|treasure island|buccaneer)\b/i,
+    artworkCue: /\b(pirate|treasure|ship|sail|anchor|compass|map|buccaneer)\b/i,
+    compatibleThemeIds: []
+  },
+  {
+    id: "vehicles",
+    label: "vehicles / racing",
+    trigger: /\b(race car|racing|cars?|trucks?|transportation|train|airplane)\b/i,
+    artworkCue: /\b(race car|racing|car|truck|train|airplane|vehicle|road|track|wheel)\b/i,
+    compatibleThemeIds: []
+  },
+  {
+    id: "safari",
+    label: "safari / jungle",
+    trigger: /\b(safari|jungle|zoo|wild animals?)\b/i,
+    artworkCue: /\b(safari|jungle|lion|giraffe|elephant|zebra|leopard|monkey|wild animal)\b/i,
+    compatibleThemeIds: []
+  },
+  {
+    id: "farm",
+    label: "farm / barnyard",
+    trigger: /\b(farm|barnyard|farmhouse|tractor)\b/i,
+    artworkCue: /\b(farm|barn|tractor|cow|pig|chicken|horse|hay bale|field)\b/i,
+    compatibleThemeIds: []
+  },
+  {
+    id: "roller",
+    label: "roller-skating / disco",
+    trigger: /\b(roller ?skate|roller disco|skating|disco)\b/i,
+    artworkCue: /\b(roller ?skate|skating|disco ball|dance floor|disco)\b/i,
+    compatibleThemeIds: ["roller-editorial"]
+  },
+  {
+    id: "pool",
+    label: "pool / swimming",
+    trigger: /\b(pool|poolside|swimming|splash)\b/i,
+    artworkCue: /\b(pool|poolside|swimming|water|wave|float|splash|cabana)\b/i,
+    compatibleThemeIds: ["pool-editorial"]
+  },
+  {
+    id: "garden",
+    label: "garden / floral",
+    trigger: /\b(garden|botanical|floral|flower|wildflower|meadow)\b/i,
+    artworkCue: /\b(garden|botanical|floral|flower|bloom|leaf|foliage|wildflower|meadow)\b/i,
+    compatibleThemeIds: ["garden-editorial", "meadow-storybook"]
+  }
+];
+function briefIdentity(brief) {
+  return [brief.eventName, brief.eventType, brief.themeName, brief.vibe, ...brief.requirements.required].join(" ");
+}
+function subjectFamiliesForBrief(brief) {
+  const identity = briefIdentity(brief);
+  const matches = SUBJECT_FAMILIES.filter((family) => family.trigger.test(identity));
+  const suppressed = new Set(matches.flatMap((family) => family.suppresses ?? []));
+  return matches.filter((family) => !suppressed.has(family.id));
+}
+function concreteSubjectRequirementsForBrief(brief) {
+  return subjectFamiliesForBrief(brief).flatMap((family) => family.bindingRequirements ?? []);
+}
+function concreteSubjectReviewRequirementsForBrief(brief) {
+  return subjectFamiliesForBrief(brief).flatMap((family) => family.reviewRequirements ?? []);
+}
+function preflightConceptForBrief(concept, brief) {
+  const families = subjectFamiliesForBrief(brief);
+  if (families.length === 0) return { passed: true, missingSubjects: [], message: "" };
+  const artBrief = `${concept.art.medium} ${concept.art.composition} ${concept.art.prompt}`;
+  const directionIdentity = concept.description;
+  const missingSubjects = families.filter((family) => {
+    if (!family.artworkCue.test(artBrief)) return true;
+    if (family.identityCue && !family.identityCue.test(directionIdentity)) return true;
+    return false;
+  }).map((family) => family.label);
+  return {
+    passed: missingSubjects.length === 0,
+    missingSubjects,
+    message: missingSubjects.length === 0 ? "" : `art brief does not depict the required concrete subject: ${missingSubjects.join(", ")}`
+  };
+}
+function curatedThemeMatchesBrief(themeId, brief) {
+  const families = subjectFamiliesForBrief(brief);
+  if (families.length === 0) return true;
+  return families.every((family) => family.compatibleThemeIds.includes(themeId));
+}
+
+// server/aiFirst/prompt.ts
+var list = (values2) => values2.join(" | ");
+function themeMenu() {
+  return LAUNCH_THEMES.map((t) => `  ${t.id} (${t.style}) placements: ${t.placements.map((p) => p.id).join(", ")}`).join(
+    "\n"
+  );
+}
+function buildSystemPrompt() {
+  return `You are Posy's invitation art director. You turn an event brief into four finished invitation directions.
+
+Emit NDJSON: exactly four lines, each a complete standalone JSON object, no array wrapper, no markdown fence, no commentary. Emit each object in full before starting the next. Posy compares and validates the complete quartet before any artwork may be generated.
+
+The four are a curated creative quartet, not four variations of one object. They must differ STRUCTURALLY, not by recolour:
+- use every focalStrategy exactly once: ${list(FOCAL_STRATEGIES)}
+- use every visualMood exactly once: ${list(VISUAL_MOODS)}
+- 4 different illustration media
+- 4 different style lanes
+- at least 3 different layouts
+- 4 different font pairings
+- 4 genuinely different compositions and focal ideas
+
+Focal-strategy contract:
+- narrative-scene: tell a small event story in a setting; the celebration and theme interact
+- iconic-detail: one sculptural close detail, not a repeat of the narrative scene
+- graphic-world: build the theme from maps, plans, marks, patterns or visual systems; no hero object required
+- tactile-still-life: arrange meaningful materials, tools or celebration objects as elevated stationery art
+
+The same dominant object or substantially equivalent scene may not lead more than one direction. If one direction uses a full vehicle, character, cake, flower, animal or other hero object, the other directions must interpret the event through different visual language.
+
+Every direction must carry the COMPLETE event identity, including occasion/milestone, setting or celebration format, and theme. Do not silently reduce a compound brief to its easiest noun. Event identity belongs in conceptName/description and in the artwork itself; artwork cannot rely on invitation text to explain the theme.
+
+Every identifier must come verbatim from these menus. An id outside them is a hard failure.
+
+layoutStyle: ${list(LAYOUT_STYLES)}
+borderStyle: ${list(BORDER_STYLES)}
+styleLaneId: ${list(STYLE_LANES.map((l) => l.id))}
+fontPairingId: ${list(FONT_PAIRINGS.map((f) => f.id))}
+texture.style: ${list(TEXTURE_STYLES)}
+dividerStyle: ${list(DIVIDER_STYLES)}
+motif.id: ${list(THEME_ART_IDS)}
+motif.placement: ${list(ART_PLACEMENTS)}
+minOverlay: ${list(OVERLAY_TREATMENTS)}
+safeTypographyRegion: ${list(SAFE_TYPOGRAPHY_REGIONS)}
+dnaHints \u2014 each value is a NUMBER from -1 to 1, never a word: ${DNA_AXES.map((a) => `${a.key} (-1 ${a.poleA} \u2026 +1 ${a.poleB})`).join(", ")}
+
+baseThemeId \u2014 the curated theme whose envelope, placements and furniture this direction inherits. placementId MUST be one of that theme's own placements:
+${themeMenu()}
+
+Colour. Declare four roles as 6-digit hex. They map onto what the renderer paints:
+  textSurface   the surface type is set on
+  headlineColor the display headline
+  bodyColor     date / time / location
+  accentColor   eyebrow, divider, RSVP cue, and the card frame
+Aim for headline 3:1, body and accent 4.5:1 against textSurface. Do not report ratios \u2014 the server measures the composited card and repairs anything short.
+
+Artwork. Write \`art.prompt\` as a real art brief: subject, treatment, palette behaviour, mood. Be specific \u2014 "chrome lariat loop catching cool rim light against deep navy, fine grain" not "western elements". Do NOT add no-text or full-bleed instructions; the server appends those verbatim to every prompt. Do not describe frames, mats or paper margins \u2014 the renderer draws the card's frame, so artwork that draws its own produces a doubled border.
+
+Subject-driven themes are literal requirements, not optional mood words. If the brief names construction, dinosaurs, space, western, princesses, superheroes, unicorns, mermaids, pirates, vehicles, safari, farm, skating, pool or another concrete subject, EVERY art.prompt must name and visibly depict that subject. Generic geometry, botanicals, colour or texture never substitute for the stated subject. For a compound theme, visibly carry every part of the identity. The host must recognise the theme before reading invitation copy.
+
+Construction / little-builder themes permit sophisticated variety. A full excavator is NOT mandatory in every direction. Use the declared focal strategy: a narrative jobsite celebration, one machinery detail, blueprint/site-plan graphic language, or a tactile arrangement of builder tools and materials. Each must still read unmistakably as construction and as the actual celebration.
+
+Match layout to composition. \`backdrop\` renders art at 30% opacity, so do not use it for one focal subject. \`split\` is a tall 40%-wide panel. \`full-bleed\` and \`banner\` are centre-cropped; keep essentials away from edges. \`safeTypographyRegion\` MUST cover most of \`placementId\`: use \`center\` for centred type and \`right-panel\` for split type. Posy canonicalizes exact geometry. Do not put region labels such as "quiet upper third" in art.composition or art.prompt. Keep faces, people, hero objects and required subjects outside the quiet region.
+
+Per line, emit exactly:
+{"conceptName":"","description":"","focalStrategy":"","visualMood":"","styleLaneId":"","layoutStyle":"","borderStyle":"","fontPairingId":"","baseThemeId":"","placementId":"","texture":{"style":"","intensity":0.0},"dividerStyle":"","motif":{"id":"","placement":""},"semanticPalette":{"textSurface":"#","headlineColor":"#","bodyColor":"#","accentColor":"#"},"art":{"medium":"","composition":"","prompt":""},"safeTypographyRegion":"","minOverlay":"","dnaHints":{}}
+
+Length budgets, enforced by the validator \u2014 a line over budget is discarded: conceptName 60 characters, description 220, art.medium 60, art.composition 120, art.prompt 1200.
+
+description is one sentence a host reads on the card \u2014 not a design rationale. art.composition is a terse framing note ("tall left panel, subject centred"), not a second art brief \u2014 the detail belongs in art.prompt. dnaHints carries only axes the brief actually stated. No other keys.`;
+}
+function orderedQuartetBlueprint(brief) {
+  const construction = subjectFamiliesForBrief(brief).some((family) => family.id === "construction");
+  const lines = [
+    "Line 1 \u2014 focalStrategy=narrative-scene; visualMood=cinematic-narrative; styleLaneId=editorial-premium; fontPairingId=editorial-serif; art.medium must be gouache; tell an event story in its setting.",
+    "Line 2 \u2014 focalStrategy=iconic-detail; visualMood=sculptural-editorial; styleLaneId=bold-graphic; fontPairingId=deco-luxe; art.medium must be watercolor; isolate one sculptural subject detail.",
+    "Line 3 \u2014 focalStrategy=graphic-world; visualMood=graphic-modernist; styleLaneId=minimal-modern; fontPairingId=minimal-geometric; art.medium must be cut-paper collage; build a visual system rather than a hero object.",
+    "Line 4 \u2014 focalStrategy=tactile-still-life; visualMood=tactile-artisanal; styleLaneId=handcrafted-rustic; fontPairingId=rustic-handwritten; art.medium must be linocut; arrange meaningful materials and celebration objects.",
+    "Use four different layoutStyle values. The line number, focal strategy, visual mood, style lane, font pairing, medium family, and focal subject are binding and may not be swapped or repeated."
+  ];
+  if (construction) {
+    lines.push(
+      "Construction subject map: Line 1 is a machine-free jobsite celebration led by builder activity, materials, safety gear and party details; Line 2 is the ONLY machine-led direction and may show one close machinery detail; Line 3 is a vehicle-free blueprint/site-plan world with measurement and jobsite markings; Line 4 is a vehicle-free builder's still life with at least three coherent tools, safety items or materials.",
+      "A dump truck, excavator, bulldozer, crane, loader or other machine named in Line 2 must not appear in any other line. Lines 1, 3 and 4 must not use any vehicle as their dominant subject."
+    );
+  }
+  return lines;
+}
+function milestoneIdentityContract(brief) {
+  const birthday = /\bbirthday\b/i.test(`${brief.eventName} ${brief.eventType} ${brief.vibe}`);
+  if (!birthday || !brief.milestone) return [];
+  return [
+    `Every description and every art.prompt must literally say "${brief.milestone} birthday" or spell the ordinal out (for example, "third birthday").`,
+    "This phrase communicates event identity to the art director; the artwork must still contain no rendered lettering, words or numerals."
+  ];
+}
+function buildUserPrompt(input) {
+  const parts = [briefToPromptBlock(input.brief)];
+  const concreteRequirements = concreteSubjectRequirementsForBrief(input.brief);
+  if (concreteRequirements.length > 0) {
+    parts.push(
+      "",
+      "CONCRETE SUBJECT CONTRACT (every concept must satisfy every line):",
+      ...concreteRequirements.map((requirement) => `- ${requirement}.`),
+      "- Every description and every art.prompt must explicitly identify the host's concrete subject, not merely a colour, texture or material."
+    );
+  }
+  const milestoneContract = milestoneIdentityContract(input.brief);
+  if (milestoneContract.length > 0) {
+    parts.push("", "MILESTONE IDENTITY CONTRACT (every concept must satisfy every line):", ...milestoneContract.map((line2) => `- ${line2}`));
+  }
+  parts.push("", "ORDERED QUARTET BLUEPRINT (binding, assigned before generation):", ...orderedQuartetBlueprint(input.brief).map((line2) => `- ${line2}`));
+  if (input.keepConstraints?.length) {
+    parts.push("", "KEEP UNCHANGED (the host locked these):", ...input.keepConstraints.map((c) => `- ${c}`));
+  }
+  if (input.direction?.trim()) {
+    parts.push("", `HOST DIRECTION: ${input.direction.trim()}`);
+  }
+  if (input.avoidConceptNames?.length) {
+    parts.push("", `ALREADY SEEN (go somewhere else): ${input.avoidConceptNames.join(", ")}`);
+  }
+  parts.push("", "Emit the four NDJSON lines now.");
+  return parts.join("\n");
+}
+function buildConceptCorrectionPrompt(errors) {
+  return [
+    "ZERO-IMAGE SERVER REVIEW FAILED.",
+    "Rewrite all four concepts from scratch. Do not patch or explain the previous quartet.",
+    "The event brief, milestone contract, concrete-subject contract and ordered quartet blueprint remain binding.",
+    "Correct every server finding below:",
+    ...Array.from(new Set(errors)).map((error) => `- ${error}`),
+    "Emit exactly four replacement NDJSON objects and nothing else."
+  ].join("\n");
+}
+function buildArtworkConstraints(brief) {
+  const concreteRequirements = concreteSubjectRequirementsForBrief(brief);
+  const lines = [
+    "BINDING EVENT-BRIEF CONSTRAINTS:",
+    ...brief.requirements.required.map((item) => `REQUIRED \u2014 ${item}.`),
+    ...concreteRequirements.map((item) => `REQUIRED \u2014 ${item}.`),
+    ...brief.requirements.excluded.map((item) => `EXCLUDED \u2014 ${item}.`)
+  ];
+  if (brief.requirements.preferred.length > 0) {
+    lines.push(...brief.requirements.preferred.map((item) => `PREFERRED \u2014 ${item}.`));
+  }
+  return lines.join("\n");
+}
+var RETRY_REMEDIES = {
+  "printed-margin": "CRITICAL: the previous attempt drew a paper margin inside the image. The illustration must bleed off all four edges with no border, mat, frame or blank perimeter of any kind.",
+  "text-detected": "CRITICAL: the previous attempt contained lettering. Produce purely pictorial artwork \u2014 absolutely no letters, words, numbers, logos, signatures or watermarks anywhere.",
+  "crop-unsafe": "CRITICAL: the previous attempt placed important subject matter near the edges where it was cropped away. Keep every salient element within the central 70% of the frame.",
+  "blank-degenerate": "CRITICAL: the previous attempt was nearly blank. Produce a fully realised illustration with clear subject matter and tonal range.",
+  "flat-bands": "CRITICAL: the previous attempt contained flat banded regions that read as corruption. Produce continuous, evenly rendered artwork.",
+  "artifact": "CRITICAL: the previous attempt contained melted, duplicated or malformed shapes. Render clean, coherent, correctly formed subject matter.",
+  "premium-feel": "CRITICAL: the previous attempt read as cheap clipart. Produce genuinely premium editorial illustration with considered composition, restrained palette and fine detail.",
+  "brief-fidelity": "CRITICAL: the previous attempt did not deliver the brief's required elements. Every required element listed must be unmistakably visible.",
+  "excluded-present": "CRITICAL: the previous attempt contained excluded content. Remove it entirely.",
+  "age-appropriate": "CRITICAL: the previous attempt was not age appropriate. Match the celebrant's age without becoming babyish or repetitive.",
+  "quiet-region": "CRITICAL: the previous attempt left nowhere quiet for the words. Keep the declared typography region visually calm and low-contrast."
+};
+function buildRetryPrompt(basePrompt, failureCodes) {
+  const remedies = Array.from(new Set(failureCodes.map((c) => RETRY_REMEDIES[c]).filter(Boolean)));
+  if (remedies.length === 0) return basePrompt;
+  return `${basePrompt}
+
+${remedies.join("\n")}`;
+}
+
+// server/aiFirst/tier1.ts
+var import_node_child_process2 = require("node:child_process");
+var import_node_fs = require("node:fs");
+var import_node_os = require("node:os");
+var import_node_path = require("node:path");
+
+// server/aiFirst/png.ts
+var import_node_zlib = require("node:zlib");
+var SIGNATURE = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+var PngDecodeError = class extends Error {
+};
+var CHANNELS = { 0: 1, 2: 3, 4: 2, 6: 4 };
+function decodePng(buffer2) {
+  if (buffer2.length < 8 || !buffer2.subarray(0, 8).equals(SIGNATURE)) {
+    throw new PngDecodeError("not a PNG (bad signature)");
+  }
+  let header = null;
+  const idat = [];
+  let offset = 8;
+  let sawEnd = false;
+  while (offset + 8 <= buffer2.length) {
+    const length = buffer2.readUInt32BE(offset);
+    const type = buffer2.toString("ascii", offset + 4, offset + 8);
+    const dataStart = offset + 8;
+    const dataEnd = dataStart + length;
+    if (dataEnd + 4 > buffer2.length) throw new PngDecodeError(`truncated chunk ${type}`);
+    if (type === "IHDR") {
+      header = {
+        width: buffer2.readUInt32BE(dataStart),
+        height: buffer2.readUInt32BE(dataStart + 4),
+        bitDepth: buffer2[dataStart + 8],
+        colorType: buffer2[dataStart + 9],
+        interlace: buffer2[dataStart + 12]
+      };
+    } else if (type === "IDAT") {
+      idat.push(buffer2.subarray(dataStart, dataEnd));
+    } else if (type === "IEND") {
+      sawEnd = true;
+      break;
+    }
+    offset = dataEnd + 4;
+  }
+  if (!header) throw new PngDecodeError("no IHDR chunk");
+  if (!sawEnd) throw new PngDecodeError("no IEND chunk \u2014 file is truncated");
+  if (idat.length === 0) throw new PngDecodeError("no image data");
+  if (header.bitDepth !== 8) throw new PngDecodeError(`unsupported bit depth ${header.bitDepth}`);
+  if (header.interlace !== 0) throw new PngDecodeError("interlaced PNGs are not supported");
+  const channels = CHANNELS[header.colorType];
+  if (!channels) throw new PngDecodeError(`unsupported colour type ${header.colorType}`);
+  let raw;
+  try {
+    raw = (0, import_node_zlib.inflateSync)(Buffer.concat(idat));
+  } catch (err) {
+    throw new PngDecodeError(`IDAT inflate failed: ${err.message}`);
+  }
+  const { width, height } = header;
+  const stride = width * channels;
+  if (raw.length < (stride + 1) * height) {
+    throw new PngDecodeError("inflated data is shorter than the declared image");
+  }
+  const pixels = unfilter(raw, width, height, channels);
+  return { width, height, rgb: toRgb(pixels, width, height, channels, header.colorType) };
+}
+function unfilter(raw, width, height, channels) {
+  const stride = width * channels;
+  const out = Buffer.alloc(stride * height);
+  for (let y = 0; y < height; y += 1) {
+    const filter = raw[y * (stride + 1)];
+    const src = y * (stride + 1) + 1;
+    const dst = y * stride;
+    const prev = dst - stride;
+    for (let x = 0; x < stride; x += 1) {
+      const value = raw[src + x];
+      const a = x >= channels ? out[dst + x - channels] : 0;
+      const b2 = y > 0 ? out[prev + x] : 0;
+      const c = x >= channels && y > 0 ? out[prev + x - channels] : 0;
+      let recon;
+      switch (filter) {
+        case 0:
+          recon = value;
+          break;
+        case 1:
+          recon = value + a;
+          break;
+        case 2:
+          recon = value + b2;
+          break;
+        case 3:
+          recon = value + (a + b2 >> 1);
+          break;
+        case 4:
+          recon = value + paeth(a, b2, c);
+          break;
+        default:
+          throw new PngDecodeError(`unknown scanline filter ${filter} on row ${y}`);
+      }
+      out[dst + x] = recon & 255;
+    }
+  }
+  return out;
+}
+function paeth(a, b2, c) {
+  const p = a + b2 - c;
+  const pa = Math.abs(p - a);
+  const pb = Math.abs(p - b2);
+  const pc = Math.abs(p - c);
+  if (pa <= pb && pa <= pc) return a;
+  return pb <= pc ? b2 : c;
+}
+function toRgb(pixels, width, height, channels, colorType) {
+  const rgb = new Uint8Array(width * height * 3);
+  const count = width * height;
+  for (let i = 0; i < count; i += 1) {
+    const src = i * channels;
+    const dst = i * 3;
+    let r;
+    let g;
+    let b2;
+    let alpha = 255;
+    if (colorType === 0) {
+      r = g = b2 = pixels[src];
+    } else if (colorType === 4) {
+      r = g = b2 = pixels[src];
+      alpha = pixels[src + 1];
+    } else if (colorType === 2) {
+      r = pixels[src];
+      g = pixels[src + 1];
+      b2 = pixels[src + 2];
+    } else {
+      r = pixels[src];
+      g = pixels[src + 1];
+      b2 = pixels[src + 2];
+      alpha = pixels[src + 3];
+    }
+    if (alpha === 255) {
+      rgb[dst] = r;
+      rgb[dst + 1] = g;
+      rgb[dst + 2] = b2;
+    } else {
+      const a = alpha / 255;
+      rgb[dst] = Math.round(r * a + 255 * (1 - a));
+      rgb[dst + 1] = Math.round(g * a + 255 * (1 - a));
+      rgb[dst + 2] = Math.round(b2 * a + 255 * (1 - a));
+    }
+  }
+  return rgb;
+}
+function lumaAt(image, x, y) {
+  const i = (y * image.width + x) * 3;
+  return 0.2126 * image.rgb[i] + 0.7152 * image.rgb[i + 1] + 0.0722 * image.rgb[i + 2];
+}
+function lumaGrid(image, targetLongEdge = 160) {
+  const scale = Math.max(1, Math.round(Math.max(image.width, image.height) / targetLongEdge));
+  const width = Math.max(1, Math.floor(image.width / scale));
+  const height = Math.max(1, Math.floor(image.height / scale));
+  const data = new Float32Array(width * height);
+  for (let gy = 0; gy < height; gy += 1) {
+    for (let gx = 0; gx < width; gx += 1) {
+      let sum = 0;
+      let n = 0;
+      for (let dy = 0; dy < scale; dy += 1) {
+        const y = gy * scale + dy;
+        if (y >= image.height) break;
+        for (let dx = 0; dx < scale; dx += 1) {
+          const x = gx * scale + dx;
+          if (x >= image.width) break;
+          sum += lumaAt(image, x, y);
+          n += 1;
+        }
+      }
+      data[gy * width + gx] = n > 0 ? sum / n : 0;
+    }
+  }
+  return { width, height, data };
+}
+function mean(values2) {
+  let sum = 0;
+  for (let i = 0; i < values2.length; i += 1) sum += values2[i];
+  return values2.length > 0 ? sum / values2.length : 0;
+}
+function stdev(values2) {
+  const m = mean(values2);
+  let sum = 0;
+  for (let i = 0; i < values2.length; i += 1) sum += (values2[i] - m) ** 2;
+  return values2.length > 0 ? Math.sqrt(sum / values2.length) : 0;
+}
+
+// server/aiFirst/tier1.ts
+var MIN_BYTES = 40 * 1024;
+var MAX_BYTES = 12 * 1024 * 1024;
+var ASPECT_TOLERANCE = 0.01;
+var MIN_GLOBAL_STDEV = 4;
+var MAX_FLAT_BAND_FRACTION = 0.08;
+var MAX_MARGIN_RING_FRACTION = 0.015;
+var MARGIN_UNIFORMITY_STDEV = 3.5;
+var SALIENCE_TOP_DECILE = 0.9;
+var SALIENCE_MIN_RATIO = 1.5;
+var MIN_MOTIF_SALIENCE_SHARE = 0.2;
+var MIN_OCR_TOKEN_LENGTH = 3;
+var OCR_MIN_CONFIDENCE = 60;
+var MAX_RENDERED_TYPE_REGION_LUMA_SPREAD = 21;
+var MAX_UNPROTECTED_TYPE_REGION_LUMA_SPREAD = 90;
+var EXPECTED_ASPECT = {
+  "16:9": 1536 / 1024,
+  "1:1": 1,
+  "9:16": 1024 / 1536
+};
+function runTier1Checks(input) {
+  const started = Date.now();
+  const findings = [];
+  const { bytes, concept } = input;
+  if (bytes.length < MIN_BYTES) {
+    findings.push({
+      code: "file-size",
+      critical: true,
+      message: `artwork is ${bytes.length} bytes \u2014 too small to be a real illustration`,
+      measured: bytes.length,
+      limit: MIN_BYTES
+    });
+  } else if (bytes.length > MAX_BYTES) {
+    findings.push({
+      code: "file-size",
+      critical: true,
+      message: `artwork is ${(bytes.length / 1e6).toFixed(1)} MB \u2014 pathological`,
+      measured: bytes.length,
+      limit: MAX_BYTES
+    });
+  }
+  let image;
+  try {
+    image = decodePng(bytes);
+  } catch (err) {
+    findings.push({
+      code: "file-integrity",
+      critical: true,
+      message: err instanceof PngDecodeError ? err.message : `decode failed: ${err.message}`
+    });
+    return { passed: false, findings, salientRegions: [], durationMs: Date.now() - started };
+  }
+  const expected = EXPECTED_ASPECT[aspectRatioForLayout(concept.layoutStyle)];
+  const actual = image.width / image.height;
+  if (Math.abs(actual - expected) / expected > ASPECT_TOLERANCE) {
+    findings.push({
+      code: "dimensions",
+      critical: true,
+      message: `artwork is ${image.width}x${image.height} (${actual.toFixed(3)}) but the ${concept.layoutStyle} layout requested ${expected.toFixed(3)}`,
+      measured: actual,
+      limit: expected
+    });
+  }
+  const grid = lumaGrid(image);
+  const globalStdev = stdev(grid.data);
+  if (globalStdev < MIN_GLOBAL_STDEV) {
+    findings.push({
+      code: "blank-degenerate",
+      critical: true,
+      message: `artwork is effectively flat (luma stdev ${globalStdev.toFixed(2)})`,
+      measured: globalStdev,
+      limit: MIN_GLOBAL_STDEV
+    });
+  }
+  const band = longestFlatBand(grid);
+  if (band > MAX_FLAT_BAND_FRACTION) {
+    findings.push({
+      code: "flat-bands",
+      critical: true,
+      message: `a flat band covers ${(band * 100).toFixed(1)}% of the long edge, which reads as corruption`,
+      measured: band,
+      limit: MAX_FLAT_BAND_FRACTION
+    });
+  }
+  const ring = uniformBorderRingFraction(grid);
+  if (ring > MAX_MARGIN_RING_FRACTION) {
+    findings.push({
+      code: "printed-margin",
+      critical: true,
+      message: `the artwork draws its own ${(ring * 100).toFixed(1)}% uniform border \u2014 the renderer already frames the card`,
+      measured: ring,
+      limit: MAX_MARGIN_RING_FRACTION
+    });
+  }
+  const salientRegions = findSalientRegions(grid);
+  const crop = evaluateCropSafety(concept.layoutStyle, image, salientRegions);
+  if (!crop.safe) {
+    findings.push({
+      code: "crop-unsafe",
+      critical: true,
+      message: crop.issues[0]?.message ?? "the layout crop removes too much salient content",
+      measured: crop.worstCroppedFraction,
+      limit: 0.25
+    });
+  }
+  const quiet = quietnessOfTypeRegion(grid, concept);
+  if (!quiet.quiet) {
+    findings.push({
+      code: "quiet-region",
+      critical: true,
+      message: `placement "${concept.placementId}" has a rendered luma spread of ${quiet.spread.toFixed(0)} after ${concept.minOverlay} protection (raw ${quiet.rawSpread.toFixed(0)}), too busy for live invitation type`,
+      measured: quiet.spread,
+      limit: quiet.limit
+    });
+  }
+  for (const [role, floor] of [
+    ["headlineColor", 3],
+    ["bodyColor", 4.5],
+    ["accentColor", 4.5]
+  ]) {
+    const ratio = contrastRatio(concept.semanticPalette[role], concept.semanticPalette.textSurface);
+    if (ratio < floor) {
+      findings.push({
+        code: "text-contrast",
+        critical: true,
+        message: `${role} is ${ratio.toFixed(2)}:1 against textSurface, below the ${floor}:1 floor`,
+        measured: ratio,
+        limit: floor
+      });
+    }
+  }
+  if (input.overlayCoverage > 0.4) {
+    findings.push({
+      code: "overlay-coverage",
+      critical: false,
+      message: `the overlay covers ${(input.overlayCoverage * 100).toFixed(0)}% of the card`,
+      measured: input.overlayCoverage,
+      limit: 0.4
+    });
+  }
+  if (input.artworkOpacity < 0.5) {
+    const visibility = focalVisibilityAfterOpacity(grid, input.artworkOpacity, concept.semanticPalette.textSurface);
+    if (visibility < MIN_FOCAL_VISIBILITY_RATIO) {
+      findings.push({
+        code: "layout-opacity",
+        critical: true,
+        message: `at ${input.artworkOpacity} opacity the artwork's focal region sits at ${visibility.toFixed(2)}:1 against the card surface \u2014 effectively erased`,
+        measured: visibility,
+        limit: MIN_FOCAL_VISIBILITY_RATIO
+      });
+    }
+  }
+  if (input.ocr !== false) {
+    const ocr = detectText(bytes);
+    if (ocr.found) {
+      findings.push({
+        code: "text-detected",
+        critical: true,
+        message: `OCR read lettering in the artwork: ${ocr.tokens.slice(0, 5).join(", ")}`,
+        measured: ocr.tokens.length
+      });
+    }
+  }
+  return {
+    passed: findings.every((f) => !f.critical),
+    findings,
+    image,
+    salientRegions,
+    durationMs: Date.now() - started
+  };
+}
+function longestFlatBand(grid) {
+  const rowRun = longestRun(grid.height, (i) => rowSignature(grid, i));
+  const colRun = longestRun(grid.width, (i) => colSignature(grid, i));
+  return Math.max(rowRun / grid.height, colRun / grid.width);
+}
+function rowSignature(grid, y) {
+  return grid.data.subarray(y * grid.width, (y + 1) * grid.width);
+}
+function colSignature(grid, x) {
+  const out = new Float32Array(grid.height);
+  for (let y = 0; y < grid.height; y += 1) out[y] = grid.data[y * grid.width + x];
+  return out;
+}
+function longestRun(count, get) {
+  let best = 0;
+  let run = 1;
+  for (let i = 1; i < count; i += 1) {
+    const a = get(i - 1);
+    const b2 = get(i);
+    let diff = 0;
+    for (let k = 0; k < a.length; k += 1) diff += Math.abs(a[k] - b2[k]);
+    if (diff / a.length < 0.75) {
+      run += 1;
+    } else {
+      best = Math.max(best, run);
+      run = 1;
+    }
+  }
+  return Math.max(best, run);
+}
+function uniformBorderRingFraction(grid) {
+  const shortEdge = Math.min(grid.width, grid.height);
+  const maxRing = Math.floor(shortEdge / 4);
+  let thickness = 0;
+  for (let r = 0; r < maxRing; r += 1) {
+    const ring = ringPixels(grid, r);
+    if (ring.length === 0) break;
+    if (stdev(ring) > MARGIN_UNIFORMITY_STDEV) break;
+    if (r > 0) {
+      const previous = ringPixels(grid, r - 1);
+      if (Math.abs(mean(ring) - mean(previous)) > MARGIN_UNIFORMITY_STDEV) break;
+    }
+    thickness = r + 1;
+  }
+  return thickness / shortEdge;
+}
+function ringPixels(grid, r) {
+  const { width, height, data } = grid;
+  if (r >= Math.floor(width / 2) || r >= Math.floor(height / 2)) return new Float32Array(0);
+  const out = [];
+  for (let x = r; x < width - r; x += 1) {
+    out.push(data[r * width + x], data[(height - 1 - r) * width + x]);
+  }
+  for (let y = r + 1; y < height - r - 1; y += 1) {
+    out.push(data[y * width + r], data[y * width + (width - 1 - r)]);
+  }
+  return Float32Array.from(out);
+}
+function findSalientRegions(grid, blocks = 12) {
+  const bw = Math.max(1, Math.floor(grid.width / blocks));
+  const bh = Math.max(1, Math.floor(grid.height / blocks));
+  const scores = [];
+  for (let by = 0; by + bh <= grid.height; by += bh) {
+    for (let bx = 0; bx + bw <= grid.width; bx += bw) {
+      const block = [];
+      for (let y = by; y < by + bh; y += 1) {
+        for (let x = bx; x < bx + bw; x += 1) block.push(grid.data[y * grid.width + x]);
+      }
+      scores.push({ x: bx, y: by, score: stdev(block) });
+    }
+  }
+  if (scores.length === 0) return [];
+  const sorted = [...scores].sort((a, b2) => a.score - b2.score);
+  const median = sorted[Math.floor(sorted.length / 2)]?.score ?? 0;
+  const threshold = Math.max(
+    sorted[Math.floor(sorted.length * SALIENCE_TOP_DECILE)]?.score ?? 0,
+    median * SALIENCE_MIN_RATIO
+  );
+  if (threshold <= 0) return [];
+  const salient = scores.filter((s) => s.score >= threshold);
+  const merged = mergeAdjacent(salient, bw, bh);
+  const totalArea = merged.reduce((sum, r) => sum + r.width * r.height, 0);
+  if (totalArea <= 0) return [];
+  return merged.filter((r) => r.width * r.height / totalArea >= MIN_MOTIF_SALIENCE_SHARE).map((r) => ({
+    x: r.x / grid.width,
+    y: r.y / grid.height,
+    width: r.width / grid.width,
+    height: r.height / grid.height
+  }));
+}
+function mergeAdjacent(blocks, bw, bh) {
+  const key = (x, y) => `${x},${y}`;
+  const remaining = new Map(blocks.map((b2) => [key(b2.x, b2.y), b2]));
+  const regions = [];
+  while (remaining.size > 0) {
+    const [firstKey, first] = remaining.entries().next().value;
+    remaining.delete(firstKey);
+    const queue = [first];
+    let minX = first.x;
+    let minY = first.y;
+    let maxX = first.x;
+    let maxY = first.y;
+    while (queue.length > 0) {
+      const cell = queue.pop();
+      minX = Math.min(minX, cell.x);
+      minY = Math.min(minY, cell.y);
+      maxX = Math.max(maxX, cell.x);
+      maxY = Math.max(maxY, cell.y);
+      for (const [dx, dy] of [
+        [bw, 0],
+        [-bw, 0],
+        [0, bh],
+        [0, -bh]
+      ]) {
+        const neighbourKey = key(cell.x + dx, cell.y + dy);
+        const neighbour = remaining.get(neighbourKey);
+        if (neighbour) {
+          remaining.delete(neighbourKey);
+          queue.push(neighbour);
+        }
+      }
+    }
+    regions.push({ x: minX, y: minY, width: maxX - minX + bw, height: maxY - minY + bh });
+  }
+  return regions;
+}
+function quietnessOfTypeRegion(grid, concept) {
+  const frame = typePlacementFrame(concept);
+  const x0 = Math.floor(frame.left / 100 * grid.width);
+  const x1 = Math.min(grid.width, Math.ceil((frame.left + frame.width) / 100 * grid.width));
+  const y0 = Math.floor(frame.top / 100 * grid.height);
+  const y1 = Math.min(grid.height, Math.ceil((frame.top + frame.height) / 100 * grid.height));
+  const values2 = [];
+  for (let y = y0; y < y1; y += 1) {
+    for (let x = x0; x < x1; x += 1) values2.push(grid.data[y * grid.width + x]);
+  }
+  if (values2.length === 0) return { quiet: true, spread: 0, rawSpread: 0, limit: 0 };
+  values2.sort((a, b2) => a - b2);
+  const p2 = values2[Math.floor(values2.length * 0.02)];
+  const p98 = values2[Math.min(values2.length - 1, Math.floor(values2.length * 0.98))];
+  const rawSpread = p98 - p2;
+  const surfaceAlpha = LOCAL_TYPE_SURFACE_ALPHA[concept.minOverlay];
+  const spread = rawSpread * (1 - surfaceAlpha);
+  const limit2 = surfaceAlpha > 0 ? MAX_RENDERED_TYPE_REGION_LUMA_SPREAD : MAX_UNPROTECTED_TYPE_REGION_LUMA_SPREAD;
+  return { quiet: spread <= limit2, spread, rawSpread, limit: limit2 };
+}
+function focalVisibilityAfterOpacity(grid, opacity, surfaceHex) {
+  const values2 = Array.from(grid.data).sort((a, b2) => a - b2);
+  const dark = values2[Math.floor(values2.length * 0.05)];
+  const light = values2[Math.floor(values2.length * 0.95)];
+  const surface = parseInt(surfaceHex.replace("#", ""), 16);
+  const surfaceLuma = 0.2126 * (surface >> 16 & 255) + 0.7152 * (surface >> 8 & 255) + 0.0722 * (surface & 255);
+  const blend = (v) => Math.round(v * opacity + surfaceLuma * (1 - opacity));
+  const toHex = (v) => `#${v.toString(16).padStart(2, "0").repeat(3)}`;
+  const compositedDark = toHex(Math.max(0, Math.min(255, blend(dark))));
+  const compositedLight = toHex(Math.max(0, Math.min(255, blend(light))));
+  return contrastRatio(compositedDark, compositedLight);
+}
+function detectText(bytes) {
+  let dir = null;
+  try {
+    dir = (0, import_node_fs.mkdtempSync)((0, import_node_path.join)((0, import_node_os.tmpdir)(), "posy-ocr-"));
+    const file = (0, import_node_path.join)(dir, "art.png");
+    (0, import_node_fs.writeFileSync)(file, bytes);
+    const tokens = /* @__PURE__ */ new Set();
+    for (const psm of ["11", "6"]) {
+      let tsv;
+      try {
+        tsv = (0, import_node_child_process2.execFileSync)("tesseract", [file, "stdout", "--psm", psm, "tsv"], {
+          encoding: "utf8",
+          stdio: ["ignore", "pipe", "ignore"],
+          timeout: 2e4
+        });
+      } catch {
+        return { found: false, tokens: [], skipped: true };
+      }
+      for (const line2 of tsv.split("\n").slice(1)) {
+        const cols = line2.split("	");
+        if (cols.length < 12) continue;
+        const confidence = parseFloat(cols[10]);
+        const text2 = (cols[11] || "").trim();
+        if (!Number.isFinite(confidence) || confidence < OCR_MIN_CONFIDENCE) continue;
+        const alnum = text2.replace(/[^A-Za-z0-9]/g, "");
+        if (alnum.length >= MIN_OCR_TOKEN_LENGTH) tokens.add(text2);
+      }
+    }
+    return { found: tokens.size > 0, tokens: Array.from(tokens), skipped: false };
+  } catch {
+    return { found: false, tokens: [], skipped: true };
+  } finally {
+    if (dir) (0, import_node_fs.rmSync)(dir, { recursive: true, force: true });
+  }
+}
+function retryCodesFor(findings) {
+  return Array.from(new Set(findings.map((f) => f.code)));
+}
+
+// server/aiFirst/visionGate.ts
+init_sdk();
+var VISION_MODEL = "claude-sonnet-4-6";
+var SYSTEM = `You are a strict art director reviewing AI-generated artwork for a printed invitation a host will send to real guests. You are the last check before a customer sees it.
+
+Score each 1-5. 4 means "a professional stationery studio would ship this". 3 means "acceptable but visibly compromised" \u2014 that is a FAIL here, so do not use 3 to be kind.
+
+- textLogoWatermarkFree: 5 = no letters, words, numbers, logos, signatures or watermarks anywhere, including stylised or partial ones.
+- artifactFree: 5 = no melted, duplicated, malformed or anatomically broken forms.
+- premiumFinish: 5 = genuinely premium editorial illustration. Score 1-2 for clipart, stock-template or generic AI look.
+- briefFidelity: 5 = the artwork unmistakably delivers the brief's stated identity.
+- compositionQuality: 5 = clear, balanced, intentional composition after applying the FINAL TYPE PROTECTION described by the user. For none, gradient or veil protection, any face, person, hero object or required subject inside the supplied LIVE TYPOGRAPHY BOX forces a score of 3 or lower. A plate is different: it is a nearly opaque paper panel in the final renderer, so judge the composition as though the pixels beneath that box are covered. Do not fail a plate merely because raw artwork lies beneath it. Do fail briefFidelity or compositionQuality if covering that box hides the only visible must-have, removes the theme's only recognizable subject, or leaves the visible composition outside the panel unbalanced.
+- ageAppropriate: 5 = correctly pitched for the celebrant's age. Babyish work for an adult, or content too mature for a child, scores 1.
+
+Judge BRIEF REQUIREMENTS holistically through briefFidelity and ageAppropriate. Do not repeat them in requiredPresent.
+
+For each VISIBLE MUST-HAVE, report whether that concrete subject is visibly present. These are binary positive visual facts only. Return an empty requiredPresent array when there are no VISIBLE MUST-HAVES. Also list any EXCLUDED item you can actually see.
+
+Reply with JSON only:
+{"textLogoWatermarkFree":0,"artifactFree":0,"premiumFinish":0,"briefFidelity":0,"compositionQuality":0,"ageAppropriate":0,"requiredPresent":[{"requirement":"","present":true}],"excludedFound":[],"notes":""}`;
+var CODE_FOR_DIMENSION = {
+  textLogoWatermarkFree: "text-detected",
+  artifactFree: "artifact",
+  premiumFinish: "premium-feel",
+  briefFidelity: "brief-fidelity",
+  compositionQuality: "crop-unsafe",
+  ageAppropriate: "age-appropriate"
+};
+function clampScore(value) {
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.min(5, n));
+}
+async function runVisionGate(input) {
+  const started = Date.now();
+  const empty = {
+    textLogoWatermarkFree: 0,
+    artifactFree: 0,
+    premiumFinish: 0,
+    briefFidelity: 0,
+    compositionQuality: 0,
+    ageAppropriate: 0
+  };
+  if (!process.env.ANTHROPIC_API_KEY && !input.client) {
+    return {
+      scores: empty,
+      requiredPresent: [],
+      excludedFound: [],
+      notes: "ANTHROPIC_API_KEY is not configured",
+      passed: false,
+      failureCodes: [],
+      unavailable: true,
+      durationMs: Date.now() - started,
+      usage: { inputTokens: 0, outputTokens: 0 }
+    };
+  }
+  const client = input.client ?? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const { brief, concept } = input;
+  const reviewRequirements = concreteSubjectReviewRequirementsForBrief(brief);
+  const typeBox = typePlacementFrame(concept);
+  const protectionAlpha = LOCAL_TYPE_SURFACE_ALPHA[concept.minOverlay];
+  const protectionInstruction = concept.minOverlay === "plate" ? `FINAL TYPE PROTECTION: a ${(protectionAlpha * 100).toFixed(0)}%-opaque solid paper panel in ${concept.semanticPalette.textSurface} covers the LIVE TYPOGRAPHY BOX in the rendered invitation. Treat raw pixels beneath the box as covered. Required subjects must remain clearly recognizable outside the panel, and the remaining visible composition must still feel balanced.` : `FINAL TYPE PROTECTION: ${concept.minOverlay} (${(protectionAlpha * 100).toFixed(0)}% local surface opacity). The LIVE TYPOGRAPHY BOX must contain no face, person, hero object or required subject.`;
+  const userText = [
+    `Celebration: ${brief.eventName || brief.eventType || "a celebration"}${brief.milestone ? ` \xB7 ${brief.milestone}` : ""}`,
+    brief.vibe ? `Intended feeling: ${brief.vibe}` : "",
+    `Direction: ${concept.conceptName} \u2014 ${concept.description}`,
+    `LIVE TYPOGRAPHY BOX (percentage of final card): left ${typeBox.left.toFixed(0)}%, top ${typeBox.top.toFixed(0)}%, width ${typeBox.width.toFixed(0)}%, height ${typeBox.height.toFixed(0)}%.`,
+    protectionInstruction,
+    "",
+    "BRIEF REQUIREMENTS (judge holistically in briefFidelity and ageAppropriate):",
+    ...brief.requirements.required.map((r) => `- ${r}`),
+    "",
+    "VISIBLE MUST-HAVES (report each in requiredPresent):",
+    ...reviewRequirements.map((r) => `- ${r}`),
+    "",
+    "EXCLUDED:",
+    ...brief.requirements.excluded.map((r) => `- ${r}`)
+  ].filter(Boolean).join("\n");
+  let raw = "";
+  let usage = { inputTokens: 0, outputTokens: 0 };
+  try {
+    const response = await client.messages.create({
+      model: VISION_MODEL,
+      max_tokens: 700,
+      system: SYSTEM,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image",
+              source: { type: "base64", media_type: "image/png", data: input.bytes.toString("base64") }
+            },
+            { type: "text", text: userText }
+          ]
+        }
+      ]
+    });
+    raw = response.content.map((b2) => b2.type === "text" ? b2.text : "").join("");
+    usage = {
+      inputTokens: response.usage?.input_tokens ?? 0,
+      outputTokens: response.usage?.output_tokens ?? 0
+    };
+  } catch (err) {
+    return {
+      scores: empty,
+      requiredPresent: [],
+      excludedFound: [],
+      notes: `vision call failed: ${err.message}`,
+      passed: false,
+      failureCodes: [],
+      unavailable: true,
+      durationMs: Date.now() - started,
+      usage
+    };
+  }
+  const parsed = extractJson(raw);
+  if (!parsed) {
+    return {
+      scores: empty,
+      requiredPresent: [],
+      excludedFound: [],
+      notes: "vision response was not parseable JSON",
+      passed: false,
+      failureCodes: [],
+      unavailable: true,
+      durationMs: Date.now() - started,
+      usage
+    };
+  }
+  const scores = {
+    textLogoWatermarkFree: clampScore(parsed.textLogoWatermarkFree),
+    artifactFree: clampScore(parsed.artifactFree),
+    premiumFinish: clampScore(parsed.premiumFinish),
+    briefFidelity: clampScore(parsed.briefFidelity),
+    compositionQuality: clampScore(parsed.compositionQuality),
+    ageAppropriate: clampScore(parsed.ageAppropriate)
+  };
+  const reportedRequired = Array.isArray(parsed.requiredPresent) ? parsed.requiredPresent.map((r) => ({
+    requirement: String(r?.requirement ?? ""),
+    present: r?.present === true
+  })) : [];
+  const requiredPresent = reviewRequirements.map((requirement, index2) => {
+    const exact = reportedRequired.find(
+      (reported2) => reported2.requirement.trim().toLowerCase() === requirement.trim().toLowerCase()
+    );
+    const reported = exact ?? reportedRequired[index2];
+    return { requirement, present: reported?.present === true };
+  });
+  const excludedFound = Array.isArray(parsed.excludedFound) ? parsed.excludedFound.filter((e) => typeof e === "string" && e.trim().length > 0) : [];
+  const failureCodes = [];
+  for (const key of Object.keys(scores)) {
+    if (scores[key] < MIN_DIMENSION_SCORE) failureCodes.push(CODE_FOR_DIMENSION[key]);
+  }
+  const missingRequired = requiredPresent.filter((r) => !r.present);
+  if (missingRequired.length > 0) failureCodes.push("brief-fidelity");
+  if (reviewRequirements.length > 0 && requiredPresent.length === 0) {
+    failureCodes.push("brief-fidelity");
+  }
+  if (excludedFound.length > 0) failureCodes.push("excluded-present");
+  return {
+    scores,
+    requiredPresent,
+    excludedFound,
+    notes: typeof parsed.notes === "string" ? parsed.notes : "",
+    passed: failureCodes.length === 0,
+    failureCodes: Array.from(new Set(failureCodes)),
+    unavailable: false,
+    durationMs: Date.now() - started,
+    usage
+  };
+}
+function extractJson(raw) {
+  const start = raw.indexOf("{");
+  const end = raw.lastIndexOf("}");
+  if (start === -1 || end <= start) return null;
+  try {
+    return JSON.parse(raw.slice(start, end + 1));
+  } catch {
+    return null;
+  }
+}
+var VISION_INPUT_USD_PER_MTOK = 3;
+var VISION_OUTPUT_USD_PER_MTOK = 15;
+function visionCostUsd(usage) {
+  return usage.inputTokens / 1e6 * VISION_INPUT_USD_PER_MTOK + usage.outputTokens / 1e6 * VISION_OUTPUT_USD_PER_MTOK;
+}
+
+// server/aiFirst/fallback.ts
+var import_promises2 = require("node:fs/promises");
+var import_node_path2 = __toESM(require("node:path"), 1);
+function occasionsFor(brief) {
+  const text2 = `${brief.eventType} ${brief.eventName} ${brief.milestone}`.toLowerCase();
+  const out = [];
+  if (/birthday/.test(text2)) {
+    const age = ageFromMilestone(brief.milestone);
+    if (age !== null && age <= 12) out.push("kids-birthday");
+    else if (age !== null && age <= 19) out.push("teen-birthday");
+    else out.push("milestone-birthday");
+  }
+  if (/wedding|engage|shower|bridal|baby/.test(text2)) out.push("shower");
+  if (/holiday|christmas|new year/.test(text2)) out.push("holiday-party");
+  if (/dinner|anniversary|retirement|corporate/.test(text2)) out.push("dinner-party", "milestone-birthday");
+  out.push("celebration");
+  return out;
+}
+function laneDistance(a, b2) {
+  if (a === b2) return 0;
+  const ia = STYLE_LANES.findIndex((l) => l.id === a);
+  const ib = STYLE_LANES.findIndex((l) => l.id === b2);
+  if (ia < 0 || ib < 0) return STYLE_LANES.length;
+  return Math.abs(ia - ib);
+}
+function paletteDistance2(theme, concept) {
+  const variant = theme.palettes[0];
+  const pairs = [
+    [variant.ink, concept.semanticPalette.headlineColor],
+    [variant.accent, concept.semanticPalette.accentColor],
+    [variant.surface, concept.semanticPalette.textSurface]
+  ];
+  return pairs.reduce((sum, [a, b2]) => sum + Math.abs(contrastRatio(a, "#808080") - contrastRatio(b2, "#808080")), 0);
+}
+function adaptStudioDirection(input) {
+  const occasions = occasionsFor(input.brief);
+  const semanticallySafe = LAUNCH_THEMES.filter((theme2) => curatedThemeMatchesBrief(theme2.id, input.brief));
+  if (semanticallySafe.length === 0) return null;
+  const candidates = semanticallySafe.filter((t) => !input.usedThemeIds.includes(t.id));
+  const pool = candidates.length > 0 ? candidates : semanticallySafe;
+  const scored = pool.map((theme2) => ({
+    theme: theme2,
+    score: laneDistance(theme2.styleLaneId, input.concept.styleLaneId) * 2 + paletteDistance2(theme2, input.concept) + (occasions.length > 0 && occasions.some((o) => theme2.occasions.includes(o)) ? 0 : 4)
+  })).sort((a, b2) => a.score - b2.score || a.theme.id.localeCompare(b2.theme.id));
+  const theme = scored[0].theme;
+  const palette = theme.palettes[0];
+  const safeTypographyRegion = theme.layoutStyle === "split" ? "right-panel" : theme.layoutStyle === "banner" || theme.layoutStyle === "centered" ? "lower-third" : "center";
+  return {
+    theme,
+    reason: input.reason,
+    concept: {
+      ...input.concept,
+      conceptName: theme.name,
+      description: theme.description,
+      baseThemeId: theme.id,
+      placementId: theme.placements[0].id,
+      layoutStyle: theme.layoutStyle,
+      borderStyle: theme.borderStyle,
+      styleLaneId: theme.styleLaneId,
+      fontPairingId: theme.fontPairingIds[0],
+      dividerStyle: theme.divider,
+      texture: { style: theme.texture.style, intensity: theme.texture.intensity },
+      motif: { id: theme.art.id, placement: theme.art.placement },
+      semanticPalette: {
+        textSurface: palette.surface,
+        headlineColor: palette.ink,
+        bodyColor: palette.body,
+        accentColor: palette.accent
+      },
+      art: {
+        medium: "curated studio illustration",
+        composition: `${theme.layoutStyle} composition with ${theme.art.placement} artwork`,
+        prompt: `${theme.artwork.alt}. This is curated studio artwork matched to the event brief.`
+      },
+      safeTypographyRegion,
+      minOverlay: theme.defaultOverlay
+    }
+  };
+}
+var STATIC_ROOTS = [
+  process.env.POSY_STATIC_ROOT,
+  // Vercel's build copies the Vite output to the root `public` directory
+  // before packaging the function. Keep this ahead of the source-tree
+  // fallback so the production function reads the exact shipped asset.
+  import_node_path2.default.resolve(process.cwd(), "public"),
+  import_node_path2.default.resolve(process.cwd(), "dist", "public"),
+  import_node_path2.default.resolve(process.cwd(), "client", "public")
+].filter((root) => Boolean(root));
+async function loadStudioArtwork(theme) {
+  const relative2 = theme.artwork.fullUrl.replace(/^\/+/, "");
+  for (const root of STATIC_ROOTS) {
+    try {
+      return await (0, import_promises2.readFile)(import_node_path2.default.join(root, relative2));
+    } catch {
+      continue;
+    }
+  }
+  throw new Error(`studio artwork missing for theme "${theme.id}" (${theme.artwork.fullUrl})`);
+}
+
+// server/aiFirst/artwork.ts
+var DEFAULT_ARTWORK_MODEL = "gpt-image-2";
+var SIZE_FOR_ASPECT = {
+  "16:9": "1536x1024",
+  "1:1": "1024x1024",
+  "9:16": "1024x1536"
+};
+var IMAGE_COST_USD_MICROS = {
+  "gpt-image-1": {
+    low: { "1024x1024": 11e3, "1024x1536": 16e3, "1536x1024": 16e3 },
+    medium: { "1024x1024": 42e3, "1024x1536": 63e3, "1536x1024": 63e3 },
+    high: { "1024x1024": 167e3, "1024x1536": 25e4, "1536x1024": 25e4 }
+  },
+  "gpt-image-2": {
+    low: { "1024x1024": 6e3, "1024x1536": 5e3, "1536x1024": 5e3 },
+    medium: { "1024x1024": 53e3, "1024x1536": 41e3, "1536x1024": 41e3 },
+    high: { "1024x1024": 211e3, "1024x1536": 165e3, "1536x1024": 165e3 }
+  }
+};
+function sizeForAspect(aspectRatio) {
+  return SIZE_FOR_ASPECT[aspectRatio];
+}
+function estimateImageCostUsdMicros(model, quality, size2) {
+  return IMAGE_COST_USD_MICROS[model][quality][size2];
+}
+async function generateArtwork(request) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error("OPENAI_API_KEY is not configured \u2014 illustration generation is unavailable.");
+  }
+  const started = Date.now();
+  const model = request.model ?? DEFAULT_ARTWORK_MODEL;
+  const response = await fetch("https://api.openai.com/v1/images/generations", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({
+      model,
+      prompt: request.prompt,
+      size: sizeForAspect(request.aspectRatio),
+      quality: request.quality ?? "high",
+      n: 1,
+      // Without this an image model can return a fully transparent alpha
+      // channel, which composites to an invisible card.
+      background: "opaque"
+    }),
+    signal: request.signal
+  });
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(`${model} request failed (${response.status}): ${body.slice(0, 300)}`);
+  }
+  const data = await response.json();
+  const b64 = data.data?.[0]?.b64_json;
+  if (!b64) throw new Error(`${model} returned no image data`);
+  return {
+    bytes: Buffer.from(b64, "base64"),
+    dataUrl: `data:image/png;base64,${b64}`,
+    durationMs: Date.now() - started
+  };
+}
+
+// server/aiFirst/previewStore.ts
+var import_node_crypto3 = require("node:crypto");
+var import_promises3 = require("node:fs/promises");
+var import_node_path3 = __toESM(require("node:path"), 1);
+function sha2562(input) {
+  return (0, import_node_crypto3.createHash)("sha256").update(input).digest("hex");
+}
+function conceptFingerprint(concept) {
+  return sha2562(conceptImageFingerprintInput(concept));
+}
+function assetHashOf(bytes) {
+  return sha2562(bytes);
+}
+function previewIdFor(eventId, fingerprint, assetHash) {
+  return sha2562(`${eventId} ${fingerprint} ${assetHash}`).slice(0, 32);
+}
+async function savePreview(input) {
+  const now = input.now ?? Date.now();
+  const fingerprint = conceptFingerprint(input.concept);
+  const assetHash = assetHashOf(input.bytes);
+  const previewId = previewIdFor(input.eventId, fingerprint, assetHash);
+  const existing = await input.store.findByPreviewId(input.eventId, previewId);
+  if (existing) {
+    await input.store.touch(previewId, now);
+    return { record: { ...existing, lastAccessedAt: now }, reused: true };
+  }
+  const record = {
+    eventId: input.eventId,
+    previewId,
+    conceptFingerprint: fingerprint,
+    assetHash,
+    assetUrl: input.assetUrl,
+    concept: input.concept,
+    source: input.source,
+    promoted: false,
+    promotedAt: null,
+    createdAt: now,
+    lastAccessedAt: now
+  };
+  return { record: await input.store.put(record), reused: false };
+}
+async function lookupReusablePreview(store, eventId, concept, now = Date.now()) {
+  const hit = await store.findByFingerprint(eventId, conceptFingerprint(concept));
+  if (!hit) return void 0;
+  await store.touch(hit.previewId, now);
+  return { ...hit, lastAccessedAt: now };
+}
+async function applyPreview(store, eventId, previewId, expectedAssetHash, now = Date.now()) {
+  const record = await store.findByPreviewId(eventId, previewId);
+  if (!record) return { ok: false, failure: "not-found" };
+  if (expectedAssetHash && expectedAssetHash !== record.assetHash) {
+    return { ok: false, failure: "asset-hash-mismatch" };
+  }
+  const promoted = await store.promote(eventId, previewId, now);
+  return { ok: true, record: promoted ?? record };
+}
+var STATIC_ROOTS2 = [
+  process.env.POSY_STATIC_ROOT,
+  import_node_path3.default.resolve(process.cwd(), "public"),
+  import_node_path3.default.resolve(process.cwd(), "dist", "public"),
+  import_node_path3.default.resolve(process.cwd(), "client", "public")
+].filter((root) => Boolean(root));
+async function resolvePreviewAssetBytes(record) {
+  const { assetUrl } = record;
+  const dataUrlMatch = /^data:([^;]+);base64,([\s\S]+)$/.exec(assetUrl);
+  if (dataUrlMatch) {
+    return { bytes: Buffer.from(dataUrlMatch[2], "base64"), contentType: dataUrlMatch[1] || "image/png" };
+  }
+  const relative2 = assetUrl.replace(/^\/+/, "");
+  for (const root of STATIC_ROOTS2) {
+    try {
+      const bytes = await (0, import_promises3.readFile)(import_node_path3.default.join(root, relative2));
+      const ext = import_node_path3.default.extname(relative2).toLowerCase();
+      const contentType = ext === ".webp" ? "image/webp" : ext === ".jpg" || ext === ".jpeg" ? "image/jpeg" : "image/png";
+      return { bytes, contentType };
+    } catch {
+      continue;
+    }
+  }
+  return void 0;
+}
+function previewAssetUrl(ownerToken, previewId) {
+  return `/api/events/owner/${ownerToken}/ai-first/preview/${previewId}/asset`;
+}
+var PREVIEW_TTL_MS = 7 * 24 * 60 * 60 * 1e3;
+async function cleanupPreviews(store, now = Date.now()) {
+  const stale = await store.listForCleanup(now - PREVIEW_TTL_MS);
+  const removed = [];
+  let keptPromoted = 0;
+  for (const record of stale) {
+    if (record.promoted) {
+      keptPromoted += 1;
+      continue;
+    }
+    await store.remove(record.previewId);
+    removed.push(record.previewId);
+  }
+  return { removed, keptPromoted };
+}
+
+// server/aiFirst/usage.ts
+var SPARK = { eventSoft: 12, eventHard: 12, monthlySoft: 12, monthlyHard: 12 };
+var PLUS = { eventSoft: 24, eventHard: 40, monthlySoft: 48, monthlyHard: 80 };
+function ceilingsForTier(tier) {
+  return tier === "plus_trial" || tier === "plus_active" ? PLUS : SPARK;
+}
+function tierLabel(tier) {
+  return tier === "plus_trial" || tier === "plus_active" ? "Plus" : "Spark";
+}
+var MAX_CONCURRENT_GENERATIONS_PER_EVENT = 2;
+var MAX_ARTWORK_CONCURRENCY = 2;
+var RATE_LIMITS = {
+  event: { limit: 6, windowMs: 60 * 60 * 1e3 },
+  token: { limit: 12, windowMs: 60 * 60 * 1e3 },
+  ip: { limit: 30, windowMs: 60 * 60 * 1e3 }
+};
+var RateLimiter = class {
+  hits = /* @__PURE__ */ new Map();
+  check(scope, key, now = Date.now()) {
+    const rule = RATE_LIMITS[scope];
+    const id = `${scope}:${key}`;
+    const recent = (this.hits.get(id) ?? []).filter((t) => now - t < rule.windowMs);
+    if (recent.length >= rule.limit) {
+      this.hits.set(id, recent);
+      return false;
+    }
+    recent.push(now);
+    this.hits.set(id, recent);
+    return true;
+  }
+  reset() {
+    this.hits.clear();
+  }
+};
+var BREAKER_FAILURE_THRESHOLD = 5;
+var BREAKER_COOLDOWN_MS = 2 * 60 * 1e3;
+var CircuitBreaker = class {
+  failures = 0;
+  openedAt = null;
+  stateAt(now = Date.now()) {
+    if (this.openedAt === null) return "closed";
+    return now - this.openedAt >= BREAKER_COOLDOWN_MS ? "half-open" : "open";
+  }
+  get state() {
+    return this.stateAt();
+  }
+  allows(now = Date.now()) {
+    return this.stateAt(now) !== "open";
+  }
+  recordSuccess() {
+    this.failures = 0;
+    this.openedAt = null;
+  }
+  recordFailure(now = Date.now()) {
+    this.failures += 1;
+    if (this.failures >= BREAKER_FAILURE_THRESHOLD) this.openedAt = now;
+  }
+};
+var hooks = [];
+function emitAnomaly(anomaly) {
+  for (const hook of [...hooks]) {
+    try {
+      hook(anomaly);
+    } catch {
+    }
+  }
+}
+function guardGeneration(input) {
+  const now = input.now ?? Date.now();
+  const ceilings = ceilingsForTier(input.tier);
+  const warnings = [];
+  const label = tierLabel(input.tier);
+  const deny = (denial, message2, kind) => {
+    if (kind) {
+      emitAnomaly({ kind, eventId: input.eventId, email: input.email, detail: message2, at: now });
+    }
+    return { allowed: false, denial, message: message2, warnings, ceilings, allowance: 0 };
+  };
+  if (input.killSwitch) {
+    return deny(
+      "kill-switch",
+      "New invitation artwork is paused right now. The Posy collection and your saved designs are still available.",
+      "kill-switch"
+    );
+  }
+  if (input.breaker && !input.breaker.allows()) {
+    return deny(
+      "circuit-open",
+      "The illustration service is having trouble. Please try again shortly \u2014 the Posy collection is still available.",
+      "circuit-open"
+    );
+  }
+  if (input.usage.activeGenerations >= MAX_CONCURRENT_GENERATIONS_PER_EVENT) {
+    return deny("concurrency", "This event already has invitation directions being created. Let those finish first.");
+  }
+  if (input.limiter) {
+    const checks = [
+      ["event", String(input.eventId)],
+      ["token", input.ownerToken],
+      ["ip", input.ip]
+    ];
+    for (const [scope, key] of checks) {
+      if (key && !input.limiter.check(scope, key, now)) {
+        return deny("rate-limited", "That is a lot of invitation directions in a short time. Please try again shortly.");
+      }
+    }
+  }
+  if (input.supportOverride) {
+    emitAnomaly({
+      kind: "support-override",
+      eventId: input.eventId,
+      email: input.email,
+      detail: `override by ${input.supportOverride.by}: ${input.supportOverride.reason}`,
+      at: now
+    });
+    return { allowed: true, warnings, ceilings, allowance: input.requested };
+  }
+  const eventRemaining = ceilings.eventHard - input.usage.eventBilled;
+  if (eventRemaining <= 0) {
+    return deny(
+      "event-ceiling",
+      `This event has reached its ${label} limit for new invitation artwork. The directions you have already are still yours to use.`,
+      "event-hard-ceiling"
+    );
+  }
+  const monthlyRemaining = input.email ? ceilings.monthlyHard - input.usage.monthlyBilled : Number.POSITIVE_INFINITY;
+  if (monthlyRemaining <= 0) {
+    return deny(
+      "monthly-ceiling",
+      `You have reached this month's ${label} limit for new invitation artwork. Everything you have already created is still available.`,
+      "monthly-hard-ceiling"
+    );
+  }
+  if (input.usage.eventBilled + input.requested > ceilings.eventSoft && ceilings.eventSoft < ceilings.eventHard) {
+    warnings.push(`This event is past its usual ${label} allowance for new artwork.`);
+    emitAnomaly({
+      kind: "event-soft-ceiling",
+      eventId: input.eventId,
+      email: input.email,
+      detail: `${input.usage.eventBilled} billed images on this event`,
+      at: now
+    });
+  }
+  if (input.email && input.usage.monthlyBilled + input.requested > ceilings.monthlySoft && ceilings.monthlySoft < ceilings.monthlyHard) {
+    warnings.push(`You are past your usual ${label} allowance for new artwork this month.`);
+    emitAnomaly({
+      kind: "monthly-soft-ceiling",
+      eventId: input.eventId,
+      email: input.email,
+      detail: `${input.usage.monthlyBilled} billed images this month`,
+      at: now
+    });
+  }
+  return {
+    allowed: true,
+    warnings,
+    ceilings,
+    allowance: Math.max(0, Math.min(input.requested, eventRemaining, monthlyRemaining))
+  };
+}
+function monthStart(now = Date.now()) {
+  const d = new Date(now);
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1);
+}
+
+// server/aiFirst/conceptOnlyProof.ts
+init_sdk();
+
+// server/aiFirst/conceptStream.ts
+var ConceptStreamParser = class {
+  buffer = "";
+  emitted = 0;
+  rejected = [];
+  /** Concepts that parsed but failed validation, for the report. */
+  get rejections() {
+    return this.rejected;
+  }
+  get count() {
+    return this.emitted;
+  }
+  /**
+   * Appends a chunk and returns every concept that became complete because of
+   * it. Usually zero or one.
+   */
+  push(chunk) {
+    this.buffer += chunk;
+    return this.drain(false);
+  }
+  /** Call once the model has finished; drains any unterminated final object. */
+  flush() {
+    return this.drain(true);
+  }
+  drain(final) {
+    const out = [];
+    for (; ; ) {
+      const span = this.nextObjectSpan();
+      if (!span) break;
+      const raw = this.buffer.slice(span.start, span.end);
+      this.buffer = this.buffer.slice(span.end);
+      const parsed = this.validate(raw);
+      if (parsed) out.push(parsed);
+    }
+    if (final) {
+      const remainder = stripNoise(this.buffer).trim();
+      this.buffer = "";
+      if (remainder.startsWith("{")) {
+        const parsed = this.validate(remainder);
+        if (parsed) out.push(parsed);
+      }
+    }
+    return out;
+  }
+  validate(raw) {
+    let value;
+    try {
+      value = JSON.parse(raw);
+    } catch {
+      this.rejected.push({ index: this.emitted, raw: raw.slice(0, 400), errors: ["line is not valid JSON"] });
+      return null;
+    }
+    const result = parseAiFirstConcept(value);
+    if (!result.ok) {
+      this.rejected.push({ index: this.emitted, raw: raw.slice(0, 400), errors: result.errors });
+      return null;
+    }
+    const line2 = { index: this.emitted, concept: result.concept, normalized: result.normalized };
+    this.emitted += 1;
+    return line2;
+  }
+  /**
+   * Finds the next balanced top-level `{...}` in the buffer, ignoring braces
+   * inside strings. Returns null while the object is still arriving.
+   */
+  nextObjectSpan() {
+    const start = this.buffer.indexOf("{");
+    if (start === -1) return null;
+    let depth = 0;
+    let inString = false;
+    let escaped2 = false;
+    for (let i = start; i < this.buffer.length; i += 1) {
+      const ch = this.buffer[i];
+      if (escaped2) {
+        escaped2 = false;
+        continue;
+      }
+      if (ch === "\\") {
+        if (inString) escaped2 = true;
+        continue;
+      }
+      if (ch === '"') {
+        inString = !inString;
+        continue;
+      }
+      if (inString) continue;
+      if (ch === "{") depth += 1;
+      else if (ch === "}") {
+        depth -= 1;
+        if (depth === 0) return { start, end: i + 1 };
+      }
+    }
+    return null;
+  }
+};
+function stripNoise(text2) {
+  return text2.replace(/```(?:json|ndjson)?/gi, "").replace(/^[\s,\[\]]+/, "").replace(/[\s,\[\]]+$/, "");
+}
+
+// server/aiFirst/conceptQuartet.ts
+var REQUIRED_CONCEPT_QUARTET_SIZE = 4;
+var OCCASION_ART_CUE = /\b(birthday|celebration|party|cake|candles?|bunting|garland|confetti|streamers?|balloons?|place settings?|party table|picnic table|festive)\b/i;
+var BACKYARD_CUE = /\b(backyard|back garden|lawn|patio|outdoor|garden party|cookout|barbecue|bbq|grill|picnic)\b/i;
+var CONSTRUCTION_STRATEGY_CUES = {
+  "narrative-scene": /\b(job ?site|building site|build zone|builder scene|construction scene|excavator|bulldozer|dump truck|backhoe|loader|crane|cement mixer)\b/i,
+  "iconic-detail": /\b(excavator|bulldozer|dump truck|backhoe|loader|crane|cement mixer|steel tracks?|hydraulic|bucket|boom|machine detail)\b/i,
+  "graphic-world": /\b(blueprint|site plan|survey grid|measurement grid|schematic|architectural plan|caution stripe|topographic|construction markings?)\b/i,
+  "tactile-still-life": /\b(hard hat|tool belt|builder tools?|shovel|work gloves?|lumber|wood offcuts?|concrete blocks?|traffic cones?|safety vest|measuring tape)\b/i
+};
+var CONSTRUCTION_CUE_GROUPS = [
+  /\b(excavator|bulldozer|dump truck|backhoe|loader|crane|cement mixer)\b/i,
+  /\b(bucket|boom|hydraulic|steel tracks?|machine detail)\b/i,
+  /\b(hard hat|safety vest|traffic cones?|caution stripe|construction barrier)\b/i,
+  /\b(tool belt|builder tools?|shovel|work gloves?|measuring tape)\b/i,
+  /\b(lumber|wood offcuts?|concrete blocks?|scaffold|building materials?)\b/i,
+  /\b(blueprint|site plan|survey grid|measurement grid|schematic|architectural plan|construction markings?)\b/i,
+  /\b(job ?site|building site|build zone|builder scene|construction scene)\b/i
+];
+var MACHINE_PATTERNS = [
+  ["excavator", /\b(excavator|digger)\b/i],
+  ["bulldozer", /\b(bulldozer|dozer)\b/i],
+  ["dump truck", /\bdump truck\b/i],
+  ["backhoe", /\bbackhoe\b/i],
+  ["loader", /\b(front|wheel)?\s*loader\b/i],
+  ["crane", /\bcrane\b/i],
+  ["cement mixer", /\b(cement|concrete) mixer\b/i]
+];
+function briefIdentity2(brief) {
+  return [
+    brief.eventName,
+    brief.eventType,
+    brief.milestone,
+    brief.themeName,
+    brief.vibe,
+    ...brief.requirements.required
+  ].join(" ");
+}
+function mediumFamily(value) {
+  const text2 = value.toLowerCase();
+  const families = [
+    ["watercolor", /watercolou?r/],
+    ["gouache", /gouache/],
+    ["cut-paper", /cut[- ]?paper|papercut/],
+    ["linocut", /linocut|woodcut/],
+    ["collage", /collage/],
+    ["colored-pencil", /colou?red pencil|pencil/],
+    ["ink", /\bink\b|line art/],
+    ["vector", /vector|flat graphic/],
+    ["pastel", /pastel/],
+    ["oil", /oil paint/],
+    ["digital", /digital/]
+  ];
+  return families.find(([, pattern]) => pattern.test(text2))?.[0] ?? text2.replace(/[^a-z0-9]+/g, " ").trim();
+}
+function uniqueCount(values2) {
+  return new Set(values2.map((value) => value.trim().toLowerCase())).size;
+}
+function milestonePattern(milestone) {
+  const match2 = /^(\d{1,3})/.exec(milestone);
+  if (!match2) return null;
+  const number = Number(match2[1]);
+  const words = {
+    1: "first|one",
+    2: "second|two",
+    3: "third|three",
+    4: "fourth|four",
+    5: "fifth|five",
+    6: "sixth|six",
+    7: "seventh|seven",
+    8: "eighth|eight",
+    9: "ninth|nine",
+    10: "tenth|ten"
+  };
+  const aliases = [milestone.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), `${number}[- ]?year[- ]?old`];
+  if (words[number]) aliases.push(words[number]);
+  return new RegExp(`\\b(?:${aliases.join("|")})(?:[- ]birthday)?\\b`, "i");
+}
+function dominantMachine(concept) {
+  const focalText = `${concept.art.medium} ${concept.art.composition} ${concept.art.prompt}`;
+  return MACHINE_PATTERNS.find(([, pattern]) => pattern.test(focalText))?.[0] ?? null;
+}
+function exactArtworkPrompt(concept, brief) {
+  return `${buildArtworkPrompt(concept)}
+
+${buildArtworkConstraints(brief)}`;
+}
+function addUniquenessError(errors, label, values2, minimum = values2.length) {
+  if (uniqueCount(values2) < minimum) errors.push(`quartet must use ${minimum} distinct ${label}`);
+}
+function preflightConceptQuartet(candidates, brief) {
+  const concepts = candidates.slice(0, REQUIRED_CONCEPT_QUARTET_SIZE);
+  const errors = [];
+  const identity = briefIdentity2(brief);
+  const birthday = /\bbirthday\b/i.test(identity);
+  const explicitBackyardCelebration = BACKYARD_CUE.test(identity);
+  const milestone = milestonePattern(brief.milestone);
+  const construction = subjectFamiliesForBrief(brief).some((family) => family.id === "construction");
+  if (candidates.length !== REQUIRED_CONCEPT_QUARTET_SIZE) {
+    errors.push(
+      `concept provider returned ${candidates.length}; exactly ${REQUIRED_CONCEPT_QUARTET_SIZE} are required before artwork spend`
+    );
+  }
+  concepts.forEach((concept, index2) => {
+    const label = `concept ${index2 + 1} (${concept.conceptName})`;
+    const artBrief = `${concept.art.medium} ${concept.art.composition} ${concept.art.prompt}`;
+    const subject = preflightConceptForBrief(concept, brief);
+    const layout = validateLayoutBeforeGeneration(concept);
+    if (!concept.focalStrategy) errors.push(`${label} is missing focalStrategy`);
+    if (!concept.visualMood) errors.push(`${label} is missing visualMood`);
+    if (!subject.passed) errors.push(`${label}: ${subject.message}`);
+    for (const issue of layout.issues.filter((finding) => finding.repair === "regenerate")) {
+      errors.push(`${label}: ${issue.message}`);
+    }
+    if (birthday) {
+      if (!OCCASION_ART_CUE.test(artBrief)) errors.push(`${label} artwork omits the birthday/celebration identity`);
+      if (milestone && !milestone.test(concept.description)) {
+        errors.push(`${label} host-facing description omits the ${brief.milestone} milestone`);
+      }
+      if (milestone && !milestone.test(artBrief)) {
+        errors.push(`${label} artwork direction omits the ${brief.milestone} milestone`);
+      }
+    }
+    if (explicitBackyardCelebration && !BACKYARD_CUE.test(artBrief)) {
+      errors.push(`${label} artwork omits the backyard BBQ/outdoor celebration setting`);
+    }
+    if (construction && concept.focalStrategy) {
+      if (!CONSTRUCTION_STRATEGY_CUES[concept.focalStrategy].test(artBrief)) {
+        errors.push(`${label} does not deliver its ${concept.focalStrategy} construction strategy`);
+      }
+      const cueGroups = CONSTRUCTION_CUE_GROUPS.filter((pattern) => pattern.test(artBrief)).length;
+      if (cueGroups < 2) errors.push(`${label} needs at least two coherent construction/jobsite cue groups`);
+    }
+  });
+  if (concepts.length === REQUIRED_CONCEPT_QUARTET_SIZE) {
+    addUniquenessError(errors, "focal strategies", concepts.map((concept) => concept.focalStrategy ?? ""));
+    addUniquenessError(errors, "visual moods", concepts.map((concept) => concept.visualMood ?? ""));
+    addUniquenessError(errors, "illustration media", concepts.map((concept) => mediumFamily(concept.art.medium)));
+    addUniquenessError(errors, "style lanes", concepts.map((concept) => concept.styleLaneId));
+    addUniquenessError(errors, "font pairings", concepts.map((concept) => concept.fontPairingId));
+    addUniquenessError(errors, "focal compositions", concepts.map((concept) => concept.art.composition));
+    addUniquenessError(errors, "concept names", concepts.map((concept) => concept.conceptName));
+    addUniquenessError(errors, "layouts", concepts.map((concept) => concept.layoutStyle), 3);
+    if (construction) {
+      const machineLed = concepts.map(dominantMachine).filter((machine) => Boolean(machine));
+      if (machineLed.length > 2) errors.push("quartet repeats machine-led construction artwork in more than two directions");
+      for (const machine of Array.from(new Set(machineLed))) {
+        if (machineLed.filter((candidate) => candidate === machine).length > 1) {
+          errors.push(`quartet repeats ${machine} as a dominant subject`);
+        }
+      }
+    }
+  }
+  const reviewCards = concepts.filter(
+    (concept) => Boolean(concept.focalStrategy && concept.visualMood)
+  ).map((concept, index2) => ({
+    index: index2,
+    conceptName: concept.conceptName,
+    description: concept.description,
+    focalStrategy: concept.focalStrategy,
+    visualMood: concept.visualMood,
+    medium: concept.art.medium,
+    composition: concept.art.composition,
+    layoutStyle: concept.layoutStyle,
+    fontPairingId: concept.fontPairingId,
+    exactArtworkPrompt: exactArtworkPrompt(concept, brief)
+  }));
+  return { passed: errors.length === 0, errors, concepts, reviewCards };
+}
+
+// server/aiFirst/conceptBindings.ts
+function escaped(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+function milestonePattern2(milestone) {
+  const number = /^(\d{1,3})/.exec(milestone)?.[1];
+  if (!number) return null;
+  const ordinalWords = {
+    "1": "first",
+    "2": "second",
+    "3": "third",
+    "4": "fourth",
+    "5": "fifth",
+    "6": "sixth",
+    "7": "seventh",
+    "8": "eighth",
+    "9": "ninth",
+    "10": "tenth"
+  };
+  const aliases = [escaped(milestone), `${number}[- ]?year[- ]?old`];
+  if (ordinalWords[number]) aliases.push(`${ordinalWords[number]}(?:[- ]birthday)?`);
+  return new RegExp(`\\b(?:${aliases.join("|")})\\b`, "i");
+}
+var CONSTRUCTION_BINDINGS = {
+  "narrative-scene": "construction jobsite celebration with hard hats, safety cones, lumber and builder activity",
+  "iconic-detail": "construction machinery detail with a hydraulic bucket, steel tracks and safety striping",
+  "graphic-world": "construction blueprint site plan with survey grid, measured lumber and caution-stripe markings",
+  "tactile-still-life": "builder's still life with a hard hat, measuring tape, work gloves and lumber offcuts"
+};
+var CONSTRUCTION_GROUPS = [
+  /\b(excavator|bulldozer|dump truck|backhoe|loader|crane|cement mixer)\b/i,
+  /\b(bucket|boom|hydraulic|steel tracks?|machine detail)\b/i,
+  /\b(hard hat|safety vest|traffic cones?|caution stripe|construction barrier)\b/i,
+  /\b(tool belt|builder tools?|shovel|work gloves?|measuring tape)\b/i,
+  /\b(lumber|wood offcuts?|concrete blocks?|scaffold|building materials?)\b/i,
+  /\b(blueprint|site plan|survey grid|measurement grid|schematic|architectural plan|construction markings?)\b/i,
+  /\b(job ?site|building site|build zone|builder scene|construction scene)\b/i
+];
+var NAMED_CONSTRUCTION_MACHINE = /\b(?:dump trucks?|excavators?|diggers?|bulldozers?|dozers?|backhoes?|(?:front|wheel)\s+loaders?|loaders?|cranes?|(?:cement|concrete) mixers?)\b/i;
+var NAMED_CONSTRUCTION_MACHINE_GLOBAL = /\b(?:dump trucks?|excavators?|diggers?|bulldozers?|dozers?|backhoes?|(?:front|wheel)\s+loaders?|loaders?|cranes?|(?:cement|concrete) mixers?)\b/gi;
+var MACHINE_FREE_CONSTRUCTION_COMPOSITIONS = {
+  "narrative-scene": "wide backyard jobsite celebration led by builder activity below a calm typography field",
+  "graphic-world": "tall construction site-plan system beside a quiet typography panel",
+  "tactile-still-life": "centred builder-tool still life with generous quiet space around the type area"
+};
+function paletteLine(candidate) {
+  const { headlineColor, bodyColor, accentColor, textSurface } = candidate.semanticPalette;
+  return `Restrained palette of ${accentColor}, ${headlineColor}, ${bodyColor}, and ${textSurface}`;
+}
+function machineFreeConstructionPrompt(candidate, brief, milestonePhrase) {
+  const medium = candidate.art.medium.replace(NAMED_CONSTRUCTION_MACHINE_GLOBAL, "").replace(/\s{2,}/g, " ").trim() || "editorial illustration";
+  const birthday = milestonePhrase.trim() || brief.eventType.trim() || "birthday";
+  const backyard = /\b(backyard|barbecue|bbq|cookout|patio|garden party)\b/i.test(
+    `${brief.vibe} ${brief.requirements.required.join(" ")}`
+  );
+  const setting = backyard ? "backyard BBQ" : "celebration setting";
+  switch (candidate.focalStrategy) {
+    case "narrative-scene":
+      return `A refined ${medium} narrative of a ${setting} transformed into a ${birthday} little-builder jobsite celebration, led by measured lumber, scaffold frames, child-sized hard hats, safety cones, work gloves, tool belts, picnic tables, restrained bunting and a small cake. Builder activity and construction materials create the story without a full construction vehicle. ${paletteLine(candidate)}; polished, cinematic, age-appropriate editorial stationery.`;
+    case "graphic-world":
+      return `An intelligent ${medium} construction site-plan world for a ${birthday} ${setting}: survey grids, measured-lumber shapes, architectural marks, caution-stripe rhythm, traffic-cone symbols, a picnic-table footprint and restrained confetti. The construction identity comes from blueprint language and jobsite markings, with no vehicle as a hero object. ${paletteLine(candidate)}; precise, graphic and premium.`;
+    case "tactile-still-life":
+      return `An elevated ${medium} builder's still life for a ${birthday} ${setting}, arranged from a child-sized hard hat, measuring tape, work gloves, neat lumber offcuts, a small shovel, safety cones, restrained bunting and one birthday candle. Construction tools and materials carry the theme without a full construction vehicle. ${paletteLine(candidate)}; tactile, collected and never clip art.`;
+    default:
+      return candidate.art.prompt;
+  }
+}
+function appendSentence(value, sentence, maxLength) {
+  const trimmed = value.trim().replace(/[.\s]+$/, "");
+  const suffix = `. ${sentence}.`;
+  const available = Math.max(0, maxLength - suffix.length);
+  return `${trimmed.slice(0, available).trimEnd()}${suffix}`;
+}
+function bindConceptsToBrief(candidates, brief) {
+  const birthday = /\bbirthday\b/i.test(`${brief.eventName} ${brief.eventType} ${brief.vibe}`);
+  const milestone = birthday ? milestonePattern2(brief.milestone) : null;
+  const milestonePhrase = `${brief.milestone} birthday`;
+  const construction = subjectFamiliesForBrief(brief).some((family) => family.id === "construction");
+  return candidates.map((candidate) => {
+    const typeGeometry = canonicalTypeGeometry(candidate);
+    let description = candidate.description;
+    let medium = candidate.art.medium;
+    let composition = candidate.art.composition;
+    let prompt = candidate.art.prompt;
+    if (milestone && !milestone.test(description)) {
+      description = appendSentence(description, `Created for a ${milestonePhrase}`, 220);
+    }
+    if (milestone && !milestone.test(prompt)) {
+      prompt = appendSentence(prompt, `Artwork for a ${milestonePhrase} celebration`, 1200);
+    }
+    if (construction && candidate.focalStrategy) {
+      const artBrief = `${candidate.art.medium} ${candidate.art.composition} ${prompt}`;
+      if (candidate.focalStrategy !== "iconic-detail" && NAMED_CONSTRUCTION_MACHINE.test(artBrief)) {
+        medium = medium.replace(NAMED_CONSTRUCTION_MACHINE_GLOBAL, "").replace(/\s{2,}/g, " ").trim() || "editorial illustration";
+        composition = MACHINE_FREE_CONSTRUCTION_COMPOSITIONS[candidate.focalStrategy] ?? composition;
+        prompt = machineFreeConstructionPrompt(candidate, brief, milestonePhrase);
+      }
+      const boundArtBrief = `${medium} ${composition} ${prompt}`;
+      const cueCount = CONSTRUCTION_GROUPS.filter((pattern) => pattern.test(boundArtBrief)).length;
+      if (cueCount < 2) prompt = appendSentence(prompt, CONSTRUCTION_BINDINGS[candidate.focalStrategy], 1200);
+      if (!/\b(construction|builder|job ?site|building site|hard hat|dump truck|excavator|bulldozer)\b/i.test(description)) {
+        description = appendSentence(description, "An unmistakable construction and little-builder direction", 220);
+      }
+    }
+    return {
+      ...candidate,
+      description,
+      art: { ...candidate.art, medium, composition, prompt },
+      // The renderer owns the real type box. Do not spend a second text call
+      // asking a model to rediscover geometry Posy can derive exactly.
+      placementId: typeGeometry.placementId,
+      safeTypographyRegion: typeGeometry.safeTypographyRegion
+    };
+  });
+}
+
+// server/aiFirst/conceptOnlyProof.ts
+var CONCEPT_MODEL = "claude-sonnet-4-6";
+var MAX_TEXT_ONLY_CONCEPT_CORRECTIONS = 1;
+function abortError(reason) {
+  if (reason instanceof Error) return reason;
+  const error = new Error(typeof reason === "string" ? reason : "Concept proof was disconnected.");
+  error.name = "AbortError";
+  return error;
+}
+function throwIfAborted(signal) {
+  if (signal?.aborted) throw abortError(signal.reason);
+}
+async function runConceptOnlyProof(input) {
+  const client = input.anthropic ?? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  let firstConceptReported = false;
+  const requestQuartet = async (messages2) => {
+    const parser = new ConceptStreamParser();
+    const candidates = [];
+    const collect = (concepts) => {
+      for (const line2 of concepts) {
+        if (!firstConceptReported) {
+          firstConceptReported = true;
+          input.onFirstConcept?.();
+        }
+        candidates.push(line2.concept);
+      }
+    };
+    const stream = await client.messages.stream({
+      model: CONCEPT_MODEL,
+      max_tokens: 4e3,
+      system: buildSystemPrompt(),
+      messages: messages2
+    });
+    for await (const chunk of stream) {
+      throwIfAborted(input.signal);
+      if (chunk.type !== "content_block_delta" || chunk.delta.type !== "text_delta") continue;
+      collect(parser.push(chunk.delta.text));
+    }
+    throwIfAborted(input.signal);
+    collect(parser.flush());
+    input.onReviewingConcepts?.();
+    const boundCandidates = bindConceptsToBrief(candidates, input.brief);
+    const quartet = preflightConceptQuartet(boundCandidates, input.brief);
+    const parserErrors = parser.rejections.flatMap((rejection) => rejection.errors);
+    return { candidates: boundCandidates, quartet, parserErrors };
+  };
+  const userPrompt = buildUserPrompt({
+    brief: input.brief,
+    direction: input.direction,
+    avoidConceptNames: input.avoidConceptNames,
+    keepConstraints: input.keepConstraints
+  });
+  let attempt = await requestQuartet([{ role: "user", content: userPrompt }]);
+  let conceptRejections = attempt.parserErrors.length + attempt.quartet.errors.length;
+  if (!attempt.quartet.passed) {
+    const firstErrors = [...attempt.parserErrors, ...attempt.quartet.errors];
+    const assistantContent = attempt.candidates.length ? attempt.candidates.map((concept) => JSON.stringify(concept)).join("\n") : "No valid concept objects were parsed from the first response.";
+    attempt = await requestQuartet([
+      { role: "user", content: userPrompt },
+      { role: "assistant", content: assistantContent },
+      { role: "user", content: buildConceptCorrectionPrompt(firstErrors) }
+    ]);
+    conceptRejections += attempt.parserErrors.length + attempt.quartet.errors.length;
+  }
+  if (!attempt.quartet.passed) {
+    const finalErrors = [...attempt.parserErrors, ...attempt.quartet.errors];
+    for (const error of finalErrors) input.onPreflightWarning?.(error);
+    throw new Error(
+      `creative quartet failed zero-image preflight after ${MAX_TEXT_ONLY_CONCEPT_CORRECTIONS} text-only correction pass: ${finalErrors.join("; ")}`
+    );
+  }
+  return {
+    model: CONCEPT_MODEL,
+    concepts: attempt.quartet.concepts,
+    conceptRejections,
+    imageProviderCalls: 0,
+    billedArtworkAttempts: 0
+  };
+}
+
+// server/aiFirst/pipeline.ts
+var TARGET_CONCEPT_COUNT = TARGET_DIRECTION_COUNT;
+var MAX_ARTWORK_ATTEMPTS = 2;
+var MAX_ARTWORK_ATTEMPTS_NO_RETRY = 1;
+var Semaphore = class {
+  available;
+  waiting = [];
+  constructor(size2) {
+    this.available = size2;
+  }
+  async acquire() {
+    if (this.available > 0) {
+      this.available -= 1;
+      return () => this.release();
+    }
+    await new Promise((resolve4) => this.waiting.push(resolve4));
+    return () => this.release();
+  }
+  release() {
+    const next = this.waiting.shift();
+    if (next) next();
+    else this.available += 1;
+  }
+};
+async function runAiFirstPipeline(input) {
+  const started = Date.now();
+  const sink = input.sink;
+  const emit = (event) => {
+    sink({ ...event, at: Date.now() });
+    if (input.runStore && input.runId && event.type === "progress") {
+      void input.runStore.updateProgress(input.runId, event.message);
+    }
+  };
+  const since = () => Date.now() - started;
+  const generateImage = input.generateImage ?? generateArtwork;
+  const summary = {
+    directions: 0,
+    adaptedDirections: 0,
+    billedImages: 0,
+    reusedImages: 0,
+    retries: 0,
+    costUsd: 0,
+    msToFirstConcept: null,
+    msToFirstDirection: null,
+    msToAllDirections: null,
+    conceptRejections: 0,
+    degraded: []
+  };
+  emit({ type: "progress", message: PROGRESS_MESSAGES.understanding });
+  const semaphore = new Semaphore(MAX_ARTWORK_CONCURRENCY);
+  const usedThemeIds = [];
+  const inFlight = [];
+  let startedDirections = 0;
+  let budgetRemaining = input.allowance;
+  const directionLimit = Math.max(1, Math.min(TARGET_CONCEPT_COUNT, input.directionLimit ?? TARGET_CONCEPT_COUNT));
+  const startDirection = (index2, concept) => {
+    startedDirections += 1;
+    emit({
+      type: "progress",
+      message: startedDirections === 1 ? PROGRESS_MESSAGES.firstDirection : PROGRESS_MESSAGES.anotherDirection
+    });
+    usedThemeIds.push(concept.baseThemeId);
+    inFlight.push(
+      (async () => {
+        const release2 = await semaphore.acquire();
+        try {
+          const finished = await resolveDirection({
+            index: index2,
+            concept,
+            input,
+            generateImage,
+            summary,
+            usedThemeIds,
+            spend: {
+              take: () => {
+                if (budgetRemaining <= 0) return false;
+                budgetRemaining -= 1;
+                return true;
+              }
+            },
+            emit,
+            startedAt: started
+          });
+          summary.directions += 1;
+          if (finished.source === "adapted-studio-direction") summary.adaptedDirections += 1;
+          if (summary.msToFirstDirection === null) summary.msToFirstDirection = since();
+          emit({ type: "direction", direction: finished });
+        } catch (err) {
+          if (isAbortError2(err) || input.signal?.aborted) throw err;
+          emit({ type: "warning", message: `direction ${index2 + 1} could not be completed: ${err.message}` });
+        } finally {
+          release2();
+        }
+      })()
+    );
+  };
+  try {
+    const proof = await runConceptOnlyProof({
+      brief: input.brief,
+      direction: input.direction,
+      avoidConceptNames: input.avoidConceptNames,
+      keepConstraints: input.keepConstraints,
+      anthropic: input.anthropic,
+      signal: input.signal,
+      onFirstConcept: () => {
+        if (summary.msToFirstConcept === null) summary.msToFirstConcept = since();
+      },
+      onReviewingConcepts: () => emit({ type: "progress", message: PROGRESS_MESSAGES.reviewingConcepts }),
+      onPreflightWarning: (error) => emit({ type: "warning", message: `creative set blocked before artwork spend: ${error}` })
+    });
+    summary.conceptRejections = proof.conceptRejections;
+    proof.concepts.forEach((concept, index2) => emit({ type: "concept", index: index2, concept }));
+    proof.concepts.slice(0, directionLimit).forEach((concept, index2) => startDirection(index2, concept));
+  } catch (err) {
+    await Promise.allSettled(inFlight);
+    if (isAbortError2(err) || input.signal?.aborted) throw abortError2(input.signal?.reason);
+    throw new Error(`concept generation failed: ${err.message}`);
+  }
+  emit({ type: "progress", message: PROGRESS_MESSAGES.finishing });
+  await Promise.all(inFlight);
+  throwIfAborted2(input.signal);
+  if (summary.directions === 0) {
+    throw new Error(
+      `invitation generation delivered ${summary.directions} of ${directionLimit} promised directions`
+    );
+  } else if (summary.directions < directionLimit) {
+    summary.degraded.push(`only ${summary.directions} of ${directionLimit} directions completed`);
+  } else {
+    emit({
+      type: "progress",
+      message: directionLimit === 1 ? "Your review direction is ready." : PROGRESS_MESSAGES.ready
+    });
+  }
+  summary.msToAllDirections = since();
+  if (input.runStore && input.runId) await input.runStore.complete(input.runId);
+  emit({ type: "done", summary });
+  return summary;
+}
+async function resolveDirection(ctx) {
+  const { input, summary } = ctx;
+  const attempts = [];
+  let repair = validateLayoutBeforeGeneration(ctx.concept);
+  let concept = { ...ctx.concept, layoutStyle: repair.layoutStyle, minOverlay: repair.overlay };
+  const normalized = normalizeSemanticPalette(concept.semanticPalette);
+  if (normalized.fixes.some((f) => f.changed)) {
+    concept = {
+      ...concept,
+      semanticPalette: {
+        textSurface: concept.semanticPalette.textSurface,
+        headlineColor: normalized.fixes.find((f) => f.role === "headlineColor")?.after ?? concept.semanticPalette.headlineColor,
+        bodyColor: normalized.fixes.find((f) => f.role === "bodyColor")?.after ?? concept.semanticPalette.bodyColor,
+        accentColor: normalized.fixes.find((f) => f.role === "accentColor")?.after ?? concept.semanticPalette.accentColor
+      }
+    };
+  }
+  let artworkOpacity = repair.artworkOpacity;
+  const reusable = await lookupReusablePreview(input.previewStore, input.eventId, concept);
+  if (reusable) {
+    summary.reusedImages += 1;
+    await input.usageStore.record({
+      eventId: input.eventId,
+      email: input.email,
+      reason: "reuse",
+      billed: false,
+      automatic: false,
+      conceptFingerprint: reusable.conceptFingerprint,
+      previewId: reusable.previewId,
+      reuseOf: reusable.previewId,
+      costUsdMicros: 0,
+      createdAt: Date.now()
+    });
+    return finish(ctx, concept, reusable, "ai-generated", attempts, artworkOpacity, true);
+  }
+  const basePrompt = `${buildArtworkPrompt(concept)}
+
+${buildArtworkConstraints(input.brief)}`;
+  let failureCodes = [];
+  const maxAttempts = input.disableAutomaticRetry ? MAX_ARTWORK_ATTEMPTS_NO_RETRY : MAX_ARTWORK_ATTEMPTS;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    throwIfAborted2(input.signal);
+    if (input.breaker && !input.breaker.allows()) {
+      summary.degraded.push("provider circuit open");
+      break;
+    }
+    const idempotencyKey = input.runId ? `${input.runId}:direction-${ctx.index}:attempt-${attempt}` : void 0;
+    if (!ctx.spend.take()) {
+      summary.degraded.push("billed-image allowance exhausted");
+      break;
+    }
+    const attemptStarted = Date.now();
+    const prompt = attempt === 1 ? basePrompt : buildRetryPrompt(basePrompt, failureCodes);
+    const aspectRatio = aspectRatioForLayout(concept.layoutStyle);
+    const artworkModel = input.artworkModel ?? DEFAULT_ARTWORK_MODEL;
+    const artworkQuality = "high";
+    const artworkSize = sizeForAspect(aspectRatio);
+    const imageCostUsdMicros = estimateImageCostUsdMicros(artworkModel, artworkQuality, artworkSize);
+    const reserved = await input.usageStore.reserveProviderAttempt({
+      eventId: input.eventId,
+      email: input.email,
+      reason: attempt === 1 ? "initial" : "quality-retry",
+      // Once the request can reach the provider, billing is conservatively
+      // treated as possible. A transport failure cannot prove it was free.
+      billed: true,
+      automatic: attempt > 1,
+      conceptFingerprint: void 0,
+      idempotencyKey,
+      costUsdMicros: imageCostUsdMicros,
+      createdAt: Date.now()
+    });
+    if (!reserved) {
+      summary.degraded.push(
+        `direction ${ctx.index + 1} attempt ${attempt} was already reserved under this run \u2014 skipped rather than spent twice`
+      );
+      break;
+    }
+    summary.billedImages += 1;
+    summary.costUsd += imageCostUsdMicros / 1e6;
+    if (attempt > 1) summary.retries += 1;
+    let bytes;
+    let dataUrl;
+    try {
+      const art = await ctx.generateImage({
+        prompt,
+        aspectRatio,
+        model: artworkModel,
+        quality: artworkQuality,
+        signal: input.signal
+      });
+      bytes = art.bytes;
+      dataUrl = art.dataUrl;
+      input.breaker?.recordSuccess();
+    } catch (err) {
+      if (isAbortError2(err) || input.signal?.aborted) throw abortError2(input.signal?.reason);
+      input.breaker?.recordFailure();
+      attempts.push({
+        attempt,
+        tier1: { passed: false, findings: [], durationMs: 0 },
+        failureCodes: ["provider-error"],
+        // The request crossed the provider boundary. Billing is uncertain,
+        // so the durable reservation remains billed and no automatic retry
+        // may follow it.
+        billed: true,
+        durationMs: Date.now() - attemptStarted
+      });
+      summary.degraded.push(`direction ${ctx.index + 1} provider result was uncertain; automatic retry blocked`);
+      ctx.emit({
+        type: "warning",
+        message: `artwork attempt ${attempt} did not return safely; no automatic retry was made: ${err.message}`
+      });
+      break;
+    }
+    let tier1 = runTier1Checks({
+      bytes,
+      concept,
+      overlayCoverage: OVERLAY_COVERAGE[repair.overlay],
+      artworkOpacity: artworkOpacity ?? 1,
+      ocr: input.ocr
+    });
+    if (onlyCriticalFailureIs(tier1.findings, "crop-unsafe")) {
+      for (const layoutStyle of cropRescueLayouts(concept.layoutStyle)) {
+        const candidateRepair = validateLayoutBeforeGeneration({ ...concept, layoutStyle });
+        const candidateConcept = {
+          ...concept,
+          layoutStyle: candidateRepair.layoutStyle,
+          minOverlay: candidateRepair.overlay
+        };
+        if (aspectRatioForLayout(candidateConcept.layoutStyle) !== aspectRatio) continue;
+        const candidateTier1 = runTier1Checks({
+          bytes,
+          concept: candidateConcept,
+          overlayCoverage: OVERLAY_COVERAGE[candidateRepair.overlay],
+          artworkOpacity: candidateRepair.artworkOpacity ?? 1,
+          ocr: input.ocr
+        });
+        if (!candidateTier1.passed) continue;
+        concept = candidateConcept;
+        repair = candidateRepair;
+        artworkOpacity = candidateRepair.artworkOpacity;
+        tier1 = candidateTier1;
+        summary.degraded.push(
+          `direction ${ctx.index + 1} reused its paid artwork in ${candidateConcept.layoutStyle} after a crop-only layout failure`
+        );
+        break;
+      }
+    }
+    if (onlyCriticalFailureIs(tier1.findings, "quiet-region") && repair.overlay !== "plate") {
+      const candidateConcept = { ...concept, minOverlay: "plate" };
+      const candidateRepair = validateLayoutBeforeGeneration(candidateConcept);
+      const candidateTier1 = runTier1Checks({
+        bytes,
+        concept: candidateConcept,
+        overlayCoverage: OVERLAY_COVERAGE[candidateRepair.overlay],
+        artworkOpacity: candidateRepair.artworkOpacity ?? artworkOpacity ?? 1,
+        ocr: input.ocr
+      });
+      if (candidateTier1.passed) {
+        concept = candidateConcept;
+        repair = candidateRepair;
+        artworkOpacity = candidateRepair.artworkOpacity ?? artworkOpacity;
+        tier1 = candidateTier1;
+        summary.degraded.push(
+          `direction ${ctx.index + 1} reused its paid artwork with a deterministic paper panel after a quiet-region-only failure`
+        );
+      }
+    }
+    let vision;
+    if (tier1.passed) {
+      vision = await runVisionGate({ bytes, concept, brief: input.brief, client: input.anthropic });
+      summary.costUsd += visionCostUsd(vision.usage);
+      if (vision.unavailable) summary.degraded.push(`vision gate unavailable: ${vision.notes}`);
+    }
+    const passed = tier1.passed && vision?.passed === true;
+    failureCodes = tier1.passed ? vision?.failureCodes ?? ["vision-unavailable"] : retryCodesFor(tier1.findings);
+    attempts.push({
+      attempt,
+      tier1: { passed: tier1.passed, findings: tier1.findings, durationMs: tier1.durationMs },
+      vision: vision ? {
+        scores: vision.scores,
+        requiredPresent: vision.requiredPresent,
+        excludedFound: vision.excludedFound,
+        passed: vision.passed,
+        failureCodes: vision.failureCodes,
+        unavailable: vision.unavailable,
+        notes: vision.notes
+      } : void 0,
+      failureCodes: passed ? [] : failureCodes,
+      billed: true,
+      durationMs: Date.now() - attemptStarted
+    });
+    if (passed) {
+      const saved = await savePreview({
+        store: input.previewStore,
+        eventId: input.eventId,
+        concept,
+        bytes,
+        assetUrl: dataUrl,
+        source: "ai-generated"
+      });
+      if (input.artworkAttemptStore && input.ownerToken) {
+        await input.artworkAttemptStore.record({
+          eventId: input.eventId,
+          ownerToken: input.ownerToken,
+          runId: input.runId ?? null,
+          idempotencyKey: idempotencyKey ?? null,
+          directionIndex: ctx.index,
+          attempt,
+          status: "accepted",
+          bytes,
+          previewId: saved.record.previewId,
+          concept,
+          failureCodes: [],
+          tier1Findings: tier1.findings,
+          visionScores: vision?.scores ?? null,
+          model: artworkModel,
+          quality: artworkQuality,
+          size: artworkSize,
+          costUsdMicros: imageCostUsdMicros
+        });
+      }
+      if (input.runStore && input.runId) await input.runStore.incrementCompleted(input.runId);
+      return finish(ctx, concept, saved.record, "ai-generated", attempts, artworkOpacity, false);
+    }
+    if (input.artworkAttemptStore && input.ownerToken) {
+      await input.artworkAttemptStore.record({
+        eventId: input.eventId,
+        ownerToken: input.ownerToken,
+        runId: input.runId ?? null,
+        idempotencyKey: idempotencyKey ?? null,
+        directionIndex: ctx.index,
+        attempt,
+        status: "rejected",
+        bytes,
+        previewId: null,
+        concept,
+        failureCodes,
+        tier1Findings: tier1.findings,
+        visionScores: vision?.scores ?? null,
+        model: artworkModel,
+        quality: artworkQuality,
+        size: artworkSize,
+        costUsdMicros: imageCostUsdMicros
+      });
+    }
+  }
+  throwIfAborted2(input.signal);
+  const adapted = adaptStudioDirection({
+    concept,
+    brief: input.brief,
+    usedThemeIds: ctx.usedThemeIds,
+    reason: failureCodes.length > 0 ? failureCodes.join(", ") : "artwork unavailable"
+  });
+  if (!adapted) {
+    throw new Error(
+      `generated artwork did not meet Posy's quality standard and no theme-safe studio fallback matches this event`
+    );
+  }
+  ctx.emit({
+    type: "warning",
+    message: `direction ${ctx.index + 1} fell back to an adapted studio direction (${adapted.reason})`
+  });
+  const studioBytes = await loadStudioArtwork(adapted.theme);
+  const savedStudio = await savePreview({
+    store: input.previewStore,
+    eventId: input.eventId,
+    concept: adapted.concept,
+    bytes: studioBytes,
+    assetUrl: adapted.theme.artwork.fullUrl,
+    source: "adapted-studio-direction"
+  });
+  if (input.runStore && input.runId) {
+    await input.runStore.incrementFallback(input.runId);
+    await input.runStore.incrementCompleted(input.runId);
+  }
+  return finish(ctx, adapted.concept, savedStudio.record, "adapted-studio-direction", attempts, void 0, false);
+}
+function onlyCriticalFailureIs(findings, code) {
+  const critical = findings.filter((finding) => finding.critical);
+  return critical.length === 1 && critical[0].code === code;
+}
+function cropRescueLayouts(layoutStyle) {
+  return layoutStyle === "split" ? ["full-bleed", "backdrop"] : [];
+}
+function abortError2(reason) {
+  if (reason instanceof Error) return reason;
+  const error = new Error(typeof reason === "string" ? reason : "Invitation generation was disconnected.");
+  error.name = "AbortError";
+  return error;
+}
+function isAbortError2(err) {
+  return err instanceof Error && err.name === "AbortError";
+}
+function throwIfAborted2(signal) {
+  if (signal?.aborted) throw abortError2(signal.reason);
+}
+function finish(ctx, concept, record, source, attempts, artworkOpacity, reusedPreview) {
+  const illustrationUrl = ctx.input.ownerToken ? previewAssetUrl(ctx.input.ownerToken, record.previewId) : record.assetUrl;
+  return {
+    index: ctx.index,
+    concept,
+    source,
+    previewId: record.previewId,
+    assetHash: record.assetHash,
+    illustrationUrl,
+    overlay: concept.minOverlay,
+    artworkOpacity,
+    attempts,
+    reusedPreview,
+    msFromStart: Date.now() - ctx.startedAt
+  };
+}
+
+// shared/aiFirstAskPosy.ts
+var INVITATION_ASK_POSY_ACTIONS = [
+  {
+    id: "refine",
+    label: "Refine this invitation",
+    direction: "Refine the selected direction. Keep its identity; sharpen the craft.",
+    pins: ["layout", "palette"],
+    resultCount: 2
+  },
+  {
+    id: "different-directions",
+    label: "Create different directions",
+    direction: "Go somewhere genuinely different from what the host has already seen.",
+    pins: [],
+    resultCount: 4
+  },
+  {
+    id: "keep-layout-change-art",
+    label: "Keep the layout, change the artwork",
+    direction: "Keep the composition exactly as it is and replace the illustration with a different subject and treatment.",
+    pins: ["layout", "typography"],
+    resultCount: 2
+  },
+  {
+    id: "keep-art-change-typography",
+    label: "Keep the artwork, change the typography",
+    direction: "Keep the illustration brief identical and reset the type: different pairing, different hierarchy.",
+    pins: ["artwork", "palette"],
+    resultCount: 2
+  },
+  {
+    id: "more-elegant",
+    label: "More elegant",
+    direction: "More elegant: restrained palette, finer detail, more negative space, quieter type.",
+    pins: [],
+    resultCount: 2
+  },
+  {
+    id: "more-playful",
+    label: "More playful",
+    direction: "More playful: livelier colour, looser mark-making, more energy \u2014 without becoming childish.",
+    pins: [],
+    resultCount: 2
+  },
+  {
+    id: "more-modern",
+    label: "More modern",
+    direction: "More modern: contemporary shapes, cleaner geometry, current editorial typography.",
+    pins: [],
+    resultCount: 2
+  },
+  {
+    id: "less-literal",
+    label: "Reduce literal elements",
+    direction: "Say the theme through colour, material and mood rather than depicting its objects literally.",
+    pins: [],
+    resultCount: 2
+  },
+  {
+    id: "stronger-theme",
+    label: "Strengthen the theme",
+    direction: "Make the theme unmistakable at a glance \u2014 the guest should know what this celebrates before reading a word.",
+    pins: [],
+    resultCount: 2
+  },
+  {
+    id: "help-choose",
+    label: "Help me choose",
+    direction: "",
+    pins: [],
+    advisory: true
+  }
+];
+
+// server/aiFirst/askPosy.ts
+function constraintsFor(concept, pins) {
+  const out = [];
+  for (const pin of pins) {
+    if (pin === "layout") {
+      out.push(`layoutStyle must stay "${concept.layoutStyle}" with safeTypographyRegion "${concept.safeTypographyRegion}"`);
+    }
+    if (pin === "artwork") {
+      out.push(`art.medium must stay "${concept.art.medium}" and art.prompt must stay: ${concept.art.prompt}`);
+    }
+    if (pin === "typography") {
+      out.push(`fontPairingId must stay "${concept.fontPairingId}"`);
+    }
+    if (pin === "palette") {
+      const p = concept.semanticPalette;
+      out.push(
+        `semanticPalette must stay textSurface ${p.textSurface}, headlineColor ${p.headlineColor}, bodyColor ${p.bodyColor}, accentColor ${p.accentColor}`
+      );
+    }
+  }
+  return out;
+}
+function resolveAskPosyAction(actionId, body = {}) {
+  const freeText = typeof body.direction === "string" && body.direction.trim() ? body.direction.trim() : void 0;
+  const avoid = Array.isArray(body.avoidConceptNames) ? body.avoidConceptNames.filter((n) => typeof n === "string") : void 0;
+  const explicitConstraints = Array.isArray(body.keepConstraints) ? body.keepConstraints.filter((n) => typeof n === "string") : [];
+  const action = INVITATION_ASK_POSY_ACTIONS.find((a) => a.id === actionId);
+  if (!action || action.advisory) {
+    return { direction: freeText, avoidConceptNames: avoid, keepConstraints: explicitConstraints };
+  }
+  const concept = body.concept;
+  const pinned = concept && action.pins.length > 0 ? constraintsFor(concept, action.pins) : [];
+  return {
+    action,
+    direction: [action.direction, freeText].filter(Boolean).join(" "),
+    keepConstraints: [...pinned, ...explicitConstraints],
+    avoidConceptNames: avoid
+  };
+}
+
+// server/aiFirst/config.ts
+var AI_FIRST_DIRECTION_LIMIT_ENV = "POSY_AI_FIRST_DIRECTION_LIMIT";
+var AI_FIRST_IMAGE_MODEL_ENV = "POSY_AI_FIRST_IMAGE_MODEL";
+var SUPPORTED_ARTWORK_MODELS = /* @__PURE__ */ new Set(["gpt-image-1", "gpt-image-2"]);
+function readAiFirstDirectionLimit(env) {
+  const parsed = Number(env[AI_FIRST_DIRECTION_LIMIT_ENV]);
+  return Number.isInteger(parsed) && parsed >= 1 && parsed <= TARGET_DIRECTION_COUNT ? parsed : TARGET_DIRECTION_COUNT;
+}
+function readAiFirstArtworkModel(env) {
+  const configured = env[AI_FIRST_IMAGE_MODEL_ENV]?.trim() || DEFAULT_ARTWORK_MODEL;
+  if (!SUPPORTED_ARTWORK_MODELS.has(configured)) {
+    throw new Error(
+      `${AI_FIRST_IMAGE_MODEL_ENV} must be one of: ${Array.from(SUPPORTED_ARTWORK_MODELS).join(", ")}.`
+    );
+  }
+  return configured;
+}
+
+// server/aiFirst/providerReadiness.ts
+init_sdk();
+function safeError(error) {
+  const status = typeof error?.status === "number" ? error.status : void 0;
+  const message2 = error instanceof Error ? error.message : String(error);
+  return { httpStatus: status, error: message2.slice(0, 500) };
+}
+async function checkAiFirstModelReadiness(input) {
+  const anthropicKey = input.env.ANTHROPIC_API_KEY?.trim();
+  const openAiKey = input.env.OPENAI_API_KEY?.trim();
+  let anthropic = {
+    provider: "anthropic",
+    model: CONCEPT_MODEL,
+    configured: Boolean(anthropicKey),
+    accessible: false
+  };
+  if (anthropicKey) {
+    try {
+      const client = input.anthropic ?? new Anthropic({ apiKey: anthropicKey });
+      const model = await client.models.retrieve(CONCEPT_MODEL);
+      anthropic = { ...anthropic, accessible: model.id === CONCEPT_MODEL };
+    } catch (error) {
+      anthropic = { ...anthropic, ...safeError(error) };
+    }
+  }
+  let openai = {
+    provider: "openai",
+    model: input.artworkModel,
+    configured: Boolean(openAiKey),
+    accessible: false
+  };
+  if (openAiKey) {
+    try {
+      const response = await (input.fetchImpl ?? fetch)(
+        `https://api.openai.com/v1/models/${encodeURIComponent(input.artworkModel)}`,
+        { headers: { Authorization: `Bearer ${openAiKey}` } }
+      );
+      if (!response.ok) {
+        const body = await response.text().catch(() => "");
+        openai = {
+          ...openai,
+          httpStatus: response.status,
+          error: body.slice(0, 500) || `OpenAI model check failed (${response.status}).`
+        };
+      } else {
+        const model = await response.json();
+        openai = { ...openai, accessible: model.id === input.artworkModel, httpStatus: response.status };
+      }
+    } catch (error) {
+      openai = { ...openai, ...safeError(error) };
+    }
+  }
+  return {
+    ready: anthropic.accessible && openai.accessible,
+    anthropic,
+    openai,
+    imageProviderCalls: 0
+  };
+}
+
+// server/aiFirst/routes.ts
+var breaker = new CircuitBreaker();
+var limiter = new RateLimiter();
+function abortOnUnexpectedResponseClose(res, controller) {
+  res.on("close", () => {
+    if (!res.writableEnded) controller.abort(new Error("The invitation generation connection closed."));
+  });
+}
+function registerAiFirstRoutes(app2, deps) {
+  const env = () => deps.env ?? process.env;
+  const flags = () => readFeatureFlags(env());
+  app2.get("/api/feature-flags", (_req, res) => {
+    res.json(flags());
+  });
+  const gated = (handler) => {
+    return async (req, res) => {
+      if (!flags().aiFirstInvitations) {
+        res.status(404).json({ error: "Not found" });
+        return;
+      }
+      await handler(req, res);
+    };
+  };
+  const previewOwnerReview = (handler) => gated(async (req, res) => {
+    if (env().VERCEL_ENV !== "preview") {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    const ownerToken = String(req.params.ownerToken);
+    const event = await deps.storage.getEventByOwnerToken(ownerToken);
+    if (!event) {
+      res.status(404).json({ error: "Event not found" });
+      return;
+    }
+    if (!flags().invitationGenerationKillSwitch) {
+      res.status(409).json({
+        error: "Preview readiness review requires invitation generation to remain paused.",
+        denial: "kill-switch-required"
+      });
+      return;
+    }
+    await handler(req, res, event, ownerToken);
+  });
+  app2.get(
+    "/api/events/owner/:ownerToken/ai-first/review/readiness",
+    previewOwnerReview(async (_req, res) => {
+      let artworkModel;
+      try {
+        artworkModel = readAiFirstArtworkModel(env());
+      } catch (error) {
+        res.status(503).json({ error: error.message, denial: "invalid-provider-configuration" });
+        return;
+      }
+      const providers = await (deps.checkModelReadiness ?? checkAiFirstModelReadiness)({
+        env: env(),
+        artworkModel
+      });
+      const directionLimit = readAiFirstDirectionLimit(env());
+      const automaticRetryDisabled = flags().aiFirstDisableAutomaticRetry;
+      const canaryControlsReady = artworkModel === "gpt-image-2" && directionLimit === 1 && automaticRetryDisabled;
+      res.json({
+        ready: providers.ready && canaryControlsReady,
+        environment: "preview",
+        killSwitch: true,
+        canaryControlsReady,
+        directionLimit,
+        automaticRetryDisabled,
+        artworkModel,
+        providers,
+        imageProviderCalls: 0,
+        billedArtworkAttempts: 0
+      });
+    })
+  );
+  app2.post(
+    "/api/events/owner/:ownerToken/ai-first/review/concept-proof",
+    previewOwnerReview(async (req, res, event) => {
+      if (req.body?.confirmConceptOnly !== true) {
+        res.status(400).json({
+          error: "Set confirmConceptOnly to true to run the text-only Preview proof.",
+          denial: "concept-proof-confirmation-required"
+        });
+        return;
+      }
+      const [menuItems2, budgetItems2, guests2] = await Promise.all([
+        deps.storage.listMenuItems(event.id),
+        deps.storage.listBudgetItems(event.id),
+        deps.storage.listGuests(event.id)
+      ]);
+      const brief = buildEventBrief({
+        event,
+        dna: computeEventDna({ eventType: event.eventType, menuItems: menuItems2, budgetItems: budgetItems2 }).scores,
+        guestCount: guests2.length > 0 ? guests2.length : null,
+        vibeAnswer: typeof req.body?.feeling === "string" ? req.body.feeling : void 0,
+        inspirationNotes: typeof req.body?.inspirationNotes === "string" ? req.body.inspirationNotes : void 0
+      });
+      try {
+        const proof = await (deps.runConceptProof ?? runConceptOnlyProof)({
+          brief,
+          direction: typeof req.body?.direction === "string" ? req.body.direction : void 0
+        });
+        res.json({
+          ...proof,
+          environment: "preview",
+          killSwitch: true,
+          runClaimed: false
+        });
+      } catch (error) {
+        res.status(503).json({
+          error: error.message,
+          denial: "concept-proof-failed",
+          environment: "preview",
+          killSwitch: true,
+          runClaimed: false,
+          imageProviderCalls: 0,
+          billedArtworkAttempts: 0
+        });
+      }
+    })
+  );
+  app2.get(
+    "/api/events/owner/:ownerToken/ai-first/status",
+    gated(async (req, res) => {
+      const requestFlags = flags();
+      const event = await deps.storage.getEventByOwnerToken(String(req.params.ownerToken));
+      if (!event) {
+        res.status(404).json({ error: "Event not found" });
+        return;
+      }
+      const email = event.capturedEmail ?? void 0;
+      const entitlement = email ? await deps.storage.getEmailEntitlement(email) : void 0;
+      const tier = entitlement?.planTier;
+      const usage = await deps.usageStore.snapshot(event.id, email, monthStart());
+      const activeGenerations = await deps.runStore.hasActiveRun(event.id) ? 1 : usage.activeGenerations;
+      res.json({
+        plan: tierLabel(tier),
+        ceilings: ceilingsForTier(tier),
+        usage: { ...usage, activeGenerations },
+        killSwitch: requestFlags.invitationGenerationKillSwitch,
+        // The client renders the reviewer control only when the server—not a
+        // build-time browser assumption—proves this is a paused Vercel
+        // Preview. The review endpoints repeat both checks before doing work.
+        previewReviewAvailable: env().VERCEL_ENV === "preview" && requestFlags.invitationGenerationKillSwitch,
+        directionLimit: readAiFirstDirectionLimit(env()),
+        automaticRetryDisabled: requestFlags.aiFirstDisableAutomaticRetry,
+        // A reload or return visit must not turn a later cost-bearing run
+        // back into an unqualified one-click action. The server enforces the
+        // same fact on POST; this field lets the UI explain it beforehand.
+        additionalGenerationConfirmationRequired: usage.eventBilled > 0,
+        // The one question a thin brief is allowed to ask, and only then.
+        briefQuestion: briefIsSufficient(event) ? null : SINGLE_BRIEF_QUESTION,
+        askPosyActions: INVITATION_ASK_POSY_ACTIONS
+      });
+    })
+  );
+  app2.get(
+    "/api/events/owner/:ownerToken/ai-first/run/:runId",
+    gated(async (req, res) => {
+      const event = await deps.storage.getEventByOwnerToken(String(req.params.ownerToken));
+      if (!event) {
+        res.status(404).json({ error: "Event not found" });
+        return;
+      }
+      const run = await deps.runStore.get(String(req.params.runId));
+      if (!run || run.eventId !== event.id || run.ownerToken !== req.params.ownerToken) {
+        res.status(404).json({ error: "Run not found" });
+        return;
+      }
+      res.json({
+        runId: run.runId,
+        status: run.status,
+        progressMessage: run.progressMessage,
+        completedCount: run.completedCount,
+        fallbackCount: run.fallbackCount,
+        errorMessage: run.errorMessage,
+        terminal: run.terminal
+      });
+    })
+  );
+  app2.post(
+    "/api/events/owner/:ownerToken/ai-first/generate",
+    gated(async (req, res) => {
+      const ownerToken = String(req.params.ownerToken);
+      const event = await deps.storage.getEventByOwnerToken(ownerToken);
+      if (!event) {
+        res.status(404).json({ error: "Event not found" });
+        return;
+      }
+      const requestFlags = flags();
+      if (requestFlags.invitationGenerationKillSwitch) {
+        res.status(403).json({
+          error: "New invitation artwork is paused right now. The Posy collection and your saved designs are still available.",
+          denial: "kill-switch",
+          paused: true
+        });
+        return;
+      }
+      const requestedAction = INVITATION_ASK_POSY_ACTIONS.find((action2) => action2.id === req.body?.action);
+      if (requestedAction?.advisory) {
+        res.status(400).json({
+          error: "Help me choose gives on-screen guidance and does not create new artwork.",
+          denial: "advisory-only"
+        });
+        return;
+      }
+      const runId = typeof req.body?.runId === "string" ? req.body.runId.trim() : "";
+      if (!runId) {
+        res.status(400).json({ error: "A runId is required to start invitation generation." });
+        return;
+      }
+      const existingRun = await deps.runStore.get(runId);
+      if (existingRun) {
+        const sameEvent = existingRun.eventId === event.id && existingRun.ownerToken === ownerToken;
+        res.status(409).json({
+          error: sameEvent ? "This invitation run already exists." : "That run id is unavailable.",
+          denial: "duplicate",
+          ...sameEvent ? {
+            run: {
+              runId: existingRun.runId,
+              status: existingRun.status,
+              progressMessage: existingRun.progressMessage,
+              completedCount: existingRun.completedCount,
+              fallbackCount: existingRun.fallbackCount,
+              terminal: existingRun.terminal
+            }
+          } : {}
+        });
+        return;
+      }
+      const email = event.capturedEmail ?? void 0;
+      const entitlement = email ? await deps.storage.getEmailEntitlement(email) : void 0;
+      const tier = entitlement?.planTier;
+      const usage = await deps.usageStore.snapshot(event.id, email, monthStart());
+      const hasActiveRun = await deps.runStore.hasActiveRun(event.id);
+      if (usage.eventBilled > 0 && req.body?.confirmAdditionalGeneration !== true) {
+        res.status(409).json({
+          error: "Confirm before starting another invitation generation. No image call was made.",
+          denial: "additional-generation-confirmation-required",
+          confirmationRequired: true
+        });
+        return;
+      }
+      let artworkModel;
+      try {
+        artworkModel = readAiFirstArtworkModel(env());
+      } catch (err) {
+        res.status(503).json({ error: err.message, denial: "invalid-provider-configuration" });
+        return;
+      }
+      const configuredDirectionLimit = readAiFirstDirectionLimit(env());
+      const requestedDirectionCount = Number(req.body?.directionCount);
+      const directionLimit = Number.isInteger(requestedDirectionCount) && requestedDirectionCount > 0 ? Math.min(configuredDirectionLimit, requestedDirectionCount) : configuredDirectionLimit;
+      const maxAttemptsPerDirection = requestFlags.aiFirstDisableAutomaticRetry ? 1 : 2;
+      const action = resolveAskPosyAction(req.body?.action, req.body);
+      const guard = guardGeneration({
+        eventId: event.id,
+        email,
+        tier,
+        usage: { ...usage, activeGenerations: hasActiveRun ? Math.max(usage.activeGenerations, 1) : usage.activeGenerations },
+        requested: directionLimit * maxAttemptsPerDirection,
+        killSwitch: false,
+        // already handled above, unconditionally
+        breaker,
+        limiter,
+        ownerToken,
+        ip: req.ip
+      });
+      if (!guard.allowed) {
+        res.status(guard.denial === "rate-limited" ? 429 : 403).json({
+          error: guard.message,
+          denial: guard.denial,
+          plan: tierLabel(tier)
+        });
+        return;
+      }
+      const [menuItems2, budgetItems2, guests2] = await Promise.all([
+        deps.storage.listMenuItems(event.id),
+        deps.storage.listBudgetItems(event.id),
+        deps.storage.listGuests(event.id)
+      ]);
+      const brief = buildEventBrief({
+        event,
+        dna: computeEventDna({ eventType: event.eventType, menuItems: menuItems2, budgetItems: budgetItems2 }).scores,
+        guestCount: guests2.length > 0 ? guests2.length : null,
+        vibeAnswer: typeof req.body?.feeling === "string" ? req.body.feeling : void 0,
+        inspirationNotes: typeof req.body?.inspirationNotes === "string" ? req.body.inspirationNotes : void 0
+      });
+      const claim = await deps.runStore.claim({ runId, eventId: event.id, ownerToken });
+      if (claim.outcome === "duplicate" || claim.outcome === "active-elsewhere") {
+        res.status(409).json({
+          error: claim.outcome === "duplicate" ? "This invitation run is already in progress." : "This event already has an invitation run in progress.",
+          denial: claim.outcome,
+          run: {
+            runId: claim.record.runId,
+            status: claim.record.status,
+            progressMessage: claim.record.progressMessage,
+            completedCount: claim.record.completedCount,
+            fallbackCount: claim.record.fallbackCount,
+            terminal: claim.record.terminal
+          }
+        });
+        return;
+      }
+      res.writeHead(200, {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache, no-transform",
+        Connection: "keep-alive",
+        "X-Accel-Buffering": "no"
+      });
+      const send = (event2) => {
+        if (res.destroyed || res.writableEnded) return;
+        res.write(`data: ${JSON.stringify(event2)}
+
+`);
+      };
+      for (const warning of guard.warnings) {
+        send({ type: "warning", message: warning, at: Date.now() });
+      }
+      const controller = new AbortController();
+      abortOnUnexpectedResponseClose(res, controller);
+      deps.usageStore.beginRun?.(event.id);
+      try {
+        await (deps.runPipeline ?? runAiFirstPipeline)({
+          eventId: event.id,
+          email,
+          brief,
+          direction: action.direction,
+          avoidConceptNames: action.avoidConceptNames,
+          keepConstraints: action.keepConstraints,
+          previewStore: deps.previewStore,
+          usageStore: deps.usageStore,
+          allowance: guard.allowance,
+          sink: send,
+          breaker,
+          ocr: true,
+          signal: controller.signal,
+          runId,
+          ownerToken,
+          runStore: deps.runStore,
+          artworkAttemptStore: deps.artworkAttemptStore,
+          disableAutomaticRetry: requestFlags.aiFirstDisableAutomaticRetry,
+          directionLimit,
+          artworkModel
+        });
+      } catch (err) {
+        const rawMessage = err.message;
+        const message2 = hostFacingGenerationError(rawMessage);
+        if (message2 !== rawMessage) {
+          console.warn(`AI-first run ${runId} rejected its artwork: ${rawMessage}`);
+        }
+        try {
+          await deps.runStore.fail(runId, message2);
+          send({ type: "error", message: message2, at: Date.now() });
+        } catch (persistenceError) {
+          console.error("Failed to persist AI-first run failure", persistenceError);
+        }
+      } finally {
+        deps.usageStore.endRun?.(event.id);
+        if (!res.destroyed && !res.writableEnded) res.end();
+      }
+    })
+  );
+  app2.post(
+    "/api/events/owner/:ownerToken/ai-first/apply",
+    gated(async (req, res) => {
+      const event = await deps.storage.getEventByOwnerToken(String(req.params.ownerToken));
+      if (!event) {
+        res.status(404).json({ error: "Event not found" });
+        return;
+      }
+      const previewId = typeof req.body?.previewId === "string" ? req.body.previewId : "";
+      const expectedAssetHash = typeof req.body?.assetHash === "string" ? req.body.assetHash : void 0;
+      const applied = await applyPreview(deps.previewStore, event.id, previewId, expectedAssetHash);
+      if (!applied.ok || !applied.record) {
+        res.status(applied.failure === "asset-hash-mismatch" ? 409 : 404).json({
+          error: applied.failure === "asset-hash-mismatch" ? "That artwork no longer matches the version you approved. Preview it again before applying." : "That preview is no longer available."
+        });
+        return;
+      }
+      const record = applied.record;
+      const snapshot = {
+        concept: record.concept,
+        previewId: record.previewId,
+        assetHash: record.assetHash,
+        artworkUrl: record.assetUrl,
+        artworkOpacity: typeof req.body?.artworkOpacity === "number" ? req.body.artworkOpacity : void 0,
+        source: record.source
+      };
+      const { theme } = themeFromSnapshot(snapshot);
+      const appliedConcept = { ...buildThemedConcept(theme), [AI_FIRST_CONCEPT_KEY]: snapshot };
+      const dna = deriveThemeDna(appliedConcept);
+      const updated = await deps.storage.updateEventByOwnerToken(String(req.params.ownerToken), {
+        inviteDesignConceptJson: JSON.stringify(appliedConcept),
+        inviteIllustrationUrl: record.assetUrl,
+        paletteColors: JSON.stringify(appliedConcept.paletteColors),
+        envelopeColor: dna.primaryColor,
+        envelopeLinerPattern: dna.linerPattern,
+        stampStyle: dna.stampStyle
+      });
+      if (!updated) {
+        res.status(404).json({ error: "Event not found" });
+        return;
+      }
+      await deps.usageStore.record({
+        eventId: event.id,
+        email: event.capturedEmail ?? void 0,
+        reason: "apply",
+        billed: false,
+        automatic: false,
+        conceptFingerprint: record.conceptFingerprint,
+        previewId: record.previewId,
+        costUsdMicros: 0,
+        createdAt: Date.now()
+      });
+      res.json({ event: updated, previewId: record.previewId, assetHash: record.assetHash });
+    })
+  );
+  app2.get(
+    "/api/events/owner/:ownerToken/ai-first/preview/:previewId/asset",
+    gated(async (req, res) => {
+      const event = await deps.storage.getEventByOwnerToken(String(req.params.ownerToken));
+      if (!event) {
+        res.status(404).json({ error: "Event not found" });
+        return;
+      }
+      const record = await deps.previewStore.findByPreviewId(event.id, String(req.params.previewId));
+      if (!record) {
+        res.status(404).json({ error: "That preview is no longer available." });
+        return;
+      }
+      const asset = await resolvePreviewAssetBytes(record);
+      if (!asset) {
+        res.status(404).json({ error: "That preview's artwork could not be found." });
+        return;
+      }
+      res.writeHead(200, {
+        "Content-Type": asset.contentType,
+        "Cache-Control": "private, max-age=31536000, immutable",
+        "Content-Length": String(asset.bytes.length)
+      });
+      res.end(asset.bytes);
+    })
+  );
+  app2.get(
+    "/api/events/owner/:ownerToken/ai-first/review/attempts",
+    gated(async (req, res) => {
+      const ownerToken = String(req.params.ownerToken);
+      const event = await deps.storage.getEventByOwnerToken(ownerToken);
+      if (!event) {
+        res.status(404).json({ error: "Event not found" });
+        return;
+      }
+      const rows = await deps.artworkAttemptStore.listForOwner(event.id, ownerToken);
+      res.json({
+        attempts: rows.map((row) => ({
+          id: row.id,
+          directionIndex: row.directionIndex,
+          attempt: row.attempt,
+          status: row.status,
+          runId: row.runId,
+          idempotencyKey: row.idempotencyKey,
+          assetHash: row.assetHash,
+          // The binary route below serves the actual bytes; this listing
+          // never does, however small or large the underlying image is.
+          assetUrl: `/api/events/owner/${ownerToken}/ai-first/review/attempts/${row.id}/asset`,
+          previewId: row.previewId,
+          conceptName: row.concept.conceptName,
+          failureCodes: row.failureCodes,
+          tier1Findings: row.tier1Findings,
+          visionScores: row.visionScores,
+          model: row.model,
+          quality: row.quality,
+          size: row.size,
+          costUsdMicros: row.costUsdMicros,
+          costEstimateStatus: row.size ? "image-output-only-model-size-estimate" : "legacy-unverified",
+          createdAt: row.createdAt
+        }))
+      });
+    })
+  );
+  app2.get(
+    "/api/events/owner/:ownerToken/ai-first/review/attempts/:id/asset",
+    gated(async (req, res) => {
+      const ownerToken = String(req.params.ownerToken);
+      const event = await deps.storage.getEventByOwnerToken(ownerToken);
+      if (!event) {
+        res.status(404).json({ error: "Event not found" });
+        return;
+      }
+      const row = await deps.artworkAttemptStore.findById(event.id, ownerToken, String(req.params.id));
+      if (!row) {
+        res.status(404).json({ error: "That review attempt is no longer available." });
+        return;
+      }
+      const bytes = Buffer.from(row.assetBytesBase64, "base64");
+      res.writeHead(200, {
+        "Content-Type": "image/png",
+        // Owner-private: content-addressed by id, so long-lived caching is
+        // safe in the requesting browser's own cache, but never in a shared
+        // one — this is protected evidence, not a public asset.
+        "Cache-Control": "private, max-age=31536000, immutable",
+        "Content-Length": String(bytes.length)
+      });
+      res.end(bytes);
+    })
+  );
+  app2.post(
+    "/api/ai-first/cleanup-previews",
+    gated(async (_req, res) => {
+      const result = await cleanupPreviews(deps.previewStore);
+      res.json(result);
+    })
+  );
+}
+
+// server/aiFirst/dbStore.ts
+var import_node_crypto4 = require("node:crypto");
+
+// server/aiFirst/runStore.ts
+var RUN_LEASE_MS = 5 * 60 * 1e3;
+var RUN_LEASE_EXPIRED_ERROR = "lease-expired";
+
+// server/aiFirst/dbStore.ts
+function uniqueViolationConstraint(err) {
+  const anyErr = err;
+  if (!anyErr || anyErr.code !== "23505") return void 0;
+  return anyErr.constraint_name ?? anyErr.constraint;
+}
+function toRecord(row) {
+  const parsed = aiFirstConceptSchema.safeParse(JSON.parse(row.conceptJson));
+  if (!parsed.success) return void 0;
+  return {
+    eventId: row.eventId,
+    previewId: row.previewId,
+    conceptFingerprint: row.conceptFingerprint,
+    assetHash: row.assetHash,
+    assetUrl: row.assetUrl,
+    concept: parsed.data,
+    source: row.source === "adapted-studio-direction" ? "adapted-studio-direction" : "ai-generated",
+    promoted: row.promoted,
+    promotedAt: row.promotedAt,
+    createdAt: row.createdAt,
+    lastAccessedAt: row.lastAccessedAt
+  };
+}
+var DbPreviewStore = class {
+  async findByFingerprint(eventId, conceptFingerprint2) {
+    const rows = await db.select().from(aiFirstPreviews).where(and(eq(aiFirstPreviews.eventId, eventId), eq(aiFirstPreviews.conceptFingerprint, conceptFingerprint2)));
+    return rows[0] ? toRecord(rows[0]) : void 0;
+  }
+  async findByPreviewId(eventId, previewId) {
+    const rows = await db.select().from(aiFirstPreviews).where(and(eq(aiFirstPreviews.eventId, eventId), eq(aiFirstPreviews.previewId, previewId)));
+    return rows[0] ? toRecord(rows[0]) : void 0;
+  }
+  async put(record) {
+    await db.insert(aiFirstPreviews).values({
+      eventId: record.eventId,
+      previewId: record.previewId,
+      conceptFingerprint: record.conceptFingerprint,
+      assetHash: record.assetHash,
+      assetUrl: record.assetUrl,
+      conceptJson: JSON.stringify(record.concept),
+      source: record.source,
+      promoted: record.promoted,
+      promotedAt: record.promotedAt,
+      createdAt: record.createdAt,
+      lastAccessedAt: record.lastAccessedAt
+    }).onConflictDoNothing({ target: aiFirstPreviews.previewId });
+    return record;
+  }
+  async touch(previewId, at) {
+    await db.update(aiFirstPreviews).set({ lastAccessedAt: at }).where(eq(aiFirstPreviews.previewId, previewId));
+  }
+  async promote(eventId, previewId, at) {
+    const rows = await db.update(aiFirstPreviews).set({ promoted: true, promotedAt: at, lastAccessedAt: at }).where(and(eq(aiFirstPreviews.eventId, eventId), eq(aiFirstPreviews.previewId, previewId))).returning();
+    return rows[0] ? toRecord(rows[0]) : void 0;
+  }
+  async listForCleanup(before) {
+    const rows = await db.select().from(aiFirstPreviews).where(and(lt(aiFirstPreviews.lastAccessedAt, before), eq(aiFirstPreviews.promoted, false)));
+    return rows.map(toRecord).filter((r) => r !== void 0);
+  }
+  async remove(previewId) {
+    await db.delete(aiFirstPreviews).where(eq(aiFirstPreviews.previewId, previewId));
+  }
+};
+var DbUsageStore = class {
+  /** In-process only; the DB ceilings are the durable guarantee. */
+  active = /* @__PURE__ */ new Map();
+  async record(entry) {
+    await db.insert(aiFirstImageLedger).values({
+      eventId: entry.eventId,
+      email: entry.email ?? null,
+      reason: entry.reason,
+      billed: entry.billed,
+      automatic: entry.automatic,
+      conceptFingerprint: entry.conceptFingerprint ?? null,
+      previewId: entry.previewId ?? null,
+      reuseOf: entry.reuseOf ?? null,
+      idempotencyKey: entry.idempotencyKey ?? null,
+      costUsdMicros: entry.costUsdMicros,
+      createdAt: entry.createdAt
+    });
+  }
+  async reserveProviderAttempt(entry) {
+    if (!entry.billed) throw new Error("provider attempt reservations must be billed or billing-uncertain");
+    const inserted = await db.insert(aiFirstImageLedger).values({
+      eventId: entry.eventId,
+      email: entry.email ?? null,
+      reason: entry.reason,
+      billed: entry.billed,
+      automatic: entry.automatic,
+      conceptFingerprint: entry.conceptFingerprint ?? null,
+      previewId: entry.previewId ?? null,
+      reuseOf: entry.reuseOf ?? null,
+      idempotencyKey: entry.idempotencyKey ?? null,
+      costUsdMicros: entry.costUsdMicros,
+      createdAt: entry.createdAt
+    }).onConflictDoNothing().returning({ id: aiFirstImageLedger.id });
+    return inserted.length === 1;
+  }
+  async findByIdempotencyKey(key) {
+    const rows = await db.select().from(aiFirstImageLedger).where(eq(aiFirstImageLedger.idempotencyKey, key));
+    const row = rows[0];
+    if (!row) return void 0;
+    return {
+      eventId: row.eventId,
+      email: row.email ?? void 0,
+      reason: row.reason,
+      billed: row.billed,
+      automatic: row.automatic,
+      conceptFingerprint: row.conceptFingerprint ?? void 0,
+      previewId: row.previewId ?? void 0,
+      reuseOf: row.reuseOf ?? void 0,
+      idempotencyKey: row.idempotencyKey ?? void 0,
+      costUsdMicros: row.costUsdMicros,
+      createdAt: row.createdAt
+    };
+  }
+  async snapshot(eventId, email, from) {
+    const eventRows = await db.select({ n: sql`count(*)::int` }).from(aiFirstImageLedger).where(and(eq(aiFirstImageLedger.eventId, eventId), eq(aiFirstImageLedger.billed, true)));
+    let monthlyBilled = 0;
+    if (email) {
+      const monthlyRows = await db.select({ n: sql`count(*)::int` }).from(aiFirstImageLedger).where(
+        and(
+          eq(aiFirstImageLedger.email, email),
+          eq(aiFirstImageLedger.billed, true),
+          gte(aiFirstImageLedger.createdAt, from)
+        )
+      );
+      monthlyBilled = monthlyRows[0]?.n ?? 0;
+    }
+    return {
+      eventBilled: eventRows[0]?.n ?? 0,
+      monthlyBilled,
+      activeGenerations: this.active.get(eventId) ?? 0
+    };
+  }
+  beginRun(eventId) {
+    this.active.set(eventId, (this.active.get(eventId) ?? 0) + 1);
+  }
+  endRun(eventId) {
+    this.active.set(eventId, Math.max(0, (this.active.get(eventId) ?? 0) - 1));
+  }
+};
+function toRunRecord(row) {
+  return {
+    runId: row.runId,
+    eventId: row.eventId,
+    ownerToken: row.ownerToken,
+    status: row.status,
+    progressMessage: row.progressMessage,
+    completedCount: row.completedCount,
+    fallbackCount: row.fallbackCount,
+    errorMessage: row.errorMessage,
+    terminal: row.terminal,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt
+  };
+}
+var DbRunStore = class {
+  async expireStaleForEvent(eventId, now) {
+    await db.update(aiFirstGenerationRuns).set({
+      status: "failed",
+      terminal: true,
+      errorMessage: RUN_LEASE_EXPIRED_ERROR,
+      updatedAt: now
+    }).where(
+      and(
+        eq(aiFirstGenerationRuns.eventId, eventId),
+        eq(aiFirstGenerationRuns.status, "active"),
+        eq(aiFirstGenerationRuns.terminal, false),
+        lt(aiFirstGenerationRuns.updatedAt, now - RUN_LEASE_MS)
+      )
+    );
+  }
+  async claim(input) {
+    const now = input.now ?? Date.now();
+    await this.expireStaleForEvent(input.eventId, now);
+    try {
+      const inserted = await db.insert(aiFirstGenerationRuns).values({
+        runId: input.runId,
+        eventId: input.eventId,
+        ownerToken: input.ownerToken,
+        status: "active",
+        progressMessage: "",
+        completedCount: 0,
+        fallbackCount: 0,
+        errorMessage: null,
+        terminal: false,
+        createdAt: now,
+        updatedAt: now
+      }).returning();
+      return { outcome: "claimed", record: toRunRecord(inserted[0]) };
+    } catch (err) {
+      const constraint = uniqueViolationConstraint(err);
+      if (!constraint) throw err;
+      if (constraint === "ai_first_generation_runs_run_id_unique") {
+        const existing = await db.select().from(aiFirstGenerationRuns).where(eq(aiFirstGenerationRuns.runId, input.runId));
+        return { outcome: "duplicate", record: toRunRecord(existing[0]) };
+      }
+      if (constraint === "ai_first_generation_runs_one_active_per_event_uq") {
+        const active = await db.select().from(aiFirstGenerationRuns).where(
+          and(
+            eq(aiFirstGenerationRuns.eventId, input.eventId),
+            eq(aiFirstGenerationRuns.status, "active"),
+            eq(aiFirstGenerationRuns.terminal, false)
+          )
+        );
+        if (active[0]) return { outcome: "active-elsewhere", record: toRunRecord(active[0]) };
+        return this.claim(input);
+      }
+      throw err;
+    }
+  }
+  async get(runId) {
+    const rows = await db.select().from(aiFirstGenerationRuns).where(eq(aiFirstGenerationRuns.runId, runId));
+    return rows[0] ? toRunRecord(rows[0]) : void 0;
+  }
+  async updateProgress(runId, message2, now = Date.now()) {
+    await db.update(aiFirstGenerationRuns).set({ progressMessage: message2, updatedAt: now }).where(eq(aiFirstGenerationRuns.runId, runId));
+  }
+  async incrementCompleted(runId, by = 1, now = Date.now()) {
+    await db.update(aiFirstGenerationRuns).set({ completedCount: sql`${aiFirstGenerationRuns.completedCount} + ${by}`, updatedAt: now }).where(eq(aiFirstGenerationRuns.runId, runId));
+  }
+  async incrementFallback(runId, by = 1, now = Date.now()) {
+    await db.update(aiFirstGenerationRuns).set({ fallbackCount: sql`${aiFirstGenerationRuns.fallbackCount} + ${by}`, updatedAt: now }).where(eq(aiFirstGenerationRuns.runId, runId));
+  }
+  async complete(runId, now = Date.now()) {
+    await db.update(aiFirstGenerationRuns).set({ status: "completed", terminal: true, updatedAt: now }).where(eq(aiFirstGenerationRuns.runId, runId));
+  }
+  async fail(runId, errorMessage, now = Date.now()) {
+    await db.update(aiFirstGenerationRuns).set({ status: "failed", errorMessage, terminal: true, updatedAt: now }).where(eq(aiFirstGenerationRuns.runId, runId));
+  }
+  async hasActiveRun(eventId, now = Date.now()) {
+    await this.expireStaleForEvent(eventId, now);
+    const rows = await db.select({ n: sql`count(*)::int` }).from(aiFirstGenerationRuns).where(
+      and(
+        eq(aiFirstGenerationRuns.eventId, eventId),
+        eq(aiFirstGenerationRuns.status, "active"),
+        eq(aiFirstGenerationRuns.terminal, false)
+      )
+    );
+    return (rows[0]?.n ?? 0) > 0;
+  }
+};
+function toArtworkAttemptRecord(row) {
+  return {
+    id: String(row.id),
+    eventId: row.eventId,
+    ownerToken: row.ownerToken,
+    runId: row.runId ?? null,
+    idempotencyKey: row.idempotencyKey ?? null,
+    directionIndex: row.directionIndex,
+    attempt: row.attempt,
+    status: row.status,
+    assetHash: row.assetHash,
+    assetBytesBase64: row.assetBytesBase64,
+    previewId: row.previewId ?? null,
+    concept: JSON.parse(row.conceptJson),
+    failureCodes: JSON.parse(row.failureCodesJson),
+    tier1Findings: JSON.parse(row.tier1FindingsJson),
+    visionScores: row.visionScoresJson ? JSON.parse(row.visionScoresJson) : null,
+    model: row.model,
+    quality: row.quality,
+    size: row.size ?? null,
+    costUsdMicros: row.costUsdMicros,
+    createdAt: row.createdAt
+  };
+}
+var DbArtworkAttemptStore = class {
+  async record(input) {
+    const assetHash = (0, import_node_crypto4.createHash)("sha256").update(input.bytes).digest("hex");
+    const now = input.now ?? Date.now();
+    const previewId = input.status === "accepted" ? input.previewId ?? null : null;
+    const inserted = await db.insert(aiFirstArtworkAttempts).values({
+      eventId: input.eventId,
+      ownerToken: input.ownerToken,
+      runId: input.runId ?? null,
+      idempotencyKey: input.idempotencyKey ?? null,
+      directionIndex: input.directionIndex,
+      attempt: input.attempt,
+      status: input.status,
+      assetHash,
+      assetBytesBase64: input.bytes.toString("base64"),
+      previewId,
+      conceptJson: JSON.stringify(input.concept),
+      failureCodesJson: JSON.stringify(input.failureCodes),
+      tier1FindingsJson: JSON.stringify(input.tier1Findings),
+      visionScoresJson: input.visionScores ? JSON.stringify(input.visionScores) : null,
+      model: input.model ?? DEFAULT_ARTWORK_MODEL,
+      quality: input.quality ?? "high",
+      size: input.size ?? null,
+      costUsdMicros: input.costUsdMicros,
+      createdAt: now
+    }).returning();
+    return toArtworkAttemptRecord(inserted[0]);
+  }
+  async listForOwner(eventId, ownerToken) {
+    const rows = await db.select().from(aiFirstArtworkAttempts).where(and(eq(aiFirstArtworkAttempts.eventId, eventId), eq(aiFirstArtworkAttempts.ownerToken, ownerToken)));
+    return rows.map(toArtworkAttemptRecord);
+  }
+  async findById(eventId, ownerToken, id) {
+    const numericId = Number(id);
+    if (!Number.isFinite(numericId)) return void 0;
+    const rows = await db.select().from(aiFirstArtworkAttempts).where(
+      and(
+        eq(aiFirstArtworkAttempts.eventId, eventId),
+        eq(aiFirstArtworkAttempts.ownerToken, ownerToken),
+        eq(aiFirstArtworkAttempts.id, numericId)
+      )
+    );
+    return rows[0] ? toArtworkAttemptRecord(rows[0]) : void 0;
+  }
+};
+
 // server/routes.ts
 function publicEventView(event) {
-  const { ownerToken, ...rest } = event;
+  const { ownerToken, capturedEmail, ...rest } = event;
   return rest;
 }
+async function stampCapturedEmailSafe(eventId, email) {
+  try {
+    const normalized = (email ?? "").trim().toLowerCase();
+    if (!normalized) return;
+    const event = await storage.getEventById(eventId);
+    if (!event) return;
+    if (event.capturedEmail && event.capturedEmail !== normalized) {
+      console.warn(`[email-capture] event ${eventId} already has a different captured email; not overwriting from Stripe`);
+      return;
+    }
+    await storage.setEventCapturedEmail(eventId, normalized);
+  } catch (err) {
+    console.error(`[email-capture] failed to stamp email on event ${eventId}:`, err);
+  }
+}
 async function registerRoutes(httpServer2, app2) {
+  registerAiFirstRoutes(app2, {
+    storage,
+    previewStore: new DbPreviewStore(),
+    usageStore: new DbUsageStore(),
+    runStore: new DbRunStore(),
+    artworkAttemptStore: new DbArtworkAttemptStore()
+  });
   app2.post("/api/events", async (req, res) => {
     const parsed = insertEventSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
     const event = await storage.createEvent(parsed.data);
     res.json(event);
+  });
+  app2.post("/api/events/:eventId/email-capture", async (req, res) => {
+    const eventId = Number(req.params.eventId);
+    if (!Number.isFinite(eventId) || eventId <= 0) {
+      return res.status(400).json({ error: "Invalid event ID" });
+    }
+    const { email, ownerToken } = req.body;
+    if (!email || !email.trim()) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+    if (!ownerToken) {
+      return res.status(400).json({ error: "Owner token is required" });
+    }
+    const event = await storage.getEventById(eventId);
+    if (!event || event.ownerToken !== ownerToken) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+    await storage.setEventCapturedEmail(eventId, email);
+    const updated = await storage.getEventById(eventId);
+    res.json(updated);
+  });
+  app2.post("/api/events/lookup", async (req, res) => {
+    const { email } = req.body;
+    if (!email || !email.trim()) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+    const normalized = email.trim().toLowerCase();
+    const found = await storage.getEventsByEmail(normalized);
+    const safe = found.map((e) => ({
+      ownerToken: e.ownerToken,
+      eventName: e.eventName,
+      eventType: e.eventType,
+      eventDate: e.eventDate,
+      createdAt: e.createdAt
+    }));
+    res.json({ events: safe });
   });
   app2.get("/api/events/owner/:ownerToken", async (req, res) => {
     const event = await storage.getEventByOwnerToken(req.params.ownerToken);
@@ -70167,7 +79879,7 @@ async function registerRoutes(httpServer2, app2) {
     if (!guest || guest.eventId !== event.id) return res.status(404).json({ error: "Guest not found" });
     if (!guest.email) return res.status(400).json({ error: "This guest has no email address on file" });
     const rsvpOrigin = String(req.body?.origin || "");
-    const rsvpUrl = rsvpOrigin ? `${rsvpOrigin}#/rsvp/${event.shareSlug}` : `#/rsvp/${event.shareSlug}`;
+    const rsvpUrl = rsvpOrigin ? `${rsvpOrigin}/rsvp/${event.shareSlug}` : `/rsvp/${event.shareSlug}`;
     const tokenCtx = { guestName: guest.name.split(" ")[0] || guest.name, eventName: event.eventName, eventDate: event.eventDate, location: event.location, hostNames: event.hostNames };
     const rawMessage = event.inviteMessage || `We'd love for you to join us for ${event.eventName}.`;
     const withGreeting = rawMessage.includes("{{guestName}}") ? rawMessage : `Hi {{guestName}},
@@ -70197,7 +79909,7 @@ Can't wait to celebrate with you!`;
     if (!event) return res.status(404).json({ error: "Event not found" });
     const allGuests = await storage.listGuests(event.id);
     const rsvpOrigin = String(req.body?.origin || "");
-    const rsvpUrl = rsvpOrigin ? `${rsvpOrigin}#/rsvp/${event.shareSlug}` : `#/rsvp/${event.shareSlug}`;
+    const rsvpUrl = rsvpOrigin ? `${rsvpOrigin}/rsvp/${event.shareSlug}` : `/rsvp/${event.shareSlug}`;
     const rawSubject = event.inviteSubject || `You're invited: ${event.eventName}`;
     const targets = allGuests.filter((g) => g.email && !g.emailSentAt);
     const results = [];
@@ -70235,7 +79947,7 @@ Can't wait to celebrate with you!`;
     if (!event) return res.status(404).json({ error: "Event not found" });
     const allGuests = await storage.listGuests(event.id);
     const rsvpOrigin = String(req.body?.origin || "");
-    const rsvpUrl = rsvpOrigin ? `${rsvpOrigin}#/rsvp/${event.shareSlug}` : `#/rsvp/${event.shareSlug}`;
+    const rsvpUrl = rsvpOrigin ? `${rsvpOrigin}/rsvp/${event.shareSlug}` : `/rsvp/${event.shareSlug}`;
     const targets = allGuests.filter((g) => g.email && g.rsvpStatus === "pending");
     const deadlineLine = event.rsvpDeadline ? `We'd love to hear back by ${event.rsvpDeadline}.` : "We'd love to hear back from you soon.";
     const results = [];
@@ -70257,6 +79969,70 @@ Thanks so much!`;
         await storage.updateGuest(event.id, guest.id, { emailSendError: result.error || "Failed to send" });
         results.push({ guestId: guest.id, name: guest.name, ok: false, error: result.error });
         if (result.authUrl) break;
+      }
+    }
+    res.json({ attempted: targets.length, results });
+  });
+  app2.post("/api/events/public/:shareSlug/guests/:guestId/sms-opt-in", async (req, res) => {
+    const event = await storage.getEventByShareSlug(req.params.shareSlug);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+    const guest = await storage.getGuest(Number(req.params.guestId));
+    if (!guest || guest.eventId !== event.id) return res.status(404).json({ error: "Guest not found" });
+    const optIn = Boolean(req.body?.optIn);
+    const phone = typeof req.body?.phone === "string" ? req.body.phone.trim() : void 0;
+    if (optIn && !(phone || guest.phone)) {
+      return res.status(400).json({ error: "A phone number is needed to opt in to texts" });
+    }
+    const updated = await storage.updateGuest(event.id, guest.id, {
+      ...phone ? { phone } : {},
+      smsOptIn: optIn,
+      smsConsentAt: optIn ? Date.now() : null
+    });
+    res.json(updated);
+  });
+  app2.post("/api/events/owner/:ownerToken/guests/:guestId/send-sms", async (req, res) => {
+    const event = await storage.getEventByOwnerToken(req.params.ownerToken);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+    const guest = await storage.getGuest(Number(req.params.guestId));
+    if (!guest || guest.eventId !== event.id) return res.status(404).json({ error: "Guest not found" });
+    if (!guest.smsOptIn) return res.status(400).json({ error: "This guest hasn't opted in to text messages" });
+    if (!guest.phone) return res.status(400).json({ error: "This guest has no phone number on file" });
+    const rsvpOrigin = String(req.body?.origin || "");
+    const rsvpUrl = rsvpOrigin ? `${rsvpOrigin}/rsvp/${event.shareSlug}` : `/rsvp/${event.shareSlug}`;
+    const greetingName = guest.name.split(" ")[0] || guest.name;
+    const deadlineLine = event.rsvpDeadline ? ` by ${event.rsvpDeadline}` : "";
+    const body = `Hi ${greetingName}, just a reminder to RSVP for ${event.eventName}${deadlineLine}: ${rsvpUrl}
+
+Reply STOP to opt out.`;
+    const result = await sendReminderSms({ to: guest.phone, body });
+    if (!result.ok) {
+      await storage.updateGuest(event.id, guest.id, { smsSendError: result.error || "Failed to send" });
+      return res.status(502).json({ error: result.error || "Failed to send text" });
+    }
+    const updated = await storage.updateGuest(event.id, guest.id, { smsSentAt: Date.now(), smsSendError: "" });
+    res.json(updated);
+  });
+  app2.post("/api/events/owner/:ownerToken/guests/send-reminder-sms", async (req, res) => {
+    const event = await storage.getEventByOwnerToken(req.params.ownerToken);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+    const allGuests = await storage.listGuests(event.id);
+    const rsvpOrigin = String(req.body?.origin || "");
+    const rsvpUrl = rsvpOrigin ? `${rsvpOrigin}/rsvp/${event.shareSlug}` : `/rsvp/${event.shareSlug}`;
+    const deadlineLine = event.rsvpDeadline ? ` by ${event.rsvpDeadline}` : "";
+    const targets = allGuests.filter((g) => g.smsOptIn && g.phone && g.rsvpStatus === "pending");
+    const results = [];
+    for (const guest of targets) {
+      const greetingName = guest.name.split(" ")[0] || guest.name;
+      const body = `Hi ${greetingName}, just a reminder to RSVP for ${event.eventName}${deadlineLine}: ${rsvpUrl}
+
+Reply STOP to opt out.`;
+      const result = await sendReminderSms({ to: guest.phone, body });
+      if (result.ok) {
+        await storage.updateGuest(event.id, guest.id, { smsSentAt: Date.now(), smsSendError: "" });
+        results.push({ guestId: guest.id, name: guest.name, ok: true });
+      } else {
+        await storage.updateGuest(event.id, guest.id, { smsSendError: result.error || "Failed to send" });
+        results.push({ guestId: guest.id, name: guest.name, ok: false, error: result.error });
       }
     }
     res.json({ attempted: targets.length, results });
@@ -70390,16 +80166,22 @@ Thanks so much!`;
     const feasibility = assessBudgetFeasibility({ budgetItems: budgetItems2, guests: guests2 });
     res.json(feasibility);
   });
+  function readInspirationImages(value) {
+    if (!Array.isArray(value)) return [];
+    return value.filter((x) => typeof x === "string" && x.startsWith("data:image/")).slice(0, 3);
+  }
   app2.post("/api/events/owner/:ownerToken/invite/generate-concepts", async (req, res) => {
     const event = await storage.getEventByOwnerToken(req.params.ownerToken);
     if (!event) return res.status(404).json({ error: "Event not found" });
     const themePrompt = String(req.body?.themePrompt || "").trim();
     if (!themePrompt) return res.status(400).json({ error: "themePrompt is required" });
+    const inspirationImages = readInspirationImages(req.body?.inspirationImages);
     try {
       const dnaProfile = await getEventDnaProfile(req.params.ownerToken, event);
       const guests2 = await storage.listGuests(event.id);
       const guestCount = guests2.reduce((sum, g) => sum + g.partySize, 0);
       const formatRecommendation = recommendInviteFormat(dnaProfile, guestCount);
+      const inspirationNotes = inspirationImages.length > 0 ? await extractInspirationNotes(inspirationImages) : "";
       const concepts = await generateInviteDesignConcepts({
         themePrompt,
         eventName: event.eventName,
@@ -70409,11 +80191,73 @@ Thanks so much!`;
         hostNames: event.hostNames,
         themeName: event.themeName,
         dnaSummary: dnaSummaryForPrompt(dnaProfile),
-        formatGuidance: formatRecommendation?.conceptGuidance ?? null
+        formatGuidance: formatRecommendation?.conceptGuidance ?? null,
+        inspirationNotes: inspirationNotes || null,
+        preferredStyleLanes: Array.isArray(req.body?.preferredStyleLanes) ? req.body.preferredStyleLanes.filter((x) => typeof x === "string") : null
       });
-      res.json({ concepts, dnaProfile });
+      res.json({ concepts, dnaProfile, inspirationNotes: inspirationNotes || void 0 });
     } catch (err) {
       res.status(502).json({ error: "Couldn't generate design concepts right now \u2014 please try again." });
+    }
+  });
+  app2.post("/api/events/owner/:ownerToken/invite/refine-concepts", async (req, res) => {
+    const event = await storage.getEventByOwnerToken(req.params.ownerToken);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+    const feedback = String(req.body?.feedback || "").trim();
+    if (!feedback) return res.status(400).json({ error: "feedback is required" });
+    const previousConcepts = Array.isArray(req.body?.previousConcepts) ? req.body.previousConcepts.filter(isValidInviteDesignConcept) : [];
+    const themePrompt = String(req.body?.themePrompt || "").trim() || event.themeName || feedback;
+    const inspirationImages = readInspirationImages(req.body?.inspirationImages);
+    try {
+      const dnaProfile = await getEventDnaProfile(req.params.ownerToken, event);
+      const guests2 = await storage.listGuests(event.id);
+      const guestCount = guests2.reduce((sum, g) => sum + g.partySize, 0);
+      const formatRecommendation = recommendInviteFormat(dnaProfile, guestCount);
+      const inspirationNotes = inspirationImages.length > 0 ? await extractInspirationNotes(inspirationImages) : "";
+      const concepts = await generateInviteDesignConcepts({
+        themePrompt,
+        eventName: event.eventName,
+        eventType: event.eventType,
+        eventDate: event.eventDate,
+        location: event.location,
+        hostNames: event.hostNames,
+        themeName: event.themeName,
+        dnaSummary: dnaSummaryForPrompt(dnaProfile),
+        formatGuidance: formatRecommendation?.conceptGuidance ?? null,
+        previousConcepts,
+        feedback,
+        inspirationNotes: inspirationNotes || null
+      });
+      res.json({ concepts, dnaProfile, inspirationNotes: inspirationNotes || void 0 });
+    } catch (err) {
+      res.status(502).json({ error: "Couldn't refine design concepts right now \u2014 please try again." });
+    }
+  });
+  app2.post("/api/events/owner/:ownerToken/invite/preview-concept", async (req, res) => {
+    const event = await storage.getEventByOwnerToken(req.params.ownerToken);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+    const concept = req.body?.concept;
+    if (!isValidInviteDesignConcept(concept)) {
+      return res.status(400).json({ error: "Invalid design concept" });
+    }
+    try {
+      const aspectRatio = concept.layoutStyle === "banner" ? "16:9" : concept.layoutStyle === "full-bleed" ? "9:16" : "1:1";
+      let illustrationUrl = null;
+      try {
+        illustrationUrl = await generateInviteIllustration(concept, aspectRatio, "medium");
+      } catch (firstErr) {
+        console.error("preview-concept first attempt failed, retrying at low quality:", firstErr);
+        try {
+          illustrationUrl = await generateInviteIllustration(concept, aspectRatio, "low");
+        } catch (secondErr) {
+          console.error("preview-concept retry also failed:", secondErr);
+          return res.json({ illustrationUrl: null, fallback: true });
+        }
+      }
+      res.json({ illustrationUrl });
+    } catch (err) {
+      console.error("preview-concept unexpected error:", err);
+      res.json({ illustrationUrl: null, fallback: true });
     }
   });
   app2.post("/api/events/owner/:ownerToken/invite/apply-concept", async (req, res) => {
@@ -70423,12 +80267,17 @@ Thanks so much!`;
     if (!isValidInviteDesignConcept(concept)) {
       return res.status(400).json({ error: "Invalid design concept" });
     }
+    const preGenerated = typeof req.body?.illustrationUrl === "string" ? req.body.illustrationUrl : null;
     try {
-      const aspectRatio = concept.layoutStyle === "banner" ? "16:9" : "1:1";
-      const illustrationUrl = await generateInviteIllustration(concept.illustrationPrompt, aspectRatio);
+      const aspectRatio = concept.layoutStyle === "banner" ? "16:9" : concept.layoutStyle === "full-bleed" ? "9:16" : "1:1";
+      const illustrationUrl = preGenerated ?? await generateInviteIllustrationWithQualityGate(concept, aspectRatio);
+      const dna = deriveThemeDna(concept);
       const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, {
         inviteDesignConceptJson: JSON.stringify(concept),
-        inviteIllustrationUrl: illustrationUrl
+        inviteIllustrationUrl: illustrationUrl,
+        envelopeColor: dna.primaryColor,
+        envelopeLinerPattern: dna.linerPattern,
+        stampStyle: dna.stampStyle
       });
       if (!updated) return res.status(404).json({ error: "Event not found" });
       res.json(updated);
@@ -70436,6 +80285,106 @@ Thanks so much!`;
       console.error("apply-concept illustration generation failed:", err);
       res.status(502).json({ error: "Couldn't generate the illustration right now \u2014 please try again." });
     }
+  });
+  app2.post("/api/events/owner/:ownerToken/invite/apply-theme", async (req, res) => {
+    const event = await storage.getEventByOwnerToken(req.params.ownerToken);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+    const theme = typeof req.body?.themeId === "string" ? getLaunchTheme(req.body.themeId) : void 0;
+    if (!theme) return res.status(400).json({ error: "Unknown themeId" });
+    const concept = buildThemedConcept(theme, {
+      paletteVariantId: typeof req.body?.paletteVariantId === "string" ? req.body.paletteVariantId : void 0,
+      placementId: typeof req.body?.placementId === "string" ? req.body.placementId : void 0,
+      overlay: req.body?.overlay,
+      fontPairingId: typeof req.body?.fontPairingId === "string" ? req.body.fontPairingId : void 0,
+      copy: themeCopyForEvent(theme, event)
+    });
+    const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, {
+      inviteDesignConceptJson: JSON.stringify(concept),
+      // Untaught renderers (existing email templates, older cached clients)
+      // read this field, so pointing it at the static artwork keeps them
+      // showing the right image instead of nothing.
+      inviteIllustrationUrl: theme.artwork.fullUrl,
+      themeName: theme.name,
+      paletteColors: JSON.stringify(concept.paletteColors),
+      // Applying a theme returns the host to Posy-rendered mode; any uploaded
+      // custom image is preserved so they can switch back.
+      inviteRenderMode: "",
+      ...defaultEnvelopeForTheme(theme)
+    });
+    if (!updated) return res.status(404).json({ error: "Event not found" });
+    res.json(updated);
+  });
+  app2.patch("/api/events/owner/:ownerToken/invite/theme", async (req, res) => {
+    const event = await storage.getEventByOwnerToken(req.params.ownerToken);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+    const applied = parseInviteDesignConcept(event.inviteDesignConceptJson);
+    const selection = readThemeSelection(applied);
+    if (!applied || !selection) return res.status(400).json({ error: "No curated theme is applied yet" });
+    const theme = getLaunchTheme(selection.themeId);
+    if (!theme) return res.status(400).json({ error: "No curated theme is applied yet" });
+    const palette = getPaletteVariant(
+      theme,
+      typeof req.body?.paletteVariantId === "string" ? req.body.paletteVariantId : selection.paletteVariantId
+    );
+    const placement = getPlacement(
+      theme,
+      typeof req.body?.placementId === "string" ? req.body.placementId : selection.placementId
+    );
+    const overlay = getOverlay(theme, req.body?.overlay ?? selection.overlay);
+    const postage = getPostageStamp(
+      theme,
+      typeof req.body?.postageStampId === "string" ? req.body.postageStampId : selection.postageStampId
+    );
+    const fontPairingId = getFontPairingIdFor(
+      theme,
+      typeof req.body?.fontPairingId === "string" ? req.body.fontPairingId : applied.fontPairingId
+    );
+    const copy = { ...selection.copy };
+    for (const key of ["eyebrow", "dateLine", "timeLine", "locationLine", "rsvpLine"]) {
+      if (typeof req.body?.copy?.[key] === "string") copy[key] = req.body.copy[key].slice(0, 160);
+    }
+    const nextConcept = {
+      ...applied,
+      paletteColors: paletteVariantColors(palette),
+      fontPairingId,
+      theme: {
+        ...selection,
+        paletteVariantId: palette.id,
+        placementId: placement.id,
+        overlay,
+        postageStampId: postage.id,
+        copy
+      }
+    };
+    const eventUpdates = {
+      inviteDesignConceptJson: JSON.stringify(nextConcept),
+      paletteColors: JSON.stringify(nextConcept.paletteColors)
+    };
+    if (typeof req.body?.inviteSubject === "string") {
+      eventUpdates.inviteSubject = req.body.inviteSubject.slice(0, 200);
+    }
+    if (typeof req.body?.inviteMessage === "string") {
+      eventUpdates.inviteMessage = req.body.inviteMessage.slice(0, 1e3);
+    }
+    const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, eventUpdates);
+    if (!updated) return res.status(404).json({ error: "Event not found" });
+    res.json(updated);
+  });
+  app2.patch("/api/events/owner/:ownerToken/invite/concept-palette", async (req, res) => {
+    const event = await storage.getEventByOwnerToken(req.params.ownerToken);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+    const appliedConcept = parseInviteDesignConcept(event.inviteDesignConceptJson);
+    if (!appliedConcept) return res.status(400).json({ error: "No design concept is applied yet" });
+    const paletteColors = req.body?.paletteColors;
+    if (!Array.isArray(paletteColors) || paletteColors.length !== 4 || !paletteColors.every((c) => typeof c === "string" && /^#[0-9a-fA-F]{6}$/.test(c))) {
+      return res.status(400).json({ error: "paletteColors must be an array of 4 hex colors" });
+    }
+    const updatedConcept = { ...appliedConcept, paletteColors };
+    const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, {
+      inviteDesignConceptJson: JSON.stringify(updatedConcept)
+    });
+    if (!updated) return res.status(404).json({ error: "Event not found" });
+    res.json(updated);
   });
   app2.post("/api/events/owner/:ownerToken/invite/clear-concept", async (req, res) => {
     const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, {
@@ -70445,12 +80394,151 @@ Thanks so much!`;
     if (!updated) return res.status(404).json({ error: "Event not found" });
     res.json(updated);
   });
+  app2.patch("/api/events/owner/:ownerToken/invite/suite", async (req, res) => {
+    const event = await storage.getEventByOwnerToken(req.params.ownerToken);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+    const updates = {};
+    if (req.body?.envelopeColor !== void 0) {
+      const color = req.body.envelopeColor;
+      if (typeof color !== "string" || !/^#[0-9a-fA-F]{6}$/.test(color)) {
+        return res.status(400).json({ error: "envelopeColor must be a hex color" });
+      }
+      updates.envelopeColor = color;
+    }
+    if (req.body?.envelopeLinerPattern !== void 0) {
+      if (!isLinerPattern(req.body.envelopeLinerPattern)) {
+        return res.status(400).json({ error: "envelopeLinerPattern must be one of: solid, dots, stripes, chevron, floral" });
+      }
+      updates.envelopeLinerPattern = req.body.envelopeLinerPattern;
+    }
+    if (req.body?.stampStyle !== void 0) {
+      if (!isStampStyle(req.body.stampStyle)) {
+        return res.status(400).json({ error: "stampStyle must be a valid stamp style" });
+      }
+      updates.stampStyle = req.body.stampStyle;
+    }
+    if (req.body?.linerColor !== void 0) {
+      const color = req.body.linerColor;
+      if (typeof color !== "string" || !/^#[0-9a-fA-F]{6}$/.test(color)) {
+        return res.status(400).json({ error: "linerColor must be a hex color" });
+      }
+      updates.linerColor = color;
+    }
+    if (req.body?.stampColor !== void 0) {
+      const color = req.body.stampColor;
+      if (typeof color !== "string" || !/^#[0-9a-fA-F]{6}$/.test(color)) {
+        return res.status(400).json({ error: "stampColor must be a hex color" });
+      }
+      updates.stampColor = color;
+    }
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: "No suite fields supplied" });
+    }
+    const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, updates);
+    if (!updated) return res.status(404).json({ error: "Event not found" });
+    res.json(updated);
+  });
+  app2.patch("/api/events/owner/:ownerToken/invite-status", async (req, res) => {
+    const event = await storage.getEventByOwnerToken(req.params.ownerToken);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+    const status = req.body?.status;
+    if (status !== "draft" && status !== "published") {
+      return res.status(400).json({ error: "status must be 'draft' or 'published'" });
+    }
+    const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, { inviteStatus: status });
+    if (!updated) return res.status(404).json({ error: "Event not found" });
+    res.json(updated);
+  });
+  app2.patch("/api/events/owner/:ownerToken/rsvp-phone", async (req, res) => {
+    const event = await storage.getEventByOwnerToken(req.params.ownerToken);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+    const phone = typeof req.body?.phone === "string" ? req.body.phone.trim() : "";
+    const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, { rsvpPhone: phone });
+    if (!updated) return res.status(404).json({ error: "Event not found" });
+    res.json(updated);
+  });
+  app2.patch("/api/events/owner/:ownerToken/invite/live-design", async (req, res) => {
+    const event = await storage.getEventByOwnerToken(req.params.ownerToken);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+    const appliedConcept = parseInviteDesignConcept(event.inviteDesignConceptJson);
+    if (!appliedConcept) return res.status(400).json({ error: "No design concept is applied yet" });
+    const updates = {};
+    const eventUpdates = {};
+    if (typeof req.body?.fontPairingId === "string") {
+      if (!FONT_PAIRINGS.some((f) => f.id === req.body.fontPairingId)) {
+        return res.status(400).json({ error: "Invalid fontPairingId" });
+      }
+      updates.fontPairingId = req.body.fontPairingId;
+    }
+    if (typeof req.body?.layoutStyle === "string") {
+      if (!LAYOUT_STYLES.includes(req.body.layoutStyle)) {
+        return res.status(400).json({ error: "Invalid layoutStyle" });
+      }
+      updates.layoutStyle = req.body.layoutStyle;
+    }
+    if (typeof req.body?.borderStyle === "string") {
+      if (!BORDER_STYLES.includes(req.body.borderStyle)) {
+        return res.status(400).json({ error: "Invalid borderStyle" });
+      }
+      updates.borderStyle = req.body.borderStyle;
+    }
+    if (Array.isArray(req.body?.paletteColors)) {
+      const pc = req.body.paletteColors;
+      if (pc.length !== 4 || !pc.every((c) => typeof c === "string" && /^#[0-9a-fA-F]{6}$/.test(c))) {
+        return res.status(400).json({ error: "paletteColors must be an array of 4 hex colors" });
+      }
+      updates.paletteColors = pc;
+    }
+    if (typeof req.body?.inviteSubject === "string") {
+      eventUpdates.inviteSubject = req.body.inviteSubject.slice(0, 200);
+    }
+    if (typeof req.body?.inviteMessage === "string") {
+      eventUpdates.inviteMessage = req.body.inviteMessage.slice(0, 1e3);
+    }
+    if (Object.keys(updates).length > 0) {
+      const updatedConcept = { ...appliedConcept, ...updates };
+      eventUpdates.inviteDesignConceptJson = JSON.stringify(updatedConcept);
+    }
+    if (Object.keys(eventUpdates).length === 0) {
+      return res.json(event);
+    }
+    const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, eventUpdates);
+    if (!updated) return res.status(404).json({ error: "Event not found" });
+    res.json(updated);
+  });
+  app2.patch("/api/events/owner/:ownerToken/invite/custom-design", async (req, res) => {
+    const event = await storage.getEventByOwnerToken(req.params.ownerToken);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+    const imageDataUrl = req.body?.imageDataUrl;
+    if (typeof imageDataUrl !== "string" || !imageDataUrl.startsWith("data:image/")) {
+      return res.status(400).json({ error: "imageDataUrl must be an image data URL" });
+    }
+    const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, {
+      customInviteImageUrl: imageDataUrl,
+      inviteRenderMode: "custom"
+    });
+    if (!updated) return res.status(404).json({ error: "Event not found" });
+    res.json(updated);
+  });
+  app2.patch("/api/events/owner/:ownerToken/invite/custom-design/clear", async (req, res) => {
+    const event = await storage.getEventByOwnerToken(req.params.ownerToken);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+    const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, {
+      inviteRenderMode: ""
+    });
+    if (!updated) return res.status(404).json({ error: "Event not found" });
+    res.json(updated);
+  });
   app2.post("/api/events/owner/:ownerToken/master-planner/generate", async (req, res) => {
     const event = await storage.getEventByOwnerToken(req.params.ownerToken);
     if (!event) return res.status(404).json({ error: "Event not found" });
+    const access2 = await canGenerateDraft(event.id);
+    if (!access2.ok) {
+      return res.status(402).json({ error: "This event needs Spark or Plus to generate a plan." });
+    }
     const reservation = await reserveOrResumeFreeDraft(event.id);
     if (!reservation.ok || !reservation.generation) {
-      return res.status(409).json({ error: "This event's free draft has already been used." });
+      return res.status(409).json({ error: "This event's plan has already been generated." });
     }
     const generationId = reservation.generation.id;
     res.json({ generationId, draftStatus: "generating" });
@@ -70473,6 +80561,29 @@ Thanks so much!`;
     const event = await storage.getEventByOwnerToken(req.params.ownerToken);
     if (!event) return res.status(404).json({ error: "Event not found" });
     const summary = await getEntitlementSummary(event.id);
+    if (!summary) return res.status(404).json({ error: "Event not found" });
+    res.json(summary);
+  });
+  app2.post("/api/events/:eventId/email-capture", async (req, res) => {
+    const eventId = Number(req.params.eventId);
+    if (!Number.isInteger(eventId)) return res.status(400).json({ error: "Invalid event id." });
+    const email = typeof req.body?.email === "string" ? req.body.email : "";
+    const ownerToken = typeof req.body?.ownerToken === "string" ? req.body.ownerToken : "";
+    const normalized = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
+      return res.status(400).json({ error: "Please enter a valid email address." });
+    }
+    if (!ownerToken) return res.status(401).json({ error: "Missing ownerToken." });
+    const event = await storage.getEventByOwnerToken(ownerToken);
+    if (!event || event.id !== eventId) {
+      return res.status(403).json({ error: "You don't have access to this event." });
+    }
+    if (event.capturedEmail && event.capturedEmail !== normalized) {
+      console.warn(`[email-capture] event ${eventId} already has a different captured email; ignoring new value`);
+    } else {
+      await storage.setEventCapturedEmail(eventId, normalized);
+    }
+    const summary = await getEntitlementSummary(eventId);
     if (!summary) return res.status(404).json({ error: "Event not found" });
     res.json(summary);
   });
@@ -70549,32 +80660,65 @@ Thanks so much!`;
   });
   const checkoutSessionSchema = external_exports.object({
     email: external_exports.string().trim().email(),
-    billingInterval: external_exports.enum(["annual", "monthly"])
+    // Which product is being purchased. Defaults to "plus" so existing
+    // callers that omit it keep the subscription behavior.
+    plan: external_exports.enum(["plus", "spark"]).default("plus"),
+    billingInterval: external_exports.enum(["annual", "monthly"]).default("annual"),
+    // For Plus: the event a host was mid-build on, if they upgraded from
+    // inside their dashboard rather than the standalone /pricing page.
+    // For Spark: REQUIRED — the event's ownerToken, since a Spark purchase is
+    // event-scoped. Carried through to success_url so checkout can send them
+    // back to that event.
+    returnToken: external_exports.string().trim().optional()
   });
   app2.post("/api/checkout/create-session", async (req, res) => {
     const parsed = checkoutSessionSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: "Please provide a valid email and billing option." });
     }
-    const { email, billingInterval } = parsed.data;
+    const { email, plan, billingInterval, returnToken } = parsed.data;
     const stripe = getStripe();
+    if (!stripe) {
+      return res.status(503).json({ error: "Checkout isn't set up yet \u2014 please check back soon." });
+    }
+    const origin = `${req.protocol}://${req.get("host")}`;
+    if (plan === "spark") {
+      const sparkPriceId = getSparkPriceId();
+      if (!sparkPriceId) {
+        return res.status(503).json({ error: "Checkout isn't set up yet \u2014 please check back soon." });
+      }
+      if (!returnToken) {
+        return res.status(400).json({ error: "This event couldn't be found for checkout. Please try again from your event." });
+      }
+      try {
+        const session = await stripe.checkout.sessions.create({
+          mode: "payment",
+          customer_email: email,
+          line_items: [{ price: sparkPriceId, quantity: 1 }],
+          success_url: `${origin}/draft-generating/${encodeURIComponent(returnToken)}?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${origin}/draft-generating/${encodeURIComponent(returnToken)}?checkout=cancelled`,
+          metadata: { plan: "spark", ownerToken: returnToken }
+        });
+        return res.json({ url: session.url });
+      } catch (err) {
+        console.error("Stripe Spark checkout session creation failed:", err);
+        return res.status(502).json({ error: "Couldn't start checkout. Please try again." });
+      }
+    }
     const priceId = getPriceId(billingInterval);
-    if (!stripe || !priceId) {
+    if (!priceId) {
       return res.status(503).json({ error: "Checkout isn't set up yet \u2014 please check back soon." });
     }
     await storage.upsertEmailEntitlement(email, { billingInterval });
-    const origin = `${req.protocol}://${req.get("host")}`;
     try {
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
         customer_email: email,
         line_items: [{ price: priceId, quantity: 1 }],
-        subscription_data: { trial_period_days: 7 },
         payment_method_collection: "always",
-        // card required even during the trial
-        success_url: `${origin}/#/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${origin}/#/pricing?checkout=cancelled`,
-        metadata: { billingInterval }
+        success_url: returnToken ? `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}&returnToken=${encodeURIComponent(returnToken)}` : `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: returnToken ? `${origin}/pricing?checkout=cancelled&returnToken=${encodeURIComponent(returnToken)}` : `${origin}/pricing?checkout=cancelled`,
+        metadata: { plan: "plus", billingInterval, ...returnToken ? { returnToken } : {} }
       });
       res.json({ url: session.url });
     } catch (err) {
@@ -70589,7 +80733,36 @@ Thanks so much!`;
     if (!stripe) return res.status(503).json({ error: "Checkout isn't set up yet." });
     try {
       const session = await stripe.checkout.sessions.retrieve(sessionId, { expand: ["subscription", "customer"] });
-      if (session.status !== "complete" || !session.subscription || typeof session.subscription === "string") {
+      if (session.status !== "complete") {
+        return res.status(409).json({ error: "This checkout session hasn't completed yet." });
+      }
+      if (session.mode === "payment") {
+        const ownerToken = session.metadata?.ownerToken;
+        const email2 = (session.customer_details?.email || session.customer_email || "").toLowerCase();
+        if (!ownerToken) {
+          return res.status(500).json({ error: "This checkout session is missing its event reference." });
+        }
+        const unlocked = await storage.markEventSparkUnlocked(ownerToken, session.id);
+        if (unlocked) await stampCapturedEmailSafe(unlocked.id, email2);
+        await sendMetaPurchaseEvent({
+          email: email2,
+          phone: session.customer_details?.phone,
+          value: CHECKOUT_PRICES.spark,
+          currency: "USD",
+          eventId: session.id,
+          eventSourceUrl: req.get("referer") || void 0
+        });
+        return res.json({
+          plan: "spark",
+          unlocked: true,
+          email: email2,
+          returnToken: ownerToken,
+          firedEvent: "spark_unlocked",
+          eventId: session.id,
+          value: CHECKOUT_PRICES.spark
+        });
+      }
+      if (!session.subscription || typeof session.subscription === "string") {
         return res.status(409).json({ error: "This checkout session hasn't completed yet." });
       }
       const subscription = session.subscription;
@@ -70607,6 +80780,11 @@ Thanks so much!`;
         trialStartedAt: subscription.trial_start ? subscription.trial_start * 1e3 : previous?.trialStartedAt ?? null,
         trialEndsAt: subscription.trial_end ? subscription.trial_end * 1e3 : previous?.trialEndsAt ?? null
       });
+      const plusReturnToken = session.metadata?.returnToken;
+      if (plusReturnToken) {
+        const returnEvent = await storage.getEventByOwnerToken(plusReturnToken);
+        if (returnEvent) await stampCapturedEmailSafe(returnEvent.id, email);
+      }
       let firedEvent = null;
       if (isNewTransition) {
         if (newPlanTier === "plus_trial") {
@@ -70616,13 +80794,25 @@ Thanks so much!`;
         }
         if (firedEvent) {
           await storage.logAnalyticsEvent(firedEvent, { email, billingInterval: updated.billingInterval ?? void 0, metadata: { subscriptionId: subscription.id } });
+          await sendMetaPurchaseEvent({
+            email,
+            phone: session.customer_details?.phone,
+            value: plusPriceValue(updated.billingInterval),
+            currency: "USD",
+            eventId: subscription.id,
+            eventSourceUrl: req.get("referer") || void 0
+          });
         }
       }
       res.json({
+        plan: "plus",
         planTier: updated.planTier,
         trialEndsAt: updated.trialEndsAt,
         billingInterval: updated.billingInterval,
-        firedEvent
+        firedEvent,
+        eventId: subscription.id,
+        value: plusPriceValue(updated.billingInterval),
+        email
       });
     } catch (err) {
       console.error("Stripe checkout confirmation failed:", err);
@@ -70648,6 +80838,14 @@ Thanks so much!`;
     }
     try {
       switch (event.type) {
+        case "checkout.session.completed": {
+          const session = event.data.object;
+          if (session.mode === "payment" && session.metadata?.plan === "spark") {
+            const ownerToken = session.metadata?.ownerToken;
+            if (ownerToken) await storage.markEventSparkUnlocked(ownerToken, session.id);
+          }
+          break;
+        }
         case "customer.subscription.updated":
         case "customer.subscription.created": {
           const subscription = event.data.object;
@@ -70665,6 +80863,20 @@ Thanks so much!`;
             });
             if (previous?.planTier === "plus_trial" && newPlanTier === "plus_active") {
               await storage.logAnalyticsEvent("subscribed", { email, metadata: { subscriptionId: subscription.id, via: "trial_conversion" } });
+              const returnToken = subscription.metadata?.returnToken;
+              if (returnToken) {
+                const subEvent = await storage.getEventByOwnerToken(returnToken);
+                if (subEvent) await stampCapturedEmailSafe(subEvent.id, email);
+              }
+              const interval2 = subscription.items.data[0]?.price?.recurring?.interval;
+              const phone = !("deleted" in customer) ? customer.phone ?? void 0 : void 0;
+              await sendMetaPurchaseEvent({
+                email,
+                phone,
+                value: interval2 === "month" ? CHECKOUT_PRICES.plusMonthly : CHECKOUT_PRICES.plusAnnual,
+                currency: "USD",
+                eventId: subscription.id
+              });
             }
           }
           break;
@@ -70718,14 +80930,14 @@ Thanks so much!`;
 }
 
 // server/app.ts
-function log(message, source = "express") {
+function log(message2, source = "express") {
   const formattedTime = (/* @__PURE__ */ new Date()).toLocaleTimeString("en-US", {
     hour: "numeric",
     minute: "2-digit",
     second: "2-digit",
     hour12: true
   });
-  console.log(`${formattedTime} [${source}] ${message}`);
+  console.log(`${formattedTime} [${source}] ${message2}`);
 }
 function createExpressApp() {
   const app2 = (0, import_express.default)();
@@ -70744,7 +80956,7 @@ function createExpressApp() {
   app2.use(import_express.default.urlencoded({ extended: false, limit: "6mb" }));
   app2.use((req, res, next) => {
     const start = Date.now();
-    const path7 = req.path;
+    const path8 = req.path;
     let capturedJsonResponse = void 0;
     const originalResJson = res.json;
     res.json = function(bodyJson, ...args) {
@@ -70753,8 +80965,8 @@ function createExpressApp() {
     };
     res.on("finish", () => {
       const duration = Date.now() - start;
-      if (path7.startsWith("/api")) {
-        let logLine = `${req.method} ${path7} ${res.statusCode} in ${duration}ms`;
+      if (path8.startsWith("/api")) {
+        let logLine = `${req.method} ${path8} ${res.statusCode} in ${duration}ms`;
         if (capturedJsonResponse) {
           logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
         }
@@ -70772,12 +80984,12 @@ function ensureRoutesRegistered(app2, httpServer2) {
       await registerRoutes(httpServer2, app2);
       app2.use((err, _req, res, next) => {
         const status = err.status || err.statusCode || 500;
-        const message = err.message || "Internal Server Error";
+        const message2 = err.message || "Internal Server Error";
         console.error("Internal Server Error:", err);
         if (res.headersSent) {
           return next(err);
         }
-        return res.status(status).json({ message });
+        return res.status(status).json({ message: message2 });
       });
     })();
   }

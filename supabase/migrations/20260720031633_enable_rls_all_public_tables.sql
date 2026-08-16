@@ -1,0 +1,11 @@
+-- Recovered verbatim from Production migration history.
+ALTER TABLE public.analytics_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.budget_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.email_entitlements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.guests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.master_planner_generations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.menu_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.shopping_list_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.theme_suggestion_cache ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.timeline_items ENABLE ROW LEVEL SECURITY;

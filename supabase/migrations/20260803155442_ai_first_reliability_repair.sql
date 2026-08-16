@@ -3,25 +3,13 @@
 -- This file was authored by extracting the exact DDL `drizzle-kit generate`
 -- produces from shared/schema.ts for the objects this repair adds or
 -- changes (verified against a scratch drizzle-kit run against this exact
--- schema.ts; not hand-typed SQL). It is scoped to only this repair's
--- changes, not a full-schema baseline: this project has no prior
--- drizzle-kit migration history (see package.json's "db:push" script,
--- which runs `drizzle-kit push` directly against the schema rather than
--- through tracked migration files), so a plain `drizzle-kit generate` run
--- here would otherwise emit a spurious "CREATE TABLE" for all fourteen
--- existing tables as if this were the project's first-ever migration —
--- which is wrong and would conflict with the tables that already exist.
+-- schema.ts; not hand-typed SQL). It is intentionally incremental: the
+-- earlier canonical migrations create the production baseline and the two
+-- AI-first foundation tables this repair depends on.
 --
--- THIS MUST BE APPLIED before the code in this repair is deployed anywhere
--- real: it is a required migration, not optional documentation. Apply it
--- via `npm run db:push` (this project's actual schema-deploy command) or by
--- running this file directly against the target database. Per this
--- repair's scope, that application step was NOT performed here -- no
--- command in this repair connected to any database, staging, preview, or
--- production instance. Deploying the TypeScript changes in this repair
--- without first applying this migration will fail at runtime the moment
--- the new stores are used, because the tables/indexes described below will
--- not exist yet.
+-- This is a required migration. Deploy it only through the ordered files in
+-- supabase/migrations (`npm run db:push`) so migration history and schema do
+-- not drift again.
 --
 -- What changes and why, three objects:
 --

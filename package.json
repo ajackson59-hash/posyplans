@@ -11,7 +11,10 @@
     "start": "NODE_ENV=production node dist/index.cjs",
     "check": "tsc",
     "test": "vitest run",
-    "db:push": "drizzle-kit push"
+    "db:migration:new": "npx --yes supabase@2.114.0 migration new",
+    "db:reset": "npx --yes supabase@2.114.0 db reset",
+    "db:push:dry-run": "npx --yes supabase@2.114.0 db push --dry-run --skip-vault",
+    "db:push": "npx --yes supabase@2.114.0 db push --skip-vault"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.111.0",

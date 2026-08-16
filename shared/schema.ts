@@ -584,7 +584,7 @@ export const aiFirstImageLedger = pgTable(
   },
   (table) => [
     // A REAL partial unique index, part of the generated schema (see
-    // migrations/ for the SQL this produces via `drizzle-kit generate` —
+    // supabase/migrations/ for the reviewed SQL produced from this schema —
     // not a comment). Two concurrent requests inserting a ledger row for
     // the same run+direction+attempt idempotency key now race at the
     // database: the loser's INSERT fails with a unique-violation instead of
@@ -625,7 +625,7 @@ export type AiFirstImageLedgerRow = typeof aiFirstImageLedger.$inferSelect;
 //    non-terminal run" a fact the database itself refuses to duplicate,
 //    regardless of what run id either request used.
 //
-// Both indexes are part of the generated schema below (see migrations/ for
+// Both indexes are part of the generated schema below (see supabase/migrations/ for
 // the SQL `drizzle-kit generate` produced from them), not comments.
 export const aiFirstGenerationRuns = pgTable(
   "ai_first_generation_runs",

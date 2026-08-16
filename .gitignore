@@ -1,4 +1,5 @@
 node_modules/
+drizzle/
 dist/
 .env
 .env.local
