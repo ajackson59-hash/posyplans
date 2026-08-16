@@ -15,6 +15,7 @@
 
 import type { BorderStyle, InviteDesignConcept, LayoutStyle } from "./inviteDesign";
 import type { LinerPattern, StampStyle } from "./themeDna";
+import { parseEventDate, suggestRsvpDeadline } from "./rsvpDeadline";
 
 /* ── Filters ─────────────────────────────────────────────────────────── */
 
@@ -84,6 +85,21 @@ export const OVERLAY_LABELS: Record<OverlayTreatment, string> = {
   veil: "Soft veil",
   plate: "Paper panel",
   gradient: "Gradient",
+};
+
+/**
+ * Stable surface opacity over the complete live-type box. The deterministic
+ * quality gate imports the same values as the renderer, so it judges the card
+ * customers actually see instead of rejecting safe artwork from raw pixels.
+ * A gradient is deliberately zero here: its opacity changes by position and
+ * cannot guarantee the whole type block. Full-card AI layouts canonicalize it
+ * to a local veil before generation.
+ */
+export const LOCAL_TYPE_SURFACE_ALPHA: Record<OverlayTreatment, number> = {
+  none: 0,
+  veil: 0.88,
+  plate: 0.94,
+  gradient: 0,
 };
 
 /**
@@ -902,20 +918,27 @@ export function defaultThemeCopy(theme: LaunchTheme): ThemeCopy {
 
 /**
  * Copy seeded from the host's real event so a freshly applied theme reads as
- * their invitation immediately, falling back to the theme's sample lines for
- * anything the event does not know yet.
+ * their invitation immediately. Sample dates, venues, times and RSVP
+ * deadlines are never allowed onto a real event — missing facts stay blank.
  */
 export function themeCopyForEvent(
   theme: LaunchTheme,
-  event: { eventDate?: string; location?: string; hostNames?: string; rsvpDeadline?: string },
+  event: { eventDate?: string; eventTime?: string; location?: string; hostNames?: string; rsvpDeadline?: string },
 ): ThemeCopy {
-  const base = defaultThemeCopy(theme);
+  const eventDate = event.eventDate?.trim() ?? "";
+  const requestedDeadline = event.rsvpDeadline?.trim() ?? "";
+  const parsedEvent = parseEventDate(eventDate);
+  const parsedDeadline = parseEventDate(requestedDeadline);
+  const manualDeadlineIsSafe =
+    requestedDeadline.length > 0 && (!parsedEvent || !parsedDeadline || parsedDeadline.getTime() < parsedEvent.getTime());
+  const rsvpDeadline = manualDeadlineIsSafe ? requestedDeadline : suggestRsvpDeadline(eventDate) ?? "";
+
   return {
-    eyebrow: event.hostNames ? `Hosted by ${event.hostNames}` : base.eyebrow,
-    dateLine: event.eventDate || base.dateLine,
-    timeLine: base.timeLine,
-    locationLine: event.location || base.locationLine,
-    rsvpLine: event.rsvpDeadline ? `Kindly reply by ${event.rsvpDeadline}` : base.rsvpLine,
+    eyebrow: event.hostNames?.trim() ? `Hosted by ${event.hostNames.trim()}` : "Please join us",
+    dateLine: eventDate,
+    timeLine: event.eventTime?.trim() ?? "",
+    locationLine: event.location?.trim() ?? "",
+    rsvpLine: rsvpDeadline ? `Kindly reply by ${rsvpDeadline}` : "",
   };
 }
 
@@ -931,13 +954,27 @@ function isThemeCopy(value: unknown): value is ThemeCopy {
   );
 }
 
-/** Reads a validated theme selection off a concept, or null if there isn't one. */
-export function readThemeSelection(concept: unknown): ThemeSelection | null {
+function curatedThemeById(themeId: string): LaunchTheme | undefined {
+  return isLaunchThemeId(themeId) ? getLaunchTheme(themeId) : undefined;
+}
+
+/**
+ * Reads a validated theme selection off a concept, or null if there isn't one.
+ *
+ * `resolveTheme` exists so a caller holding a theme that is not in the curated
+ * catalogue — a generated one, rebuilt from a stored snapshot — can still read
+ * its selection. Omitted, only the eight curated themes resolve, which is the
+ * behaviour every existing caller relies on.
+ */
+export function readThemeSelection(
+  concept: unknown,
+  resolveTheme: (themeId: string) => LaunchTheme | undefined = curatedThemeById,
+): ThemeSelection | null {
   if (!concept || typeof concept !== "object") return null;
   const raw = (concept as { theme?: unknown }).theme;
   if (!raw || typeof raw !== "object") return null;
   const t = raw as Record<string, unknown>;
-  const theme = isLaunchThemeId(t.themeId) ? getLaunchTheme(t.themeId as string) : undefined;
+  const theme = typeof t.themeId === "string" ? resolveTheme(t.themeId) : undefined;
   if (!theme) return null;
   return {
     themeId: theme.id,

@@ -1,7 +1,9 @@
 import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
-  out: "./migrations",
+  // Drizzle snapshots are development-only inputs. Deployable SQL lives in
+  // supabase/migrations and is applied by the Supabase CLI.
+  out: "./drizzle",
   schema: "./shared/schema.ts",
   dialect: "postgresql",
   dbCredentials: {

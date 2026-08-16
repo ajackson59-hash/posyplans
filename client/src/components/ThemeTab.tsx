@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest, apiRequestJson } from "@/lib/queryClient";
 import type { EventRecord, ThemeSuggestion } from "@/lib/types";
 import { POPULAR_THEME_PICKS } from "@/lib/types";
+import { eventStyleSeed, isSavedEventStyle } from "@shared/eventStyle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -47,7 +48,7 @@ export default function ThemeTab({
   const queryClient = useQueryClient();
   const eventQueryKey = [`/api/events/owner/${ownerToken}`];
 
-  const [themeDraft, setThemeDraft] = useState(event.themeName || "");
+  const [themeDraft, setThemeDraft] = useState(eventStyleSeed(event));
   const [suggestion, setSuggestion] = useState<ThemeSuggestion | null>(null);
   const [addedMenu, setAddedMenu] = useState<Set<number>>(new Set());
   const [addedShopping, setAddedShopping] = useState<Set<number>>(new Set());
@@ -279,44 +280,52 @@ export default function ThemeTab({
       });
       return;
     }
-    setThemeDraft(theme);
-    if (theme !== event.themeName) saveTheme.mutate(theme);
-    getSuggestions.mutate(theme);
+    const normalizedTheme = theme.trim();
+    setThemeDraft(normalizedTheme);
+    if (!isSavedEventStyle(event, normalizedTheme)) saveTheme.mutate(normalizedTheme);
+    getSuggestions.mutate(normalizedTheme);
   }
 
   return (
     <div className="space-y-6">
       <AiDraftedBadge ownerToken={ownerToken} />
-      <Card className="border-card-border">
+      <Card id="event-style-section" className="scroll-mt-6 border-card-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-serif text-lg">
             <Palette className="h-4 w-4" /> Party theme
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Set a theme once and get a matching color palette plus ready-to-add menu, décor, and timeline ideas —
-            so a golf-themed first birthday (or anything else) gets a real head start instead of a blank page.
+            Posy starts with the event style you already described. Refine it here only if you want to, then get a
+            matching palette plus ready-to-add menu, décor, and timeline ideas.
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Input
-              className="flex-1"
-              data-testid="input-theme-name"
-              placeholder="e.g. Golf / Hole in One, Under the Sea, or your own idea"
-              value={themeDraft}
-              onChange={(e) => setThemeDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") fetchFor(themeDraft);
-              }}
-            />
-            <Button
-              data-testid="button-get-theme-ideas"
-              disabled={getSuggestions.isPending}
-              onClick={() => fetchFor(themeDraft)}
-            >
-              <Wand2 className="mr-1.5 h-3.5 w-3.5" />
-              {getSuggestions.isPending ? "Thinking…" : "Get theme ideas"}
-            </Button>
+          <div className="space-y-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Input
+                className="flex-1"
+                data-testid="input-theme-name"
+                placeholder="e.g. Golf / Hole in One, Under the Sea, or your own idea"
+                value={themeDraft}
+                onChange={(e) => setThemeDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") fetchFor(themeDraft);
+                }}
+              />
+              <Button
+                data-testid="button-get-theme-ideas"
+                disabled={getSuggestions.isPending}
+                onClick={() => fetchFor(themeDraft)}
+              >
+                <Wand2 className="mr-1.5 h-3.5 w-3.5" />
+                {getSuggestions.isPending ? "Thinking…" : "Get theme ideas"}
+              </Button>
+            </div>
+            {event.vibeDescription?.trim() && !event.themeName?.trim() && (
+              <p className="text-xs text-muted-foreground" data-testid="text-theme-from-intake">
+                Carried over from your event details — you do not need to type it again.
+              </p>
+            )}
           </div>
 
           <div>

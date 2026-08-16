@@ -64,6 +64,7 @@ import AiDraftedBadge from "@/components/AiDraftedBadge";
 import ReadinessScoreCard from "@/components/ReadinessScoreCard";
 import NextActions from "@/components/NextActions";
 import ReadinessMoment from "@/components/ReadinessMoment";
+import { hasSelectedInvitationDesign } from "@/lib/invitationState";
 import { parseInviteDesignConcept, conceptHeadingStyle, conceptBodyStyle, conceptBorderStyle } from "@shared/inviteDesign";
 import {
   Copy,
@@ -144,9 +145,17 @@ export default function Dashboard() {
   // "Go to Shopping List" links) and only switch the active tab without moving
   // the viewport — on a long dashboard page that reads as "nothing happened."
   // This wrapper switches the tab AND scrolls the tab section into view.
-  const navigateToTab = (tab: string) => {
+  const navigateToTab = (tab: string, sectionId = "event-tabs-section") => {
     setActiveTab(tab);
-    document.getElementById("event-tabs-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    // The requested section may not exist until Radix mounts the newly active
+    // tab. Wait for that render before scrolling so the click never appears to
+    // do nothing on this long page.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const target = document.getElementById(sectionId) ?? document.getElementById("event-tabs-section");
+        target?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
   };
 
   const [editingInvite, setEditingInvite] = useState(false);
@@ -575,6 +584,7 @@ export default function Dashboard() {
   }
 
   const { event, guests } = data;
+  const hasInvitationDesign = hasSelectedInvitationDesign(event);
 
   return (
     <div className="min-h-screen bg-background">
@@ -591,15 +601,17 @@ export default function Dashboard() {
             >
               Upgrade to Plus
             </Link>
-            <a
-              href={`/rsvp/${event.shareSlug}`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-              data-testid="link-preview-rsvp"
-            >
-              Preview RSVP page <ExternalLink className="h-3.5 w-3.5" />
-            </a>
+            {hasInvitationDesign && (
+              <a
+                href={`/rsvp/${event.shareSlug}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                data-testid="link-preview-rsvp"
+              >
+                Preview invitation <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            )}
           </div>
         </div>
       </header>
@@ -693,6 +705,33 @@ export default function Dashboard() {
             </div>
           )}
         </div>
+
+        <Card className="border-primary/25 bg-primary/[0.03]" data-testid="card-invitation-next-step">
+          <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 rounded-full bg-primary/10 p-2 text-primary">
+                <Mail className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="font-serif text-lg font-semibold text-foreground">
+                  {hasInvitationDesign ? "Your invitation is ready to finish" : "Create your invitation"}
+                </p>
+                <p className="mt-0.5 max-w-2xl text-sm text-muted-foreground">
+                  {hasInvitationDesign
+                    ? "Review the design and wording, choose your RSVP settings, then share it with guests."
+                    : "Posy already has your event style. Start with a custom idea, choose a ready-made design, or upload your own."}
+                </p>
+              </div>
+            </div>
+            <Button
+              className="shrink-0"
+              onClick={() => navigateToTab("guests", "invitation-design-section")}
+              data-testid="button-open-invitation-workspace"
+            >
+              {hasInvitationDesign ? "Finish invitation" : "Create invitation"}
+            </Button>
+          </CardContent>
+        </Card>
 
         {/* Readiness */}
         <ReadinessMoment ownerToken={ownerToken} eventDate={event.eventDate} onNavigate={navigateToTab} />
@@ -872,166 +911,51 @@ export default function Dashboard() {
 
           <TabsContent value="guests" className="space-y-6">
         <AiDraftedBadge ownerToken={ownerToken} />
-        {/* RSVP settings */}
-        <Card className="border-card-border">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-serif text-lg">
-              <Users className="h-4 w-4 text-primary" /> RSVP settings
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="rsvpRestriction">Who can guests bring?</Label>
-              <Select
-                value={event.rsvpRestriction}
-                onValueChange={(value) => saveRsvpRestriction.mutate(value as RsvpRestriction)}
-              >
-                <SelectTrigger id="rsvpRestriction" className="mt-1.5" data-testid="select-rsvp-restriction">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {RSVP_RESTRICTION_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="mt-1.5 text-xs text-muted-foreground">
-                {RSVP_RESTRICTION_OPTIONS.find((o) => o.value === event.rsvpRestriction)?.description}
-              </p>
-            </div>
-            <div>
-              <Label htmlFor="rsvpDeadline">RSVP deadline (optional)</Label>
-              <DatePickerField
-                id="rsvpDeadline"
-                testId="input-rsvp-deadline"
-                value={deadlineDraft}
-                onChange={setDeadlineDraft}
-                onBlur={() => {
-                  if (deadlineDraft !== event.rsvpDeadline) saveRsvpDeadline.mutate(deadlineDraft);
-                }}
-                onDateSelect={(next) => {
-                  if (next !== event.rsvpDeadline) saveRsvpDeadline.mutate(next);
-                }}
-              />
-              {!event.rsvpDeadline && suggestedRsvpDeadline ? (
-                <div className="mt-1.5 space-y-1" data-testid="hint-suggested-rsvp-deadline">
-                  <div className="flex items-start gap-1.5 text-xs text-muted-foreground">
-                    <Sparkles className="mt-0.5 h-3 w-3 flex-shrink-0 text-secondary" />
-                    <span>
-                      Suggested: <span className="font-medium text-foreground">{suggestedRsvpDeadline}</span> — gives
-                      guests enough time to reply before the event.
-                    </span>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-auto px-1.5 py-0.5 text-xs text-secondary hover:text-secondary"
-                    data-testid="button-use-suggested-rsvp-deadline"
-                    onClick={() => {
-                      setDeadlineDraft(suggestedRsvpDeadline);
-                      saveRsvpDeadline.mutate(suggestedRsvpDeadline);
-                    }}
-                  >
-                    <Check className="mr-1 h-3 w-3" />
-                    Use this date
-                  </Button>
-                </div>
-              ) : (
-                <p className="mt-1.5 text-xs text-muted-foreground">Shown to guests on the RSVP page as a gentle nudge to respond.</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Invitation composer */}
-        <Card className="border-card-border">
-          <CardHeader className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <Card id="invitation-design-section" className="scroll-mt-6 border-card-border">
+          <CardHeader>
             <div>
               <CardTitle className="flex items-center gap-2 font-serif text-lg">
-                <Mail className="h-4 w-4 text-primary" /> Invitation &amp; RSVP link
+                <Mail className="h-4 w-4 text-primary" /> Create your invitation
               </CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">
-                Write it once — every guest gets the same polished invite and a live RSVP link that keeps your headcount accurate automatically.
+                Choose the design first, then confirm the wording and RSVP details. Posy keeps it all together on one shareable page.
               </p>
             </div>
-            {!editingInvite && (
-              <Button
-                variant="outline"
-                size="sm"
-                data-testid="button-edit-invite"
-                onClick={() => {
-                  setSubjectDraft(event.inviteSubject);
-                  setMessageDraft(event.inviteMessage);
-                  setArtworkDraft(event.inviteArtworkUrl);
-                  setFontDraft(event.inviteFontFamily || DEFAULT_INVITE_FONT_ID);
-                  setAccentColorDraft(event.inviteAccentColor || "");
-                  setEditingInvite(true);
-                }}
-              >
-                Edit invite text
-              </Button>
-            )}
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/50 p-3">
-              <span className="flex-1 truncate text-sm text-muted-foreground" data-testid="text-rsvp-link">
-                {rsvpUrl}
-              </span>
-              <Button size="sm" variant="secondary" onClick={copyLink} data-testid="button-copy-rsvp-link">
-                <Copy className="mr-1.5 h-3.5 w-3.5" /> Copy link
-              </Button>
-            </div>
+            <InviteDesignPicker
+              ownerToken={ownerToken}
+              event={event}
+              onReviewEventStyle={() => navigateToTab("theme", "event-style-section")}
+            />
 
-            {/* Draft / Published toggle + RSVP phone */}
-            <div className="flex flex-wrap items-center gap-3 rounded-md border border-border bg-muted/30 p-3">
-              <div className="flex items-center gap-2">
-                {event.inviteStatus === "draft" ? (
-                  <>
-                    <Badge variant="outline" className="gap-1 text-yellow-700">
-                      <Lock className="h-3 w-3" /> Draft
-                    </Badge>
-                    <Button
-                      size="sm"
-                      onClick={() => toggleInviteStatus.mutate("published")}
-                      disabled={toggleInviteStatus.isPending}
-                      data-testid="button-publish-invites"
-                    >
-                      <Send className="mr-1.5 h-3.5 w-3.5" /> Publish &amp; make live
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Badge variant="outline" className="gap-1 text-green-700">
-                      <Check className="h-3 w-3" /> Live
-                    </Badge>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => toggleInviteStatus.mutate("draft")}
-                      disabled={toggleInviteStatus.isPending}
-                      data-testid="button-unpublish-invites"
-                    >
-                      <Lock className="mr-1.5 h-3.5 w-3.5" /> Switch to draft
-                    </Button>
-                  </>
-                )}
+            <div className="flex flex-col gap-3 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-primary">Next: confirm the wording</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Use Posy's draft, adjust the tone, or write it in your own words.
+                </p>
               </div>
-              <div className="flex items-center gap-2">
-                <Phone className="h-3.5 w-3.5 text-muted-foreground" />
-                <Input
-                  className="h-8 w-40 text-sm"
-                  placeholder="RSVP phone (optional)"
-                  defaultValue={event.rsvpPhone || ""}
-                  onBlur={(e) => updateRsvpPhone.mutate(e.target.value.trim())}
-                  data-testid="input-rsvp-phone"
-                />
-              </div>
+              {!editingInvite && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  data-testid="button-edit-invite"
+                  onClick={() => {
+                    setSubjectDraft(event.inviteSubject);
+                    setMessageDraft(event.inviteMessage);
+                    setArtworkDraft(event.inviteArtworkUrl);
+                    setFontDraft(event.inviteFontFamily || DEFAULT_INVITE_FONT_ID);
+                    setAccentColorDraft(event.inviteAccentColor || "");
+                    setEditingInvite(true);
+                  }}
+                >
+                  Edit invitation wording
+                </Button>
+              )}
             </div>
-
-            <InviteDesignPicker ownerToken={ownerToken} event={event} />
 
             {editingInvite ? (
               <div className="space-y-4">
@@ -1418,51 +1342,151 @@ export default function Dashboard() {
               })()
             )}
 
-            <div className="flex flex-wrap gap-2 border-t border-border pt-4">
-              <Button
-                size="sm"
-                onClick={() => sendBulkEmail.mutate()}
-                disabled={sendBulkEmail.isPending || guests.every((g) => !g.email || g.emailSentAt)}
-                data-testid="button-send-bulk-email"
-              >
-                <Send className="mr-1.5 h-3.5 w-3.5" />
-                {sendBulkEmail.isPending ? "Sending…" : "Send all invites via email"}
-              </Button>
-              <Button size="sm" variant="outline" onClick={copyAllEmails} data-testid="button-copy-all-emails">
-                <Mail className="mr-1.5 h-3.5 w-3.5" /> Copy all guest emails (for BCC)
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => sendReminderEmail.mutate()}
-                disabled={sendReminderEmail.isPending || !guests.some((g) => g.email && g.rsvpStatus === "pending")}
-                data-testid="button-send-reminder"
-              >
-                <BellRing className="mr-1.5 h-3.5 w-3.5" />
-                {sendReminderEmail.isPending ? "Sending…" : "Send RSVP reminder to pending guests"}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => sendReminderSms.mutate()}
-                disabled={sendReminderSms.isPending || !guests.some((g) => g.smsOptIn && g.phone && g.rsvpStatus === "pending")}
-                data-testid="button-send-reminder-sms"
-                title="Only goes to guests who opted in to texts"
-              >
-                <MessageSquareText className="mr-1.5 h-3.5 w-3.5" />
-                {sendReminderSms.isPending ? "Sending…" : "Text RSVP reminder to opted-in guests"}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              "Send all invites via email" and "Send RSVP reminder" send automatically
-              on your behalf — the reminder only goes to guests still awaiting a reply
-              {event.rsvpDeadline ? ` and mentions your ${event.rsvpDeadline} deadline` : ""}.
-              Prefer to do it yourself? Use the envelope icon next to a guest to open a
-              pre-filled email in your own mail app, copy the RSVP link into a text or
-              printed invite, or BCC everyone at once. Text reminders only reach guests
-              who explicitly opted in to SMS on the RSVP page — Posy never texts anyone
-              who hasn't agreed to it.
-            </p>
+            <section className="space-y-4 border-t border-border pt-5" aria-labelledby="rsvp-settings-title">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-primary">Next: choose RSVP settings</p>
+                <h3 id="rsvp-settings-title" className="mt-1 font-serif text-lg font-semibold text-foreground">
+                  How should guests respond?
+                </h3>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div>
+                  <Label htmlFor="rsvpRestriction">Who can guests bring?</Label>
+                  <Select
+                    value={event.rsvpRestriction}
+                    onValueChange={(value) => saveRsvpRestriction.mutate(value as RsvpRestriction)}
+                  >
+                    <SelectTrigger id="rsvpRestriction" className="mt-1.5" data-testid="select-rsvp-restriction">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {RSVP_RESTRICTION_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="mt-1.5 text-xs text-muted-foreground">
+                    {RSVP_RESTRICTION_OPTIONS.find((o) => o.value === event.rsvpRestriction)?.description}
+                  </p>
+                </div>
+                <div>
+                  <Label htmlFor="rsvpDeadline">RSVP deadline (optional)</Label>
+                  <DatePickerField
+                    id="rsvpDeadline"
+                    testId="input-rsvp-deadline"
+                    value={deadlineDraft}
+                    onChange={setDeadlineDraft}
+                    onBlur={() => {
+                      if (deadlineDraft !== event.rsvpDeadline) saveRsvpDeadline.mutate(deadlineDraft);
+                    }}
+                    onDateSelect={(next) => {
+                      if (next !== event.rsvpDeadline) saveRsvpDeadline.mutate(next);
+                    }}
+                  />
+                  {!event.rsvpDeadline && suggestedRsvpDeadline ? (
+                    <div className="mt-1.5 space-y-1" data-testid="hint-suggested-rsvp-deadline">
+                      <p className="text-xs text-muted-foreground">
+                        Suggested: <span className="font-medium text-foreground">{suggestedRsvpDeadline}</span>
+                      </p>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-auto px-1.5 py-0.5 text-xs text-secondary hover:text-secondary"
+                        data-testid="button-use-suggested-rsvp-deadline"
+                        onClick={() => {
+                          setDeadlineDraft(suggestedRsvpDeadline);
+                          saveRsvpDeadline.mutate(suggestedRsvpDeadline);
+                        }}
+                      >
+                        <Check className="mr-1 h-3 w-3" /> Use this date
+                      </Button>
+                    </div>
+                  ) : (
+                    <p className="mt-1.5 text-xs text-muted-foreground">Shown on the RSVP page.</p>
+                  )}
+                </div>
+                <div>
+                  <Label htmlFor="rsvpPhone">RSVP phone (optional)</Label>
+                  <div className="relative mt-1.5">
+                    <Phone className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input
+                      id="rsvpPhone"
+                      className="pl-9 text-sm"
+                      placeholder="For guest questions"
+                      defaultValue={event.rsvpPhone || ""}
+                      onBlur={(e) => updateRsvpPhone.mutate(e.target.value.trim())}
+                      data-testid="input-rsvp-phone"
+                    />
+                  </div>
+                  <p className="mt-1.5 text-xs text-muted-foreground">Optional contact shown to guests.</p>
+                </div>
+              </div>
+            </section>
+
+            <section className="space-y-3 border-t border-border pt-5" aria-labelledby="share-invitation-title">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-primary">Then: publish and share</p>
+                <h3 id="share-invitation-title" className="mt-1 font-serif text-lg font-semibold text-foreground">
+                  Your invitation link
+                </h3>
+              </div>
+              {hasInvitationDesign ? (
+                <>
+                  <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/50 p-3">
+                    <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground" data-testid="text-rsvp-link">
+                      {rsvpUrl}
+                    </span>
+                    <Button size="sm" variant="secondary" onClick={copyLink} data-testid="button-copy-rsvp-link">
+                      <Copy className="mr-1.5 h-3.5 w-3.5" /> Copy link
+                    </Button>
+                    <Button asChild size="sm" variant="outline">
+                      <a href={`/rsvp/${event.shareSlug}`} target="_blank" rel="noreferrer">
+                        Preview <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+                      </a>
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {event.inviteStatus === "draft" ? (
+                      <>
+                        <Badge variant="outline" className="gap-1 text-yellow-700">
+                          <Lock className="h-3 w-3" /> Draft
+                        </Badge>
+                        <Button
+                          size="sm"
+                          onClick={() => toggleInviteStatus.mutate("published")}
+                          disabled={toggleInviteStatus.isPending}
+                          data-testid="button-publish-invites"
+                        >
+                          <Send className="mr-1.5 h-3.5 w-3.5" /> Publish &amp; make live
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Badge variant="outline" className="gap-1 text-green-700">
+                          <Check className="h-3 w-3" /> Live
+                        </Badge>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => toggleInviteStatus.mutate("draft")}
+                          disabled={toggleInviteStatus.isPending}
+                          data-testid="button-unpublish-invites"
+                        >
+                          <Lock className="mr-1.5 h-3.5 w-3.5" /> Switch to draft
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="rounded-md border border-dashed border-border bg-muted/30 p-4 text-sm text-muted-foreground" data-testid="text-invitation-share-locked">
+                  Choose an invitation design above first. Your share link and publishing controls will appear here when it is ready.
+                </div>
+              )}
+            </section>
           </CardContent>
         </Card>
 
@@ -1697,6 +1721,61 @@ export default function Dashboard() {
                 </table>
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-card-border" data-testid="card-send-invitations">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 font-serif text-lg">
+              <Send className="h-4 w-4 text-primary" /> Send invitations
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Add guests first, then send the finished invitation or copy their addresses for your own email.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                onClick={() => sendBulkEmail.mutate()}
+                disabled={!hasInvitationDesign || sendBulkEmail.isPending || guests.every((g) => !g.email || g.emailSentAt)}
+                data-testid="button-send-bulk-email"
+              >
+                <Send className="mr-1.5 h-3.5 w-3.5" />
+                {sendBulkEmail.isPending ? "Sending…" : "Send all invites via email"}
+              </Button>
+              <Button size="sm" variant="outline" onClick={copyAllEmails} disabled={guests.every((g) => !g.email)} data-testid="button-copy-all-emails">
+                <Mail className="mr-1.5 h-3.5 w-3.5" /> Copy all guest emails (for BCC)
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => sendReminderEmail.mutate()}
+                disabled={!hasInvitationDesign || sendReminderEmail.isPending || !guests.some((g) => g.email && g.rsvpStatus === "pending")}
+                data-testid="button-send-reminder"
+              >
+                <BellRing className="mr-1.5 h-3.5 w-3.5" />
+                {sendReminderEmail.isPending ? "Sending…" : "Send RSVP reminder to pending guests"}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => sendReminderSms.mutate()}
+                disabled={!hasInvitationDesign || sendReminderSms.isPending || !guests.some((g) => g.smsOptIn && g.phone && g.rsvpStatus === "pending")}
+                data-testid="button-send-reminder-sms"
+                title="Only goes to guests who opted in to texts"
+              >
+                <MessageSquareText className="mr-1.5 h-3.5 w-3.5" />
+                {sendReminderSms.isPending ? "Sending…" : "Text RSVP reminder to opted-in guests"}
+              </Button>
+            </div>
+            {!hasInvitationDesign && (
+              <p className="text-xs text-muted-foreground">Finish choosing an invitation design before sending.</p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Posy sends each email invitation separately. Reminders only go to guests still awaiting a reply
+              {event.rsvpDeadline ? ` and mention your ${event.rsvpDeadline} deadline` : ""}. Text reminders only reach guests who explicitly opted in.
+            </p>
           </CardContent>
         </Card>
           </TabsContent>

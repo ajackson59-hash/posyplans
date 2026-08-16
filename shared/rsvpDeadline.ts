@@ -22,6 +22,8 @@ const PARSE_FORMATS = [
   DISPLAY_FORMAT,
   "MMMM d, yyyy",
   "MMM d, yyyy",
+  "d MMMM yyyy",
+  "d MMM yyyy",
   "M/d/yyyy",
   "MM/dd/yyyy",
   "yyyy-MM-dd",
