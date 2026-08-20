@@ -55,15 +55,16 @@ export interface EventRecord {
 export type RsvpRestriction = "none" | "no_children" | "plus_one" | "no_additional_guests";
 
 export const RSVP_RESTRICTION_OPTIONS: { value: RsvpRestriction; label: string; description: string }[] = [
-  { value: "none", label: "No restrictions", description: "Guests can bring any number of adults and children." },
-  { value: "plus_one", label: "Plus-one allowed", description: "Each guest may bring exactly one additional person." },
-  { value: "no_children", label: "No children", description: "Adults only — the children counter is hidden." },
+  { value: "none", label: "Adults and children", description: "Guests can respond for the party size on their invitation." },
+  { value: "plus_one", label: "Plus-one allowed", description: "Guests can respond for up to two people, within their invitation's party size." },
+  { value: "no_children", label: "No children", description: "Adults only, up to the party size on each invitation." },
   { value: "no_additional_guests", label: "No additional guests", description: "Guests can only RSVP for themselves." },
 ];
 
 export interface GuestRecord {
   id: number;
   eventId: number;
+  accessToken: string;
   name: string;
   email: string;
   phone: string;

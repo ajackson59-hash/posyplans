@@ -43,6 +43,8 @@ export interface IStorage {
   updateGuest(eventId: number, guestId: number, data: Partial<Guest>): Promise<Guest | undefined>;
   deleteGuest(eventId: number, guestId: number): Promise<boolean>;
   getGuest(guestId: number): Promise<Guest | undefined>;
+  getGuestByAccessToken(eventId: number, accessToken: string): Promise<Guest | undefined>;
+  rotateGuestAccessToken(eventId: number, guestId: number): Promise<Guest | undefined>;
 
   listBudgetItems(eventId: number): Promise<BudgetItem[]>;
   createBudgetItem(eventId: number, data: InsertBudgetItem): Promise<BudgetItem>;
@@ -164,6 +166,24 @@ export class DatabaseStorage implements IStorage {
 
   async getGuest(guestId: number): Promise<Guest | undefined> {
     const rows = await db.select().from(guests).where(eq(guests.id, guestId));
+    return rows[0];
+  }
+
+  async getGuestByAccessToken(eventId: number, accessToken: string): Promise<Guest | undefined> {
+    const rows = await db.select().from(guests).where(and(
+      eq(guests.eventId, eventId),
+      eq(guests.accessToken, accessToken),
+    ));
+    return rows[0];
+  }
+
+  async rotateGuestAccessToken(eventId: number, guestId: number): Promise<Guest | undefined> {
+    const existing = await this.getGuest(guestId);
+    if (!existing || existing.eventId !== eventId) return undefined;
+    const rows = await db.update(guests)
+      .set({ accessToken: randomToken(32) })
+      .where(and(eq(guests.id, guestId), eq(guests.eventId, eventId)))
+      .returning();
     return rows[0];
   }
 

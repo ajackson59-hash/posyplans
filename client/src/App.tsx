@@ -29,6 +29,7 @@ function AppRouter() {
       <Route path="/draft-generating/:ownerToken" component={DraftGenerating} />
       <Route path="/draft-overview/:ownerToken" component={DraftOverview} />
       <Route path="/dashboard/:ownerToken" component={Dashboard} />
+      <Route path="/rsvp/:shareSlug/g/:guestToken" component={Rsvp} />
       <Route path="/rsvp/:shareSlug" component={Rsvp} />
       <Route path="/pricing" component={Pricing} />
       <Route path="/checkout/success" component={CheckoutSuccess} />

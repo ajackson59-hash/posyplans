@@ -189,6 +189,12 @@ export type RsvpStatus = (typeof RSVP_STATUSES)[number];
 export const guests = pgTable("guests", {
   id: serial("id").primaryKey(),
   eventId: integer("event_id").notNull(),
+  // Opaque bearer credential used by the guest-facing RSVP route. It is
+  // deliberately unrelated to the sequential guest id, so a public event
+  // link cannot be used to enumerate invitees or submit on their behalf.
+  accessToken: text("access_token")
+    .notNull()
+    .default(sql`replace(gen_random_uuid()::text, '-', '')`),
   name: text("name").notNull(),
   email: text("email").notNull().default(""),
   phone: text("phone").notNull().default(""),
@@ -211,11 +217,14 @@ export const guests = pgTable("guests", {
   smsConsentAt: bigint("sms_consent_at", { mode: "number" }),
   smsSentAt: bigint("sms_sent_at", { mode: "number" }), // set when an automated reminder text was sent
   smsSendError: text("sms_send_error"), // last automated SMS send error, if any
-});
+}, (table) => [
+  uniqueIndex("guests_access_token_unique").on(table.accessToken),
+]);
 
 export const insertGuestSchema = createInsertSchema(guests).omit({
   id: true,
   eventId: true,
+  accessToken: true,
   rsvpStatus: true,
   attendingCount: true,
   attendingAdults: true,

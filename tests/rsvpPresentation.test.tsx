@@ -49,16 +49,32 @@ function publicEvent(withConcept: boolean): Omit<EventRecord, "ownerToken"> {
   } as Omit<EventRecord, "ownerToken">;
 }
 
-function renderRsvp(withConcept: boolean) {
+const personalizedGuest = {
+  name: "Maya Rivera",
+  group: "Family",
+  partySize: 2,
+  rsvpStatus: "pending" as const,
+  attendingCount: null,
+  attendingAdults: null,
+  attendingChildren: null,
+  note: "",
+};
+
+function renderRsvp(withConcept: boolean, path = "/rsvp/qa") {
   const client = new QueryClient({
     defaultOptions: {
-      queries: { retry: false, queryFn: async () => publicEvent(withConcept) },
+      queries: {
+        retry: false,
+        queryFn: async ({ queryKey }) =>
+          String(queryKey[0]).includes("/guest/") ? personalizedGuest : publicEvent(withConcept),
+      },
     },
   });
-  const { hook } = memoryLocation({ path: "/rsvp/qa" });
+  const { hook } = memoryLocation({ path });
   render(
     <QueryClientProvider client={client}>
       <Router hook={hook}>
+        <Route path="/rsvp/:shareSlug/g/:guestToken" component={Rsvp} />
         <Route path="/rsvp/:shareSlug" component={Rsvp} />
       </Router>
     </QueryClientProvider>,
@@ -89,7 +105,7 @@ describe("RSVP presentation", () => {
     mockedApiRequest.mockReset();
     renderRsvp(false);
 
-    await waitFor(() => expect(screen.getByTestId("input-guest-search")).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId("form-identify-guest")).toBeTruthy());
     expect(screen.getByTestId("rsvp-header-inner").className).toContain("justify-center");
     expect(screen.getByTestId("rsvp-main").className).toContain("max-w-5xl");
     expect(screen.getByTestId("rsvp-main").className).not.toContain("border-x");
@@ -104,16 +120,51 @@ describe("RSVP presentation", () => {
     expect(controls.className).toContain("sm:border");
 
     mockedApiRequest.mockResolvedValueOnce({
-      json: async () => [{ id: 9, name: "Maya Rivera", group: "Family", rsvpStatus: "pending" }],
+      json: async () => ({ guest: personalizedGuest, guestToken: "a".repeat(32) }),
     } as Response);
-    fireEvent.change(screen.getByTestId("input-guest-search"), { target: { value: "Maya" } });
-    await waitFor(() => expect(screen.getByTestId("button-select-guest-9")).toBeTruthy());
-    fireEvent.click(screen.getByTestId("button-select-guest-9"));
+    fireEvent.change(screen.getByTestId("input-guest-name-verify"), { target: { value: "Maya Rivera" } });
+    fireEvent.change(screen.getByTestId("input-guest-contact-verify"), { target: { value: "maya@example.com" } });
+    fireEvent.click(screen.getByTestId("button-verify-guest"));
+    await waitFor(() => expect(screen.getByTestId("text-selected-guest").textContent).toContain("Maya Rivera"));
     fireEvent.click(screen.getByTestId("button-rsvp-yes"));
 
     expect(screen.getByTestId("button-adults-increment")).toBeTruthy();
     expect(screen.getByTestId("text-children-value")).toBeTruthy();
     expect(screen.getByTestId("textarea-rsvp-note")).toBeTruthy();
     expect(screen.getByTestId("checkbox-sms-opt-in")).toBeTruthy();
+  });
+
+  it("opens a recipient-specific link already addressed and never shows guest search", async () => {
+    mockedApiRequest.mockReset();
+    renderRsvp(true, `/rsvp/qa/g/${"b".repeat(32)}`);
+
+    await waitFor(() => expect(screen.getByTestId("text-envelope-addressee").textContent).toBe("For Maya"));
+    expect(screen.queryByTestId("form-identify-guest")).toBeNull();
+    expect(screen.queryByTestId("input-guest-name-verify")).toBeNull();
+  });
+
+  it("submits RSVP and SMS consent with the guest token instead of a numeric id", async () => {
+    mockedApiRequest.mockReset();
+    mockedApiRequest.mockResolvedValue({ json: async () => personalizedGuest } as Response);
+    const token = "c".repeat(32);
+    renderRsvp(false, `/rsvp/qa/g/${token}`);
+
+    await waitFor(() => expect(screen.getByTestId("text-selected-guest")).toBeTruthy());
+    fireEvent.click(screen.getByTestId("button-rsvp-yes"));
+    fireEvent.click(screen.getByTestId("button-adults-increment"));
+    fireEvent.click(screen.getByTestId("checkbox-sms-opt-in"));
+    fireEvent.change(screen.getByTestId("input-sms-phone"), { target: { value: "555-555-1212" } });
+    fireEvent.click(screen.getByTestId("button-submit-rsvp"));
+
+    await waitFor(() => expect(mockedApiRequest).toHaveBeenCalledWith(
+      "POST",
+      `/api/events/public/qa/guest/${token}/rsvp`,
+      expect.objectContaining({ status: "yes", attendingCount: 2 }),
+    ));
+    expect(mockedApiRequest).toHaveBeenCalledWith(
+      "POST",
+      `/api/events/public/qa/guest/${token}/sms-opt-in`,
+      { optIn: true, phone: "555-555-1212" },
+    );
   });
 });

@@ -19,17 +19,20 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle2, HelpCircle, Mail, MessageSquareText, Search, UserRound, XCircle } from "lucide-react";
-import { useDebouncedCallback } from "@/hooks/use-debounce";
 import CountStepper from "@/components/CountStepper";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "wouter";
 
 type PublicEvent = Omit<EventRecord, "ownerToken">;
 interface GuestMatch {
-  id: number;
   name: string;
   group: string;
+  partySize: number;
   rsvpStatus: RsvpStatus;
+  attendingCount: number | null;
+  attendingAdults: number | null;
+  attendingChildren: number | null;
+  note: string;
 }
 
 function parsePalette(raw: string): string[] {
@@ -58,17 +61,25 @@ function headcountLimits(restriction: string) {
 }
 
 export default function Rsvp() {
-  const { shareSlug } = useParams<{ shareSlug: string }>();
+  const { shareSlug, guestToken } = useParams<{ shareSlug: string; guestToken?: string }>();
   const { toast } = useToast();
 
   const { data: event, isLoading } = useQuery<PublicEvent>({
     queryKey: [`/api/events/public/${shareSlug}`],
   });
 
-  const [query, setQuery] = useState("");
-  const [matches, setMatches] = useState<GuestMatch[]>([]);
-  const [searching, setSearching] = useState(false);
-  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const {
+    data: personalizedGuest,
+    isLoading: isGuestLoading,
+    isError: isGuestError,
+  } = useQuery<GuestMatch>({
+    queryKey: [`/api/events/public/${shareSlug}/guest/${guestToken}`],
+    enabled: Boolean(guestToken),
+  });
+
+  const [identityName, setIdentityName] = useState("");
+  const [identityContact, setIdentityContact] = useState("");
+  const [activeGuestToken, setActiveGuestToken] = useState(guestToken || "");
   const [selected, setSelected] = useState<GuestMatch | null>(null);
   const [status, setStatus] = useState<Exclude<RsvpStatus, "pending"> | null>(null);
   const [adults, setAdults] = useState(1);
@@ -92,13 +103,19 @@ export default function Rsvp() {
 
   const restriction = event?.rsvpRestriction || "none";
   const limits = headcountLimits(restriction);
+  const recipient = selected ?? personalizedGuest ?? null;
+  const allowedPartySize = Math.max(1, recipient?.partySize ?? 1);
 
   // Whenever the restriction caps change (e.g. a fresh guest selection),
   // make sure the current counts still respect them.
   useEffect(() => {
     if (limits.hideChildren && children !== 0) setChildren(0);
     if (adults > limits.maxAdults) setAdults(limits.maxAdults);
-  }, [limits.hideChildren, limits.maxAdults]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (adults + children > allowedPartySize) {
+      setChildren(Math.max(0, allowedPartySize - Math.min(adults, allowedPartySize)));
+      if (adults > allowedPartySize) setAdults(allowedPartySize);
+    }
+  }, [limits.hideChildren, limits.maxAdults, allowedPartySize]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Reveal sequence: the addressed front turns over, the lined flap lifts, then
   // the whole envelope collapses out of the flow while the invite fades in.
@@ -119,32 +136,37 @@ export default function Rsvp() {
     };
   }, [envelopeOpened, event?.inviteDesignConceptJson]);
 
-  const search = useDebouncedCallback(async (q: string) => {
-    if (!q.trim()) {
-      setMatches([]);
-      setSearching(false);
-      setHighlightedIndex(-1);
-      return;
-    }
-    setSearching(true);
-    const res = await apiRequest("GET", `/api/events/public/${shareSlug}/search-guests?q=${encodeURIComponent(q)}`);
-    const results = await res.json();
-    setMatches(results);
-    setHighlightedIndex(results.length > 0 ? 0 : -1);
-    setSearching(false);
-  }, 250);
-
-  const pickGuest = (m: GuestMatch) => {
+  const pickGuest = (m: GuestMatch, token: string) => {
     setSelected(m);
+    setActiveGuestToken(token);
     setStatus(m.rsvpStatus === "pending" ? null : (m.rsvpStatus as any));
+    setAdults(Math.max(1, m.attendingAdults ?? 1));
+    setChildren(Math.max(0, m.attendingChildren ?? 0));
+    setNote(m.note || "");
   };
+
+  useEffect(() => {
+    if (!guestToken || !personalizedGuest || selected) return;
+    pickGuest(personalizedGuest, guestToken);
+  }, [guestToken, personalizedGuest, selected]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const identifyGuest = useMutation<{ guest: GuestMatch; guestToken: string }>({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/events/public/${shareSlug}/identify`, {
+        name: identityName,
+        contact: identityContact,
+      });
+      return res.json();
+    },
+    onSuccess: ({ guest, guestToken: verifiedToken }) => pickGuest(guest, verifiedToken),
+  });
 
   const totalAttending = adults + children;
 
   const submitRsvp = useMutation({
     mutationFn: async () => {
-      if (!selected || !status) return;
-      const res = await apiRequest("POST", `/api/events/public/${shareSlug}/guests/${selected.id}/rsvp`, {
+      if (!recipient || !activeGuestToken || !status) return;
+      const res = await apiRequest("POST", `/api/events/public/${shareSlug}/guest/${activeGuestToken}/rsvp`, {
         status,
         attendingAdults: adults,
         attendingChildren: children,
@@ -156,7 +178,7 @@ export default function Rsvp() {
       // The SMS checkbox is a separate consent action from the RSVP itself.
       // Only fire it if the guest actively checked the box and gave a number.
       if (smsOptIn && smsPhone.trim()) {
-        await apiRequest("POST", `/api/events/public/${shareSlug}/guests/${selected.id}/sms-opt-in`, {
+        await apiRequest("POST", `/api/events/public/${shareSlug}/guest/${activeGuestToken}/sms-opt-in`, {
           optIn: true,
           phone: smsPhone.trim(),
         });
@@ -172,7 +194,7 @@ export default function Rsvp() {
     },
   });
 
-  if (isLoading) {
+  if (isLoading || (Boolean(guestToken) && isGuestLoading)) {
     return (
       <div className="mx-auto max-w-lg px-6 py-16">
         <Skeleton className="h-6 w-40" />
@@ -186,6 +208,15 @@ export default function Rsvp() {
       <div className="mx-auto max-w-lg px-6 py-24 text-center">
         <h1 className="font-serif text-2xl font-semibold">We couldn't find this event</h1>
         <p className="mt-2 text-muted-foreground">Double check the link you were given.</p>
+      </div>
+    );
+  }
+
+  if (guestToken && isGuestError) {
+    return (
+      <div className="mx-auto max-w-lg px-6 py-24 text-center">
+        <h1 className="font-serif text-2xl font-semibold">This personal invitation link isn't valid</h1>
+        <p className="mt-2 text-muted-foreground">Ask your host to send you a fresh link.</p>
       </div>
     );
   }
@@ -252,7 +283,7 @@ export default function Rsvp() {
   const stampColor = /^#[0-9a-fA-F]{6}$/.test(event.stampColor || "") ? (event.stampColor as string) : (dna?.accentColor ?? "#cbd5e1");
   const showEnvelope = !!dna && !!envelopeColor && !!linerPattern && !!stamp;
   const inviteRevealed = !showEnvelope || envelopeDismissed;
-  const guestFirstName = selected?.name.split(" ")[0];
+  const guestFirstName = recipient?.name.split(" ")[0];
 
   return (
     <div className="min-h-screen bg-background">
@@ -401,7 +432,7 @@ export default function Rsvp() {
                   <div className="flex-1 p-5">
                     <p className="text-sm font-medium" style={conceptHeadingStyle(concept)}>
                       {applyInviteTokens(event.inviteSubject, {
-                        guestName: selected?.name.split(" ")[0],
+                        guestName: recipient?.name.split(" ")[0],
                         eventName: event.eventName,
                         eventDate: event.eventDate,
                         location: event.location,
@@ -410,7 +441,7 @@ export default function Rsvp() {
                     </p>
                     <p className="mt-1 whitespace-pre-wrap text-sm" style={conceptBodyStyle(concept)}>
                       {applyInviteTokens(event.inviteMessage, {
-                        guestName: selected?.name.split(" ")[0],
+                        guestName: recipient?.name.split(" ")[0],
                         eventName: event.eventName,
                         eventDate: event.eventDate,
                         location: event.location,
@@ -445,7 +476,7 @@ export default function Rsvp() {
                     <div className="text-center">
                       <p className="text-sm font-medium" style={conceptHeadingStyle(concept)}>
                         {applyInviteTokens(event.inviteSubject, {
-                          guestName: selected?.name.split(" ")[0],
+                          guestName: recipient?.name.split(" ")[0],
                           eventName: event.eventName,
                           eventDate: event.eventDate,
                           location: event.location,
@@ -454,7 +485,7 @@ export default function Rsvp() {
                       </p>
                       <p className="mt-1 whitespace-pre-wrap text-sm" style={conceptBodyStyle(concept)}>
                         {applyInviteTokens(event.inviteMessage, {
-                          guestName: selected?.name.split(" ")[0],
+                          guestName: recipient?.name.split(" ")[0],
                           eventName: event.eventName,
                           eventDate: event.eventDate,
                           location: event.location,
@@ -466,7 +497,7 @@ export default function Rsvp() {
                     <>
                       <p className="text-sm font-medium" style={conceptHeadingStyle(concept)}>
                         {applyInviteTokens(event.inviteSubject, {
-                          guestName: selected?.name.split(" ")[0],
+                          guestName: recipient?.name.split(" ")[0],
                           eventName: event.eventName,
                           eventDate: event.eventDate,
                           location: event.location,
@@ -475,7 +506,7 @@ export default function Rsvp() {
                       </p>
                       <p className="mt-1 whitespace-pre-wrap text-sm" style={conceptBodyStyle(concept)}>
                         {applyInviteTokens(event.inviteMessage, {
-                          guestName: selected?.name.split(" ")[0],
+                          guestName: recipient?.name.split(" ")[0],
                           eventName: event.eventName,
                           eventDate: event.eventDate,
                           location: event.location,
@@ -507,7 +538,7 @@ export default function Rsvp() {
                   )}
                 >
                   {applyInviteTokens(event.inviteSubject, {
-                    guestName: selected?.name.split(" ")[0],
+                    guestName: recipient?.name.split(" ")[0],
                     eventName: event.eventName,
                     eventDate: event.eventDate,
                     location: event.location,
@@ -519,7 +550,7 @@ export default function Rsvp() {
                   style={getInviteBodyStyle(event.inviteFontFamily || DEFAULT_INVITE_FONT_ID)}
                 >
                   {applyInviteTokens(event.inviteMessage, {
-                    guestName: selected?.name.split(" ")[0],
+                    guestName: recipient?.name.split(" ")[0],
                     eventName: event.eventName,
                     eventDate: event.eventDate,
                     location: event.location,
@@ -585,101 +616,91 @@ export default function Rsvp() {
               </div>
             </CardContent>
           </Card>
-        ) : !selected ? (
-          <div>
-            <label className="text-sm font-medium text-foreground">Find your name to RSVP</label>
-            <div className="relative mt-2">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                data-testid="input-guest-search"
-                className="h-11 pl-9 text-base"
-                placeholder="Start typing your name…"
-                value={query}
-                autoFocus
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  search(e.target.value);
-                }}
-                onKeyDown={(e) => {
-                  if (matches.length === 0) return;
-                  if (e.key === "ArrowDown") {
-                    e.preventDefault();
-                    setHighlightedIndex((i) => (i + 1) % matches.length);
-                  } else if (e.key === "ArrowUp") {
-                    e.preventDefault();
-                    setHighlightedIndex((i) => (i - 1 + matches.length) % matches.length);
-                  } else if (e.key === "Enter") {
-                    e.preventDefault();
-                    const target = matches[highlightedIndex] ?? matches[0];
-                    if (target) pickGuest(target);
-                  }
-                }}
-              />
+        ) : !recipient ? (
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              identifyGuest.mutate();
+            }}
+            data-testid="form-identify-guest"
+          >
+            <div>
+              <h2 className="font-serif text-lg font-semibold text-foreground">Find your invitation</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Enter the exact full name and email or phone number your host has on file.
+              </p>
             </div>
-            {searching && (
-              <div className="mt-2 space-y-1.5">
-                <Skeleton className="h-12 w-full rounded-md" />
-                <Skeleton className="h-12 w-full rounded-md" />
+            <div>
+              <label htmlFor="guest-name" className="text-sm font-medium text-foreground">Full name</label>
+              <div className="relative mt-1.5">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="guest-name"
+                  data-testid="input-guest-name-verify"
+                  className="h-11 pl-9 text-base"
+                  autoComplete="name"
+                  value={identityName}
+                  onChange={(e) => setIdentityName(e.target.value)}
+                />
               </div>
-            )}
-            {!searching && matches.length > 0 && (
-              <div className="mt-2 divide-y divide-border rounded-md border border-border overflow-hidden">
-                {matches.map((m, i) => (
-                  <button
-                    key={m.id}
-                    className={`flex w-full items-center gap-3 px-4 py-3.5 text-left hover-elevate active-elevate-2 ${
-                      i === highlightedIndex ? "bg-primary/5" : ""
-                    }`}
-                    data-testid={`button-select-guest-${m.id}`}
-                    onMouseEnter={() => setHighlightedIndex(i)}
-                    onClick={() => pickGuest(m)}
-                  >
-                    <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-                      {m.name.charAt(0).toUpperCase()}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-base font-medium text-foreground">{m.name}</span>
-                      {m.group && <span className="block text-xs text-muted-foreground">{m.group}</span>}
-                    </span>
-                    {m.rsvpStatus !== "pending" && (
-                      <span className="flex-none rounded-full bg-secondary/20 px-2 py-0.5 text-xs font-medium text-secondary-foreground">
-                        Already responded
-                      </span>
-                    )}
-                  </button>
-                ))}
+            </div>
+            <div>
+              <label htmlFor="guest-contact" className="text-sm font-medium text-foreground">Email or phone</label>
+              <div className="relative mt-1.5">
+                <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="guest-contact"
+                  data-testid="input-guest-contact-verify"
+                  className="h-11 pl-9 text-base"
+                  autoComplete="email"
+                  value={identityContact}
+                  onChange={(e) => setIdentityContact(e.target.value)}
+                />
               </div>
-            )}
-            {!searching && query.trim() && matches.length === 0 && (
-              <p className="mt-2 text-sm text-muted-foreground" data-testid="text-no-guest-match">
-                No match found — double check the spelling, or ask your host to add you.
+            </div>
+            {identifyGuest.isError && (
+              <p className="text-sm text-destructive" data-testid="text-guest-verification-error">
+                We couldn't verify that invitation. Check both entries or ask your host for your private link.
               </p>
             )}
-          </div>
+            <Button
+              type="submit"
+              className="h-11 w-full text-base"
+              disabled={!identityName.trim() || !identityContact.trim() || identifyGuest.isPending}
+              data-testid="button-verify-guest"
+            >
+              {identifyGuest.isPending ? "Checking…" : "Continue to RSVP"}
+            </Button>
+          </form>
         ) : (
           <div className="space-y-5">
             <div className="flex items-center gap-3 rounded-md border border-primary/30 bg-primary/5 p-3.5">
               <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-primary/15 text-base font-semibold text-primary">
-                {selected.name.charAt(0).toUpperCase()}
+                {recipient.name.charAt(0).toUpperCase()}
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-xs text-muted-foreground">RSVP-ing as</p>
                 <p className="truncate font-serif text-lg font-semibold text-foreground" data-testid="text-selected-guest">
-                  {selected.name}
+                  {recipient.name}
                 </p>
               </div>
-              <button
-                className="flex-none text-xs font-medium text-primary underline"
-                onClick={() => {
-                  setSelected(null);
-                  setStatus(null);
-                  setQuery("");
-                  setMatches([]);
-                }}
-                data-testid="button-not-you"
-              >
-                Not you?
-              </button>
+              {!guestToken && (
+                <button
+                  className="flex-none text-xs font-medium text-primary underline"
+                  onClick={() => {
+                    setSelected(null);
+                    setActiveGuestToken("");
+                    setStatus(null);
+                    setIdentityName("");
+                    setIdentityContact("");
+                    identifyGuest.reset();
+                  }}
+                  data-testid="button-not-you"
+                >
+                  Not you?
+                </button>
+              )}
             </div>
 
             <div className="grid grid-cols-3 gap-2">
@@ -691,7 +712,7 @@ export default function Rsvp() {
             {(status === "yes" || status === "maybe") && (
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">Who's coming?</label>
-                {limits.locked ? (
+                {limits.locked || allowedPartySize === 1 ? (
                   <p className="rounded-md border border-border bg-muted/30 px-3 py-2.5 text-sm text-muted-foreground" data-testid="text-headcount-locked">
                     <UserRound className="mr-1.5 inline h-3.5 w-3.5" />
                     This invitation is for you only — no additional guests.
@@ -702,7 +723,7 @@ export default function Rsvp() {
                       label="Adults"
                       value={adults}
                       min={1}
-                      max={limits.maxAdults}
+                      max={Math.min(limits.maxAdults, Math.max(1, allowedPartySize - children))}
                       onChange={setAdults}
                       testId="adults"
                     />
@@ -711,13 +732,18 @@ export default function Rsvp() {
                         label="Children"
                         value={children}
                         min={0}
-                        max={Math.max(0, limits.maxChildren)}
+                        max={Math.min(limits.maxChildren, Math.max(0, allowedPartySize - adults))}
                         onChange={setChildren}
                         testId="children"
                       />
                     )}
                     {restriction === "plus_one" && (
                       <p className="text-xs text-muted-foreground">This invitation allows one additional guest (2 total).</p>
+                    )}
+                    {restriction !== "plus_one" && allowedPartySize > 1 && (
+                      <p className="text-xs text-muted-foreground">
+                        This invitation is for up to {allowedPartySize} guests total.
+                      </p>
                     )}
                   </div>
                 )}
