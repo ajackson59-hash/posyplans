@@ -240,13 +240,13 @@ export default function Dashboard() {
     onSuccess: (_data, guestId) => {
       queryClient.invalidateQueries({ queryKey: [`/api/events/owner/${ownerToken}`] });
       const guest = data?.guests.find((g) => g.id === guestId);
-      toast({ title: "Invite sent", description: guest ? `Emailed ${guest.name} from your Gmail.` : undefined });
+      toast({ title: "Invite sent", description: guest ? `Emailed ${guest.name}.` : undefined });
     },
     onError: (error: Error & { authUrl?: string }) => {
       toast({
         title: "Couldn't send email",
         description: error.authUrl
-          ? "Reconnect your Gmail account, then try again."
+          ? "Reconnect your email service, then try again."
           : error?.message || "I couldn't get this invite sent.",
         variant: "destructive",
       });
@@ -270,13 +270,13 @@ export default function Dashboard() {
       } else {
         toast({
           title: `Sent ${sent} invite${sent === 1 ? "" : "s"}`,
-          description: failed > 0 ? `${failed} couldn't be sent — check Gmail connection.` : "All invites sent from your Gmail.",
+          description: failed > 0 ? `${failed} couldn't be sent — check the email setup.` : "All invites were sent.",
           variant: failed > 0 ? "destructive" : "default",
         });
       }
     },
     onError: () => {
-      toast({ title: "Couldn't send invites", description: "Check your Gmail connection and try again.", variant: "destructive" });
+      toast({ title: "Couldn't send invites", description: "Check the email setup and try again.", variant: "destructive" });
     },
   });
 
@@ -393,13 +393,13 @@ export default function Dashboard() {
       } else {
         toast({
           title: `Sent ${sent} reminder${sent === 1 ? "" : "s"}`,
-          description: failed > 0 ? `${failed} couldn't be sent — check Gmail connection.` : "Nudge sent to everyone still pending.",
+          description: failed > 0 ? `${failed} couldn't be sent — check the email setup.` : "Nudge sent to everyone still pending.",
           variant: failed > 0 ? "destructive" : "default",
         });
       }
     },
     onError: () => {
-      toast({ title: "Couldn't send reminders", description: "Check your Gmail connection and try again.", variant: "destructive" });
+      toast({ title: "Couldn't send reminders", description: "Check the email setup and try again.", variant: "destructive" });
     },
   });
 
@@ -534,7 +534,16 @@ export default function Dashboard() {
 
   function copyLink() {
     navigator.clipboard.writeText(rsvpUrl);
-    toast({ title: "RSVP link copied", description: "Paste it into a text, email, or invite card." });
+    toast({ title: "General RSVP link copied", description: "Guests will verify their full name and email or phone." });
+  }
+
+  function personalRsvpUrl(guest: GuestRecord) {
+    return `${rsvpUrl}/g/${guest.accessToken}`;
+  }
+
+  function copyGuestLink(guest: GuestRecord) {
+    navigator.clipboard.writeText(personalRsvpUrl(guest));
+    toast({ title: `${guest.name}'s private link copied`, description: "They can open it and RSVP without searching." });
   }
 
   function mailtoFor(guest: GuestRecord) {
@@ -548,7 +557,7 @@ export default function Dashboard() {
     };
     const message = applyInviteTokens(data.event.inviteMessage, ctx);
     const subject = applyInviteTokens(data.event.inviteSubject, ctx);
-    const body = `${message}\n\nRSVP here: ${rsvpUrl}`;
+    const body = `${message}\n\nRSVP here: ${personalRsvpUrl(guest)}`;
     return `mailto:${guest.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   }
 
@@ -1591,7 +1600,18 @@ export default function Dashboard() {
                       const meta = STATUS_META[guest.rsvpStatus];
                       return (
                         <tr key={guest.id} data-testid={`row-guest-${guest.id}`}>
-                          <td className="px-3 py-2.5 font-medium text-foreground">{guest.name}</td>
+                          <td className="px-3 py-2.5 font-medium text-foreground">
+                            <div>{guest.name}</div>
+                            {guest.note && (
+                              <div
+                                className="mt-1 max-w-[220px] whitespace-normal text-xs font-normal leading-relaxed text-muted-foreground"
+                                data-testid={`text-guest-note-${guest.id}`}
+                                title={guest.note}
+                              >
+                                “{guest.note}”
+                              </div>
+                            )}
+                          </td>
                           <td className="px-3 py-2.5 text-muted-foreground">{guest.group || "—"}</td>
                           <td className="px-3 py-2.5 text-muted-foreground">
                             {(guest.rsvpStatus === "yes" || guest.rsvpStatus === "maybe") && guest.attendingCount != null ? (
@@ -1646,13 +1666,23 @@ export default function Dashboard() {
                           </td>
                           <td className="px-3 py-2.5 text-right">
                             <div className="flex justify-end gap-1">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8"
+                                data-testid={`button-copy-personal-link-${guest.id}`}
+                                title={`Copy ${guest.name}'s private RSVP link`}
+                                onClick={() => copyGuestLink(guest)}
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
                               {guest.email && (
                                 <Button
                                   size="icon"
                                   variant="ghost"
                                   className="h-8 w-8"
                                   data-testid={`button-send-email-now-${guest.id}`}
-                                  title={guest.emailSentAt ? "Re-send invite via email" : "Send invite via email now (from your Gmail)"}
+                                  title={guest.emailSentAt ? "Re-send invite via email" : "Send invite via email now"}
                                   disabled={sendEmail.isPending}
                                   onClick={() => sendEmail.mutate(guest.id)}
                                 >

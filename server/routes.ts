@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { createServer } from 'node:http';
 import type { Server } from 'node:http';
 import { storage } from "./storage";
@@ -19,7 +19,6 @@ import { generateThemeSuggestionAi } from "./themeAi";
 import { applyInviteTokens, INVITE_TONES } from "@shared/inviteTokens";
 import { generateInviteToneAi, type InviteTone } from "./inviteAi";
 import { generateBudgetSuggestionAi } from "./budgetAi";
-import { isFuzzyNameMatch } from "./fuzzyMatch";
 import { generateInviteDesignConcepts, extractInspirationNotes } from "./inviteDesignAi";
 import { generateInviteIllustration, generateInviteIllustrationWithQualityGate } from "./illustrationGen";
 import { isValidInviteDesignConcept, type InviteDesignConcept, parseInviteDesignConcept, getFontPairing, FONT_PAIRINGS, LAYOUT_STYLES, BORDER_STYLES } from "@shared/inviteDesign";
@@ -59,6 +58,72 @@ function publicEventView(event: Event) {
   // Never expose ownerToken (the host's secret edit key) on public routes.
   const { ownerToken, capturedEmail, ...rest } = event;
   return rest;
+}
+
+function publicGuestView(guest: Guest) {
+  // A verified recipient needs their invitation allowance and any previous
+  // response so they can amend it. Contact details, delivery metadata,
+  // sequential ids, and the bearer token itself never belong in a public
+  // response body.
+  return {
+    name: guest.name,
+    group: guest.group,
+    partySize: guest.partySize,
+    rsvpStatus: guest.rsvpStatus,
+    attendingCount: guest.attendingCount,
+    attendingAdults: guest.attendingAdults,
+    attendingChildren: guest.attendingChildren,
+    note: guest.note,
+  };
+}
+
+const guestTokenSchema = z.string().min(24).max(128).regex(/^[A-Za-z0-9_-]+$/);
+const guestIdentifySchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  contact: z.string().trim().min(3).max(254),
+});
+
+function normalizeIdentityName(value: string): string {
+  return value.normalize("NFKC").trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function normalizePhone(value: string): string {
+  return value.replace(/\D/g, "");
+}
+
+function requestOrigin(req: Request): string {
+  const forwardedProto = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
+  const forwardedHost = String(req.headers["x-forwarded-host"] || "").split(",")[0].trim();
+  const protocol = forwardedProto || req.protocol || "https";
+  const host = forwardedHost || req.get("host") || "posyplans.com";
+  return `${protocol}://${host}`;
+}
+
+function guestRsvpUrl(req: Request, event: Event, guest: Guest): string {
+  return `${requestOrigin(req)}/rsvp/${event.shareSlug}/g/${guest.accessToken}`;
+}
+
+// This is defense in depth for the generic recovery form. The direct guest
+// link is the primary path; recovery requires two exact identity factors and
+// is also bounded per process/IP so it cannot be used as a guest-list oracle.
+const GUEST_IDENTIFY_LIMIT = 8;
+const GUEST_IDENTIFY_WINDOW_MS = 10 * 60 * 1000;
+const guestIdentifyAttempts = new Map<string, { count: number; resetsAt: number }>();
+
+function allowGuestIdentifyAttempt(key: string, now = Date.now()): boolean {
+  const current = guestIdentifyAttempts.get(key);
+  if (!current || current.resetsAt <= now) {
+    guestIdentifyAttempts.set(key, { count: 1, resetsAt: now + GUEST_IDENTIFY_WINDOW_MS });
+    return true;
+  }
+  if (current.count >= GUEST_IDENTIFY_LIMIT) return false;
+  current.count += 1;
+  if (guestIdentifyAttempts.size > 2000) {
+    guestIdentifyAttempts.forEach((entry, candidate) => {
+      if (entry.resetsAt <= now) guestIdentifyAttempts.delete(candidate);
+    });
+  }
+  return true;
 }
 
 // Defense-in-depth email capture from trusted Stripe moments (checkout confirm
@@ -190,30 +255,63 @@ export async function registerRoutes(
     res.json(publicEventView(event));
   });
 
-  app.get("/api/events/public/:shareSlug/search-guests", async (req, res) => {
+  app.get("/api/events/public/:shareSlug/guest/:guestToken", async (req, res) => {
     const event = await storage.getEventByShareSlug(req.params.shareSlug);
     if (!event) return res.status(404).json({ error: "Event not found" });
-    const query = String(req.query.q || "").trim().toLowerCase();
-    const all = await storage.listGuests(event.id);
-    let matches: typeof all = [];
-    if (query) {
-      // Rank exact substring matches first (most confident), then fall back
-      // to typo-tolerant fuzzy matches so a small misspelling (e.g.
-      // "Jonh" for "John") still surfaces the right guest.
-      const substringMatches = all.filter((g) => g.name.toLowerCase().includes(query));
-      const substringIds = new Set(substringMatches.map((g) => g.id));
-      const fuzzyMatches = all.filter((g) => !substringIds.has(g.id) && isFuzzyNameMatch(query, g.name));
-      matches = [...substringMatches, ...fuzzyMatches];
-    }
-    res.json(matches.slice(0, 8).map((g) => ({ id: g.id, name: g.name, group: g.group, rsvpStatus: g.rsvpStatus })));
+    const token = guestTokenSchema.safeParse(req.params.guestToken);
+    if (!token.success) return res.status(404).json({ error: "Invitation not found" });
+    const guest = await storage.getGuestByAccessToken(event.id, token.data);
+    if (!guest) return res.status(404).json({ error: "Invitation not found" });
+    res.set("Cache-Control", "private, no-store");
+    res.json(publicGuestView(guest));
   });
 
-  app.post("/api/events/public/:shareSlug/guests/:guestId/rsvp", async (req, res) => {
+  app.post("/api/events/public/:shareSlug/identify", async (req, res) => {
     const event = await storage.getEventByShareSlug(req.params.shareSlug);
-    if (!event) return res.status(404).json({ error: "Event not found" });
-    const guestId = Number(req.params.guestId);
-    const guest = await storage.getGuest(guestId);
-    if (!guest || guest.eventId !== event.id) return res.status(404).json({ error: "Guest not found" });
+    if (!event) return res.status(404).json({ error: "Invitation not found" });
+    const attemptKey = `${req.ip || "unknown"}:${event.shareSlug}`;
+    if (!allowGuestIdentifyAttempt(attemptKey)) {
+      res.set("Retry-After", String(Math.ceil(GUEST_IDENTIFY_WINDOW_MS / 1000)));
+      return res.status(429).json({ error: "Too many attempts. Please use your personal invitation link or try again later." });
+    }
+
+    const parsed = guestIdentifySchema.safeParse(req.body);
+    if (!parsed.success) return res.status(404).json({ error: "We couldn't verify that invitation" });
+
+    const targetName = normalizeIdentityName(parsed.data.name);
+    const targetEmail = parsed.data.contact.trim().toLowerCase();
+    const targetPhone = normalizePhone(parsed.data.contact);
+    const isEmailContact = targetEmail.includes("@");
+    const isUsablePhone = !isEmailContact && targetPhone.length >= 7;
+    const allGuests = await storage.listGuests(event.id);
+    const guest = allGuests.find((candidate) => {
+      if (normalizeIdentityName(candidate.name) !== targetName) return false;
+      const emailMatches = isEmailContact && Boolean(candidate.email) && candidate.email.trim().toLowerCase() === targetEmail;
+      const phoneMatches = isUsablePhone && Boolean(candidate.phone) && normalizePhone(candidate.phone) === targetPhone;
+      return emailMatches || phoneMatches;
+    });
+
+    // Keep every failed lookup deliberately indistinguishable: callers cannot
+    // learn whether the name, email, or phone was the part that differed.
+    if (!guest) return res.status(404).json({ error: "We couldn't verify that invitation" });
+    res.set("Cache-Control", "private, no-store");
+    res.json({ guest: publicGuestView(guest), guestToken: guest.accessToken });
+  });
+
+  // Retire the old fuzzy-search endpoint explicitly. Returning no candidate
+  // data protects existing deployments during rollout while making the privacy
+  // boundary clear to any stale client.
+  app.get("/api/events/public/:shareSlug/search-guests", (_req, res) => {
+    res.status(410).json({ error: "Guest search has been replaced by private invitation verification" });
+  });
+
+  app.post("/api/events/public/:shareSlug/guest/:guestToken/rsvp", async (req, res) => {
+    const event = await storage.getEventByShareSlug(req.params.shareSlug);
+    if (!event) return res.status(404).json({ error: "Invitation not found" });
+    const token = guestTokenSchema.safeParse(req.params.guestToken);
+    if (!token.success) return res.status(404).json({ error: "Invitation not found" });
+    const guest = await storage.getGuestByAccessToken(event.id, token.data);
+    if (!guest) return res.status(404).json({ error: "Invitation not found" });
 
     const parsed = rsvpSubmitSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
@@ -222,10 +320,10 @@ export async function registerRoutes(
     let attendingChildren = parsed.data.attendingChildren;
     let attendingCount = parsed.data.attendingCount;
 
-    if ((parsed.data.status === "yes" || parsed.data.status === "maybe") && (attendingAdults != null || attendingChildren != null)) {
+    if (parsed.data.status === "yes" || parsed.data.status === "maybe") {
       // Enforce the host's RSVP restriction server-side too, in case the
       // client is bypassed. Mirrors the logic in the RSVP page UI.
-      attendingAdults = Math.max(1, attendingAdults ?? 1);
+      attendingAdults = Math.max(1, attendingAdults ?? Math.min(attendingCount ?? guest.partySize, guest.partySize));
       attendingChildren = Math.max(0, attendingChildren ?? 0);
       if (event.rsvpRestriction === "no_children") {
         attendingChildren = 0;
@@ -240,6 +338,12 @@ export async function registerRoutes(
         attendingAdults = 1;
         attendingChildren = 0;
       }
+      const invitedPartySize = Math.max(1, guest.partySize);
+      if (attendingAdults + attendingChildren > invitedPartySize) {
+        const remainingChildren = Math.max(0, invitedPartySize - attendingAdults);
+        attendingChildren = Math.min(attendingChildren, remainingChildren);
+        attendingAdults = Math.min(attendingAdults, invitedPartySize - attendingChildren);
+      }
       attendingCount = attendingAdults + attendingChildren;
     } else if (parsed.data.status === "no") {
       attendingAdults = 0;
@@ -247,7 +351,7 @@ export async function registerRoutes(
       attendingCount = 0;
     }
 
-    const updated = await storage.updateGuest(event.id, guestId, {
+    const updated = await storage.updateGuest(event.id, guest.id, {
       rsvpStatus: parsed.data.status,
       attendingCount: attendingCount ?? (parsed.data.status === "yes" ? guest.partySize : parsed.data.status === "maybe" ? guest.partySize : 0),
       attendingAdults: attendingAdults ?? null,
@@ -255,7 +359,8 @@ export async function registerRoutes(
       note: parsed.data.note ?? guest.note,
       respondedAt: Date.now(),
     });
-    res.json(updated);
+    res.set("Cache-Control", "private, no-store");
+    res.json(publicGuestView(updated!));
   });
 
   /* ============ GUESTS: OWNER MANAGEMENT ============ */
@@ -288,6 +393,14 @@ export async function registerRoutes(
     const event = await storage.getEventByOwnerToken(req.params.ownerToken);
     if (!event) return res.status(404).json({ error: "Event not found" });
     const updated = await storage.updateGuest(event.id, Number(req.params.guestId), { invitedAt: Date.now() });
+    if (!updated) return res.status(404).json({ error: "Guest not found" });
+    res.json(updated);
+  });
+
+  app.post("/api/events/owner/:ownerToken/guests/:guestId/rotate-access-token", async (req, res) => {
+    const event = await storage.getEventByOwnerToken(req.params.ownerToken);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+    const updated = await storage.rotateGuestAccessToken(event.id, Number(req.params.guestId));
     if (!updated) return res.status(404).json({ error: "Guest not found" });
     res.json(updated);
   });
@@ -558,8 +671,7 @@ export async function registerRoutes(
     if (!guest || guest.eventId !== event.id) return res.status(404).json({ error: "Guest not found" });
     if (!guest.email) return res.status(400).json({ error: "This guest has no email address on file" });
 
-    const rsvpOrigin = String(req.body?.origin || "");
-    const rsvpUrl = rsvpOrigin ? `${rsvpOrigin}/rsvp/${event.shareSlug}` : `/rsvp/${event.shareSlug}`;
+    const rsvpUrl = guestRsvpUrl(req, event, guest);
     const tokenCtx = { guestName: guest.name.split(" ")[0] || guest.name, eventName: event.eventName, eventDate: event.eventDate, location: event.location, hostNames: event.hostNames };
     const rawMessage = event.inviteMessage || `We'd love for you to join us for ${event.eventName}.`;
     const withGreeting = rawMessage.includes("{{guestName}}") ? rawMessage : `Hi {{guestName}},\n\n${rawMessage}`;
@@ -584,8 +696,6 @@ export async function registerRoutes(
     const event = await storage.getEventByOwnerToken(req.params.ownerToken);
     if (!event) return res.status(404).json({ error: "Event not found" });
     const allGuests = await storage.listGuests(event.id);
-    const rsvpOrigin = String(req.body?.origin || "");
-    const rsvpUrl = rsvpOrigin ? `${rsvpOrigin}/rsvp/${event.shareSlug}` : `/rsvp/${event.shareSlug}`;
     const rawSubject = event.inviteSubject || `You're invited: ${event.eventName}`;
     const targets = allGuests.filter((g) => g.email && !g.emailSentAt);
 
@@ -593,6 +703,7 @@ export async function registerRoutes(
     const rawMessage = event.inviteMessage || `We'd love for you to join us for ${event.eventName}.`;
     const messageTemplate = rawMessage.includes("{{guestName}}") ? rawMessage : `Hi {{guestName}},\n\n${rawMessage}`;
     for (const guest of targets) {
+      const rsvpUrl = guestRsvpUrl(req, event, guest);
       const tokenCtx = { guestName: guest.name.split(" ")[0] || guest.name, eventName: event.eventName, eventDate: event.eventDate, location: event.location, hostNames: event.hostNames };
       const base = applyInviteTokens(messageTemplate, tokenCtx);
       const subject = applyInviteTokens(rawSubject, tokenCtx);
@@ -622,13 +733,12 @@ export async function registerRoutes(
     const event = await storage.getEventByOwnerToken(req.params.ownerToken);
     if (!event) return res.status(404).json({ error: "Event not found" });
     const allGuests = await storage.listGuests(event.id);
-    const rsvpOrigin = String(req.body?.origin || "");
-    const rsvpUrl = rsvpOrigin ? `${rsvpOrigin}/rsvp/${event.shareSlug}` : `/rsvp/${event.shareSlug}`;
     const targets = allGuests.filter((g) => g.email && g.rsvpStatus === "pending");
     const deadlineLine = event.rsvpDeadline ? `We'd love to hear back by ${event.rsvpDeadline}.` : "We'd love to hear back from you soon.";
 
     const results: { guestId: number; name: string; ok: boolean; error?: string }[] = [];
     for (const guest of targets) {
+      const rsvpUrl = guestRsvpUrl(req, event, guest);
       const greetingName = guest.name.split(" ")[0] || guest.name;
       const subject = `Reminder: RSVP for ${event.eventName}`;
       const body = `Hi ${greetingName},\n\nJust a friendly reminder to RSVP for ${event.eventName}. ${deadlineLine}\n\nRSVP here: ${rsvpUrl}\n\nThanks so much!`;
@@ -650,11 +760,13 @@ export async function registerRoutes(
   // in to SMS is never inferred from an RSVP or having a phone on file.
   // This endpoint is the only way smsOptIn gets set to true, and it's
   // guest-initiated from the public RSVP page, never pre-checked by a host.
-  app.post("/api/events/public/:shareSlug/guests/:guestId/sms-opt-in", async (req, res) => {
+  app.post("/api/events/public/:shareSlug/guest/:guestToken/sms-opt-in", async (req, res) => {
     const event = await storage.getEventByShareSlug(req.params.shareSlug);
-    if (!event) return res.status(404).json({ error: "Event not found" });
-    const guest = await storage.getGuest(Number(req.params.guestId));
-    if (!guest || guest.eventId !== event.id) return res.status(404).json({ error: "Guest not found" });
+    if (!event) return res.status(404).json({ error: "Invitation not found" });
+    const token = guestTokenSchema.safeParse(req.params.guestToken);
+    if (!token.success) return res.status(404).json({ error: "Invitation not found" });
+    const guest = await storage.getGuestByAccessToken(event.id, token.data);
+    if (!guest) return res.status(404).json({ error: "Invitation not found" });
 
     const optIn = Boolean(req.body?.optIn);
     const phone = typeof req.body?.phone === "string" ? req.body.phone.trim() : undefined;
@@ -667,7 +779,8 @@ export async function registerRoutes(
       smsOptIn: optIn,
       smsConsentAt: optIn ? Date.now() : null,
     });
-    res.json(updated);
+    res.set("Cache-Control", "private, no-store");
+    res.json(publicGuestView(updated!));
   });
 
   // Sends via Twilio (see server/sms.ts). Requires TWILIO_ACCOUNT_SID,
@@ -681,8 +794,7 @@ export async function registerRoutes(
     if (!guest.smsOptIn) return res.status(400).json({ error: "This guest hasn't opted in to text messages" });
     if (!guest.phone) return res.status(400).json({ error: "This guest has no phone number on file" });
 
-    const rsvpOrigin = String(req.body?.origin || "");
-    const rsvpUrl = rsvpOrigin ? `${rsvpOrigin}/rsvp/${event.shareSlug}` : `/rsvp/${event.shareSlug}`;
+    const rsvpUrl = guestRsvpUrl(req, event, guest);
     const greetingName = guest.name.split(" ")[0] || guest.name;
     const deadlineLine = event.rsvpDeadline ? ` by ${event.rsvpDeadline}` : "";
     const body = `Hi ${greetingName}, just a reminder to RSVP for ${event.eventName}${deadlineLine}: ${rsvpUrl}\n\nReply STOP to opt out.`;
@@ -700,13 +812,12 @@ export async function registerRoutes(
     const event = await storage.getEventByOwnerToken(req.params.ownerToken);
     if (!event) return res.status(404).json({ error: "Event not found" });
     const allGuests = await storage.listGuests(event.id);
-    const rsvpOrigin = String(req.body?.origin || "");
-    const rsvpUrl = rsvpOrigin ? `${rsvpOrigin}/rsvp/${event.shareSlug}` : `/rsvp/${event.shareSlug}`;
     const deadlineLine = event.rsvpDeadline ? ` by ${event.rsvpDeadline}` : "";
     const targets = allGuests.filter((g) => g.smsOptIn && g.phone && g.rsvpStatus === "pending");
 
     const results: { guestId: number; name: string; ok: boolean; error?: string }[] = [];
     for (const guest of targets) {
+      const rsvpUrl = guestRsvpUrl(req, event, guest);
       const greetingName = guest.name.split(" ")[0] || guest.name;
       const body = `Hi ${greetingName}, just a reminder to RSVP for ${event.eventName}${deadlineLine}: ${rsvpUrl}\n\nReply STOP to opt out.`;
       const result = await sendReminderSms({ to: guest.phone, body });
