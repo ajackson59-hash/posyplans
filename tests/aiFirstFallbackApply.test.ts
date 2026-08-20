@@ -186,6 +186,27 @@ describe("a direction that fell back to an adapted studio direction", () => {
     expect(updates).toHaveLength(1);
   });
 
+  it("restores the approved direction after browser state is lost", async () => {
+    const { direction, previewStore, usageStore, imageCallsAfterRun, imageCalls } = await runToFallback();
+    const { app } = appFor(previewStore, usageStore);
+
+    const res = await request(app).get(`/api/events/owner/${OWNER}/ai-first/approved-designs`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.appliedPreviewId).toBeNull();
+    expect(res.body.directions).toHaveLength(1);
+    expect(res.body.directions[0]).toMatchObject({
+      previewId: direction.previewId,
+      assetHash: direction.assetHash,
+      concept: direction.concept,
+      source: "adapted-studio-direction",
+      illustrationUrl: `/api/events/owner/${OWNER}/ai-first/preview/${direction.previewId}/asset`,
+      reusedPreview: true,
+    });
+    expect(res.body.directions[0].illustrationUrl).not.toMatch(/^data:/);
+    expect(imageCalls()).toBe(imageCallsAfterRun);
+  });
+
   it("persists the artwork, palette, envelope and composition it displayed", async () => {
     const { direction, previewStore, usageStore } = await runToFallback();
     const { app, updates } = appFor(previewStore, usageStore);
