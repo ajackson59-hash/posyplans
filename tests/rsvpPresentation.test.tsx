@@ -99,6 +99,8 @@ describe("RSVP presentation", () => {
     fireEvent.click(screen.getByTestId("button-open-envelope"));
     expect(screen.getByTestId("envelope-mailpiece").style.transform).toBe("rotateY(180deg)");
     expect(screen.getByTestId("envelope-flap").style.transform).toBe("rotateX(-168deg)");
+    expect(screen.getByTestId("envelope-flap").style.transition).not.toContain("1.56");
+    expect(screen.getByTestId("envelope-card-reveal").style.transform).toBe("translateY(-28%)");
   });
 
   it("makes the invitation the focal point and stacks the complete RSVP area below it", async () => {
