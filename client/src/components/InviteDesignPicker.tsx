@@ -37,7 +37,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Sparkles, Wand2, RotateCcw, X, Check, ImagePlus, Heart, ThumbsDown, ArrowLeft } from "lucide-react";
 import ThemeChooser from "./ThemeChooser";
 import InviteStudio from "./InviteStudio";
-import AiFirstInvitations from "./AiFirstInvitations";
+import AiFirstInvitations, { type ApprovedDesignsResponse } from "./AiFirstInvitations";
 import { resolveThemeView } from "@/lib/themeInvite";
 import { useFeatureFlags } from "@/lib/featureFlags";
 import { useAiFirstSession } from "@/lib/aiFirstSession";
@@ -100,6 +100,19 @@ export default function InviteDesignPicker({ ownerToken, event, onReviewEventSty
   const [cameFromChooser, setCameFromChooser] = useState(false);
 
   const appliedConcept = parseInviteDesignConcept(event.inviteDesignConceptJson);
+  const approvedDesigns = useQuery<ApprovedDesignsResponse>({
+    queryKey: [`/api/events/owner/${ownerToken}/ai-first/approved-designs`],
+    enabled: flags.aiFirstInvitations,
+  });
+  // A host may already have a curated/legacy design active when an AI-first
+  // preview finishes. That older editor must not hide the accepted preview:
+  // surface it once so the host can explicitly apply it without generating
+  // or paying for another image. Once an AI preview is applied, the normal
+  // editor takes priority again.
+  const hasUnappliedApprovedDesign =
+    flags.aiFirstInvitations &&
+    approvedDesigns.data?.appliedPreviewId === null &&
+    (approvedDesigns.data?.directions.length ?? 0) > 0;
 
   const invalidateEvent = () => {
     queryClient.invalidateQueries({ queryKey: [`/api/events/owner/${ownerToken}`] });
@@ -630,6 +643,24 @@ export default function InviteDesignPicker({ ownerToken, event, onReviewEventSty
   // A curated theme has its own composed-portrait studio. The AI concept path
   // below keeps the older live editor, which is built around a generated
   // illustration rather than art-directed artwork.
+  // Recovery takes priority over an older curated or generated-concept
+  // editor. Previously those two early returns made the durable preview and
+  // its zero-cost "Use this design" action impossible to reach after reload.
+  if (hasUnappliedApprovedDesign && !showCustomTheme && !aiFirst.browsingCollection) {
+    return (
+      <div data-testid="card-ai-first-invitations">
+        <AiFirstInvitations
+          ownerToken={ownerToken}
+          event={event}
+          session={aiFirst}
+          onBrowseCollection={() => aiFirst.setBrowsingCollection(true)}
+          onReviewEventStyle={onReviewEventStyle}
+        />
+        {renderCustomDesignEntry()}
+      </div>
+    );
+  }
+
   if (resolveThemeView(event) && !browsing) {
     return (
       <div data-testid="card-invite-studio">
