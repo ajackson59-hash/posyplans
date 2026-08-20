@@ -315,9 +315,10 @@ export function isStampStyle(value: unknown): value is StampStyle {
 
 // ── Envelope finish ───────────────────────────────────────────────────────────
 // Style lanes fall into two rendering finishes. "premium" gets heavier paper
-// stock, restrained shadow and a wax seal; "playful" gets brighter contrast,
-// a springier flap animation and a postage-style stamp. Driven by lane so a
-// christening and a neon 90s party don't render with the same gravitas.
+// stock and restrained shadow; "playful" gets brighter contrast and lighter
+// stock. The stationery may vary, but the interaction deliberately does not:
+// every envelope opens with the same composed, non-bouncy movement so even a
+// whimsical party still feels like Posy rather than a novelty animation.
 
 export const ENVELOPE_FINISHES = ["premium", "playful"] as const;
 export type EnvelopeFinish = (typeof ENVELOPE_FINISHES)[number];
@@ -397,11 +398,11 @@ export function shadeHex(hex: string, amount: number): string {
  * to move at all.
  */
 export function flapAnimationMs(finish: EnvelopeFinish): number {
-  return finish === "premium" ? 820 : 620;
+  return finish === "premium" ? 1040 : 980;
 }
 
 /** Time spent turning the addressed front over before the back flap opens. */
-export const ENVELOPE_TURN_MS = 460;
+export const ENVELOPE_TURN_MS = 720;
 
 /** How long the opened envelope lingers after the flap settles, before collapsing. */
-export const ENVELOPE_LINGER_MS = 420;
+export const ENVELOPE_LINGER_MS = 360;

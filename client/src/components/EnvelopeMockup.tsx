@@ -7,8 +7,11 @@
  * will see. Any change here lands in both places at once.
  *
  * Rendering finish is driven by the concept's style lane (see envelopeFinish):
- *   premium — heavier stock, tighter shadow, wax seal, slower flap
- *   playful — brighter contrast, springier flap, postage-style stamp
+ *   premium — heavier stock, tighter shadow, wax seal
+ *   playful — brighter contrast, postage-style stamp
+ *
+ * The opening choreography is intentionally shared across both finishes. Theme
+ * personality belongs in the stationery, not in a bouncy interaction.
  *
  * Palette colours arrive unconstrained from the model, so every piece of text
  * drawn here derives its own ink from the underlying colour's luminance rather
@@ -162,7 +165,7 @@ function WaxSeal({ color, glyph, opened, delayMs = 0 }: { color: string; glyph: 
   const ink = readableInk(color);
   return (
     <span
-      className="absolute left-1/2 top-[50%] z-40 flex h-9 w-9 -translate-x-1/2 items-center justify-center rounded-full text-sm transition-all duration-500 sm:h-10 sm:w-10"
+      className="absolute left-1/2 top-[50%] z-40 flex h-9 w-9 -translate-x-1/2 items-center justify-center rounded-full text-sm sm:h-10 sm:w-10"
       style={{
         // Off-centre highlight reads as wax catching light; the inset ring is the
         // rim left behind when a seal is pressed.
@@ -170,7 +173,8 @@ function WaxSeal({ color, glyph, opened, delayMs = 0 }: { color: string; glyph: 
         boxShadow: `inset 0 0 0 1.5px ${shadeHex(color, -0.35)}, 0 2px 5px rgba(0,0,0,0.28)`,
         color: ink,
         opacity: opened ? 0 : 1,
-        transform: opened ? "translate(-50%, 6px) scale(0.82)" : "translate(-50%, 0) scale(1)",
+        transform: opened ? "translate(-50%, 0) scale(0.94)" : "translate(-50%, 0) scale(1)",
+        transition: "opacity 300ms ease, transform 360ms cubic-bezier(0.4, 0, 0.2, 1)",
         transitionDelay: opened ? `${delayMs}ms` : "0ms",
       }}
       aria-hidden="true"
@@ -238,6 +242,9 @@ export default function EnvelopeMockup({
   // With curated postage the two are independent and both are drawn.
   const stampIsWax = !postage && stampStyle === "wax-seal";
   const showPostage = Boolean(postage) || !stampIsWax;
+  const flapDurationMs = flapAnimationMs(finish);
+  const flapDelayMs = ENVELOPE_TURN_MS - 80;
+  const cardLiftDelayMs = ENVELOPE_TURN_MS + Math.round(flapDurationMs * 0.42);
 
   const faceShadow = premium
     ? `inset 0 0 0 1px ${ink}26, 0 1px 2px rgba(24,18,12,0.13), 0 12px 28px -8px rgba(24,18,12,0.3), 0 28px 54px -24px rgba(24,18,12,0.24)`
@@ -260,7 +267,8 @@ export default function EnvelopeMockup({
         style={{
           transformStyle: "preserve-3d",
           transform: opened ? "rotateY(180deg)" : "rotateY(0deg)",
-          transition: `transform ${ENVELOPE_TURN_MS}ms cubic-bezier(0.22, 0.61, 0.36, 1)`,
+          transition: `transform ${ENVELOPE_TURN_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`,
+          willChange: "transform",
         }}
         data-testid="envelope-mailpiece"
       >
@@ -338,28 +346,51 @@ export default function EnvelopeMockup({
                 clipPath: "polygon(0 0, 100% 0, 50% 100%)",
               }}
             />
+            {/* A single quiet card edge rising from the pocket bridges the
+                physical envelope to the full invitation that follows. It is
+                intentionally unillustrated: the finished invitation remains
+                the focal point rather than becoming a second mini mockup. */}
             <div
-              className="absolute inset-0"
+              className="absolute bottom-[5%] left-[9%] z-10 h-[70%] w-[82%] rounded-[3px]"
+              style={{
+                background: `linear-gradient(150deg, ${shadeHex(linerBaseColor, 0.5)} 0%, ${shadeHex(linerBaseColor, 0.7)} 100%)`,
+                border: `1px solid ${shadeHex(linerBaseColor, -0.08)}`,
+                boxShadow: "0 -8px 24px -16px rgba(24,18,12,0.34)",
+                opacity: opened ? 1 : 0,
+                transform: opened ? "translateY(-28%)" : "translateY(5%)",
+                transition: `transform 680ms cubic-bezier(0.22, 0.72, 0.24, 1), opacity 260ms ease`,
+                transitionDelay: opened ? `${cardLiftDelayMs}ms` : "0ms",
+                willChange: "transform, opacity",
+              }}
+              data-testid="envelope-card-reveal"
+            >
+              <span
+                className="absolute left-1/2 top-[18%] h-px w-10 -translate-x-1/2"
+                style={{ backgroundColor: `${readableInk(shadeHex(linerBaseColor, 0.65))}24` }}
+              />
+            </div>
+            <div
+              className="absolute inset-0 z-20"
               style={{
                 background: `linear-gradient(135deg, ${shadeHex(envelopeColor, 0.02)}, ${shadeHex(envelopeColor, -0.04)})`,
                 clipPath: "polygon(0 0, 0 100%, 51% 70%)",
               }}
             />
             <div
-              className="absolute inset-0"
+              className="absolute inset-0 z-20"
               style={{
                 background: `linear-gradient(225deg, ${shadeHex(envelopeColor, 0.02)}, ${shadeHex(envelopeColor, -0.04)})`,
                 clipPath: "polygon(100% 0, 100% 100%, 49% 70%)",
               }}
             />
             <div
-              className="absolute inset-0"
+              className="absolute inset-0 z-20"
               style={{
                 background: `linear-gradient(to bottom, ${pocketTop} 0%, ${envelopeColor} 44%, ${shadeHex(envelopeColor, -0.08)} 100%)`,
                 clipPath: "polygon(0 42%, 50% 70%, 100% 42%, 100% 100%, 0 100%)",
               }}
             />
-            <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 700 500" preserveAspectRatio="none" aria-hidden="true">
+            <svg className="pointer-events-none absolute inset-0 z-20 h-full w-full" viewBox="0 0 700 500" preserveAspectRatio="none" aria-hidden="true">
               <path
                 d="M0 210 L350 350 L700 210"
                 fill="none"
@@ -377,7 +408,7 @@ export default function EnvelopeMockup({
                 vectorEffect="non-scaling-stroke"
               />
             </svg>
-            <div className="pointer-events-none absolute inset-0" style={paperTexture} />
+            <div className="pointer-events-none absolute inset-0 z-20" style={paperTexture} />
           </div>
 
           <div
@@ -386,10 +417,9 @@ export default function EnvelopeMockup({
               transformOrigin: "top",
               transformStyle: "preserve-3d",
               transform: opened ? "rotateX(-168deg)" : "rotateX(0deg)",
-              transition: premium
-                ? `transform ${flapAnimationMs("premium")}ms cubic-bezier(0.22, 0.61, 0.36, 1)`
-                : `transform ${flapAnimationMs("playful")}ms cubic-bezier(0.34, 1.56, 0.64, 1)`,
-              transitionDelay: opened ? `${ENVELOPE_TURN_MS - 40}ms` : "0ms",
+              transition: `transform ${flapDurationMs}ms cubic-bezier(0.22, 0.72, 0.24, 1)`,
+              transitionDelay: opened ? `${flapDelayMs}ms` : "0ms",
+              willChange: "transform",
             }}
             data-testid="envelope-flap"
           >
@@ -420,7 +450,7 @@ export default function EnvelopeMockup({
             color={postage || stampIsWax ? stampColor : shadeHex(envelopeColor, -0.3)}
             glyph={glyph}
             opened={opened}
-            delayMs={ENVELOPE_TURN_MS - 40}
+            delayMs={flapDelayMs}
           />
         </div>
       </div>
@@ -435,7 +465,7 @@ export default function EnvelopeMockup({
       onClick={onOpen}
       disabled={opened}
       aria-label="Open your invitation"
-      className="block w-full cursor-pointer transition-transform duration-300 hover:-translate-y-0.5 disabled:cursor-default disabled:hover:translate-y-0"
+      className="block w-full cursor-pointer rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 disabled:cursor-default"
       data-testid="button-open-envelope"
     >
       {body}
