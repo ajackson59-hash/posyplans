@@ -20,6 +20,7 @@ import {
   readableInk,
   shadeHex,
   flapAnimationMs,
+  ENVELOPE_TURN_MS,
   type EnvelopeFinish,
   type LinerPattern,
   type StampStyle,
@@ -157,7 +158,7 @@ export function PostageStamp({
 }
 
 /** A dimensional wax seal — radial shading plus a pressed rim, not a flat disc. */
-function WaxSeal({ color, glyph, opened }: { color: string; glyph: string; opened: boolean }) {
+function WaxSeal({ color, glyph, opened, delayMs = 0 }: { color: string; glyph: string; opened: boolean; delayMs?: number }) {
   const ink = readableInk(color);
   return (
     <span
@@ -170,6 +171,7 @@ function WaxSeal({ color, glyph, opened }: { color: string; glyph: string; opene
         color: ink,
         opacity: opened ? 0 : 1,
         transform: opened ? "translate(-50%, 6px) scale(0.82)" : "translate(-50%, 0) scale(1)",
+        transitionDelay: opened ? `${delayMs}ms` : "0ms",
       }}
       aria-hidden="true"
     >
@@ -201,6 +203,8 @@ export interface EnvelopeMockupProps {
   onOpen?: () => void;
   /** Suppresses the button affordance for a non-interactive preview. */
   interactive?: boolean;
+  /** Lets the guest-facing reveal lead at a more generous desktop scale. */
+  displaySize?: "standard" | "hero";
   className?: string;
 }
 
@@ -217,6 +221,7 @@ export default function EnvelopeMockup({
   opened,
   onOpen,
   interactive = true,
+  displaySize = "standard",
   className = "",
 }: EnvelopeMockupProps) {
   const premium = finish === "premium";
@@ -227,7 +232,6 @@ export default function EnvelopeMockup({
   const flapFold = shadeHex(envelopeColor, premium ? -0.2 : -0.14);
   const pocketTop = shadeHex(envelopeColor, 0.04);
   const stampPaper = shadeHex(envelopeColor, 0.82);
-  const labelInk = readableInk(stampPaper);
   const { glyph } = stampGlyph(stampStyle);
   // Without curated postage the single stamp control has to serve both jobs, so
   // a "wax-seal" choice moves the motif onto the fold instead of the corner.
@@ -235,163 +239,191 @@ export default function EnvelopeMockup({
   const stampIsWax = !postage && stampStyle === "wax-seal";
   const showPostage = Boolean(postage) || !stampIsWax;
 
+  const faceShadow = premium
+    ? `inset 0 0 0 1px ${ink}26, 0 1px 2px rgba(24,18,12,0.13), 0 12px 28px -8px rgba(24,18,12,0.3), 0 28px 54px -24px rgba(24,18,12,0.24)`
+    : `inset 0 0 0 1px ${ink}24, 0 2px 4px rgba(24,18,12,0.14), 0 16px 34px -10px rgba(24,18,12,0.3)`;
+  const paperTexture = {
+    backgroundImage: PAPER_GRAIN,
+    backgroundSize: "120px 120px",
+    mixBlendMode: "overlay" as const,
+    opacity: premium ? 0.15 : 0.09,
+  };
+
   const body = (
     <div
-      className={`relative mx-auto aspect-[7/5] w-full max-w-sm rounded-[6px] ${className}`}
-      style={{
-        backgroundColor: envelopeColor,
-        perspective: "1100px",
-        transformStyle: "preserve-3d",
-        // Layered shadow: a tight contact shadow plus a wider ambient one, which
-        // is what lifts the envelope off the page instead of shadow-sm's haze.
-        boxShadow: premium
-          ? `inset 0 0 0 1px ${ink}26, 0 1px 2px rgba(24,18,12,0.13), 0 10px 24px -6px rgba(24,18,12,0.28), 0 24px 48px -20px rgba(24,18,12,0.22)`
-          : `inset 0 0 0 1px ${ink}24, 0 2px 4px rgba(24,18,12,0.14), 0 14px 30px -8px rgba(24,18,12,0.3)`,
-      }}
+      className={`relative mx-auto aspect-[7/5] w-full ${displaySize === "hero" ? "max-w-lg" : "max-w-sm"} ${className}`}
+      style={{ perspective: "1300px" }}
+      data-testid="envelope-stage"
     >
-      {/* Liner + front pocket, clipped so rounded corners stay masked while the
-          flap above is free to rotate past the top edge. */}
-      <div className="absolute inset-0 overflow-hidden rounded-[6px]">
-        {/* Liner, clipped to the flap's own triangle. A closed envelope must not
-            show its liner — filling the whole top edge with it left bare wedges
-            either side of the flap, which read as torn paper. Matching the shapes
-            means the liner is revealed as a triangular recess as the flap lifts. */}
-        <div
-          className="absolute inset-x-0 top-0 h-[60%]"
-          style={{
-            ...linerPatternStyle(linerPattern, linerColor, linerBaseColor),
-            clipPath: "polygon(0 0, 100% 0, 50% 100%)",
-          }}
-        />
-        {/* Envelope back showing either side of the flap triangle. */}
-        <div
-          className="absolute inset-x-0 top-0 h-[60%]"
-          style={{
-            backgroundColor: shadeHex(envelopeColor, -0.03),
-            clipPath: "polygon(0 0, 50% 100%, 0 100%)",
-          }}
-        />
-        <div
-          className="absolute inset-x-0 top-0 h-[60%]"
-          style={{
-            backgroundColor: shadeHex(envelopeColor, -0.03),
-            clipPath: "polygon(100% 0, 100% 100%, 50% 100%)",
-          }}
-        />
-        {/* Front pocket. The faint vertical gradient is the light falloff on a
-            paper face; without it the pocket reads as a flat swatch. */}
-        <div
-          className="absolute inset-x-0 bottom-0 top-[45%]"
-          style={{
-            background: `linear-gradient(to bottom, ${pocketTop} 0%, ${envelopeColor} 38%, ${shadeHex(envelopeColor, -0.07)} 100%)`,
-          }}
-        />
-        {/* Pocket seam — the top edge of the front panel catches a highlight. */}
-        <div
-          className="absolute inset-x-0 top-[45%] h-px"
-          style={{ backgroundColor: shadeHex(envelopeColor, 0.22), opacity: 0.55 }}
-        />
-        {/* Paper fibre. Overlay blend keeps it reading as texture on both dark
-            and light stock rather than a grey film. */}
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            backgroundImage: PAPER_GRAIN,
-            backgroundSize: "120px 120px",
-            mixBlendMode: "overlay",
-            opacity: premium ? 0.16 : 0.09,
-          }}
-        />
-      </div>
-
-      {/* Stamp sits on the front pocket in the top-right corner, where franking
-          actually goes. Sized as a proportion of the envelope so it holds its
-          scale from the 240px editor preview up to the full-width guest view. */}
-      {showPostage && (
-        <span
-          className="absolute right-[7%] top-[53%] z-20 w-[13%]"
-          style={{
-            aspectRatio: "44 / 52",
-            filter: "drop-shadow(0 1px 2px rgba(24,18,12,0.3))",
-            transform: premium ? "rotate(-1.5deg)" : "rotate(2.5deg)",
-          }}
-        >
-          <PostageStamp
-            style={postage?.motif ?? stampStyle}
-            color={postage?.inkColor ?? stampColor}
-            paperColor={postage?.paperColor ?? stampPaper}
-            denomination={postage?.denomination}
-            caption={postage?.caption}
-            label={postage?.label}
-          />
-        </span>
-      )}
-
-      <span
-        className="absolute bottom-[9%] left-[18%] right-[18%] z-20 rounded-[3px] border px-3 py-2 text-center font-serif text-xs font-medium tracking-[0.1em] sm:text-sm"
-        style={{
-          color: labelInk,
-          backgroundColor: stampPaper,
-          borderColor: shadeHex(stampPaper, -0.12),
-          boxShadow: "0 1px 2px rgba(24,18,12,0.12)",
-        }}
-        data-testid="text-envelope-addressee"
-      >
-        {addressee}
-      </span>
-
-      {/* Two-sided flap. Real envelopes reveal the liner on the underside as the
-          flap lifts; fading a single triangle away made the paper look like a
-          flat graphic. Both faces share the same fold and stay present for the
-          full rotation, so the reveal reads as one physical sheet. */}
       <div
-        className="absolute inset-x-0 top-0 z-30 h-[60%]"
+        className="absolute inset-0"
         style={{
-          transformOrigin: "top",
           transformStyle: "preserve-3d",
-          transform: opened ? "rotateX(-168deg)" : "rotateX(0deg)",
-          // Playful lanes overshoot slightly on open; premium stays measured.
-          // Duration comes from flapAnimationMs so the RSVP page's collapse timer
-          // cannot drift out of sync with it.
-          transition: premium
-            ? `transform ${flapAnimationMs("premium")}ms cubic-bezier(0.22, 0.61, 0.36, 1)`
-            : `transform ${flapAnimationMs("playful")}ms cubic-bezier(0.34, 1.56, 0.64, 1)`,
+          transform: opened ? "rotateY(180deg)" : "rotateY(0deg)",
+          transition: `transform ${ENVELOPE_TURN_MS}ms cubic-bezier(0.22, 0.61, 0.36, 1)`,
         }}
-        data-testid="envelope-flap"
+        data-testid="envelope-mailpiece"
       >
+        {/* Address side: postage and recipient belong here. Keeping the seal and
+            flap off this face fixes the physically impossible hybrid that made
+            the old envelope feel like a flat illustration. */}
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 overflow-hidden rounded-[7px]"
           style={{
-            // Gradient runs toward the fold, so the crease darkens the way a
-            // folded sheet does. A single flat fill is what made this look printed.
-            background: `linear-gradient(to bottom, ${flapTop} 0%, ${shadeHex(envelopeColor, -0.1)} 62%, ${flapFold} 100%)`,
-            clipPath: "polygon(0 0, 100% 0, 50% 100%)",
+            background: `linear-gradient(145deg, ${shadeHex(envelopeColor, 0.08)} 0%, ${envelopeColor} 48%, ${shadeHex(envelopeColor, -0.06)} 100%)`,
             backfaceVisibility: "hidden",
-            boxShadow: `inset 0 1px 0 ${shadeHex(envelopeColor, 0.18)}, inset 0 -1px 0 ${flapFold}`,
+            boxShadow: faceShadow,
           }}
-          data-testid="envelope-flap-front"
-        />
-        <div
-          className="absolute inset-0"
-          style={{
-            ...linerPatternStyle(linerPattern, linerColor, linerBaseColor),
-            clipPath: "polygon(0 0, 100% 0, 50% 100%)",
-            backfaceVisibility: "hidden",
-            transform: "rotateX(180deg)",
-            boxShadow: `inset 0 0 0 1px ${shadeHex(linerBaseColor, -0.12)}`,
-          }}
-          data-testid="envelope-flap-liner"
-        />
-      </div>
+          data-testid="envelope-front"
+        >
+          <div className="pointer-events-none absolute inset-0" style={paperTexture} />
+          <div
+            className="pointer-events-none absolute inset-[2.5%] rounded-[5px] border"
+            style={{ borderColor: `${ink}18` }}
+          />
 
-      {/* Wax seal holding the flap shut. */}
-      {/* Wax seal on the fold. Once postage is a control of its own, the seal
-          control owns stampStyle/stampColor outright and always uses them. */}
-      <WaxSeal
-        color={postage || stampIsWax ? stampColor : shadeHex(envelopeColor, -0.3)}
-        glyph={glyph}
-        opened={opened}
-      />
+          {showPostage && (
+            <span
+              className="absolute right-[7%] top-[8%] z-20 w-[13%]"
+              style={{
+                aspectRatio: "44 / 52",
+                filter: "drop-shadow(0 1px 2px rgba(24,18,12,0.25))",
+                transform: premium ? "rotate(-1.5deg)" : "rotate(2.5deg)",
+              }}
+            >
+              <PostageStamp
+                style={postage?.motif ?? stampStyle}
+                color={postage?.inkColor ?? stampColor}
+                paperColor={postage?.paperColor ?? stampPaper}
+                denomination={postage?.denomination}
+                caption={postage?.caption}
+                label={postage?.label}
+              />
+            </span>
+          )}
+
+          <div className="absolute inset-x-[16%] top-[41%] z-10 text-center" style={{ color: ink }}>
+            <span className="block text-[8px] font-semibold uppercase tracking-[0.3em] opacity-55 sm:text-[9px]">
+              Posy correspondence
+            </span>
+            <span
+              className="mt-2 block font-serif text-base font-medium tracking-[0.08em] sm:text-lg"
+              data-testid="text-envelope-addressee"
+            >
+              {addressee}
+            </span>
+            <span className="mx-auto mt-3 block h-px w-14" style={{ backgroundColor: `${ink}3d` }} />
+          </div>
+        </div>
+
+        {/* Back side: the addressed envelope turns over first, then this lined
+            flap lifts automatically. */}
+        <div
+          className="absolute inset-0 rounded-[7px]"
+          style={{
+            backgroundColor: envelopeColor,
+            backfaceVisibility: "hidden",
+            boxShadow: faceShadow,
+            transform: "rotateY(180deg)",
+            transformStyle: "preserve-3d",
+          }}
+          data-testid="envelope-back"
+        >
+          <div className="absolute inset-0 overflow-hidden rounded-[7px]">
+            <div className="absolute inset-0" style={{ backgroundColor: shadeHex(envelopeColor, -0.025) }} />
+            <div
+              className="absolute inset-x-0 top-0 h-[62%]"
+              style={{
+                ...linerPatternStyle(linerPattern, linerColor, linerBaseColor),
+                clipPath: "polygon(0 0, 100% 0, 50% 100%)",
+              }}
+            />
+            <div
+              className="absolute inset-0"
+              style={{
+                background: `linear-gradient(135deg, ${shadeHex(envelopeColor, 0.02)}, ${shadeHex(envelopeColor, -0.04)})`,
+                clipPath: "polygon(0 0, 0 100%, 51% 70%)",
+              }}
+            />
+            <div
+              className="absolute inset-0"
+              style={{
+                background: `linear-gradient(225deg, ${shadeHex(envelopeColor, 0.02)}, ${shadeHex(envelopeColor, -0.04)})`,
+                clipPath: "polygon(100% 0, 100% 100%, 49% 70%)",
+              }}
+            />
+            <div
+              className="absolute inset-0"
+              style={{
+                background: `linear-gradient(to bottom, ${pocketTop} 0%, ${envelopeColor} 44%, ${shadeHex(envelopeColor, -0.08)} 100%)`,
+                clipPath: "polygon(0 42%, 50% 70%, 100% 42%, 100% 100%, 0 100%)",
+              }}
+            />
+            <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 700 500" preserveAspectRatio="none" aria-hidden="true">
+              <path
+                d="M0 210 L350 350 L700 210"
+                fill="none"
+                stroke={shadeHex(envelopeColor, -0.16)}
+                strokeOpacity="0.35"
+                strokeWidth="1.2"
+                vectorEffect="non-scaling-stroke"
+              />
+              <path
+                d="M0 212 L350 352 L700 212"
+                fill="none"
+                stroke={shadeHex(envelopeColor, 0.2)}
+                strokeOpacity="0.4"
+                strokeWidth="0.8"
+                vectorEffect="non-scaling-stroke"
+              />
+            </svg>
+            <div className="pointer-events-none absolute inset-0" style={paperTexture} />
+          </div>
+
+          <div
+            className="absolute inset-x-0 top-0 z-30 h-[62%]"
+            style={{
+              transformOrigin: "top",
+              transformStyle: "preserve-3d",
+              transform: opened ? "rotateX(-168deg)" : "rotateX(0deg)",
+              transition: premium
+                ? `transform ${flapAnimationMs("premium")}ms cubic-bezier(0.22, 0.61, 0.36, 1)`
+                : `transform ${flapAnimationMs("playful")}ms cubic-bezier(0.34, 1.56, 0.64, 1)`,
+              transitionDelay: opened ? `${ENVELOPE_TURN_MS - 40}ms` : "0ms",
+            }}
+            data-testid="envelope-flap"
+          >
+            <div
+              className="absolute inset-0"
+              style={{
+                background: `linear-gradient(to bottom, ${flapTop} 0%, ${shadeHex(envelopeColor, -0.1)} 62%, ${flapFold} 100%)`,
+                clipPath: "polygon(0 0, 100% 0, 50% 100%)",
+                backfaceVisibility: "hidden",
+                boxShadow: `inset 0 1px 0 ${shadeHex(envelopeColor, 0.18)}, inset 0 -1px 0 ${flapFold}`,
+              }}
+              data-testid="envelope-flap-front"
+            />
+            <div
+              className="absolute inset-0"
+              style={{
+                ...linerPatternStyle(linerPattern, linerColor, linerBaseColor),
+                clipPath: "polygon(0 0, 100% 0, 50% 100%)",
+                backfaceVisibility: "hidden",
+                transform: "rotateX(180deg)",
+                boxShadow: `inset 0 0 0 1px ${shadeHex(linerBaseColor, -0.12)}`,
+              }}
+              data-testid="envelope-flap-liner"
+            />
+          </div>
+
+          <WaxSeal
+            color={postage || stampIsWax ? stampColor : shadeHex(envelopeColor, -0.3)}
+            glyph={glyph}
+            opened={opened}
+            delayMs={ENVELOPE_TURN_MS - 40}
+          />
+        </div>
+      </div>
     </div>
   );
 
