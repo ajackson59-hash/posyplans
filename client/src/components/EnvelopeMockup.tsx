@@ -340,28 +340,49 @@ export default function EnvelopeMockup({
         {addressee}
       </span>
 
-      {/* Flap. Back face hidden so it doesn't flip hard past 90deg; the opacity
-          fade covers the hand-off so it doesn't read as a pop. */}
+      {/* Two-sided flap. Real envelopes reveal the liner on the underside as the
+          flap lifts; fading a single triangle away made the paper look like a
+          flat graphic. Both faces share the same fold and stay present for the
+          full rotation, so the reveal reads as one physical sheet. */}
       <div
         className="absolute inset-x-0 top-0 z-30 h-[60%]"
         style={{
-          // Gradient runs toward the fold, so the crease darkens the way a
-          // folded sheet does. A single flat fill is what made this look printed.
-          background: `linear-gradient(to bottom, ${flapTop} 0%, ${shadeHex(envelopeColor, -0.1)} 62%, ${flapFold} 100%)`,
-          clipPath: "polygon(0 0, 100% 0, 50% 100%)",
           transformOrigin: "top",
           transformStyle: "preserve-3d",
-          backfaceVisibility: "hidden",
           transform: opened ? "rotateX(-168deg)" : "rotateX(0deg)",
-          opacity: opened ? 0 : 1,
           // Playful lanes overshoot slightly on open; premium stays measured.
           // Duration comes from flapAnimationMs so the RSVP page's collapse timer
           // cannot drift out of sync with it.
           transition: premium
-            ? `transform ${flapAnimationMs("premium")}ms cubic-bezier(0.22, 0.61, 0.36, 1), opacity ${flapAnimationMs("premium")}ms ease-in-out`
-            : `transform ${flapAnimationMs("playful")}ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity ${flapAnimationMs("playful")}ms ease-in-out`,
+            ? `transform ${flapAnimationMs("premium")}ms cubic-bezier(0.22, 0.61, 0.36, 1)`
+            : `transform ${flapAnimationMs("playful")}ms cubic-bezier(0.34, 1.56, 0.64, 1)`,
         }}
-      />
+        data-testid="envelope-flap"
+      >
+        <div
+          className="absolute inset-0"
+          style={{
+            // Gradient runs toward the fold, so the crease darkens the way a
+            // folded sheet does. A single flat fill is what made this look printed.
+            background: `linear-gradient(to bottom, ${flapTop} 0%, ${shadeHex(envelopeColor, -0.1)} 62%, ${flapFold} 100%)`,
+            clipPath: "polygon(0 0, 100% 0, 50% 100%)",
+            backfaceVisibility: "hidden",
+            boxShadow: `inset 0 1px 0 ${shadeHex(envelopeColor, 0.18)}, inset 0 -1px 0 ${flapFold}`,
+          }}
+          data-testid="envelope-flap-front"
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            ...linerPatternStyle(linerPattern, linerColor, linerBaseColor),
+            clipPath: "polygon(0 0, 100% 0, 50% 100%)",
+            backfaceVisibility: "hidden",
+            transform: "rotateX(180deg)",
+            boxShadow: `inset 0 0 0 1px ${shadeHex(linerBaseColor, -0.12)}`,
+          }}
+          data-testid="envelope-flap-liner"
+        />
+      </div>
 
       {/* Wax seal holding the flap shut. */}
       {/* Wax seal on the fold. Once postage is a control of its own, the seal

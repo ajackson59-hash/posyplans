@@ -23,7 +23,7 @@ export function Wordmark({
   showTagline?: boolean;
 }) {
   return (
-    <span className="inline-flex flex-col">
+    <span className="inline-flex flex-col items-center text-center">
       <img
         src="/brand/posy-logo-header.png"
         alt="Posy — Your Planning Concierge"

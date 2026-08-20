@@ -197,7 +197,7 @@ export default function Rsvp() {
     return (
       <div className="min-h-screen bg-background">
         <header className="border-b border-border">
-          <div className="mx-auto max-w-lg px-6 py-5">
+          <div className="mx-auto flex max-w-5xl justify-center px-4 py-5 sm:px-6 lg:border-x lg:border-primary/30 lg:bg-card/20" data-testid="rsvp-header-inner">
             <Link href="/" data-testid="link-logo-home">
               <Wordmark />
             </Link>
@@ -258,14 +258,17 @@ export default function Rsvp() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border">
-        <div className="mx-auto max-w-lg px-6 py-5">
+        <div className="mx-auto flex max-w-5xl justify-center px-4 py-5 sm:px-6 lg:border-x lg:border-primary/30 lg:bg-card/20" data-testid="rsvp-header-inner">
           <Link href="/" data-testid="link-logo-home">
             <Wordmark />
           </Link>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12" data-testid="rsvp-main">
+      <main
+        className="mx-auto min-h-[calc(100vh-6rem)] max-w-5xl px-4 py-8 sm:px-6 sm:py-12 lg:border-x lg:border-primary/30 lg:bg-card/20 lg:px-10"
+        data-testid="rsvp-main"
+      >
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-medium uppercase tracking-wide text-primary">{event.eventType}</p>
           <h1 className="font-serif text-3xl font-semibold text-foreground sm:text-4xl" data-testid="text-rsvp-event-name">
@@ -296,7 +299,7 @@ export default function Rsvp() {
           data-testid="rsvp-presentation-grid"
         >
           <section
-            className="min-w-0 lg:rounded-[1.75rem] lg:border lg:border-border/80 lg:bg-card/60 lg:p-7 lg:shadow-[0_24px_70px_-42px_rgba(36,29,24,0.6)]"
+            className="min-w-0 lg:px-2"
             data-testid="rsvp-invitation-mount"
           >
 
