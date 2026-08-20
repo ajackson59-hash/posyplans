@@ -1600,7 +1600,18 @@ export default function Dashboard() {
                       const meta = STATUS_META[guest.rsvpStatus];
                       return (
                         <tr key={guest.id} data-testid={`row-guest-${guest.id}`}>
-                          <td className="px-3 py-2.5 font-medium text-foreground">{guest.name}</td>
+                          <td className="px-3 py-2.5 font-medium text-foreground">
+                            <div>{guest.name}</div>
+                            {guest.note && (
+                              <div
+                                className="mt-1 max-w-[220px] whitespace-normal text-xs font-normal leading-relaxed text-muted-foreground"
+                                data-testid={`text-guest-note-${guest.id}`}
+                                title={guest.note}
+                              >
+                                “{guest.note}”
+                              </div>
+                            )}
+                          </td>
                           <td className="px-3 py-2.5 text-muted-foreground">{guest.group || "—"}</td>
                           <td className="px-3 py-2.5 text-muted-foreground">
                             {(guest.rsvpStatus === "yes" || guest.rsvpStatus === "maybe") && guest.attendingCount != null ? (

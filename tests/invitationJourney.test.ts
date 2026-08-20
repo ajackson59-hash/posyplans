@@ -65,4 +65,10 @@ describe("dashboard invitation journey", () => {
       source.indexOf("{/* Readiness */}"),
     );
   });
+
+  it("keeps guest RSVP comments visible to the host", () => {
+    const source = fs.readFileSync(path.resolve("client/src/pages/Dashboard.tsx"), "utf8");
+    expect(source).toContain("{guest.note && (");
+    expect(source).toContain("data-testid={`text-guest-note-${guest.id}`}");
+  });
 });
