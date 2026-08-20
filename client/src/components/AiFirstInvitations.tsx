@@ -38,7 +38,7 @@ interface AiFirstStatus {
   askPosyActions: AskPosyAction[];
 }
 
-interface ApprovedDesignsResponse {
+export interface ApprovedDesignsResponse {
   appliedPreviewId: string | null;
   directions: FinishedDirection[];
 }
