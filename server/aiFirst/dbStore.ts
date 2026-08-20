@@ -74,6 +74,14 @@ export class DbPreviewStore implements AiFirstPreviewStore {
     return rows[0] ? toRecord(rows[0]) : undefined;
   }
 
+  async listForEvent(eventId: number): Promise<PreviewRecord[]> {
+    const rows = await db
+      .select()
+      .from(aiFirstPreviews)
+      .where(eq(aiFirstPreviews.eventId, eventId));
+    return rows.map(toRecord).filter((record): record is PreviewRecord => record !== undefined);
+  }
+
   async put(record: PreviewRecord): Promise<PreviewRecord> {
     await db
       .insert(aiFirstPreviews)

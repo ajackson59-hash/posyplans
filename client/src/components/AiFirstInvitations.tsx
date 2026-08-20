@@ -38,6 +38,11 @@ interface AiFirstStatus {
   askPosyActions: AskPosyAction[];
 }
 
+interface ApprovedDesignsResponse {
+  appliedPreviewId: string | null;
+  directions: FinishedDirection[];
+}
+
 interface AiFirstInvitationsProps {
   ownerToken: string;
   event: EventRecord;
@@ -63,6 +68,9 @@ export default function AiFirstInvitations({
   const status = useQuery<AiFirstStatus>({
     queryKey: [`/api/events/owner/${ownerToken}/ai-first/status`],
   });
+  const approvedDesigns = useQuery<ApprovedDesignsResponse>({
+    queryKey: [`/api/events/owner/${ownerToken}/ai-first/approved-designs`],
+  });
 
   const apply = useMutation({
     mutationFn: (direction: FinishedDirection) =>
@@ -75,6 +83,7 @@ export default function AiFirstInvitations({
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/events/owner/${ownerToken}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/events/owner/${ownerToken}/ai-first/approved-designs`] });
       toast({ title: "Design applied", description: "Now make it yours." });
     },
     onError: (err: Error) => {
@@ -86,8 +95,24 @@ export default function AiFirstInvitations({
     () => session.directions.slice().sort((a, b) => a.index - b.index),
     [session.directions],
   );
+  const durableDirections = approvedDesigns.data?.directions ?? [];
+  const availableDirections = ordered.length > 0 ? ordered : durableDirections;
+  const previousDirections = useMemo(() => {
+    const previous = new Map<string, FinishedDirection>();
+    for (const direction of session.savedDirections) previous.set(direction.previewId, direction);
+    if (ordered.length > 0) {
+      for (const direction of durableDirections) {
+        if (!ordered.some((current) => current.previewId === direction.previewId)) {
+          previous.set(direction.previewId, direction);
+        }
+      }
+    }
+    return Array.from(previous.values());
+  }, [durableDirections, ordered, session.savedDirections]);
+  const recoveredAfterRefresh = ordered.length === 0 && durableDirections.length > 0 && !session.running;
+  const hasPriorDirection = session.hasRun || durableDirections.length > 0;
 
-  const needsVibe = status.data?.briefQuestion && !session.vibeAnswer.trim() && !session.hasRun;
+  const needsVibe = status.data?.briefQuestion && !session.vibeAnswer.trim() && !hasPriorDirection;
   const latestProgress = session.progress[session.progress.length - 1] ?? "";
   const actions = status.data?.askPosyActions ?? [];
   // The server's own idea of "already active" (durable, not this tab's
@@ -102,7 +127,7 @@ export default function AiFirstInvitations({
   const targetCount = Math.min(configuredTargetCount, requestedTargetCount ?? configuredTargetCount);
   const isSingleIdea = targetCount === 1;
   const confirmationRequired =
-    Boolean(status.data?.additionalGenerationConfirmationRequired) || session.hasRun;
+    Boolean(status.data?.additionalGenerationConfirmationRequired) || hasPriorDirection;
 
   const startRun = (options: AiFirstRunOptions = {}) => {
     setRequestedTargetCount(Math.min(configuredTargetCount, options.directionCount ?? configuredTargetCount));
@@ -132,8 +157,12 @@ export default function AiFirstInvitations({
   // The header states only what is true at the moment it renders. The
   // completion sentence is claimed once the four directions are actually on
   // screen — never while the run is still in flight.
-  const complete = !session.running && ordered.length >= targetCount;
-  const heading = complete
+  const complete = !session.running && availableDirections.length >= targetCount;
+  const heading = recoveredAfterRefresh
+    ? durableDirections.length === 1
+      ? "Your approved invitation design is ready."
+      : "Your approved invitation designs are ready."
+    : complete
     ? isSingleIdea
       ? "Your invitation idea is ready."
       : targetCount === TARGET_DIRECTION_COUNT
@@ -143,17 +172,19 @@ export default function AiFirstInvitations({
       ? isSingleIdea
         ? "Posy is creating your invitation idea."
         : "Posy is creating your invitation ideas."
-      : ordered.length > 0
-        ? `${ordered.length} of ${targetCount} ideas are ready.`
+      : availableDirections.length > 0
+        ? `${availableDirections.length} of ${targetCount} ideas are ready.`
         : "Posy designs your invitation.";
-  const subheading = complete
+  const subheading = recoveredAfterRefresh
+    ? "Posy saved your approved artwork. Choose Use this design to publish it to the guest invitation — no new artwork or charge is created."
+    : complete
     ? isSingleIdea
       ? "It is designed around your event's details and checked before you see it. Nothing changes until you choose it."
       : "Each one is designed around your event's details and checked before you see it. Pick the one you like and make it yours — nothing changes until you do."
     : session.running
       ? "Each direction appears as soon as it passes Posy's checks, so you can start looking before the set is finished."
-      : ordered.length > 0
-        ? `Posy finished ${ordered.length} of ${targetCount} ideas. You can use what is here or ask for a different approach.`
+      : availableDirections.length > 0
+        ? `Posy finished ${availableDirections.length} of ${targetCount} ideas. You can use what is here or ask for a different approach.`
         : isSingleIdea
           ? "Posy uses the event details you've already shared to create a finished invitation idea. Nothing changes until you choose it."
           : `Posy uses the event details you've already shared to create ${targetCount} finished invitation ideas. Nothing changes until you choose one.`;
@@ -232,7 +263,7 @@ export default function AiFirstInvitations({
           ) : (
             <Sparkles className="mr-1.5 h-4 w-4" aria-hidden />
           )}
-          {session.hasRun
+          {hasPriorDirection
             ? isSingleIdea
               ? "Create a different idea"
               : "Create different ideas"
@@ -318,14 +349,15 @@ export default function AiFirstInvitations({
         </p>
       )}
 
-      {ordered.length > 0 && (
+      {availableDirections.length > 0 && (
         <div className="grid gap-6 sm:grid-cols-2" data-testid="grid-ai-directions">
-          {ordered.map((direction) => (
+          {availableDirections.map((direction) => (
             <DirectionCard
               key={direction.previewId || direction.index}
               direction={direction}
               event={event}
               selected={session.selectedPreviewId === direction.previewId}
+              applied={approvedDesigns.data?.appliedPreviewId === direction.previewId}
               applying={apply.isPending}
               onSelect={() => session.setSelectedPreviewId(direction.previewId)}
               onApply={() => apply.mutate(direction)}
@@ -334,18 +366,19 @@ export default function AiFirstInvitations({
         </div>
       )}
 
-      {session.savedDirections.length > 0 && (
+      {previousDirections.length > 0 && (
         <details className="mt-6 rounded-md border border-border bg-background p-4" data-testid="details-previous-directions">
           <summary className="cursor-pointer text-sm font-semibold text-foreground">
-            Compare with my previous ideas ({session.savedDirections.length})
+            Compare with my previous ideas ({previousDirections.length})
           </summary>
           <div className="mt-4 grid gap-6 sm:grid-cols-2">
-            {session.savedDirections.map((direction) => (
+            {previousDirections.map((direction) => (
               <DirectionCard
                 key={`saved-${direction.previewId || direction.index}`}
                 direction={direction}
                 event={event}
                 selected={session.selectedPreviewId === direction.previewId}
+                applied={approvedDesigns.data?.appliedPreviewId === direction.previewId}
                 applying={apply.isPending}
                 onSelect={() => session.setSelectedPreviewId(direction.previewId)}
                 onApply={() => apply.mutate(direction)}
@@ -358,7 +391,7 @@ export default function AiFirstInvitations({
       {/* Ask Posy — invitation-specific, and only once there is something to
           act on, since every action but "different directions" refers to a
           card the host is looking at. */}
-      {ordered.length > 0 && actions.length > 0 && (
+      {availableDirections.length > 0 && actions.length > 0 && (
         <section className="mt-8 rounded-md border border-border bg-muted/30 p-4" data-testid="section-ask-posy">
           <p className="text-sm font-semibold text-foreground">Make it feel more like you</p>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -371,10 +404,10 @@ export default function AiFirstInvitations({
                 type="button"
                 disabled={session.running}
                 onClick={() => {
-                  const selected = ordered.find((d) => d.previewId === session.selectedPreviewId) ?? ordered[0];
+                  const selected = availableDirections.find((d) => d.previewId === session.selectedPreviewId) ?? availableDirections[0];
                   if (action.advisory) {
                     setChoiceAdvice(
-                      ordered.length === 1
+                      availableDirections.length === 1
                         ? `Start with ${selected.concept.conceptName} if its overall composition feels right. Artwork, color and typography can all be adjusted without losing the idea.`
                         : `You selected ${selected.concept.conceptName}. Choose based on the overall feeling and composition first — artwork, colors and typography are easier to adjust afterward.`,
                     );
@@ -383,7 +416,7 @@ export default function AiFirstInvitations({
                   requestRun({
                     action: action.id,
                     concept: selected?.concept,
-                    avoidConceptNames: ordered.map((d) => d.concept.conceptName),
+                    avoidConceptNames: availableDirections.map((d) => d.concept.conceptName),
                     directionCount: action.resultCount,
                   });
                 }}
@@ -437,6 +470,7 @@ function DirectionCard({
   direction,
   event,
   selected,
+  applied,
   applying,
   onSelect,
   onApply,
@@ -444,6 +478,7 @@ function DirectionCard({
   direction: FinishedDirection;
   event: EventRecord;
   selected: boolean;
+  applied: boolean;
   applying: boolean;
   onSelect: () => void;
   onApply: () => void;
@@ -486,11 +521,11 @@ function DirectionCard({
         <Button
           size="sm"
           className="mt-3"
-          disabled={applying}
+          disabled={applying || applied}
           onClick={onApply}
           data-testid={`button-use-direction-${direction.index}`}
         >
-          <Check className="mr-1.5 h-3.5 w-3.5" aria-hidden /> Use this design
+          <Check className="mr-1.5 h-3.5 w-3.5" aria-hidden /> {applied ? "Using this design" : "Use this design"}
         </Button>
       </figcaption>
     </figure>

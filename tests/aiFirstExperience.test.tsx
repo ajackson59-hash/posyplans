@@ -25,6 +25,7 @@ vi.mock("@/lib/queryClient", () => ({
 }));
 
 const AiFirstInvitations = (await import("@/components/AiFirstInvitations")).default;
+const { apiRequestJson } = await import("@/lib/queryClient");
 
 const event = (): EventRecord =>
   ({
@@ -90,13 +91,25 @@ const status = {
   askPosyActions: INVITATION_ASK_POSY_ACTIONS,
 };
 
+const approvedDesigns = {
+  appliedPreviewId: null as string | null,
+  directions: [] as FinishedDirection[],
+};
+
 function renderExperience(
   over: Partial<ReturnType<typeof useAiFirstSession>> = {},
   statusBody: typeof status = status,
+  approvedBody: typeof approvedDesigns = approvedDesigns,
 ) {
   const onBrowseCollection = vi.fn();
   const client = new QueryClient({
-    defaultOptions: { queries: { retry: false, queryFn: async () => statusBody } },
+    defaultOptions: {
+      queries: {
+        retry: false,
+        queryFn: async ({ queryKey }) =>
+          String(queryKey[0]).endsWith("/approved-designs") ? approvedBody : statusBody,
+      },
+    },
   });
   render(
     <QueryClientProvider client={client}>
@@ -239,6 +252,35 @@ describe("cards appear as they are approved", () => {
     // Selecting a card is a preview. Only "Use this design" applies it.
     expect(screen.getByTestId("button-select-direction-0")).toBeTruthy();
     expect(screen.getByTestId("button-use-direction-0").textContent).toContain("Use this design");
+  });
+
+  it("restores an accepted direction after refresh and applies it without generating again", async () => {
+    const run = vi.fn();
+    vi.mocked(apiRequestJson).mockClear();
+    renderExperience(
+      { run },
+      {
+        ...status,
+        usage: { ...status.usage, eventBilled: 1 },
+        additionalGenerationConfirmationRequired: true,
+        directionLimit: 1,
+      },
+      { appliedPreviewId: null, directions: [direction(0)] },
+    );
+
+    await waitFor(() => expect(screen.getByTestId("button-use-direction-0")).toBeTruthy());
+    expect(screen.getByTestId("text-ai-first-heading").textContent).toContain("approved invitation design");
+    expect(document.body.textContent).toContain("no new artwork or charge");
+
+    fireEvent.click(screen.getByTestId("button-use-direction-0"));
+    await waitFor(() =>
+      expect(apiRequestJson).toHaveBeenCalledWith(
+        "POST",
+        "/api/events/owner/token/ai-first/apply",
+        expect.objectContaining({ previewId: "preview-0", assetHash: "hash-0" }),
+      ),
+    );
+    expect(run).not.toHaveBeenCalled();
   });
 
   it("offers the invitation Ask Posy actions once there is a card to act on", async () => {

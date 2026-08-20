@@ -13,12 +13,19 @@
 import type { Express, Request, Response } from "express";
 import { readFeatureFlags } from "@shared/featureFlags";
 import { AI_FIRST_CONCEPT_KEY, themeFromSnapshot, type AiFirstSnapshot } from "@shared/aiFirstTheme";
+import { validateLayoutBeforeGeneration } from "@shared/aiFirstLayout";
 import { buildThemedConcept } from "@shared/themeCatalog";
 import { deriveThemeDna } from "@shared/themeDna";
 import { computeEventDna } from "@shared/eventDna";
 import { buildEventBrief, briefIsSufficient, SINGLE_BRIEF_QUESTION } from "./brief";
 import { runAiFirstPipeline, type PipelineEvent, type PipelineInput, type RunSummary } from "./pipeline";
-import { applyPreview, cleanupPreviews, resolvePreviewAssetBytes, type AiFirstPreviewStore } from "./previewStore";
+import {
+  applyPreview,
+  cleanupPreviews,
+  previewAssetUrl,
+  resolvePreviewAssetBytes,
+  type AiFirstPreviewStore,
+} from "./previewStore";
 import {
   CircuitBreaker,
   RateLimiter,
@@ -551,6 +558,53 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
         deps.usageStore.endRun?.(event.id);
         if (!res.destroyed && !res.writableEnded) res.end();
       }
+    }),
+  );
+
+  /**
+   * Restores every accepted/adapted direction after a refresh or return
+   * visit. The preview store is the ordinary host-safe store: rejected
+   * provider attempts never enter it, and the response exposes only the
+   * owner-scoped asset route rather than stored bytes.
+   */
+  app.get(
+    "/api/events/owner/:ownerToken/ai-first/approved-designs",
+    gated(async (req, res) => {
+      const ownerToken = String(req.params.ownerToken);
+      const event = await deps.storage.getEventByOwnerToken(ownerToken);
+      if (!event) {
+        res.status(404).json({ error: "Event not found" });
+        return;
+      }
+
+      const records = (await deps.previewStore.listForEvent(event.id))
+        .slice()
+        .sort((a, b) => b.createdAt - a.createdAt);
+      let appliedPreviewId: string | null = null;
+      try {
+        const storedConcept = JSON.parse(String(event.inviteDesignConceptJson || "null"));
+        const snapshot = storedConcept?.[AI_FIRST_CONCEPT_KEY] as Partial<AiFirstSnapshot> | undefined;
+        appliedPreviewId = typeof snapshot?.previewId === "string" ? snapshot.previewId : null;
+      } catch {
+        appliedPreviewId = null;
+      }
+
+      res.json({
+        appliedPreviewId,
+        directions: records.map((record, index) => ({
+          index,
+          concept: record.concept,
+          source: record.source,
+          previewId: record.previewId,
+          assetHash: record.assetHash,
+          illustrationUrl: previewAssetUrl(ownerToken, record.previewId),
+          overlay: record.concept.minOverlay,
+          artworkOpacity: validateLayoutBeforeGeneration(record.concept).artworkOpacity,
+          attempts: [],
+          reusedPreview: true,
+          msFromStart: 0,
+        })),
+      });
     }),
   );
 

@@ -34,6 +34,13 @@ export interface PreviewRecord {
 export interface AiFirstPreviewStore {
   findByFingerprint(eventId: number, conceptFingerprint: string): Promise<PreviewRecord | undefined>;
   findByPreviewId(eventId: number, previewId: string): Promise<PreviewRecord | undefined>;
+  /**
+   * Every host-servable preview for one event. The preview store contains
+   * accepted/adapted directions only, never rejected provider attempts, so
+   * this is the durable source used to restore direction cards after a
+   * browser refresh.
+   */
+  listForEvent(eventId: number): Promise<PreviewRecord[]>;
   put(record: PreviewRecord): Promise<PreviewRecord>;
   touch(previewId: string, at: number): Promise<void>;
   promote(eventId: number, previewId: string, at: number): Promise<PreviewRecord | undefined>;
@@ -251,6 +258,12 @@ export class InMemoryPreviewStore implements AiFirstPreviewStore {
   async findByPreviewId(eventId: number, previewId: string): Promise<PreviewRecord | undefined> {
     const row = this.rows.get(previewId);
     return row && row.eventId === eventId ? { ...row } : undefined;
+  }
+
+  async listForEvent(eventId: number): Promise<PreviewRecord[]> {
+    return Array.from(this.rows.values())
+      .filter((row) => row.eventId === eventId)
+      .map((row) => ({ ...row }));
   }
 
   async put(record: PreviewRecord): Promise<PreviewRecord> {
