@@ -75,15 +75,19 @@ describe("RSVP presentation", () => {
     const label = screen.getByTestId("text-envelope-addressee");
     expect(label.className).toContain("border");
     expect(label.style.backgroundColor).not.toBe("");
+    expect(screen.getByTestId("envelope-flap-front")).toBeTruthy();
+    expect(screen.getByTestId("envelope-flap-liner")).toBeTruthy();
   });
 
-  it("uses a mounted invitation and a desktop RSVP column after reveal", async () => {
+  it("centers the brand and frames the desktop RSVP page with side rails", async () => {
     renderRsvp(false);
 
     await waitFor(() => expect(screen.getByTestId("input-guest-search")).toBeTruthy());
+    expect(screen.getByTestId("rsvp-header-inner").className).toContain("justify-center");
     expect(screen.getByTestId("rsvp-main").className).toContain("max-w-5xl");
+    expect(screen.getByTestId("rsvp-main").className).toContain("lg:border-x");
     expect(screen.getByTestId("rsvp-presentation-grid").className).toContain("lg:grid-cols-");
-    expect(screen.getByTestId("rsvp-invitation-mount").className).toContain("lg:border");
+    expect(screen.getByTestId("rsvp-invitation-mount").className).not.toContain("rounded");
     expect(screen.getByTestId("section-rsvp-controls").className).toContain("lg:border");
   });
 });
