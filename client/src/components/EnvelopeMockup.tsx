@@ -266,7 +266,9 @@ export default function EnvelopeMockup({
         className="absolute inset-0"
         style={{
           transformStyle: "preserve-3d",
-          transform: opened ? "rotateY(180deg)" : "rotateY(0deg)",
+          // Lower the piece slightly as it turns so the lifted flap stays inside
+          // the invitation stage instead of crossing the event title above it.
+          transform: opened ? "translateY(10%) rotateY(180deg)" : "translateY(0) rotateY(0deg)",
           transition: `transform ${ENVELOPE_TURN_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`,
           willChange: "transform",
         }}
@@ -416,7 +418,10 @@ export default function EnvelopeMockup({
             style={{
               transformOrigin: "top",
               transformStyle: "preserve-3d",
-              transform: opened ? "rotateX(-168deg)" : "rotateX(0deg)",
+              // Just beyond upright reads as an opened flap while keeping the
+              // liner foreshortened and contained. Folding it nearly flat
+              // projected a giant triangle over the page heading.
+              transform: opened ? "rotateX(-108deg)" : "rotateX(0deg)",
               transition: `transform ${flapDurationMs}ms cubic-bezier(0.22, 0.72, 0.24, 1)`,
               transitionDelay: opened ? `${flapDelayMs}ms` : "0ms",
               willChange: "transform",

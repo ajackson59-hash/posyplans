@@ -97,8 +97,8 @@ describe("RSVP presentation", () => {
     expect(screen.getByTestId("envelope-flap-liner")).toBeTruthy();
 
     fireEvent.click(screen.getByTestId("button-open-envelope"));
-    expect(screen.getByTestId("envelope-mailpiece").style.transform).toBe("rotateY(180deg)");
-    expect(screen.getByTestId("envelope-flap").style.transform).toBe("rotateX(-168deg)");
+    expect(screen.getByTestId("envelope-mailpiece").style.transform).toBe("translateY(10%) rotateY(180deg)");
+    expect(screen.getByTestId("envelope-flap").style.transform).toBe("rotateX(-108deg)");
     expect(screen.getByTestId("envelope-flap").style.transition).not.toContain("1.56");
     expect(screen.getByTestId("envelope-card-reveal").style.transform).toBe("translateY(-28%)");
   });
