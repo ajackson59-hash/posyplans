@@ -6,7 +6,7 @@ import type { EventRecord, RsvpStatus } from "@/lib/types";
 import { applyInviteTokens } from "@shared/inviteTokens";
 import { DEFAULT_INVITE_FONT_ID, resolveInviteAccentColor, getInviteHeadingStyle, getInviteBodyStyle } from "@/lib/inviteStyles";
 import { parseInviteDesignConcept, conceptHeadingStyle, conceptBodyStyle, conceptBorderStyle } from "@shared/inviteDesign";
-import { deriveThemeDna, isLinerPattern, isStampStyle, envelopeFinish, flapAnimationMs, ENVELOPE_LINGER_MS } from "@shared/themeDna";
+import { deriveThemeDna, isLinerPattern, isStampStyle, envelopeFinish, flapAnimationMs, ENVELOPE_LINGER_MS, ENVELOPE_TURN_MS } from "@shared/themeDna";
 import { getPaletteVariant, getPostageStamp } from "@shared/themeCatalog";
 import { resolveThemeView } from "@/lib/themeInvite";
 import { ThemeInvitation } from "@/components/ThemeInvitation";
@@ -100,9 +100,8 @@ export default function Rsvp() {
     if (adults > limits.maxAdults) setAdults(limits.maxAdults);
   }, [limits.hideChildren, limits.maxAdults]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Reveal sequence: the flap lifts (700ms), then the whole envelope collapses
-  // out of the flow (500ms) while the invite card fades in, then it unmounts so
-  // no empty box is left behind.
+  // Reveal sequence: the addressed front turns over, the lined flap lifts, then
+  // the whole envelope collapses out of the flow while the invite fades in.
   useEffect(() => {
     if (!envelopeOpened) return;
     // Hold the envelope on screen for the full flap rotation plus a brief linger,
@@ -111,7 +110,7 @@ export default function Rsvp() {
     // Read the lane off the raw query data rather than the derived `concept`,
     // which is only in scope after this component's loading guards.
     const lane = parseInviteDesignConcept(event?.inviteDesignConceptJson ?? "")?.styleLaneId;
-    const collapseAt = flapAnimationMs(envelopeFinish(lane)) + ENVELOPE_LINGER_MS;
+    const collapseAt = ENVELOPE_TURN_MS + flapAnimationMs(envelopeFinish(lane)) + ENVELOPE_LINGER_MS;
     const collapse = setTimeout(() => setEnvelopeDismissed(true), collapseAt);
     const remove = setTimeout(() => setEnvelopeRemoved(true), collapseAt + 500);
     return () => {
@@ -197,7 +196,7 @@ export default function Rsvp() {
     return (
       <div className="min-h-screen bg-background">
         <header className="border-b border-border">
-          <div className="mx-auto flex max-w-5xl justify-center px-4 py-5 sm:px-6 lg:border-x lg:border-primary/30 lg:bg-card/20" data-testid="rsvp-header-inner">
+          <div className="mx-auto flex max-w-5xl justify-center px-4 py-5 sm:px-6" data-testid="rsvp-header-inner">
             <Link href="/" data-testid="link-logo-home">
               <Wordmark />
             </Link>
@@ -258,7 +257,7 @@ export default function Rsvp() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border">
-        <div className="mx-auto flex max-w-5xl justify-center px-4 py-5 sm:px-6 lg:border-x lg:border-primary/30 lg:bg-card/20" data-testid="rsvp-header-inner">
+        <div className="mx-auto flex max-w-5xl justify-center px-4 py-5 sm:px-6" data-testid="rsvp-header-inner">
           <Link href="/" data-testid="link-logo-home">
             <Wordmark />
           </Link>
@@ -266,9 +265,19 @@ export default function Rsvp() {
       </header>
 
       <main
-        className="mx-auto min-h-[calc(100vh-6rem)] max-w-5xl px-4 py-8 sm:px-6 sm:py-12 lg:border-x lg:border-primary/30 lg:bg-card/20 lg:px-10"
+        className="relative isolate mx-auto min-h-[calc(100vh-6rem)] max-w-5xl px-4 py-8 sm:px-6 sm:py-12 lg:px-10"
         data-testid="rsvp-main"
       >
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 left-0 -z-10 hidden w-32 bg-gradient-to-r from-primary/10 via-primary/[0.035] to-transparent md:block"
+          data-testid="rsvp-side-shade-left"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 right-0 -z-10 hidden w-32 bg-gradient-to-l from-primary/10 via-primary/[0.035] to-transparent md:block"
+          data-testid="rsvp-side-shade-right"
+        />
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-medium uppercase tracking-wide text-primary">{event.eventType}</p>
           <h1 className="font-serif text-3xl font-semibold text-foreground sm:text-4xl" data-testid="text-rsvp-event-name">
@@ -292,14 +301,9 @@ export default function Rsvp() {
           )}
         </div>
 
-        <div
-          className={`mt-8 grid gap-8 lg:items-start lg:justify-center lg:gap-10 ${
-            inviteRevealed ? "lg:grid-cols-[minmax(0,30rem)_minmax(20rem,24rem)]" : "lg:grid-cols-[minmax(0,32rem)]"
-          }`}
-          data-testid="rsvp-presentation-grid"
-        >
+        <div className="mx-auto mt-8 max-w-2xl space-y-8" data-testid="rsvp-presentation-stack">
           <section
-            className="min-w-0 lg:px-2"
+            className="min-w-0"
             data-testid="rsvp-invitation-mount"
           >
 
@@ -330,6 +334,7 @@ export default function Rsvp() {
               addressee={guestFirstName ? `For ${guestFirstName}` : "You're invited"}
               opened={envelopeOpened}
               onOpen={() => setEnvelopeOpened(true)}
+              displaySize="hero"
             />
 
             {!envelopeOpened && (
@@ -348,7 +353,7 @@ export default function Rsvp() {
           // a clean neutral surface with no border, no overlaid text, and no
           // concept styling. The event details above and the RSVP form below
           // carry all the information, in the page's normal typography.
-          <div className="mt-6 overflow-hidden rounded-md bg-muted lg:mt-0" data-testid="card-custom-invite">
+          <div className="overflow-hidden rounded-md bg-muted" data-testid="card-custom-invite">
             <img
               src={event.customInviteImageUrl}
               alt={`Invitation to ${event.eventName}`}
@@ -358,7 +363,7 @@ export default function Rsvp() {
           </div>
         ) : themeView ? (
           <div
-            className="mt-6 overflow-hidden rounded-sm shadow-[0_2px_6px_rgba(23,23,23,0.09),0_24px_48px_-20px_rgba(23,23,23,0.38)] ring-1 ring-black/5 lg:mt-0"
+            className="overflow-hidden rounded-sm shadow-[0_2px_6px_rgba(23,23,23,0.09),0_24px_48px_-20px_rgba(23,23,23,0.38)] ring-1 ring-black/5"
             data-testid="card-theme-invite"
           >
             <ThemeInvitation
@@ -374,7 +379,7 @@ export default function Rsvp() {
             />
           </div>
         ) : (
-        <Card className="mt-6 overflow-hidden border-card-border lg:mt-0" style={concept ? conceptBorderStyle(concept) : undefined}>
+        <Card className="overflow-hidden border-card-border" style={concept ? conceptBorderStyle(concept) : undefined}>
           {concept ? (
             <>
               {event.inviteIllustrationUrl && concept.layoutStyle === "banner" && (
@@ -532,13 +537,13 @@ export default function Rsvp() {
 
           {inviteRevealed && (
             <section
-              className="min-w-0 lg:rounded-2xl lg:border lg:border-border/80 lg:bg-card lg:p-6 lg:shadow-[0_18px_52px_-38px_rgba(36,29,24,0.55)]"
+              className="min-w-0 sm:rounded-2xl sm:border sm:border-border/80 sm:bg-card sm:p-6 sm:shadow-[0_18px_52px_-38px_rgba(36,29,24,0.55)]"
               data-testid="section-rsvp-controls"
             >
 
         {submitted ? (
           <Card
-            className="mt-6 overflow-hidden border-card-border bg-secondary/10 lg:mt-0"
+            className="overflow-hidden border-card-border bg-secondary/10"
             style={concept ? conceptBorderStyle(concept) : undefined}
             data-testid="card-thank-you"
           >
@@ -581,7 +586,7 @@ export default function Rsvp() {
             </CardContent>
           </Card>
         ) : !selected ? (
-          <div className="mt-8 lg:mt-0">
+          <div>
             <label className="text-sm font-medium text-foreground">Find your name to RSVP</label>
             <div className="relative mt-2">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -652,7 +657,7 @@ export default function Rsvp() {
             )}
           </div>
         ) : (
-          <div className="mt-8 space-y-5 lg:mt-0">
+          <div className="space-y-5">
             <div className="flex items-center gap-3 rounded-md border border-primary/30 bg-primary/5 p-3.5">
               <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-primary/15 text-base font-semibold text-primary">
                 {selected.name.charAt(0).toUpperCase()}

@@ -400,5 +400,8 @@ export function flapAnimationMs(finish: EnvelopeFinish): number {
   return finish === "premium" ? 820 : 620;
 }
 
+/** Time spent turning the addressed front over before the back flap opens. */
+export const ENVELOPE_TURN_MS = 460;
+
 /** How long the opened envelope lingers after the flap settles, before collapsing. */
 export const ENVELOPE_LINGER_MS = 420;
