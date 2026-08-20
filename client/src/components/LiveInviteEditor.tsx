@@ -270,7 +270,7 @@ export default function LiveInviteEditor({ ownerToken, event, onBrowse }: LiveIn
 
   // ── Suite rendering ──────────────────────────────────────────────
   const dna = deriveThemeDna(liveConcept);
-  const envelopeColor = /^#[0-9a-fA-F]{6}$/.test(event.envelopeColor || "") ? (event.envelopeColor as string) : dna.primaryColor;
+  const envelopeColor = /^#[0-9a-fA-F]{6}$/.test(event.envelopeColor || "") ? (event.envelopeColor as string) : dna.backgroundColor;
   const linerPattern: LinerPattern = isLinerPattern(event.envelopeLinerPattern) ? event.envelopeLinerPattern : dna.linerPattern;
   const stamp: StampStyle = isStampStyle(event.stampStyle) ? event.stampStyle : dna.stampStyle;
   const stampMark = stampGlyph(stamp);

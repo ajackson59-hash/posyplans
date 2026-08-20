@@ -654,7 +654,10 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
         inviteDesignConceptJson: JSON.stringify(appliedConcept),
         inviteIllustrationUrl: record.assetUrl,
         paletteColors: JSON.stringify(appliedConcept.paletteColors),
-        envelopeColor: dna.primaryColor,
+        // Use the palette's lightest paper tone for the physical envelope.
+        // The first palette slot is often the near-black headline ink; using
+        // it as paper made otherwise elegant directions feel heavy and flat.
+        envelopeColor: dna.backgroundColor,
         envelopeLinerPattern: dna.linerPattern,
         stampStyle: dna.stampStyle,
       });

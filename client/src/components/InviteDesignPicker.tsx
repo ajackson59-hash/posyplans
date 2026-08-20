@@ -419,7 +419,7 @@ export default function InviteDesignPicker({ ownerToken, event, onReviewEventSty
   // (any event created before this feature) shows a complete, sensible suite.
   const renderSuiteSection = (concept: InviteDesignConcept) => {
     const dna = deriveThemeDna(concept);
-    const envelopeColor = /^#[0-9a-fA-F]{6}$/.test(event.envelopeColor || "") ? (event.envelopeColor as string) : dna.primaryColor;
+    const envelopeColor = /^#[0-9a-fA-F]{6}$/.test(event.envelopeColor || "") ? (event.envelopeColor as string) : dna.backgroundColor;
     const linerPattern: LinerPattern = isLinerPattern(event.envelopeLinerPattern) ? event.envelopeLinerPattern : dna.linerPattern;
     const stamp: StampStyle = isStampStyle(event.stampStyle) ? event.stampStyle : dna.stampStyle;
     const stampMark = stampGlyph(stamp);
@@ -949,7 +949,7 @@ export default function InviteDesignPicker({ ownerToken, event, onReviewEventSty
             // presentation Punchbowl uses where invites are shown in envelope holders.
             const dna = deriveThemeDna(concept);
             const stampMark = stampGlyph(dna.stampStyle);
-            const envelopeColor = dna.primaryColor;
+            const envelopeColor = dna.backgroundColor;
             const flapColor = dna.primaryColor;
             const linerBg = linerPatternStyle(dna.linerPattern, dna.accentColor, dna.backgroundColor);
             return (

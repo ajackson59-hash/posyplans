@@ -244,7 +244,7 @@ export default function Rsvp() {
   // the concept's derived Theme DNA, so events saved before the suite existed
   // still get a matching envelope.
   const dna = concept ? deriveThemeDna(concept) : null;
-  const envelopeColor = /^#[0-9a-fA-F]{6}$/.test(event.envelopeColor || "") ? (event.envelopeColor as string) : dna?.primaryColor;
+  const envelopeColor = /^#[0-9a-fA-F]{6}$/.test(event.envelopeColor || "") ? (event.envelopeColor as string) : dna?.backgroundColor;
   const linerPattern = isLinerPattern(event.envelopeLinerPattern) ? event.envelopeLinerPattern : dna?.linerPattern;
   const stamp = isStampStyle(event.stampStyle) ? event.stampStyle : dna?.stampStyle;
   // Suite colours are optional overrides; fall back to the concept's derived DNA
@@ -265,32 +265,45 @@ export default function Rsvp() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-lg px-6 py-12">
-        <p className="text-sm font-medium uppercase tracking-wide text-primary">{event.eventType}</p>
-        <h1 className="font-serif text-3xl font-semibold text-foreground" data-testid="text-rsvp-event-name">
-          {event.eventName}
-        </h1>
-        <p className="mt-1 text-muted-foreground">
-          {[event.eventDate, event.location].filter(Boolean).join(" · ")}
-        </p>
-        {event.rsvpDeadline && !submitted && (
-          <p className="mt-1 text-sm font-medium text-primary" data-testid="text-rsvp-deadline">
-            Please respond by {event.rsvpDeadline}
+      <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12" data-testid="rsvp-main">
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="text-sm font-medium uppercase tracking-wide text-primary">{event.eventType}</p>
+          <h1 className="font-serif text-3xl font-semibold text-foreground sm:text-4xl" data-testid="text-rsvp-event-name">
+            {event.eventName}
+          </h1>
+          <p className="mt-1 text-muted-foreground">
+            {[event.eventDate, event.location].filter(Boolean).join(" · ")}
           </p>
-        )}
-        {event.rsvpPhone && !submitted && (
-          <p className="mt-2 text-sm text-muted-foreground">
-            Prefer to call or text? Reach the host at{" "}
-            <a href={`tel:${event.rsvpPhone}`} className="font-medium text-primary underline" data-testid="link-rsvp-phone">
-              {event.rsvpPhone}
-            </a>
-          </p>
-        )}
+          {event.rsvpDeadline && !submitted && (
+            <p className="mt-1 text-sm font-medium text-primary" data-testid="text-rsvp-deadline">
+              Please respond by {event.rsvpDeadline}
+            </p>
+          )}
+          {event.rsvpPhone && !submitted && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Prefer to call or text? Reach the host at{" "}
+              <a href={`tel:${event.rsvpPhone}`} className="font-medium text-primary underline" data-testid="link-rsvp-phone">
+                {event.rsvpPhone}
+              </a>
+            </p>
+          )}
+        </div>
+
+        <div
+          className={`mt-8 grid gap-8 lg:items-start lg:justify-center lg:gap-10 ${
+            inviteRevealed ? "lg:grid-cols-[minmax(0,30rem)_minmax(20rem,24rem)]" : "lg:grid-cols-[minmax(0,32rem)]"
+          }`}
+          data-testid="rsvp-presentation-grid"
+        >
+          <section
+            className="min-w-0 lg:rounded-[1.75rem] lg:border lg:border-border/80 lg:bg-card/60 lg:p-7 lg:shadow-[0_24px_70px_-42px_rgba(36,29,24,0.6)]"
+            data-testid="rsvp-invitation-mount"
+          >
 
         {showEnvelope && dna && !envelopeRemoved && (
           <div
             className={`transition-all duration-500 ${
-              envelopeDismissed ? "pointer-events-none h-0 overflow-hidden opacity-0" : "mt-6 opacity-100"
+              envelopeDismissed ? "pointer-events-none h-0 overflow-hidden opacity-0" : "opacity-100"
             }`}
             data-testid="section-envelope"
           >
@@ -332,7 +345,7 @@ export default function Rsvp() {
           // a clean neutral surface with no border, no overlaid text, and no
           // concept styling. The event details above and the RSVP form below
           // carry all the information, in the page's normal typography.
-          <div className="mt-6 overflow-hidden rounded-md bg-muted" data-testid="card-custom-invite">
+          <div className="mt-6 overflow-hidden rounded-md bg-muted lg:mt-0" data-testid="card-custom-invite">
             <img
               src={event.customInviteImageUrl}
               alt={`Invitation to ${event.eventName}`}
@@ -342,7 +355,7 @@ export default function Rsvp() {
           </div>
         ) : themeView ? (
           <div
-            className="mt-6 overflow-hidden rounded-sm shadow-[0_2px_6px_rgba(23,23,23,0.09),0_24px_48px_-20px_rgba(23,23,23,0.38)] ring-1 ring-black/5"
+            className="mt-6 overflow-hidden rounded-sm shadow-[0_2px_6px_rgba(23,23,23,0.09),0_24px_48px_-20px_rgba(23,23,23,0.38)] ring-1 ring-black/5 lg:mt-0"
             data-testid="card-theme-invite"
           >
             <ThemeInvitation
@@ -358,7 +371,7 @@ export default function Rsvp() {
             />
           </div>
         ) : (
-        <Card className="mt-6 overflow-hidden border-card-border" style={concept ? conceptBorderStyle(concept) : undefined}>
+        <Card className="mt-6 overflow-hidden border-card-border lg:mt-0" style={concept ? conceptBorderStyle(concept) : undefined}>
           {concept ? (
             <>
               {event.inviteIllustrationUrl && concept.layoutStyle === "banner" && (
@@ -512,9 +525,17 @@ export default function Rsvp() {
         )}
         </div>
 
+          </section>
+
+          {inviteRevealed && (
+            <section
+              className="min-w-0 lg:rounded-2xl lg:border lg:border-border/80 lg:bg-card lg:p-6 lg:shadow-[0_18px_52px_-38px_rgba(36,29,24,0.55)]"
+              data-testid="section-rsvp-controls"
+            >
+
         {submitted ? (
           <Card
-            className="mt-6 overflow-hidden border-card-border bg-secondary/10"
+            className="mt-6 overflow-hidden border-card-border bg-secondary/10 lg:mt-0"
             style={concept ? conceptBorderStyle(concept) : undefined}
             data-testid="card-thank-you"
           >
@@ -557,7 +578,7 @@ export default function Rsvp() {
             </CardContent>
           </Card>
         ) : !selected ? (
-          <div className="mt-8">
+          <div className="mt-8 lg:mt-0">
             <label className="text-sm font-medium text-foreground">Find your name to RSVP</label>
             <div className="relative mt-2">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -628,7 +649,7 @@ export default function Rsvp() {
             )}
           </div>
         ) : (
-          <div className="mt-8 space-y-5">
+          <div className="mt-8 space-y-5 lg:mt-0">
             <div className="flex items-center gap-3 rounded-md border border-primary/30 bg-primary/5 p-3.5">
               <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-primary/15 text-base font-semibold text-primary">
                 {selected.name.charAt(0).toUpperCase()}
@@ -751,6 +772,9 @@ export default function Rsvp() {
             </Button>
           </div>
         )}
+            </section>
+          )}
+        </div>
       </main>
     </div>
   );

@@ -161,7 +161,7 @@ function WaxSeal({ color, glyph, opened }: { color: string; glyph: string; opene
   const ink = readableInk(color);
   return (
     <span
-      className="absolute left-1/2 top-[50%] z-40 flex h-11 w-11 -translate-x-1/2 items-center justify-center rounded-full text-base transition-all duration-500"
+      className="absolute left-1/2 top-[50%] z-40 flex h-9 w-9 -translate-x-1/2 items-center justify-center rounded-full text-sm transition-all duration-500 sm:h-10 sm:w-10"
       style={{
         // Off-centre highlight reads as wax catching light; the inset ring is the
         // rim left behind when a seal is pressed.
@@ -227,6 +227,7 @@ export default function EnvelopeMockup({
   const flapFold = shadeHex(envelopeColor, premium ? -0.2 : -0.14);
   const pocketTop = shadeHex(envelopeColor, 0.04);
   const stampPaper = shadeHex(envelopeColor, 0.82);
+  const labelInk = readableInk(stampPaper);
   const { glyph } = stampGlyph(stampStyle);
   // Without curated postage the single stamp control has to serve both jobs, so
   // a "wax-seal" choice moves the motif onto the fold instead of the corner.
@@ -244,8 +245,8 @@ export default function EnvelopeMockup({
         // Layered shadow: a tight contact shadow plus a wider ambient one, which
         // is what lifts the envelope off the page instead of shadow-sm's haze.
         boxShadow: premium
-          ? "0 1px 2px rgba(24,18,12,0.13), 0 10px 24px -6px rgba(24,18,12,0.28), 0 24px 48px -20px rgba(24,18,12,0.22)"
-          : "0 2px 4px rgba(24,18,12,0.14), 0 14px 30px -8px rgba(24,18,12,0.3)",
+          ? `inset 0 0 0 1px ${ink}26, 0 1px 2px rgba(24,18,12,0.13), 0 10px 24px -6px rgba(24,18,12,0.28), 0 24px 48px -20px rgba(24,18,12,0.22)`
+          : `inset 0 0 0 1px ${ink}24, 0 2px 4px rgba(24,18,12,0.14), 0 14px 30px -8px rgba(24,18,12,0.3)`,
       }}
     >
       {/* Liner + front pocket, clipped so rounded corners stay masked while the
@@ -308,7 +309,7 @@ export default function EnvelopeMockup({
           scale from the 240px editor preview up to the full-width guest view. */}
       {showPostage && (
         <span
-          className="absolute right-[6%] top-[52%] z-20 w-[15%]"
+          className="absolute right-[7%] top-[53%] z-20 w-[13%]"
           style={{
             aspectRatio: "44 / 52",
             filter: "drop-shadow(0 1px 2px rgba(24,18,12,0.3))",
@@ -327,8 +328,13 @@ export default function EnvelopeMockup({
       )}
 
       <span
-        className="absolute inset-x-0 bottom-5 z-20 px-6 text-center text-sm font-medium tracking-wide"
-        style={{ color: ink }}
+        className="absolute bottom-[9%] left-[18%] right-[18%] z-20 rounded-[3px] border px-3 py-2 text-center font-serif text-xs font-medium tracking-[0.1em] sm:text-sm"
+        style={{
+          color: labelInk,
+          backgroundColor: stampPaper,
+          borderColor: shadeHex(stampPaper, -0.12),
+          boxShadow: "0 1px 2px rgba(24,18,12,0.12)",
+        }}
         data-testid="text-envelope-addressee"
       >
         {addressee}
