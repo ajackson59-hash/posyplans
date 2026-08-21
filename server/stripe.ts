@@ -23,6 +23,13 @@ export const CHECKOUT_PRICES = {
   plusAnnual: 99,
 } as const;
 
+// Posy's published prices are USD prices. Stripe Adaptive Pricing otherwise
+// localizes from the checkout browser's IP, which can make a U.S. checkout
+// appear in another currency when it passes through a remote browser.
+export const USD_CHECKOUT_SESSION_DEFAULTS = {
+  adaptive_pricing: { enabled: false },
+} as const satisfies Pick<Stripe.Checkout.SessionCreateParams, "adaptive_pricing">;
+
 /** Conversion value for a Plus subscription by billing interval. Defaults to
  *  the annual price when the interval is unknown. */
 export function plusPriceValue(interval: BillingInterval | null | undefined): number {
