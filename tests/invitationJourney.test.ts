@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { hasSelectedInvitationDesign } from "@/lib/invitationState";
+import { getInvitationJourneyState, hasSelectedInvitationDesign } from "@/lib/invitationState";
 import type { EventRecord } from "@/lib/types";
 
 function event(overrides: Partial<EventRecord> = {}): EventRecord {
@@ -39,6 +39,23 @@ describe("invitation completion state", () => {
     ).toBe(true);
     expect(hasSelectedInvitationDesign(event({ inviteIllustrationUrl: "/generated.png" }))).toBe(true);
     expect(hasSelectedInvitationDesign(event({ inviteArtworkUrl: "/legacy.png" }))).toBe(true);
+  });
+
+  it("distinguishes invitations that still need review from invitations already live", () => {
+    const selected = {
+      inviteArtworkUrl: "/applied.png",
+    };
+
+    expect(getInvitationJourneyState(event())).toBe("not_started");
+    expect(getInvitationJourneyState(event({ ...selected, inviteStatus: "draft" }))).toBe("draft");
+    expect(getInvitationJourneyState(event({ ...selected, inviteStatus: "published" }))).toBe("live");
+  });
+
+  it("keeps newly created invitations private until the host publishes", () => {
+    const source = fs.readFileSync(path.resolve("server/storage.ts"), "utf8");
+    const createEvent = source.slice(source.indexOf("async createEvent"), source.indexOf("async getEventByOwnerToken"));
+    expect(createEvent).toContain('inviteStatus: "draft"');
+    expect(createEvent.indexOf('inviteStatus: "draft"')).toBeGreaterThan(createEvent.indexOf("...data"));
   });
 });
 

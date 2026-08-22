@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useParams, useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequestJson } from "@/lib/queryClient";
+import { getCheckoutHandoffPhase } from "@/lib/checkoutHandoff";
 import { touchRecentEvent } from "@/lib/eventRecovery";
 import { Wordmark } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
@@ -136,6 +137,12 @@ export default function DraftGenerating() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [returningFromCheckout]);
 
+  const checkoutHandoffPhase = getCheckoutHandoffPhase(
+    returningFromCheckout,
+    confirmCheckout.isSuccess,
+    confirmCheckout.isError,
+  );
+
   const startGeneration = useMutation({
     mutationFn: () =>
       apiRequestJson("POST", `/api/events/owner/${ownerToken}/master-planner/generate`, {}),
@@ -207,12 +214,12 @@ export default function DraftGenerating() {
   // while a returning checkout is still being confirmed.
   useEffect(() => {
     if (startedGenerationRef.current || !ownerToken) return;
-    if (returningFromCheckout && !confirmCheckout.isSuccess && !confirmCheckout.isError) return;
+    if (checkoutHandoffPhase === "confirming" || checkoutHandoffPhase === "failed") return;
     if (!entitlement.data?.canGenerate) return;
     startedGenerationRef.current = true;
     startGeneration.mutate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ownerToken, entitlement.data?.canGenerate, returningFromCheckout, confirmCheckout.isSuccess, confirmCheckout.isError]);
+  }, [ownerToken, entitlement.data?.canGenerate, checkoutHandoffPhase]);
 
   const { data: status } = useQuery<MasterPlannerStatus>({
     queryKey: ["master-planner-status", ownerToken],
@@ -247,12 +254,51 @@ export default function DraftGenerating() {
 
   // The paywall shows when the event isn't yet allowed to draft: either the
   // upfront entitlement check says so, or the generate call came back 402.
-  const stillConfirming = returningFromCheckout && (confirmCheckout.isPending || (!confirmCheckout.isSuccess && !confirmCheckout.isError));
   const showPaywall =
-    !stillConfirming &&
+    checkoutHandoffPhase === "none" &&
     ((entitlement.isSuccess && !entitlement.data.canGenerate && !startGeneration.isSuccess) || needsPaymentFromStart);
 
   const checkoutConfigured = config?.configured ?? false;
+
+  if (checkoutHandoffPhase === "confirming") {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 py-16">
+        <Link href="/" data-testid="link-logo-home">
+          <Wordmark className="mb-10" />
+        </Link>
+        <div className="w-full max-w-md space-y-4 text-center" data-testid="checkout-handoff-confirming">
+          <Loader2 className="mx-auto h-9 w-9 animate-spin text-primary" />
+          <h1 className="font-serif text-2xl font-semibold text-foreground">Payment received</h1>
+          <p className="text-sm text-muted-foreground">
+            Securing your event now. Posy will start building your plan as soon as the unlock is confirmed.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (checkoutHandoffPhase === "failed") {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 py-16">
+        <Link href="/" data-testid="link-logo-home">
+          <Wordmark className="mb-10" />
+        </Link>
+        <div className="w-full max-w-md space-y-4 text-center" data-testid="checkout-handoff-failed">
+          <h1 className="font-serif text-2xl font-semibold text-foreground">Let's finish unlocking your event</h1>
+          <p className="text-sm text-muted-foreground">
+            Stripe sent you back successfully, but Posy couldn't confirm the unlock just yet. Trying again will not create another charge.
+          </p>
+          <Button
+            onClick={() => confirmCheckout.mutate()}
+            disabled={confirmCheckout.isPending}
+            data-testid="button-retry-checkout-confirmation"
+          >
+            {confirmCheckout.isPending ? "Confirming…" : "Try unlocking again"}
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (showPaywall) {
     return (
@@ -563,6 +609,17 @@ export default function DraftGenerating() {
       <Link href="/" data-testid="link-logo-home">
         <Wordmark className="mb-10" />
       </Link>
+      {checkoutHandoffPhase === "confirmed" && !capExceeded && !startupFailed && !hasFailed && (
+        <div className="mb-8 max-w-md space-y-2 text-center" data-testid="checkout-handoff-confirmed">
+          <CheckCircle2 className="mx-auto h-8 w-8 text-primary" />
+          <h1 className="font-serif text-2xl font-semibold text-foreground">
+            Payment confirmed — Posy is building your plan
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Keep this page open. Your first draft will open automatically when it's ready.
+          </p>
+        </div>
+      )}
       <div className="w-full max-w-md space-y-4" data-testid="draft-generating-checklist">
         {CHECKLIST.map((line) => {
           const done = line.isDone(completedStages);

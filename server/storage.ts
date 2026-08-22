@@ -98,6 +98,10 @@ export class DatabaseStorage implements IStorage {
     const shareSlug = randomToken(10);
     const rows = await db.insert(events).values({
       ...data,
+      // New invitations stay private until the host has reviewed and
+      // deliberately published them. The database default remains published
+      // only to preserve the behavior of pre-existing rows.
+      inviteStatus: "draft",
       ownerToken,
       shareSlug,
       createdAt: Date.now(),

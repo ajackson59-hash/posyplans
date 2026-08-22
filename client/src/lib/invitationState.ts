@@ -15,3 +15,10 @@ export function hasSelectedInvitationDesign(event: EventRecord): boolean {
       event.inviteIllustrationUrl?.trim(),
   );
 }
+
+export type InvitationJourneyState = "not_started" | "draft" | "live";
+
+export function getInvitationJourneyState(event: EventRecord): InvitationJourneyState {
+  if (!hasSelectedInvitationDesign(event)) return "not_started";
+  return event.inviteStatus === "draft" ? "draft" : "live";
+}
