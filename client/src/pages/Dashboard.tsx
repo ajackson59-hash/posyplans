@@ -64,7 +64,7 @@ import AiDraftedBadge from "@/components/AiDraftedBadge";
 import ReadinessScoreCard from "@/components/ReadinessScoreCard";
 import NextActions from "@/components/NextActions";
 import ReadinessMoment from "@/components/ReadinessMoment";
-import { hasSelectedInvitationDesign } from "@/lib/invitationState";
+import { getInvitationJourneyState, hasSelectedInvitationDesign } from "@/lib/invitationState";
 import { parseInviteDesignConcept, conceptHeadingStyle, conceptBodyStyle, conceptBorderStyle } from "@shared/inviteDesign";
 import {
   Copy,
@@ -594,6 +594,25 @@ export default function Dashboard() {
 
   const { event, guests } = data;
   const hasInvitationDesign = hasSelectedInvitationDesign(event);
+  const invitationJourneyState = getInvitationJourneyState(event);
+  const invitationCallout =
+    invitationJourneyState === "live"
+      ? {
+          title: "Your invitation is live",
+          detail: "Preview the guest experience, manage RSVP settings, or update the design and wording at any time.",
+          action: "Manage invitation",
+        }
+      : invitationJourneyState === "draft"
+        ? {
+            title: "Your invitation is ready to finish",
+            detail: "Review the design and wording, choose your RSVP settings, then publish it for guests.",
+            action: "Finish invitation",
+          }
+        : {
+            title: "Create your invitation",
+            detail: "Posy already has your event style. Start with a custom idea, choose a ready-made design, or upload your own.",
+            action: "Create invitation",
+          };
 
   return (
     <div className="min-h-screen bg-background">
@@ -610,7 +629,7 @@ export default function Dashboard() {
             >
               Upgrade to Plus
             </Link>
-            {hasInvitationDesign && (
+            {invitationJourneyState === "live" && (
               <a
                 href={`/rsvp/${event.shareSlug}`}
                 target="_blank"
@@ -723,12 +742,10 @@ export default function Dashboard() {
               </div>
               <div>
                 <p className="font-serif text-lg font-semibold text-foreground">
-                  {hasInvitationDesign ? "Your invitation is ready to finish" : "Create your invitation"}
+                  {invitationCallout.title}
                 </p>
                 <p className="mt-0.5 max-w-2xl text-sm text-muted-foreground">
-                  {hasInvitationDesign
-                    ? "Review the design and wording, choose your RSVP settings, then share it with guests."
-                    : "Posy already has your event style. Start with a custom idea, choose a ready-made design, or upload your own."}
+                  {invitationCallout.detail}
                 </p>
               </div>
             </div>
@@ -737,7 +754,7 @@ export default function Dashboard() {
               onClick={() => navigateToTab("guests", "invitation-design-section")}
               data-testid="button-open-invitation-workspace"
             >
-              {hasInvitationDesign ? "Finish invitation" : "Create invitation"}
+              {invitationCallout.action}
             </Button>
           </CardContent>
         </Card>
