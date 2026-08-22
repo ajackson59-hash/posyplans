@@ -49,7 +49,7 @@ import { reserveOrResumeFreeDraft, getEntitlementSummary, safeParseStages, canGe
 import { runMasterPlannerOrchestration } from "./masterPlannerOrchestrator";
 import type Stripe from "stripe";
 import { parseCookies, serializeConsentCookie } from "./cookies";
-import { getStripe, getPriceId, getSparkPriceId, isStripeConfigured, getWebhookSecret, planTierFromSubscriptionStatus, plusPriceValue, CHECKOUT_PRICES, type BillingInterval } from "./stripe";
+import { getStripe, getPriceId, getSparkPriceId, isStripeConfigured, getWebhookSecret, planTierFromSubscriptionStatus, plusPriceValue, CHECKOUT_PRICES, USD_CHECKOUT_SESSION_DEFAULTS, type BillingInterval } from "./stripe";
 import { sendMetaPurchaseEvent } from "./metaCapi";
 import { registerAiFirstRoutes } from "./aiFirst/routes";
 import { DbPreviewStore, DbUsageStore, DbRunStore, DbArtworkAttemptStore } from "./aiFirst/dbStore";
@@ -1764,6 +1764,7 @@ export async function registerRoutes(
       try {
         const session = await stripe.checkout.sessions.create({
           mode: "payment",
+          ...USD_CHECKOUT_SESSION_DEFAULTS,
           customer_email: email,
           line_items: [{ price: sparkPriceId, quantity: 1 }],
           success_url: `${origin}/draft-generating/${encodeURIComponent(returnToken)}?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
@@ -1791,6 +1792,7 @@ export async function registerRoutes(
     try {
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
+        ...USD_CHECKOUT_SESSION_DEFAULTS,
         customer_email: email,
         line_items: [{ price: priceId, quantity: 1 }],
         payment_method_collection: "always",
