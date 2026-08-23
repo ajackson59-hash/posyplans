@@ -742,7 +742,7 @@ export default function LiveInviteEditor({ ownerToken, event, onBrowse }: LiveIn
           disabled={uploadCustomDesign.isPending}
           className="text-[11px] font-medium text-primary underline underline-offset-2 disabled:opacity-60"
         >
-          {uploadCustomDesign.isPending ? "Uploading your design…" : "Already have a design? Upload it instead"}
+          {uploadCustomDesign.isPending ? "Uploading your invitation…" : "Upload a finished invitation instead"}
         </button>
         <input
           ref={customDesignInputRef}
