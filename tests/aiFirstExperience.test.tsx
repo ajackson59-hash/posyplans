@@ -7,7 +7,7 @@
 // switch unmounts.
 
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, act } from "@testing-library/react";
 import { DEFAULT_FEATURE_FLAGS } from "@shared/featureFlags";
@@ -291,6 +291,31 @@ describe("cards appear as they are approved", () => {
     }
   });
 
+  it("makes a single invitation visibly selected for refinement", async () => {
+    renderExperience({ directions: [direction(0)], hasRun: true });
+
+    await waitFor(() => expect(screen.getByTestId("section-ask-posy")).toBeTruthy());
+    expect(screen.getByTestId("button-select-direction-0").getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByTestId("text-direction-selection-0").textContent).toContain("Selected to refine");
+    expect(screen.getByTestId("section-ask-posy").textContent).toContain("Refining Direction 0");
+  });
+
+  it("makes selection explicit before direction-specific actions when there are multiple invitations", async () => {
+    const setSelectedPreviewId = vi.fn();
+    renderExperience({
+      directions: [direction(0), direction(1)],
+      hasRun: true,
+      setSelectedPreviewId,
+    });
+
+    await waitFor(() => expect(screen.getByTestId("button-ask-posy-refine")).toBeTruthy());
+    expect((screen.getByTestId("button-ask-posy-refine") as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByTestId("text-direction-selection-1").textContent).toContain("Select to refine");
+
+    fireEvent.click(screen.getByTestId("button-select-direction-1"));
+    expect(setSelectedPreviewId).toHaveBeenCalledWith("preview-1");
+  });
+
   it("makes Help me choose advisory and never starts generation", async () => {
     const run = vi.fn();
     renderExperience({ directions: [direction(0), direction(1)], hasRun: true, run });
@@ -300,7 +325,7 @@ describe("cards appear as they are approved", () => {
 
     expect(run).not.toHaveBeenCalled();
     expect(screen.getByTestId("text-help-choose").textContent).toContain(
-      "Choose based on the overall feeling and composition first",
+      "Choose the invitation whose overall feeling and composition is closest",
     );
     expect(screen.queryByTestId("card-confirm-additional-generation")).toBeNull();
   });
@@ -312,14 +337,45 @@ describe("cards appear as they are approved", () => {
 
     fireEvent.click(screen.getByTestId("button-ask-posy-more-modern"));
     expect(run).not.toHaveBeenCalled();
-    expect(screen.getByTestId("card-confirm-additional-generation").textContent).toContain(
-      "Create 2 new variations",
-    );
+    const askPosy = screen.getByTestId("section-ask-posy");
+    const confirmation = within(askPosy).getByTestId("card-confirm-additional-generation");
+    expect(confirmation.getAttribute("data-placement")).toBe("refinement");
+    expect(confirmation.textContent).toContain("Update this invitation?");
 
     fireEvent.click(screen.getByTestId("button-confirm-additional-generation"));
     expect(run).toHaveBeenCalledWith(
       expect.objectContaining({
         action: "more-modern",
+        directionCount: 2,
+        confirmAdditionalGeneration: true,
+      }),
+    );
+  });
+
+  it("keeps a typed update and its spend confirmation beside the refinement controls", async () => {
+    const run = vi.fn();
+    renderExperience({
+      directions: [direction(0)],
+      hasRun: true,
+      typedDirection: "less literal, more atmospheric",
+      run,
+    });
+
+    await waitFor(() => expect(screen.getByTestId("button-submit-ask-posy-direction")).toBeTruthy());
+    expect(screen.getByTestId("button-submit-ask-posy-direction").textContent).toContain("Update my invitation");
+    fireEvent.click(screen.getByTestId("button-submit-ask-posy-direction"));
+
+    expect(run).not.toHaveBeenCalled();
+    const confirmation = within(screen.getByTestId("section-ask-posy")).getByTestId(
+      "card-confirm-additional-generation",
+    );
+    expect(confirmation.textContent).toContain("nothing starts until you confirm");
+
+    fireEvent.click(within(confirmation).getByTestId("button-confirm-additional-generation"));
+    expect(run).toHaveBeenCalledWith(
+      expect.objectContaining({
+        direction: "less literal, more atmospheric",
+        concept: expect.objectContaining({ conceptName: "Direction 0" }),
         directionCount: 2,
         confirmAdditionalGeneration: true,
       }),

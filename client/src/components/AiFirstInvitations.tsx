@@ -53,6 +53,13 @@ interface AiFirstInvitationsProps {
   onReviewEventStyle?: () => void;
 }
 
+type RunPlacement = "primary" | "refinement";
+
+interface PendingAdditionalRun {
+  options: AiFirstRunOptions;
+  placement: RunPlacement;
+}
+
 export default function AiFirstInvitations({
   ownerToken,
   event,
@@ -61,9 +68,10 @@ export default function AiFirstInvitations({
   onReviewEventStyle,
 }: AiFirstInvitationsProps) {
   const { toast } = useToast();
-  const [pendingAdditionalRun, setPendingAdditionalRun] = useState<AiFirstRunOptions | null>(null);
+  const [pendingAdditionalRun, setPendingAdditionalRun] = useState<PendingAdditionalRun | null>(null);
   const [requestedTargetCount, setRequestedTargetCount] = useState<number | null>(null);
   const [choiceAdvice, setChoiceAdvice] = useState<string | null>(null);
+  const [activeRunPlacement, setActiveRunPlacement] = useState<RunPlacement>("primary");
 
   const status = useQuery<AiFirstStatus>({
     queryKey: [`/api/events/owner/${ownerToken}/ai-first/status`],
@@ -109,8 +117,17 @@ export default function AiFirstInvitations({
     }
     return Array.from(previous.values());
   }, [durableDirections, ordered, session.savedDirections]);
+  const selectableDirections = useMemo(() => {
+    const byPreviewId = new Map<string, FinishedDirection>();
+    for (const direction of availableDirections) byPreviewId.set(direction.previewId, direction);
+    for (const direction of previousDirections) byPreviewId.set(direction.previewId, direction);
+    return Array.from(byPreviewId.values());
+  }, [availableDirections, previousDirections]);
+  const selectedDirection =
+    selectableDirections.find((direction) => direction.previewId === session.selectedPreviewId) ??
+    (selectableDirections.length === 1 ? selectableDirections[0] : null);
   const recoveredAfterRefresh = ordered.length === 0 && durableDirections.length > 0 && !session.running;
-  const hasPriorDirection = session.hasRun || durableDirections.length > 0;
+  const hasPriorDirection = session.hasRun || availableDirections.length > 0;
 
   const needsVibe = status.data?.briefQuestion && !session.vibeAnswer.trim() && !hasPriorDirection;
   const latestProgress = session.progress[session.progress.length - 1] ?? "";
@@ -129,29 +146,30 @@ export default function AiFirstInvitations({
   const confirmationRequired =
     Boolean(status.data?.additionalGenerationConfirmationRequired) || hasPriorDirection;
 
-  const startRun = (options: AiFirstRunOptions = {}) => {
+  const startRun = (options: AiFirstRunOptions = {}, placement: RunPlacement = "primary") => {
     setRequestedTargetCount(Math.min(configuredTargetCount, options.directionCount ?? configuredTargetCount));
     setChoiceAdvice(null);
+    setActiveRunPlacement(placement);
     void session.run(options);
   };
 
-  const requestRun = (options: AiFirstRunOptions = {}) => {
+  const requestRun = (options: AiFirstRunOptions = {}, placement: RunPlacement = "primary") => {
     if (!status.data) return;
     if (confirmationRequired) {
       // This first press is deliberately non-provider. It only opens the
       // confirmation below; the second, labeled press is the one that may
       // start another paid run.
-      setPendingAdditionalRun(options);
+      setPendingAdditionalRun({ options, placement });
       return;
     }
-    startRun(options);
+    startRun(options, placement);
   };
 
   const confirmAdditionalRun = () => {
     if (!pendingAdditionalRun || generateDisabled) return;
-    const options = pendingAdditionalRun;
+    const { options, placement } = pendingAdditionalRun;
     setPendingAdditionalRun(null);
-    startRun({ ...options, confirmAdditionalGeneration: true });
+    startRun({ ...options, confirmAdditionalGeneration: true }, placement);
   };
 
   // The header states only what is true at the moment it renders. The
@@ -191,8 +209,9 @@ export default function AiFirstInvitations({
 
   const creativeBrief = eventStyleSummary(event);
   const pendingCount = pendingAdditionalRun
-    ? Math.min(configuredTargetCount, pendingAdditionalRun.directionCount ?? configuredTargetCount)
+    ? Math.min(configuredTargetCount, pendingAdditionalRun.options.directionCount ?? configuredTargetCount)
     : configuredTargetCount;
+  const refinementRunning = session.running && activeRunPlacement === "refinement";
 
   return (
     <div data-testid="ai-first-invitations">
@@ -281,43 +300,14 @@ export default function AiFirstInvitations({
         </button>
       </div>
 
-      {pendingAdditionalRun && (
-        <div
-          className="mb-6 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-foreground"
-          data-testid="card-confirm-additional-generation"
-          role="alert"
-        >
-          <p className="font-semibold">
-            {pendingCount === 1
-              ? "Create another invitation idea?"
-              : pendingCount === TARGET_DIRECTION_COUNT
-                ? "Create four new invitation ideas?"
-                : `Create ${pendingCount} new variations?`}
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            This uses another generation from your plan. Your current ideas will remain available, and nothing starts until you confirm.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Button
-              type="button"
-              size="sm"
-              onClick={confirmAdditionalRun}
-              disabled={generateDisabled}
-              data-testid="button-confirm-additional-generation"
-            >
-              Confirm and create
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => setPendingAdditionalRun(null)}
-              data-testid="button-cancel-additional-generation"
-            >
-              Cancel
-            </Button>
-          </div>
-        </div>
+      {pendingAdditionalRun?.placement === "primary" && (
+        <AdditionalRunConfirmation
+          count={pendingCount}
+          refinement={false}
+          disabled={generateDisabled}
+          onConfirm={confirmAdditionalRun}
+          onCancel={() => setPendingAdditionalRun(null)}
+        />
       )}
 
       {/* Progress is the run's own events, never a timer. */}
@@ -356,7 +346,7 @@ export default function AiFirstInvitations({
               key={direction.previewId || direction.index}
               direction={direction}
               event={event}
-              selected={session.selectedPreviewId === direction.previewId}
+              selected={selectedDirection?.previewId === direction.previewId}
               applied={approvedDesigns.data?.appliedPreviewId === direction.previewId}
               applying={apply.isPending}
               onSelect={() => session.setSelectedPreviewId(direction.previewId)}
@@ -377,7 +367,7 @@ export default function AiFirstInvitations({
                 key={`saved-${direction.previewId || direction.index}`}
                 direction={direction}
                 event={event}
-                selected={session.selectedPreviewId === direction.previewId}
+                selected={selectedDirection?.previewId === direction.previewId}
                 applied={approvedDesigns.data?.appliedPreviewId === direction.previewId}
                 applying={apply.isPending}
                 onSelect={() => session.setSelectedPreviewId(direction.previewId)}
@@ -395,30 +385,36 @@ export default function AiFirstInvitations({
         <section className="mt-8 rounded-md border border-border bg-muted/30 p-4" data-testid="section-ask-posy">
           <p className="text-sm font-semibold text-foreground">Make it feel more like you</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Select an idea, then tell Posy what should stay and what should change.
+            {selectedDirection
+              ? `Refining ${selectedDirection.concept.conceptName}. Tell Posy what should stay and what should change.`
+              : "Choose an invitation above, then tell Posy what should stay and what should change."}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {actions.map((action) => (
               <button
                 key={action.id}
                 type="button"
-                disabled={session.running}
+                disabled={
+                  session.running ||
+                  (!action.advisory && action.id !== "different-directions" && !selectedDirection)
+                }
                 onClick={() => {
-                  const selected = availableDirections.find((d) => d.previewId === session.selectedPreviewId) ?? availableDirections[0];
                   if (action.advisory) {
                     setChoiceAdvice(
-                      availableDirections.length === 1
-                        ? `Start with ${selected.concept.conceptName} if its overall composition feels right. Artwork, color and typography can all be adjusted without losing the idea.`
-                        : `You selected ${selected.concept.conceptName}. Choose based on the overall feeling and composition first — artwork, colors and typography are easier to adjust afterward.`,
+                      selectedDirection
+                        ? selectableDirections.length === 1
+                          ? `Start with ${selectedDirection.concept.conceptName} if its overall composition feels right. Artwork, color and typography can all be adjusted without losing the idea.`
+                          : `You selected ${selectedDirection.concept.conceptName}. Choose based on the overall feeling and composition first — artwork, colors and typography are easier to adjust afterward.`
+                        : "Choose the invitation whose overall feeling and composition is closest to what you want. Posy can adjust its artwork, colors and typography afterward.",
                     );
                     return;
                   }
                   requestRun({
                     action: action.id,
-                    concept: selected?.concept,
-                    avoidConceptNames: availableDirections.map((d) => d.concept.conceptName),
+                    concept: selectedDirection?.concept,
+                    avoidConceptNames: selectableDirections.map((d) => d.concept.conceptName),
                     directionCount: action.resultCount,
-                  });
+                  }, "refinement");
                 }}
                 className="rounded-full border border-border bg-background px-3.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-60"
                 data-testid={`button-ask-posy-${action.id}`}
@@ -438,12 +434,29 @@ export default function AiFirstInvitations({
             type="button"
             size="sm"
             className="mt-2"
-            disabled={session.running || !session.typedDirection.trim()}
-            onClick={() => requestRun({ direction: session.typedDirection.trim(), directionCount: 2 })}
+            disabled={session.running || !session.typedDirection.trim() || !selectedDirection}
+            onClick={() => requestRun({
+              direction: session.typedDirection.trim(),
+              concept: selectedDirection?.concept,
+              avoidConceptNames: selectableDirections.map((direction) => direction.concept.conceptName),
+              directionCount: 2,
+            }, "refinement")}
             data-testid="button-submit-ask-posy-direction"
           >
-            Update my ideas
+            {refinementRunning ? (
+              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" aria-hidden />
+            ) : null}
+            {refinementRunning ? "Updating invitation…" : "Update my invitation"}
           </Button>
+          {pendingAdditionalRun?.placement === "refinement" && (
+            <AdditionalRunConfirmation
+              count={pendingCount}
+              refinement
+              disabled={generateDisabled}
+              onConfirm={confirmAdditionalRun}
+              onCancel={() => setPendingAdditionalRun(null)}
+            />
+          )}
           {choiceAdvice && (
             <p className="mt-3 rounded-md border border-border bg-background px-3 py-2 text-xs text-foreground" data-testid="text-help-choose">
               {choiceAdvice}
@@ -462,6 +475,62 @@ export default function AiFirstInvitations({
           </ul>
         </details>
       )}
+    </div>
+  );
+}
+
+function AdditionalRunConfirmation({
+  count,
+  refinement,
+  disabled,
+  onConfirm,
+  onCancel,
+}: {
+  count: number;
+  refinement: boolean;
+  disabled: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div
+      className={`${refinement ? "mt-3" : "mb-6"} rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-foreground`}
+      data-testid="card-confirm-additional-generation"
+      data-placement={refinement ? "refinement" : "primary"}
+      role="alert"
+    >
+      <p className="font-semibold">
+        {refinement
+          ? "Update this invitation?"
+          : count === 1
+            ? "Create another invitation idea?"
+            : count === TARGET_DIRECTION_COUNT
+              ? "Create four new invitation ideas?"
+              : `Create ${count} new variations?`}
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        This uses another generation from your plan. Your current ideas will remain available, and nothing starts until you confirm.
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Button
+          type="button"
+          size="sm"
+          onClick={onConfirm}
+          disabled={disabled}
+          data-testid="button-confirm-additional-generation"
+        >
+          {refinement ? "Confirm and update" : "Confirm and create"}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={onCancel}
+          data-testid="button-cancel-additional-generation"
+        >
+          Cancel
+        </Button>
+      </div>
     </div>
   );
 }
@@ -514,6 +583,15 @@ function DirectionCard({
           artworkOpacity={direction.artworkOpacity}
           decorative
         />
+        <span
+          className={`flex items-center justify-center gap-1.5 border-t px-3 py-2 text-xs font-semibold ${
+            selected ? "border-foreground bg-foreground text-background" : "border-border bg-background text-foreground"
+          }`}
+          data-testid={`text-direction-selection-${direction.index}`}
+        >
+          {selected ? <Check className="h-3.5 w-3.5" aria-hidden /> : null}
+          {selected ? "Selected to refine" : "Select to refine"}
+        </span>
       </button>
       <figcaption className="mt-2.5">
         <p className="text-sm font-medium text-foreground">{direction.concept.conceptName}</p>
