@@ -159,6 +159,8 @@ The illustrationPrompt is the most important field — it directly controls the 
 
   A) SUBJECT-DRIVEN THEMES (the theme names a concrete subject that IS the party): construction, dinosaur, princess, superhero, unicorn, mermaid, space/astronaut, pirate, dragon, cars/trucks, safari/jungle, under-the-sea, farm (for kids), fairy, ninja, sports (basketball/soccer/etc.), music/rock, movie/character themes, holiday themes (halloween, christmas), etc. For these, the subject IS the point — hosts and guests EXPECT to see that subject prominently illustrated. Feature the subject in at least 3 of the 4 shown concepts, rendered in each lane's style (a construction party gets: watercolor bulldozer for editorial-premium, cartoon dump truck for playful-illustrated, bold flat hard-hat icon for bold-graphic, storybook excavator scene for storybook-whimsical, single minimal orange cone for minimal-modern, hand-drawn wooden-toy truck for handcrafted-rustic). NEVER default to generic confetti, geometric shapes, or botanicals when the theme names a specific subject. NEVER produce a concept that a host would look at and think "that has nothing to do with my theme".
 
+  NAMED CHARACTER THEMES: When the host explicitly names a film, franchise or character theme, retain that exact named identity and its recognizable requested characters. Do not translate it into a merely adjacent aesthetic. For example, “KPop Demon Hunters” must visibly feature the recognizable heroine trio and supernatural demon-hunting story-world cues—not just generic neon, microphones or an unnamed K-pop group. Never add a franchise logo, rendered title, watermark or copied invitation layout.
+
   B) AESTHETIC/MOOD THEMES (the theme names a vibe, era, or aesthetic — not a subject): rustic farmhouse, minimalist beach, moody garden, tropical, boho, industrial, art deco, mid-century, coastal, Tuscan, garden party (adult), cocktail party, dinner party, holiday-mood (fall, winter), etc. For these, use abstract/botanical/geometric design-forward interpretations. Rustic farmhouse → wildflowers, eucalyptus, wheat stalks (NEVER roosters, pigs, cows, barns). Minimalist beach → abstract wave lines, single shell, sand-tone gradients (NEVER literal sand castles or beach umbrellas). Garden party → botanical florals (NEVER literal picnic tables). Think like a premium stationery designer.
 
   C) INSPIRATION IMAGES TAKE PRECEDENCE: If the host uploaded inspiration images and the extracted notes mention concrete subjects (hard hats, machinery, dinosaurs, specific characters, etc.), those subjects are the source of truth — feature them, don't override them with abstract shapes. The host chose those images to show you exactly what they want. Ignore the "aesthetic themes stay abstract" guidance when inspiration images provide concrete subject direction.
@@ -195,15 +197,15 @@ function parseImageDataUrl(dataUrl: string): { mediaType: VisionMediaType; data:
   return { mediaType, data: match[2] };
 }
 
-const INSPIRATION_EXTRACTION_SYSTEM = `You are a design analyst. You are shown 1-3 inspiration images a party host uploaded to steer the direction of their invitation. Describe the shared visual direction in two compact sentences covering BOTH:
+export const INSPIRATION_EXTRACTION_SYSTEM = `You are a design analyst. You are shown 1-3 inspiration images a party host uploaded to steer the direction of their invitation. Describe the shared visual direction in two compact sentences covering BOTH:
 
 1) Subject matter — what generic objects, creatures, or scenes appear across the images (e.g. "construction vehicles and hard hats", "dinosaurs and prehistoric plants", "floral wreaths and wildflowers", "abstract geometric shapes"). Be concrete about generic subject types — the host chose these images to show you WHAT they want illustrated.
 2) Style attributes — mood/tone, color palette, textures, and style descriptors (e.g. "cartoon-style, playful, primary colors", "delicate watercolor, muted earth tones").
 
 Critical rules:
 - DO extract generic subject types (hard hats, dinosaurs, flowers, mountains, animals-by-generic-category). These guide what appears in the illustration.
-- Do NOT identify, name, or suggest copying any specific character, mascot, logo, brand, celebrity, or another party's exact invitation design/artwork. Generic "a cartoon dinosaur" is fine; naming a specific character or franchise is not.
-- Never suggest reproducing a recognizable copyrighted or trademarked element. If the image contains such elements, describe only the generic subject category and style (colors, composition, texture, mood).
+- DO identify a clearly recognizable named film, franchise or character theme. The host's defining subject must not be erased into a generic aesthetic; name the recognizable character group and the visual traits that make the requested theme direct.
+- Do NOT reproduce a logo, rendered title, watermark, another party's wording, or another invitation's exact composition. Separate subject identity from copied layout: preserve the requested characters and story-world cues while describing a fresh invitation composition.
 - Output plain prose, no lists, no preamble, under 60 words.`;
 
 // Makes ONE vision LLM call (reusing the same Anthropic client as concept
@@ -289,7 +291,7 @@ export async function generateInviteDesignConcepts(params: {
     params.themeName && `Existing app theme on file: ${params.themeName}`,
     params.dnaSummary && `Host's established style so far: ${params.dnaSummary}`,
     params.formatGuidance && `Guest count and scale guidance: ${params.formatGuidance}`,
-    params.inspirationNotes && `Direction from the host's inspiration images — use BOTH the generic subject matter AND the style/mood/palette. The host chose these images to show you what they want illustrated. Do NOT copy any specific named character, logo, brand, or another party's exact design, but generic subjects (hard hats, dinosaurs, wildflowers, etc.) SHOULD be featured in the concepts: ${params.inspirationNotes}`,
+    params.inspirationNotes && `Direction from the host's inspiration images — use BOTH the subject identity AND the style/mood/palette. The host chose these images to show you what they want illustrated. Preserve any explicitly requested recognizable film, franchise or character theme; do not generalize it into a lookalike mood. Do NOT reproduce a logo, rendered title, watermark, wording or another party's exact composition: ${params.inspirationNotes}`,
     preferredStyleLanesLine,
     previousConceptsSummary,
     params.feedback && `Host's refinement feedback: "${params.feedback}"`,
