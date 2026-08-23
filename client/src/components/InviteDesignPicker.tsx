@@ -104,6 +104,24 @@ export default function InviteDesignPicker({ ownerToken, event, onReviewEventSty
     queryKey: [`/api/events/owner/${ownerToken}/ai-first/approved-designs`],
     enabled: flags.aiFirstInvitations,
   });
+  const analyzeAiFirstInspiration = useMutation({
+    mutationFn: (images: string[]) =>
+      apiRequestJson<{ inspirationNotes: string; imageProviderCalls: number; billedArtworkAttempts: number }>(
+        "POST",
+        `/api/events/owner/${ownerToken}/ai-first/inspiration`,
+        { inspirationImages: images },
+      ),
+    onSuccess: (result) => {
+      aiFirst.setInspirationNotes(result.inspirationNotes);
+      setInspirationNotes(result.inspirationNotes);
+      toast({ title: "Design inspo ready", description: "Posy will carry it into your next invitation idea." });
+    },
+    onError: (error: Error) => {
+      aiFirst.setInspirationNotes("");
+      setInspirationNotes(null);
+      toast({ title: "Couldn't read that design inspo", description: error.message, variant: "destructive" });
+    },
+  });
   // A host may already have a curated/legacy design active when an AI-first
   // preview finishes. That older editor must not hide the accepted preview:
   // surface it once so the host can explicitly apply it without generating
@@ -374,7 +392,44 @@ export default function InviteDesignPicker({ ownerToken, event, onReviewEventSty
     }
   };
 
-  // The "Add inspiration (optional)" control + thumbnails, reused near the
+  const addAiFirstDesignInspo = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const room = 3 - inspirationImages.length;
+    if (room <= 0) {
+      toast({ title: "Up to 3 design inspo images", description: "Clear them to choose a different set." });
+      return;
+    }
+    try {
+      const dataUrls = await Promise.all(Array.from(files).slice(0, room).map(readImageFileAsDataUrl));
+      const next = [...inspirationImages, ...dataUrls].slice(0, 3);
+      setInspirationImages(next);
+      aiFirst.setInspirationNotes("");
+      setInspirationNotes(null);
+      analyzeAiFirstInspiration.mutate(next);
+    } catch {
+      toast({ title: "Couldn't add that design inspo", description: "Please try a different image.", variant: "destructive" });
+    }
+  };
+
+  const openAiFirstDesignInspo = () => {
+    if (inspirationImages.length > 0 && !aiFirst.inspirationNotes) {
+      analyzeAiFirstInspiration.mutate(inspirationImages);
+      return;
+    }
+    if (inspirationImages.length >= 3) {
+      toast({ title: "3 design inspo images ready", description: "Clear them to choose a different set." });
+      return;
+    }
+    inspirationInputRef.current?.click();
+  };
+
+  const clearAiFirstDesignInspo = () => {
+    setInspirationImages([]);
+    setInspirationNotes(null);
+    aiFirst.setInspirationNotes("");
+  };
+
+  // The design-inspo control + thumbnails, reused near the
   // theme input and inside the refinement section. A single shared hidden file
   // input (rendered once below) is triggered by every "Add inspiration" button.
   const renderInspirationControl = (location: "theme" | "refine") => (
@@ -388,7 +443,7 @@ export default function InviteDesignPicker({ ownerToken, event, onReviewEventSty
         data-testid={`button-add-inspiration-${location}`}
       >
         <ImagePlus className="mr-1.5 h-3.5 w-3.5" />
-        {inspirationImages.length > 0 ? `Inspiration (${inspirationImages.length}/3)` : "Add inspiration (optional)"}
+        {inspirationImages.length > 0 ? `Design inspo (${inspirationImages.length}/3)` : "Add design inspo"}
       </Button>
       {inspirationImages.length > 0 && (
         <div className="mt-1.5 flex flex-wrap gap-1.5" data-testid={`inspiration-thumbs-${location}`}>
@@ -574,7 +629,7 @@ export default function InviteDesignPicker({ ownerToken, event, onReviewEventSty
         className="mt-2 text-left text-[11px] font-medium text-primary underline underline-offset-2 disabled:opacity-60"
         data-testid="button-upload-custom-design"
       >
-        {uploadCustomDesign.isPending ? "Uploading your design…" : "Already have a design? Upload it instead"}
+        {uploadCustomDesign.isPending ? "Uploading your invitation…" : "Upload a finished invitation instead"}
       </button>
     </>
   );
@@ -655,8 +710,25 @@ export default function InviteDesignPicker({ ownerToken, event, onReviewEventSty
           session={aiFirst}
           onBrowseCollection={() => aiFirst.setBrowsingCollection(true)}
           onReviewEventStyle={onReviewEventStyle}
+          onAddDesignInspo={openAiFirstDesignInspo}
+          onClearDesignInspo={clearAiFirstDesignInspo}
+          designInspoCount={inspirationImages.length}
+          designInspoImages={inspirationImages}
+          designInspoNotes={aiFirst.inspirationNotes}
+          designInspoAnalyzing={analyzeAiFirstInspiration.isPending}
         />
-        {renderCustomDesignEntry()}
+        <input
+          ref={inspirationInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          data-testid="input-ai-first-design-inspo"
+          onChange={(e) => {
+            addAiFirstDesignInspo(e.target.files);
+            e.target.value = "";
+          }}
+        />
       </div>
     );
   }
@@ -702,8 +774,25 @@ export default function InviteDesignPicker({ ownerToken, event, onReviewEventSty
           session={aiFirst}
           onBrowseCollection={() => aiFirst.setBrowsingCollection(true)}
           onReviewEventStyle={onReviewEventStyle}
+          onAddDesignInspo={openAiFirstDesignInspo}
+          onClearDesignInspo={clearAiFirstDesignInspo}
+          designInspoCount={inspirationImages.length}
+          designInspoImages={inspirationImages}
+          designInspoNotes={aiFirst.inspirationNotes}
+          designInspoAnalyzing={analyzeAiFirstInspiration.isPending}
         />
-        {renderCustomDesignEntry()}
+        <input
+          ref={inspirationInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          data-testid="input-ai-first-design-inspo"
+          onChange={(e) => {
+            addAiFirstDesignInspo(e.target.files);
+            e.target.value = "";
+          }}
+        />
       </div>
     );
   }
@@ -861,7 +950,7 @@ export default function InviteDesignPicker({ ownerToken, event, onReviewEventSty
       />
       {renderInspirationControl("theme")}
       <p className="mt-1 text-[11px] text-muted-foreground">
-        Upload up to 3 images that capture the vibe you want (e.g. a Pinterest screenshot). We'll read the mood, colors, and style — never copy anyone's exact design.
+        Upload up to 3 screenshots or images you like. Posy will carry their character and theme cues, mood, colors, and style into a fresh composition.
       </p>
 
       {concepts && inspirationNotes && (
