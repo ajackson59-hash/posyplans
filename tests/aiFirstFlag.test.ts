@@ -3,7 +3,7 @@
 // merged. These tests assert that literally — every AI-first route 404s, and
 // no store, model or image provider is reached.
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import express from "express";
 import request from "supertest";
 import { DEFAULT_FEATURE_FLAGS, readFeatureFlags, featureFlagEnvVar } from "@shared/featureFlags";
@@ -15,7 +15,10 @@ import { InMemoryArtworkAttemptStore } from "../server/aiFirst/artworkAttemptSto
 
 const OWNER = "owner-token";
 
-function appWith(env: Record<string, string | undefined>) {
+function appWith(
+  env: Record<string, string | undefined>,
+  analyzeInspiration: (images: string[]) => Promise<string> = async () => "recognizable character-theme direction",
+) {
   const app = express();
   app.use(express.json());
   const storage = {
@@ -34,6 +37,7 @@ function appWith(env: Record<string, string | undefined>) {
     runStore: new InMemoryRunStore(),
     artworkAttemptStore: new InMemoryArtworkAttemptStore(),
     env,
+    analyzeInspiration,
   });
   return app;
 }
@@ -64,6 +68,7 @@ describe("route gating", () => {
     ["get", `/api/events/owner/${OWNER}/ai-first/status`],
     ["get", `/api/events/owner/${OWNER}/ai-first/review/readiness`],
     ["post", `/api/events/owner/${OWNER}/ai-first/review/concept-proof`],
+    ["post", `/api/events/owner/${OWNER}/ai-first/inspiration`],
     ["post", `/api/events/owner/${OWNER}/ai-first/generate`],
     ["post", `/api/events/owner/${OWNER}/ai-first/apply`],
     ["post", "/api/ai-first/cleanup-previews"],
@@ -113,6 +118,37 @@ describe("route gating", () => {
     expect(generate.status).toBe(403);
     expect(generate.body.denial).toBe("kill-switch");
     expect(generate.body.paused).toBe(true);
+  });
+
+  it("analyzes design inspo without claiming or billing an image generation", async () => {
+    const analyze = vi.fn(async () => "KPop Demon Hunters heroine trio with neon supernatural stage energy");
+    const app = appWith({ [featureFlagEnvVar("aiFirstInvitations")]: "1" }, analyze);
+    const res = await request(app)
+      .post(`/api/events/owner/${OWNER}/ai-first/inspiration`)
+      .send({ inspirationImages: ["data:image/png;base64,AAAA"] });
+
+    expect(res.status).toBe(200);
+    expect(res.body.inspirationNotes).toContain("KPop Demon Hunters");
+    expect(res.body).toMatchObject({ imageProviderCalls: 0, billedArtworkAttempts: 0 });
+    expect(analyze).toHaveBeenCalledWith(["data:image/png;base64,AAAA"]);
+  });
+
+  it("does not analyze design inspo while the generation kill switch is on", async () => {
+    const analyze = vi.fn(async () => "should not run");
+    const app = appWith(
+      {
+        [featureFlagEnvVar("aiFirstInvitations")]: "1",
+        [featureFlagEnvVar("invitationGenerationKillSwitch")]: "1",
+      },
+      analyze,
+    );
+    const res = await request(app)
+      .post(`/api/events/owner/${OWNER}/ai-first/inspiration`)
+      .send({ inspirationImages: ["data:image/png;base64,AAAA"] });
+
+    expect(res.status).toBe(403);
+    expect(res.body.denial).toBe("kill-switch");
+    expect(analyze).not.toHaveBeenCalled();
   });
 
   it("reads the flag per request, so a kill switch needs no redeploy", async () => {
