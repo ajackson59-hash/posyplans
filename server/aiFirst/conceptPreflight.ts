@@ -28,6 +28,26 @@ export interface SubjectFamily {
 
 const SUBJECT_FAMILIES: readonly SubjectFamily[] = [
   {
+    id: "kpop-demon-hunters",
+    label: "KPop Demon Hunters",
+    trigger:
+      /\b(k[ -]?pop demon hunters?|huntr\/?x|rumi|mira|zoey|saja boys?)\b/i,
+    artworkCue:
+      /\b(k[ -]?pop demon hunters?|huntr\/?x|rumi|mira|zoey|saja boys?|demon[- ]hunt|supernatural k[ -]?pop)\b/i,
+    identityCue:
+      /\b(k[ -]?pop demon hunters?|huntr\/?x|rumi|mira|zoey|demon[- ]hunt)\b/i,
+    bindingRequirements: [
+      "The KPop Demon Hunters identity must be direct and unmistakable, with the recognizable heroine trio Rumi, Mira and Zoey depicted as the central themed characters",
+      "Preserve the trio's distinct K-pop performance energy, signature character silhouettes and supernatural demon-hunting weapons; generic pop stars, abstract neon or an unnamed girl group do not satisfy the theme",
+      "Do not include a franchise logo, movie title, character names as rendered text, or copy another invitation's composition",
+    ],
+    reviewRequirements: [
+      "The recognizable KPop Demon Hunters heroine trio is visibly present as three distinct central characters",
+      "Both K-pop performance energy and supernatural demon-hunting cues are unmistakably visible",
+    ],
+    compatibleThemeIds: [],
+  },
+  {
     id: "construction",
     label: "construction / little-builder",
     trigger: /\b(construction|builder|building site|job ?site|digging|digger|excavat|bulldoz|dump truck|hard hat)\b/i,

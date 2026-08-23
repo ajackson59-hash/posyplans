@@ -28,9 +28,12 @@ import { ConceptStreamParser } from "../server/aiFirst/conceptStream";
 import { adaptStudioDirection } from "../server/aiFirst/fallback";
 import {
   concreteSubjectRequirementsForBrief,
+  concreteSubjectReviewRequirementsForBrief,
   curatedThemeMatchesBrief,
   preflightConceptForBrief,
+  subjectFamiliesForBrief,
 } from "../server/aiFirst/conceptPreflight";
+import { INSPIRATION_EXTRACTION_SYSTEM } from "../server/inviteDesignAi";
 import { INVITATION_ASK_POSY_ACTIONS } from "@shared/aiFirstAskPosy";
 import { constraintsFor, resolveAskPosyAction } from "../server/aiFirst/askPosy";
 import { LAUNCH_THEMES } from "@shared/themeCatalog";
@@ -126,6 +129,57 @@ describe("brief — requirements the server owns, not the model", () => {
     expect(child.excluded).not.toEqual(adult.excluded);
     expect(child.required.some((r) => r.includes("age-appropriate"))).toBe(true);
     expect(adult.required.some((r) => r.includes("grown-up"))).toBe(true);
+  });
+
+  it("keeps a named KPop Demon Hunters character theme direct at every zero-image gate", () => {
+    const themedBrief = brief({
+      eventName: "Maya's KPop Demon Hunters Birthday",
+      themeName: "KPop Demon Hunters",
+      vibeDescription: "Rumi, Mira and Zoey fighting demons on a neon K-pop stage",
+      paletteColors: JSON.stringify(["violet", "electric blue", "hot pink"]),
+    });
+
+    expect(subjectFamiliesForBrief(themedBrief).map((family) => family.id)).toContain("kpop-demon-hunters");
+    expect(concreteSubjectRequirementsForBrief(themedBrief).join(" ")).toContain("Rumi, Mira and Zoey");
+    expect(concreteSubjectReviewRequirementsForBrief(themedBrief)).toHaveLength(2);
+    expect(buildUserPrompt({ brief: themedBrief })).toContain("Rumi, Mira and Zoey");
+    expect(buildArtworkConstraints(themedBrief)).toContain("generic pop stars");
+    expect(buildSystemPrompt()).toContain("preserve that exact named identity");
+    expect(INSPIRATION_EXTRACTION_SYSTEM).toContain("DO identify a clearly recognizable named film");
+  });
+
+  it("rejects a pretty K-pop aesthetic that omits the requested Demon Hunters characters", () => {
+    const themedBrief = brief({
+      eventName: "Maya's KPop Demon Hunters Birthday",
+      themeName: "KPop Demon Hunters",
+      vibeDescription: "Rumi, Mira and Zoey fighting demons on a neon K-pop stage",
+    });
+    const generic = preflightConceptForBrief(
+      concept({
+        description: "A glossy neon K-pop stage with violet spotlights.",
+        art: {
+          medium: "editorial gouache",
+          composition: "three performers across a wide stage",
+          prompt: "Three unnamed pop singers under violet neon lights with microphones and confetti.",
+        },
+      }),
+      themedBrief,
+    );
+    const direct = preflightConceptForBrief(
+      concept({
+        description: "Rumi, Mira and Zoey bring the KPop Demon Hunters world to a neon birthday stage.",
+        art: {
+          medium: "editorial gouache",
+          composition: "the heroine trio outside the quiet type region",
+          prompt: "Rumi, Mira and Zoey as the recognizable KPop Demon Hunters trio with supernatural weapons and stage energy.",
+        },
+      }),
+      themedBrief,
+    );
+
+    expect(generic.passed).toBe(false);
+    expect(generic.message).toContain("KPop Demon Hunters");
+    expect(direct.passed).toBe(true);
   });
 
   it("keeps preferred items out of the pass/fail gate", () => {

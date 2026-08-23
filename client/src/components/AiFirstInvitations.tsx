@@ -23,7 +23,7 @@ import AiFirstPreviewReview from "@/components/AiFirstPreviewReview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check, ImagePlus, Loader2, Sparkles } from "lucide-react";
 
 interface AiFirstStatus {
   plan: string;
@@ -51,6 +51,13 @@ interface AiFirstInvitationsProps {
   onBrowseCollection: () => void;
   /** Opens the event-style controls that feed this invitation brief. */
   onReviewEventStyle?: () => void;
+  /** Opens the host's local image picker; analysis happens in the parent. */
+  onAddDesignInspo?: () => void;
+  onClearDesignInspo?: () => void;
+  designInspoCount?: number;
+  designInspoImages?: string[];
+  designInspoNotes?: string;
+  designInspoAnalyzing?: boolean;
 }
 
 type RunPlacement = "primary" | "refinement";
@@ -66,6 +73,12 @@ export default function AiFirstInvitations({
   session,
   onBrowseCollection,
   onReviewEventStyle,
+  onAddDesignInspo,
+  onClearDesignInspo,
+  designInspoCount = 0,
+  designInspoImages = [],
+  designInspoNotes = "",
+  designInspoAnalyzing = false,
 }: AiFirstInvitationsProps) {
   const { toast } = useToast();
   const [pendingAdditionalRun, setPendingAdditionalRun] = useState<PendingAdditionalRun | null>(null);
@@ -253,6 +266,67 @@ export default function AiFirstInvitations({
             </Button>
           )}
         </div>
+        {onAddDesignInspo && (
+          <div className="mt-3 border-t border-border/70 pt-3" data-testid="control-design-inspo">
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={onAddDesignInspo}
+                disabled={designInspoAnalyzing || Boolean(status.data?.killSwitch)}
+                data-testid="button-add-design-inspo"
+              >
+                {designInspoAnalyzing ? (
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" aria-hidden />
+                ) : designInspoCount > 0 && designInspoNotes ? (
+                  <Check className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                ) : (
+                  <ImagePlus className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                )}
+                {designInspoAnalyzing
+                  ? "Reading design inspo…"
+                  : designInspoCount > 0 && designInspoNotes
+                    ? `${designInspoCount} design inspo image${designInspoCount === 1 ? "" : "s"} ready`
+                    : designInspoCount > 0
+                      ? "Read design inspo"
+                      : "Add design inspo"}
+              </Button>
+              {designInspoCount > 0 && onClearDesignInspo && (
+                <button
+                  type="button"
+                  onClick={onClearDesignInspo}
+                  disabled={designInspoAnalyzing}
+                  className="text-xs font-medium text-primary underline underline-offset-2 disabled:opacity-60"
+                  data-testid="button-clear-design-inspo"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Upload a screenshot or invitation you like. Posy uses its character and theme cues, palette, and visual direction—not its exact layout.
+            </p>
+            {designInspoImages.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5" data-testid="design-inspo-thumbnails">
+                {designInspoImages.map((src, index) => (
+                  <img
+                    key={`${src.slice(-20)}-${index}`}
+                    src={src}
+                    alt={`Design inspo ${index + 1}`}
+                    className="h-12 w-12 rounded border border-border object-cover"
+                    data-testid={`img-design-inspo-${index}`}
+                  />
+                ))}
+              </div>
+            )}
+            {designInspoNotes && (
+              <p className="mt-1 text-[11px] italic text-muted-foreground" data-testid="text-design-inspo-notes" aria-live="polite">
+                Posy sees: {designInspoNotes}
+              </p>
+            )}
+          </div>
+        )}
       </section>
 
       {needsVibe && (

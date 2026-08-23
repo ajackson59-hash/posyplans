@@ -50,6 +50,7 @@ import {
   type ConceptOnlyProofInput,
   type ConceptOnlyProofResult,
 } from "./conceptOnlyProof";
+import { extractInspirationNotes } from "../inviteDesignAi";
 
 /** One breaker and one limiter per process, shared by every event. */
 const breaker = new CircuitBreaker();
@@ -77,6 +78,15 @@ export interface AiFirstDeps {
   checkModelReadiness?: (input: ProviderReadinessInput) => Promise<AiFirstModelReadiness>;
   /** Test seam for the protected concept-only proof. No image generator exists in this input. */
   runConceptProof?: (input: ConceptOnlyProofInput) => Promise<ConceptOnlyProofResult>;
+  /** Test seam for the text/vision-only design-inspiration analysis. */
+  analyzeInspiration?: (images: string[]) => Promise<string>;
+}
+
+function readInspirationImages(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is string => typeof item === "string" && item.startsWith("data:image/"))
+    .slice(0, 3);
 }
 
 /** The response stream, not request-body completion, owns SSE lifetime. */
@@ -268,6 +278,48 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
         briefQuestion: briefIsSufficient(event) ? null : SINGLE_BRIEF_QUESTION,
         askPosyActions: INVITATION_ASK_POSY_ACTIONS,
       });
+    }),
+  );
+
+  /**
+   * Turns up to three host-selected images into a compact, reusable art brief.
+   * This is a vision/text analysis only: it cannot claim a generation run,
+   * reserve image usage or call the artwork provider. The resulting notes live
+   * in the parent-owned AI session and are sent with the host's next explicit
+   * create/update request.
+   */
+  app.post(
+    "/api/events/owner/:ownerToken/ai-first/inspiration",
+    gated(async (req, res) => {
+      const requestFlags = flags();
+      const event = await deps.storage.getEventByOwnerToken(String(req.params.ownerToken));
+      if (!event) {
+        res.status(404).json({ error: "Event not found" });
+        return;
+      }
+      if (requestFlags.invitationGenerationKillSwitch) {
+        res.status(403).json({
+          error: "Design inspiration analysis is paused right now.",
+          denial: "kill-switch",
+          paused: true,
+        });
+        return;
+      }
+      const images = readInspirationImages(req.body?.inspirationImages);
+      if (images.length === 0) {
+        res.status(400).json({ error: "Add at least one design inspiration image." });
+        return;
+      }
+      try {
+        const inspirationNotes = await (deps.analyzeInspiration ?? extractInspirationNotes)(images);
+        if (!inspirationNotes.trim()) {
+          res.status(422).json({ error: "Posy couldn't read a usable design direction from those images." });
+          return;
+        }
+        res.json({ inspirationNotes, imageProviderCalls: 0, billedArtworkAttempts: 0 });
+      } catch {
+        res.status(502).json({ error: "Posy couldn't read that design inspiration right now." });
+      }
     }),
   );
 
