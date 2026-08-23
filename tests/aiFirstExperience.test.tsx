@@ -367,6 +367,22 @@ describe("cards appear as they are approved", () => {
     expect(screen.queryByTestId("card-confirm-additional-generation")).toBeNull();
   });
 
+  it("opens the refinement input before asking to spend another generation", async () => {
+    const run = vi.fn();
+    renderExperience({ directions: [direction(0)], hasRun: true, run });
+    await waitFor(() => expect(screen.getByTestId("button-ask-posy-refine")).toBeTruthy());
+
+    fireEvent.click(screen.getByTestId("button-ask-posy-refine"));
+
+    const input = screen.getByTestId("input-ask-posy-direction");
+    expect(document.activeElement).toBe(input);
+    expect(screen.getByTestId("text-help-choose").textContent).toContain(
+      "Tell Posy what should stay and what should change below",
+    );
+    expect(screen.queryByTestId("card-confirm-additional-generation")).toBeNull();
+    expect(run).not.toHaveBeenCalled();
+  });
+
   it("requests two focused variations and preserves the current ideas until confirmation", async () => {
     const run = vi.fn();
     renderExperience({ directions: [direction(0)], hasRun: true, run });

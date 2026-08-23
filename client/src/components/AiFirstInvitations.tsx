@@ -8,7 +8,7 @@
 // feel broken. And a card on screen is a preview only — the live invitation
 // changes when the host presses "Use this design" and not before.
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequestJson, queryClient } from "@/lib/queryClient";
 import { themeCopyForEvent } from "@shared/themeCatalog";
@@ -84,6 +84,7 @@ export default function AiFirstInvitations({
   const [pendingAdditionalRun, setPendingAdditionalRun] = useState<PendingAdditionalRun | null>(null);
   const [requestedTargetCount, setRequestedTargetCount] = useState<number | null>(null);
   const [choiceAdvice, setChoiceAdvice] = useState<string | null>(null);
+  const typedDirectionInputRef = useRef<HTMLInputElement>(null);
   const [activeRunPlacement, setActiveRunPlacement] = useState<RunPlacement>("primary");
 
   const status = useQuery<AiFirstStatus>({
@@ -473,6 +474,14 @@ export default function AiFirstInvitations({
                   (!action.advisory && action.id !== "different-directions" && !selectedDirection)
                 }
                 onClick={() => {
+                  if (action.id === "refine") {
+                    setPendingAdditionalRun(null);
+                    setChoiceAdvice(
+                      "Tell Posy what should stay and what should change below, then choose Update my invitation.",
+                    );
+                    typedDirectionInputRef.current?.focus();
+                    return;
+                  }
                   if (action.advisory) {
                     setChoiceAdvice(
                       selectedDirection
@@ -498,6 +507,7 @@ export default function AiFirstInvitations({
             ))}
           </div>
           <Input
+            ref={typedDirectionInputRef}
             value={session.typedDirection}
             onChange={(e) => session.setTypedDirection(e.target.value)}
             placeholder="Or tell Posy in your own words"
