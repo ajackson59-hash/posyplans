@@ -7,7 +7,8 @@ import { z } from "zod";
 import { apiRequest, apiRequestJson } from "@/lib/queryClient";
 import { insertGuestSchema } from "@shared/schema";
 import type { EventRecord, GuestRecord, RsvpStatus, RsvpRestriction } from "@/lib/types";
-import { RSVP_RESTRICTION_OPTIONS } from "@/lib/types";
+import { EVENT_TYPES, RSVP_RESTRICTION_OPTIONS } from "@/lib/types";
+import { buildEventDetailsUpdate } from "@/lib/eventDetails";
 import { touchRecentEvent } from "@/lib/eventRecovery";
 import { applyInviteTokens, INVITE_TOKENS, INVITE_TONES, type InviteTone } from "@shared/inviteTokens";
 import { suggestRsvpDeadline } from "@shared/rsvpDeadline";
@@ -169,9 +170,12 @@ export default function Dashboard() {
 
   const [editingDetails, setEditingDetails] = useState(false);
   const [eventNameDraft, setEventNameDraft] = useState("");
+  const [eventTypeDraft, setEventTypeDraft] = useState("Birthday Party");
   const [eventDateDraft, setEventDateDraft] = useState("");
   const [locationDraft, setLocationDraft] = useState("");
   const [hostNamesDraft, setHostNamesDraft] = useState("");
+  const [estimatedGuestCountDraft, setEstimatedGuestCountDraft] = useState("");
+  const [vibeDescriptionDraft, setVibeDescriptionDraft] = useState("");
 
   const [editingVenue, setEditingVenue] = useState(false);
   const [venueNameDraft, setVenueNameDraft] = useState("");
@@ -468,20 +472,24 @@ export default function Dashboard() {
 
   const saveDetails = useMutation({
     mutationFn: async () => {
-      await apiRequest("PATCH", `/api/events/owner/${ownerToken}`, {
-        eventName: eventNameDraft || "My Celebration",
+      const update = buildEventDetailsUpdate({
+        eventName: eventNameDraft,
+        eventType: eventTypeDraft,
         eventDate: eventDateDraft,
         location: locationDraft,
         hostNames: hostNamesDraft,
+        estimatedGuestCount: estimatedGuestCountDraft,
+        vibeDescription: vibeDescriptionDraft,
       });
+      await apiRequest("PATCH", `/api/events/owner/${ownerToken}`, update);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/events/owner/${ownerToken}`] });
       setEditingDetails(false);
       toast({ title: "Event details saved" });
     },
-    onError: () => {
-      toast({ title: "Couldn't save event details", variant: "destructive" });
+    onError: (error: Error) => {
+      toast({ title: "Couldn't save event details", description: error.message, variant: "destructive" });
     },
   });
 
@@ -661,6 +669,21 @@ export default function Dashboard() {
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
+                    <Label htmlFor="detailsEventType">Event type</Label>
+                    <Select value={eventTypeDraft} onValueChange={setEventTypeDraft}>
+                      <SelectTrigger id="detailsEventType" data-testid="select-details-event-type">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {EVENT_TYPES.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
                     <Label htmlFor="detailsEventDate">Date</Label>
                     <DatePickerField
                       id="detailsEventDate"
@@ -669,6 +692,8 @@ export default function Dashboard() {
                       onChange={setEventDateDraft}
                     />
                   </div>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <Label htmlFor="detailsLocation">Location</Label>
                     <Input
@@ -676,6 +701,20 @@ export default function Dashboard() {
                       data-testid="input-details-location"
                       value={locationDraft}
                       onChange={(e) => setLocationDraft(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="detailsGuestCount">Estimated guest count</Label>
+                    <Input
+                      id="detailsGuestCount"
+                      data-testid="input-details-guest-count"
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      max={2000}
+                      placeholder="e.g. 30"
+                      value={estimatedGuestCountDraft}
+                      onChange={(e) => setEstimatedGuestCountDraft(e.target.value)}
                     />
                   </div>
                 </div>
@@ -687,6 +726,21 @@ export default function Dashboard() {
                     value={hostNamesDraft}
                     onChange={(e) => setHostNamesDraft(e.target.value)}
                   />
+                </div>
+                <div>
+                  <Label htmlFor="detailsPlanningBrief">Planning brief</Label>
+                  <Textarea
+                    id="detailsPlanningBrief"
+                    data-testid="input-details-planning-brief"
+                    rows={4}
+                    maxLength={500}
+                    placeholder="Describe the mood, theme, colors, and must-haves"
+                    value={vibeDescriptionDraft}
+                    onChange={(e) => setVibeDescriptionDraft(e.target.value)}
+                  />
+                  <p className="mt-1.5 text-xs text-muted-foreground">
+                    These updates guide future suggestions. Saving will not regenerate or overwrite your existing plan.
+                  </p>
                 </div>
                 <div className="flex gap-2 pt-1">
                   <Button
@@ -713,6 +767,7 @@ export default function Dashboard() {
                 <p className="mt-1 text-muted-foreground">
                   {[event.eventDate, event.location].filter(Boolean).join(" · ") || "Add a date and location any time"}
                   {event.hostNames ? ` · Hosted by ${event.hostNames}` : ""}
+                  {event.estimatedGuestCount ? ` · About ${event.estimatedGuestCount} guests` : ""}
                 </p>
               </div>
               <Button
@@ -722,9 +777,12 @@ export default function Dashboard() {
                 data-testid="button-edit-details"
                 onClick={() => {
                   setEventNameDraft(event.eventName);
+                  setEventTypeDraft(event.eventType || "Birthday Party");
                   setEventDateDraft(event.eventDate);
                   setLocationDraft(event.location);
                   setHostNamesDraft(event.hostNames);
+                  setEstimatedGuestCountDraft(event.estimatedGuestCount?.toString() || "");
+                  setVibeDescriptionDraft(event.vibeDescription || "");
                   setEditingDetails(true);
                 }}
               >
