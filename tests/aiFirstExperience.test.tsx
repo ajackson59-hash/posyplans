@@ -100,6 +100,14 @@ function renderExperience(
   over: Partial<ReturnType<typeof useAiFirstSession>> = {},
   statusBody: typeof status = status,
   approvedBody: typeof approvedDesigns = approvedDesigns,
+  designInspo: {
+    onAddDesignInspo?: () => void;
+    onClearDesignInspo?: () => void;
+    designInspoCount?: number;
+    designInspoImages?: string[];
+    designInspoNotes?: string;
+    designInspoAnalyzing?: boolean;
+  } = {},
 ) {
   const onBrowseCollection = vi.fn();
   const client = new QueryClient({
@@ -118,6 +126,7 @@ function renderExperience(
         event={event()}
         session={session(over)}
         onBrowseCollection={onBrowseCollection}
+        {...designInspo}
       />
     </QueryClientProvider>,
   );
@@ -291,6 +300,34 @@ describe("cards appear as they are approved", () => {
     }
   });
 
+  it("presents an existing image as design inspo, not as a finished invitation upload", async () => {
+    const onAddDesignInspo = vi.fn();
+    const onClearDesignInspo = vi.fn();
+    renderExperience(
+      {},
+      status,
+      approvedDesigns,
+      {
+        onAddDesignInspo,
+        onClearDesignInspo,
+        designInspoCount: 1,
+        designInspoImages: ["data:image/png;base64,AAAA"],
+        designInspoNotes: "Rumi, Mira and Zoey with neon supernatural stage energy",
+      },
+    );
+
+    await waitFor(() => expect(screen.getByTestId("button-add-design-inspo")).toBeTruthy());
+    expect(screen.getByTestId("button-add-design-inspo").textContent).toContain("1 design inspo image ready");
+    expect(screen.getByTestId("text-design-inspo-notes").textContent).toContain("Rumi, Mira and Zoey");
+    expect(screen.getByTestId("img-design-inspo-0").getAttribute("alt")).toBe("Design inspo 1");
+    expect(document.body.textContent).not.toContain("Already have a design");
+
+    fireEvent.click(screen.getByTestId("button-add-design-inspo"));
+    fireEvent.click(screen.getByTestId("button-clear-design-inspo"));
+    expect(onAddDesignInspo).toHaveBeenCalledTimes(1);
+    expect(onClearDesignInspo).toHaveBeenCalledTimes(1);
+  });
+
   it("makes a single invitation visibly selected for refinement", async () => {
     renderExperience({ directions: [direction(0)], hasRun: true });
 
@@ -413,6 +450,37 @@ describe("exploration state survives a switch to the collection", () => {
     expect(result.current.inspirationNotes).toBe("brass and dusty rose");
     expect(result.current.selectedPreviewId).toBe("preview-2");
     expect(result.current.filters).toEqual({ style: "editorial", occasion: "birthday" });
+  });
+
+  it("carries analyzed design inspo into the host's next explicit generation", async () => {
+    const { result } = renderHook(() => useAiFirstSession("token"));
+    let requestBody = "";
+    const stream = `data: ${JSON.stringify({
+      type: "done",
+      summary: { directions: 1, fallbackDirections: 0, billedImages: 0, reusedImages: 0, retries: 0, costUsd: 0, degraded: [] },
+      at: Date.now(),
+    })}\n\n`;
+    vi.stubGlobal("fetch", async (_url: string, init?: RequestInit) => {
+      requestBody = String(init?.body ?? "");
+      let sent = false;
+      return {
+        ok: true,
+        body: {
+          getReader: () => ({
+            read: async () =>
+              sent
+                ? { done: true, value: undefined }
+                : ((sent = true), { done: false, value: new TextEncoder().encode(stream) }),
+          }),
+        },
+      };
+    });
+
+    act(() => result.current.setInspirationNotes("Rumi, Mira and Zoey with neon supernatural stage energy"));
+    await act(async () => result.current.run());
+
+    expect(JSON.parse(requestBody).inspirationNotes).toContain("Rumi, Mira and Zoey");
+    vi.unstubAllGlobals();
   });
 
   it("supersedes a re-run of the same index rather than showing it twice", async () => {
