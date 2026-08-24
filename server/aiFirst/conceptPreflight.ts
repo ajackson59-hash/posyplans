@@ -223,11 +223,16 @@ export function briefForHostDirection(brief: EventBrief, direction?: string): Ev
   return {
     ...brief,
     themeName: visualIdentityOverride,
+    // Event palettes are derived from the inherited theme. Once the host
+    // replaces that identity, carrying its old colours forward turns them
+    // into a contradictory pass/fail requirement (for example construction
+    // browns against a newly requested supernatural K-pop direction).
+    colors: [],
     visualIdentityOverride,
     requirements: classifyRequirements({
       themeName: visualIdentityOverride,
       vibe: visualIdentityOverride,
-      colors: brief.colors,
+      colors: [],
       milestone: brief.milestone,
       formality: brief.formality,
     }),
