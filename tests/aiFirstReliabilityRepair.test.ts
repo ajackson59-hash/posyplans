@@ -19,6 +19,7 @@ import { InMemoryUsageStore } from "../server/aiFirst/usage";
 import { InMemoryRunStore } from "../server/aiFirst/runStore";
 import { InMemoryArtworkAttemptStore } from "../server/aiFirst/artworkAttemptStore";
 import type { EventBrief } from "../server/aiFirst/brief";
+import type { VisionGateInput, VisionVerdict } from "../server/aiFirst/visionGate";
 import { concept, conceptQuartet, framedArtworkForAspect, artworkForAspect } from "./aiFirstFixtures";
 
 const OWNER = "owner-token";
@@ -121,6 +122,7 @@ function appFor(deps: {
   env?: Record<string, string | undefined>;
   storage?: ReturnType<typeof makeStorage>;
   runPipeline?: (input: Parameters<typeof runAiFirstPipeline>[0]) => Promise<Awaited<ReturnType<typeof runAiFirstPipeline>>>;
+  reviewRetainedArtwork?: (input: VisionGateInput) => Promise<VisionVerdict>;
 }) {
   const app = express();
   app.use(express.json());
@@ -132,6 +134,7 @@ function appFor(deps: {
     artworkAttemptStore: deps.artworkAttemptStore,
     env: { [featureFlagEnvVar("aiFirstInvitations")]: "1", ...deps.env },
     runPipeline: deps.runPipeline,
+    reviewRetainedArtwork: deps.reviewRetainedArtwork,
   });
   return app;
 }
@@ -1170,6 +1173,119 @@ describe("every billed artwork result is retained for protected review; rejected
     const rejected = (await artworkAttemptStore.listForOwner(EVENT_ID, OWNER))[0];
     const viaPreviewStore = await previewStore.findByPreviewId(EVENT_ID, rejected.assetHash);
     expect(viaPreviewStore).toBeUndefined();
+  });
+});
+
+describe("retained rejected artwork can be re-reviewed without another image generation", () => {
+  async function seedRetainedAttempt() {
+    const previewStore = new InMemoryPreviewStore();
+    const usageStore = new InMemoryUsageStore();
+    const runStore = new InMemoryRunStore();
+    const artworkAttemptStore = new InMemoryArtworkAttemptStore();
+    const bytes = artworkForAspect("9:16");
+    const retainedConcept = concept({
+      conceptName: "Demon Stage Trio",
+      description: "Rumi, Mira and Zoey command a supernatural K-pop stage.",
+      art: {
+        medium: "gouache",
+        composition: "three central heroines with demon-hunting weapons and shallow edge scenery",
+        prompt: "KPop Demon Hunters heroines Rumi, Mira and Zoey perform with supernatural weapons.",
+      },
+    });
+    const attempt = await artworkAttemptStore.record({
+      eventId: EVENT_ID,
+      ownerToken: OWNER,
+      runId: "retained-review-run",
+      idempotencyKey: "retained-review-run:direction-0:attempt-1",
+      directionIndex: 0,
+      attempt: 1,
+      status: "rejected",
+      bytes,
+      concept: retainedConcept,
+      failureCodes: ["crop-unsafe"],
+      tier1Findings: [],
+      visionScores: null,
+      costUsdMicros: 165_000,
+    });
+    return { previewStore, usageStore, runStore, artworkAttemptStore, attempt };
+  }
+
+  const passingReview: VisionVerdict = {
+    scores: {
+      textLogoWatermarkFree: 5,
+      artifactFree: 5,
+      premiumFinish: 5,
+      briefFidelity: 5,
+      compositionQuality: 5,
+      ageAppropriate: 5,
+    },
+    requiredPresent: [
+      { requirement: "The recognizable KPop Demon Hunters heroine trio is visibly present", present: true },
+    ],
+    excludedFound: [],
+    notes: "Premium, legible and faithful.",
+    passed: true,
+    failureCodes: [],
+    unavailable: false,
+    durationMs: 1,
+    usage: { inputTokens: 100, outputTokens: 20 },
+  };
+
+  it("requires exact confirmation, owner scope and the retained asset hash", async () => {
+    const stores = await seedRetainedAttempt();
+    const app = appFor({ ...stores, reviewRetainedArtwork: async () => passingReview });
+    const endpoint = `/api/events/owner/${OWNER}/ai-first/review/attempts/${stores.attempt.id}/recheck`;
+
+    const unconfirmed = await request(app).post(endpoint).send({ expectedAssetHash: stores.attempt.assetHash });
+    expect(unconfirmed.status).toBe(400);
+    expect(unconfirmed.body.imageProviderCalls).toBe(0);
+
+    const wrongHash = await request(app)
+      .post(endpoint)
+      .send({ confirmRetainedReview: true, expectedAssetHash: "not-the-confirmed-hash" });
+    expect(wrongHash.status).toBe(409);
+    expect(wrongHash.body.denial).toBe("asset-hash-mismatch");
+
+    const wrongOwner = await request(app)
+      .post(`/api/events/owner/not-the-owner/ai-first/review/attempts/${stores.attempt.id}/recheck`)
+      .send({ confirmRetainedReview: true, expectedAssetHash: stores.attempt.assetHash });
+    expect(wrongOwner.status).toBe(404);
+  });
+
+  it("runs semantic vision once, saves one private preview, and is exactly idempotent", async () => {
+    const stores = await seedRetainedAttempt();
+    let visionCalls = 0;
+    let reviewedBrief: EventBrief | undefined;
+    const app = appFor({
+      ...stores,
+      reviewRetainedArtwork: async (input) => {
+        visionCalls += 1;
+        reviewedBrief = input.brief;
+        return passingReview;
+      },
+    });
+    const endpoint = `/api/events/owner/${OWNER}/ai-first/review/attempts/${stores.attempt.id}/recheck`;
+    const confirmedBody = { confirmRetainedReview: true, expectedAssetHash: stores.attempt.assetHash };
+
+    const first = await request(app).post(endpoint).send(confirmedBody);
+    expect(first.status).toBe(200);
+    expect(first.body).toMatchObject({
+      assetHash: stores.attempt.assetHash,
+      reused: false,
+      imageProviderCalls: 0,
+      billedArtworkAttempts: 0,
+    });
+    expect(first.body.previewId).toBeTruthy();
+    expect(visionCalls).toBe(1);
+    expect(reviewedBrief?.visualIdentityOverride).toBe("KPop Demon Hunters");
+    expect(await stores.previewStore.listForEvent(EVENT_ID)).toHaveLength(1);
+
+    const replay = await request(app).post(endpoint).send(confirmedBody);
+    expect(replay.status).toBe(200);
+    expect(replay.body.previewId).toBe(first.body.previewId);
+    expect(replay.body.reused).toBe(true);
+    expect(visionCalls).toBe(1);
+    expect(await stores.previewStore.listForEvent(EVENT_ID)).toHaveLength(1);
   });
 });
 
