@@ -13,7 +13,7 @@
 import type { Express, Request, Response } from "express";
 import { readFeatureFlags } from "@shared/featureFlags";
 import { AI_FIRST_CONCEPT_KEY, themeFromSnapshot, type AiFirstSnapshot } from "@shared/aiFirstTheme";
-import { validateLayoutBeforeGeneration } from "@shared/aiFirstLayout";
+import { OVERLAY_COVERAGE, validateLayoutBeforeGeneration } from "@shared/aiFirstLayout";
 import { buildThemedConcept } from "@shared/themeCatalog";
 import { deriveThemeDna } from "@shared/themeDna";
 import { computeEventDna } from "@shared/eventDna";
@@ -21,9 +21,13 @@ import { buildEventBrief, briefIsSufficient, SINGLE_BRIEF_QUESTION } from "./bri
 import { runAiFirstPipeline, type PipelineEvent, type PipelineInput, type RunSummary } from "./pipeline";
 import {
   applyPreview,
+  assetHashOf,
   cleanupPreviews,
+  conceptFingerprint,
   previewAssetUrl,
+  previewIdFor,
   resolvePreviewAssetBytes,
+  savePreview,
   type AiFirstPreviewStore,
 } from "./previewStore";
 import {
@@ -51,6 +55,9 @@ import {
   type ConceptOnlyProofResult,
 } from "./conceptOnlyProof";
 import { extractInspirationNotes } from "../inviteDesignAi";
+import { runTier1Checks } from "./tier1";
+import { runVisionGate, type VisionGateInput, type VisionVerdict } from "./visionGate";
+import { briefForHostDirection } from "./conceptPreflight";
 
 /** One breaker and one limiter per process, shared by every event. */
 const breaker = new CircuitBreaker();
@@ -80,6 +87,8 @@ export interface AiFirstDeps {
   runConceptProof?: (input: ConceptOnlyProofInput) => Promise<ConceptOnlyProofResult>;
   /** Test seam for the text/vision-only design-inspiration analysis. */
   analyzeInspiration?: (images: string[]) => Promise<string>;
+  /** Test seam for re-reviewing retained pixels without another image call. */
+  reviewRetainedArtwork?: (input: VisionGateInput) => Promise<VisionVerdict>;
 }
 
 function readInspirationImages(value: unknown): string[] {
@@ -854,6 +863,174 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
         "Content-Length": String(bytes.length),
       });
       res.end(bytes);
+    }),
+  );
+
+  /**
+   * Re-runs today's quality gates against bytes already paid for and retained.
+   * This endpoint can never reach the image provider: Tier 1 is deterministic,
+   * Tier 2 is a semantic review of the same bytes, and a pass creates only an
+   * owner-private preview. Applying that preview remains a separate host act.
+   *
+   * Confirmation plus the expected content hash binds the request to one
+   * exact rejected asset. The content-addressed preview id makes a replay
+   * idempotent and prevents a second vision call after a successful review.
+   */
+  app.post(
+    "/api/events/owner/:ownerToken/ai-first/review/attempts/:id/recheck",
+    gated(async (req, res) => {
+      const ownerToken = String(req.params.ownerToken);
+      const event = await deps.storage.getEventByOwnerToken(ownerToken);
+      if (!event) {
+        res.status(404).json({ error: "Event not found" });
+        return;
+      }
+      if (req.body?.confirmRetainedReview !== true) {
+        res.status(400).json({
+          error: "Set confirmRetainedReview to true to review the retained artwork.",
+          denial: "retained-review-confirmation-required",
+          imageProviderCalls: 0,
+          billedArtworkAttempts: 0,
+        });
+        return;
+      }
+
+      const row = await deps.artworkAttemptStore.findById(event.id, ownerToken, String(req.params.id));
+      if (!row) {
+        res.status(404).json({ error: "That review attempt is no longer available." });
+        return;
+      }
+      if (row.status !== "rejected") {
+        res.status(409).json({
+          error: "Only rejected retained artwork can be re-reviewed.",
+          denial: "attempt-not-rejected",
+          imageProviderCalls: 0,
+          billedArtworkAttempts: 0,
+        });
+        return;
+      }
+      if (typeof req.body?.expectedAssetHash !== "string" || req.body.expectedAssetHash !== row.assetHash) {
+        res.status(409).json({
+          error: "The retained artwork hash does not match the confirmed asset.",
+          denial: "asset-hash-mismatch",
+          imageProviderCalls: 0,
+          billedArtworkAttempts: 0,
+        });
+        return;
+      }
+
+      const bytes = Buffer.from(row.assetBytesBase64, "base64");
+      if (assetHashOf(bytes) !== row.assetHash) {
+        res.status(409).json({
+          error: "The retained artwork bytes failed integrity verification.",
+          denial: "retained-asset-integrity",
+          imageProviderCalls: 0,
+          billedArtworkAttempts: 0,
+        });
+        return;
+      }
+
+      const fingerprint = conceptFingerprint(row.concept);
+      const expectedPreviewId = previewIdFor(event.id, fingerprint, row.assetHash);
+      const existing = await deps.previewStore.findByPreviewId(event.id, expectedPreviewId);
+      if (existing) {
+        res.json({
+          previewId: existing.previewId,
+          assetHash: existing.assetHash,
+          assetUrl: previewAssetUrl(ownerToken, existing.previewId),
+          concept: existing.concept,
+          reused: true,
+          imageProviderCalls: 0,
+          billedArtworkAttempts: 0,
+        });
+        return;
+      }
+
+      const repair = validateLayoutBeforeGeneration(row.concept);
+      const tier1 = runTier1Checks({
+        bytes,
+        concept: row.concept,
+        overlayCoverage: OVERLAY_COVERAGE[repair.overlay],
+        artworkOpacity: repair.artworkOpacity ?? 1,
+        ocr: env().NODE_ENV === "production",
+      });
+      if (!tier1.passed) {
+        res.status(422).json({
+          error: "The retained artwork still fails Posy's deterministic quality checks.",
+          denial: "tier1-quality-rejected",
+          failureCodes: Array.from(
+            new Set(tier1.findings.filter((finding) => finding.critical).map((finding) => finding.code)),
+          ),
+          tier1Findings: tier1.findings,
+          imageProviderCalls: 0,
+          billedArtworkAttempts: 0,
+        });
+        return;
+      }
+
+      const [menuItems, budgetItems, guests] = await Promise.all([
+        deps.storage.listMenuItems(event.id),
+        deps.storage.listBudgetItems(event.id),
+        deps.storage.listGuests(event.id),
+      ]);
+      const baseBrief = buildEventBrief({
+        event,
+        dna: computeEventDna({ eventType: event.eventType, menuItems, budgetItems }).scores,
+        guestCount: guests.length > 0 ? guests.length : null,
+      });
+      const direction = [row.concept.conceptName, row.concept.description, row.concept.art.prompt].join(" ");
+      const effectiveBrief = briefForHostDirection(baseBrief, direction);
+      const vision = await (deps.reviewRetainedArtwork ?? runVisionGate)({
+        bytes,
+        concept: row.concept,
+        brief: effectiveBrief,
+      });
+      if (vision.unavailable) {
+        res.status(503).json({
+          error: "The semantic artwork review is temporarily unavailable.",
+          denial: "vision-review-unavailable",
+          notes: vision.notes,
+          imageProviderCalls: 0,
+          billedArtworkAttempts: 0,
+        });
+        return;
+      }
+      if (!vision.passed) {
+        res.status(422).json({
+          error: "The retained artwork did not meet Posy's semantic quality standard.",
+          denial: "vision-quality-rejected",
+          failureCodes: vision.failureCodes,
+          scores: vision.scores,
+          requiredPresent: vision.requiredPresent,
+          excludedFound: vision.excludedFound,
+          notes: vision.notes,
+          imageProviderCalls: 0,
+          billedArtworkAttempts: 0,
+        });
+        return;
+      }
+
+      const saved = await savePreview({
+        store: deps.previewStore,
+        eventId: event.id,
+        concept: row.concept,
+        bytes,
+        assetUrl: `data:image/png;base64,${bytes.toString("base64")}`,
+        source: "ai-generated",
+      });
+      res.json({
+        previewId: saved.record.previewId,
+        assetHash: saved.record.assetHash,
+        assetUrl: previewAssetUrl(ownerToken, saved.record.previewId),
+        concept: saved.record.concept,
+        reused: saved.reused,
+        scores: vision.scores,
+        requiredPresent: vision.requiredPresent,
+        excludedFound: vision.excludedFound,
+        notes: vision.notes,
+        imageProviderCalls: 0,
+        billedArtworkAttempts: 0,
+      });
     }),
   );
 
