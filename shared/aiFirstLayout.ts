@@ -326,13 +326,15 @@ export interface CropSafetyResult {
 export const MAX_SALIENT_CROP_FRACTION = 0.25;
 
 /**
- * A high-detail band that already bleeds across most of a generated edge is
- * framing texture, not a bounded focal motif. The image model is explicitly
- * required to paint through every edge, so rejecting this kind of stage trim,
- * sky, foliage or confetti border would contradict the full-bleed contract.
- * Narrow edge subjects remain protected by the normal 25% rule.
+ * A high-detail region that already bleeds across a generated edge can be
+ * framing texture rather than a bounded focal motif. The image model is
+ * explicitly required to paint through every edge, so rejecting stage trim,
+ * sky, foliage or confetti there would contradict the full-bleed contract.
+ * For a shallow cover crop, semantic vision is the right place to distinguish
+ * decoration from a face or hero object; deep layout crops remain blocked here.
  */
 const MIN_DECORATIVE_EDGE_BLEED_SPAN = 0.75;
+const MAX_SHALLOW_CROP_AXIS_LOSS = 0.15;
 
 function isDecorativeEdgeBleed(region: SalientRegion, visible: SalientRegion): boolean {
   const epsilon = 0.001;
@@ -342,10 +344,16 @@ function isDecorativeEdgeBleed(region: SalientRegion, visible: SalientRegion): b
   const touchesRight = region.x + region.width >= 1 - epsilon;
   const topOrBottomIsCropped = visible.y > epsilon || visible.y + visible.height < 1 - epsilon;
   const leftOrRightIsCropped = visible.x > epsilon || visible.x + visible.width < 1 - epsilon;
+  const shallowVerticalCrop = 1 - visible.height <= MAX_SHALLOW_CROP_AXIS_LOSS;
+  const shallowHorizontalCrop = 1 - visible.width <= MAX_SHALLOW_CROP_AXIS_LOSS;
 
   return (
-    (topOrBottomIsCropped && region.width >= MIN_DECORATIVE_EDGE_BLEED_SPAN && (touchesTop || touchesBottom)) ||
-    (leftOrRightIsCropped && region.height >= MIN_DECORATIVE_EDGE_BLEED_SPAN && (touchesLeft || touchesRight))
+    (topOrBottomIsCropped &&
+      (touchesTop || touchesBottom) &&
+      (shallowVerticalCrop || region.width >= MIN_DECORATIVE_EDGE_BLEED_SPAN)) ||
+    (leftOrRightIsCropped &&
+      (touchesLeft || touchesRight) &&
+      (shallowHorizontalCrop || region.height >= MIN_DECORATIVE_EDGE_BLEED_SPAN))
   );
 }
 

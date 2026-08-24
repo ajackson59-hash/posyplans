@@ -274,8 +274,18 @@ describe("layout — crop safety before composition", () => {
     expect(result.issues).toEqual([]);
   });
 
-  it("catches a motif the crop clips off the top edge", () => {
+  it("delegates a shallow full-card edge crop to semantic vision", () => {
     const result = evaluateCropSafety("full-bleed", canvas, [{ x: 0.4, y: 0, width: 0.2, height: 0.05 }]);
+    expect(result.safe).toBe(true);
+    expect(result.worstCroppedFraction).toBe(0);
+  });
+
+  it("catches a bounded motif clipped by a deep layout crop", () => {
+    const result = evaluateCropSafety(
+      "centered",
+      { width: 1024, height: 1024 },
+      [{ x: 0.4, y: 0, width: 0.2, height: 0.05 }],
+    );
     expect(result.safe).toBe(false);
     expect(result.worstCroppedFraction).toBeGreaterThan(MAX_SALIENT_CROP_FRACTION);
     expect(result.issues[0].code).toBe("full-bleed-crop-unsafe");
@@ -290,7 +300,7 @@ describe("layout — crop safety before composition", () => {
   });
 
   it("reports the worst region, not the average", () => {
-    const result = evaluateCropSafety("full-bleed", canvas, [
+    const result = evaluateCropSafety("centered", { width: 1024, height: 1024 }, [
       { x: 0.4, y: 0.4, width: 0.2, height: 0.2 },
       { x: 0.4, y: 0, width: 0.2, height: 0.04 },
     ]);
