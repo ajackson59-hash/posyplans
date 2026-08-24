@@ -3,7 +3,7 @@
 // omitted. This keeps milestone and subject compliance out of retry roulette.
 
 import type { AiFirstConcept, FocalStrategy } from "@shared/aiFirstInvite";
-import { canonicalTypeGeometry } from "@shared/aiFirstLayout";
+import { canonicalTypeGeometry, validateLayoutBeforeGeneration } from "@shared/aiFirstLayout";
 import type { EventBrief } from "./brief";
 import { subjectFamiliesForBrief } from "./conceptPreflight";
 
@@ -100,7 +100,12 @@ export function bindConceptsToBrief(
   const construction = subjectFamiliesForBrief(brief).some((family) => family.id === "construction");
 
   return candidates.map((candidate) => {
-    const typeGeometry = canonicalTypeGeometry(candidate);
+    // Layout repair must precede type canonicalization. A wide split concept
+    // becomes a banner; geometry derived for split's right panel is invalid
+    // after that deterministic move and used to trigger a pointless second
+    // text correction even though the server owns both rectangles.
+    const layoutRepair = validateLayoutBeforeGeneration(candidate);
+    const typeGeometry = canonicalTypeGeometry(candidate, layoutRepair.layoutStyle);
     let description = candidate.description;
     let medium = candidate.art.medium;
     let composition = candidate.art.composition;
@@ -141,6 +146,7 @@ export function bindConceptsToBrief(
       ...candidate,
       description,
       art: { ...candidate.art, medium, composition, prompt },
+      layoutStyle: layoutRepair.layoutStyle,
       // The renderer owns the real type box. Do not spend a second text call
       // asking a model to rediscover geometry Posy can derive exactly.
       placementId: typeGeometry.placementId,
