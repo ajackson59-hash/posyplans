@@ -282,6 +282,13 @@ describe("layout — crop safety before composition", () => {
     expect(result.issues[0].repair).toBe("change-layout");
   });
 
+  it("does not mistake edge-to-edge full-bleed trim for a clipped focal motif", () => {
+    const result = evaluateCropSafety("full-bleed", canvas, [{ x: 0, y: 0, width: 1, height: 0.16 }]);
+    expect(result.safe).toBe(true);
+    expect(result.worstCroppedFraction).toBe(0);
+    expect(result.issues).toEqual([]);
+  });
+
   it("reports the worst region, not the average", () => {
     const result = evaluateCropSafety("full-bleed", canvas, [
       { x: 0.4, y: 0.4, width: 0.2, height: 0.2 },
