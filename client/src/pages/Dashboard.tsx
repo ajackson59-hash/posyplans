@@ -126,6 +126,41 @@ export default function Dashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data, isLoading } = useEventData(ownerToken);
+  const retainedReviewRequest = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    const attemptId = params.get("retainedReviewAttempt");
+    const expectedAssetHash = params.get("retainedReviewHash");
+    return attemptId && expectedAssetHash ? { attemptId, expectedAssetHash } : null;
+  }, []);
+  const [retainedReviewReady, setRetainedReviewReady] = useState(false);
+
+  const reviewRetainedArtwork = useMutation({
+    mutationFn: async () => {
+      if (!retainedReviewRequest) throw new Error("No retained artwork was selected.");
+      return apiRequestJson<{ previewId: string; assetHash: string; imageProviderCalls: number }>(
+        "POST",
+        `/api/events/owner/${ownerToken}/ai-first/review/attempts/${retainedReviewRequest.attemptId}/recheck`,
+        {
+          confirmRetainedReview: true,
+          expectedAssetHash: retainedReviewRequest.expectedAssetHash,
+        },
+      );
+    },
+    onSuccess: () => {
+      setRetainedReviewReady(true);
+      toast({
+        title: "Private design preview ready",
+        description: "The retained artwork passed review. Your live invitation was not changed.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "The retained design did not pass review",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   useEffect(() => {
     if (ownerToken) touchRecentEvent(ownerToken);
@@ -791,6 +826,46 @@ export default function Dashboard() {
             </div>
           )}
         </div>
+
+        {retainedReviewRequest && (
+          <Card className="border-primary/30 bg-primary/[0.04]" data-testid="card-retained-artwork-review">
+            <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 rounded-full bg-primary/10 p-2 text-primary">
+                  <Sparkles className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="font-serif text-lg font-semibold text-foreground">
+                    {retainedReviewReady ? "Private design preview ready" : "Review the saved artwork"}
+                  </p>
+                  <p className="mt-0.5 max-w-2xl text-sm text-muted-foreground">
+                    {retainedReviewReady
+                      ? "It passed Posy's quality review. Your live invitation is unchanged until you explicitly choose the design."
+                      : "This reviews the exact artwork already created. It will not generate another image or change the live invitation."}
+                  </p>
+                </div>
+              </div>
+              {retainedReviewReady ? (
+                <Button
+                  className="shrink-0"
+                  onClick={() => navigateToTab("guests", "invitation-design-section")}
+                  data-testid="button-open-retained-preview"
+                >
+                  Compare design
+                </Button>
+              ) : (
+                <Button
+                  className="shrink-0"
+                  disabled={reviewRetainedArtwork.isPending}
+                  onClick={() => reviewRetainedArtwork.mutate()}
+                  data-testid="button-review-retained-artwork"
+                >
+                  {reviewRetainedArtwork.isPending ? "Reviewing…" : "Review saved artwork"}
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="border-primary/25 bg-primary/[0.03]" data-testid="card-invitation-next-step">
           <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
