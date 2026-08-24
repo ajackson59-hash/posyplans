@@ -475,6 +475,44 @@ describe("tier 2 — acceptance", () => {
     expect(reviewText).toContain("Required subjects must remain clearly recognizable outside the panel");
   });
 
+  it("reviews a replacement identity without sending the inherited feeling to the critic", async () => {
+    let reviewText = "";
+    let systemText = "";
+    const capturingCritic = {
+      messages: {
+        create: async (request: any) => {
+          systemText = request.system;
+          reviewText = request.messages[0].content.find((part: any) => part.type === "text")?.text ?? "";
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify({ ...allFive, requiredPresent: [], excludedFound: [], notes: "" }),
+              },
+            ],
+            usage: { input_tokens: 1200, output_tokens: 180 },
+          };
+        },
+      },
+    } as unknown as Anthropic;
+
+    await runVisionGate({
+      bytes: artworkPng(),
+      concept: concept(),
+      brief: brief({
+        vibe: "Construction / Dump Truck",
+        themeName: "KPop Demon Hunters",
+        visualIdentityOverride: "KPop Demon Hunters",
+      }),
+      client: capturingCritic,
+    });
+
+    expect(reviewText).toContain("Current host-selected visual identity: KPop Demon Hunters");
+    expect(reviewText).not.toContain("Intended feeling: Construction");
+    expect(systemText).toContain("all-ages action or fantasy identity");
+    expect(systemText).toContain("non-graphic supernatural creatures");
+  });
+
   it("is never a silent pass when the critic is unreachable", async () => {
     const exploding = {
       messages: {
