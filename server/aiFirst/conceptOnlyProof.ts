@@ -13,6 +13,7 @@ import type { EventBrief } from "./brief";
 import { ConceptStreamParser } from "./conceptStream";
 import { preflightConceptQuartet } from "./conceptQuartet";
 import { bindConceptsToBrief } from "./conceptBindings";
+import { briefForHostDirection } from "./conceptPreflight";
 import { buildConceptCorrectionPrompt, buildSystemPrompt, buildUserPrompt } from "./prompt";
 
 export const CONCEPT_MODEL = "claude-sonnet-4-6";
@@ -50,6 +51,7 @@ function throwIfAborted(signal?: AbortSignal): void {
 }
 
 export async function runConceptOnlyProof(input: ConceptOnlyProofInput): Promise<ConceptOnlyProofResult> {
+  const effectiveBrief = briefForHostDirection(input.brief, input.direction);
   const client = input.anthropic ?? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   let firstConceptReported = false;
 
@@ -80,14 +82,14 @@ export async function runConceptOnlyProof(input: ConceptOnlyProofInput): Promise
     throwIfAborted(input.signal);
     collect(parser.flush());
     input.onReviewingConcepts?.();
-    const boundCandidates = bindConceptsToBrief(candidates, input.brief);
-    const quartet = preflightConceptQuartet(boundCandidates, input.brief);
+    const boundCandidates = bindConceptsToBrief(candidates, effectiveBrief);
+    const quartet = preflightConceptQuartet(boundCandidates, effectiveBrief);
     const parserErrors = parser.rejections.flatMap((rejection) => rejection.errors);
     return { candidates: boundCandidates, quartet, parserErrors };
   };
 
   const userPrompt = buildUserPrompt({
-    brief: input.brief,
+    brief: effectiveBrief,
     direction: input.direction,
     avoidConceptNames: input.avoidConceptNames,
     keepConstraints: input.keepConstraints,
