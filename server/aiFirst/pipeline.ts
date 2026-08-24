@@ -53,6 +53,7 @@ import type { EventBrief } from "./brief";
 import type { AiFirstArtworkAttemptStore } from "./artworkAttemptStore";
 import type { AiFirstRunStore } from "./runStore";
 import { CONCEPT_MODEL, runConceptOnlyProof } from "./conceptOnlyProof";
+import { briefForHostDirection } from "./conceptPreflight";
 
 export { CONCEPT_MODEL };
 export const TARGET_CONCEPT_COUNT = TARGET_DIRECTION_COUNT;
@@ -154,6 +155,7 @@ class Semaphore {
 /* ── The run ─────────────────────────────────────────────────────────── */
 
 export async function runAiFirstPipeline(input: PipelineInput): Promise<RunSummary> {
+  input = { ...input, brief: briefForHostDirection(input.brief, input.direction) };
   const started = Date.now();
   const sink = input.sink;
   const emit = (event: PipelineEventInput) => {
