@@ -326,6 +326,30 @@ export interface CropSafetyResult {
 export const MAX_SALIENT_CROP_FRACTION = 0.25;
 
 /**
+ * A high-detail band that already bleeds across most of a generated edge is
+ * framing texture, not a bounded focal motif. The image model is explicitly
+ * required to paint through every edge, so rejecting this kind of stage trim,
+ * sky, foliage or confetti border would contradict the full-bleed contract.
+ * Narrow edge subjects remain protected by the normal 25% rule.
+ */
+const MIN_DECORATIVE_EDGE_BLEED_SPAN = 0.75;
+
+function isDecorativeEdgeBleed(region: SalientRegion, visible: SalientRegion): boolean {
+  const epsilon = 0.001;
+  const touchesTop = region.y <= epsilon;
+  const touchesBottom = region.y + region.height >= 1 - epsilon;
+  const touchesLeft = region.x <= epsilon;
+  const touchesRight = region.x + region.width >= 1 - epsilon;
+  const topOrBottomIsCropped = visible.y > epsilon || visible.y + visible.height < 1 - epsilon;
+  const leftOrRightIsCropped = visible.x > epsilon || visible.x + visible.width < 1 - epsilon;
+
+  return (
+    (topOrBottomIsCropped && region.width >= MIN_DECORATIVE_EDGE_BLEED_SPAN && (touchesTop || touchesBottom)) ||
+    (leftOrRightIsCropped && region.height >= MIN_DECORATIVE_EDGE_BLEED_SPAN && (touchesLeft || touchesRight))
+  );
+}
+
+/**
  * Replays the renderer's `object-fit: cover` crop for a layout and reports how
  * much of the artwork's salient content it destroys. This is the check that
  * catches clipped motifs and unsafe full-bleed crops before a customer sees
@@ -344,6 +368,7 @@ export function evaluateCropSafety(
 
   let worst = 0;
   for (const region of salientRegions) {
+    if (isDecorativeEdgeBleed(region, visible)) continue;
     const area = region.width * region.height;
     if (area <= 0) continue;
     const overlapW = Math.max(
