@@ -7,7 +7,7 @@
 // artwork request is allowed to start.
 
 import type { AiFirstConcept } from "@shared/aiFirstInvite";
-import type { EventBrief } from "./brief";
+import { classifyRequirements, type EventBrief } from "./brief";
 
 export interface SubjectFamily {
   id: string;
@@ -178,15 +178,60 @@ const SUBJECT_FAMILIES: readonly SubjectFamily[] = [
   },
 ];
 
+function matchingFamilies(identity: string): SubjectFamily[] {
+  const matches = SUBJECT_FAMILIES.filter((family) => family.trigger.test(identity));
+  const suppressed = new Set(matches.flatMap((family) => family.suppresses ?? []));
+  return matches.filter((family) => !suppressed.has(family.id));
+}
+
+export function subjectFamiliesForText(identity: string): SubjectFamily[] {
+  return matchingFamilies(identity);
+}
+
 function briefIdentity(brief: EventBrief): string {
+  if (brief.visualIdentityOverride) {
+    return [brief.visualIdentityOverride, ...brief.requirements.required].join(" ");
+  }
   return [brief.eventName, brief.eventType, brief.themeName, brief.vibe, ...brief.requirements.required].join(" ");
 }
 
 export function subjectFamiliesForBrief(brief: EventBrief): SubjectFamily[] {
-  const identity = briefIdentity(brief);
-  const matches = SUBJECT_FAMILIES.filter((family) => family.trigger.test(identity));
-  const suppressed = new Set(matches.flatMap((family) => family.suppresses ?? []));
-  return matches.filter((family) => !suppressed.has(family.id));
+  return matchingFamilies(briefIdentity(brief));
+}
+
+/**
+ * Turns a newly named concrete subject into the binding visual identity for
+ * this generation. Generic refinements ("more elegant", "less literal")
+ * continue to steer the existing brief. A newly named character/franchise or
+ * subject family replaces an inherited theme so an old event title cannot
+ * silently overpower the host's current request.
+ */
+export function briefForHostDirection(brief: EventBrief, direction?: string): EventBrief {
+  if (brief.visualIdentityOverride) return brief;
+
+  const currentDirection = direction?.trim() ?? "";
+  const directionFamilies = subjectFamiliesForText(currentDirection);
+  const explicitFamilies = directionFamilies.length > 0
+    ? directionFamilies
+    : subjectFamiliesForText(brief.inspirationNotes.trim());
+  if (explicitFamilies.length === 0) return brief;
+
+  const inheritedIds = new Set(subjectFamiliesForBrief(brief).map((family) => family.id));
+  if (explicitFamilies.every((family) => inheritedIds.has(family.id))) return brief;
+
+  const visualIdentityOverride = explicitFamilies.map((family) => family.label).join(" + ");
+  return {
+    ...brief,
+    themeName: visualIdentityOverride,
+    visualIdentityOverride,
+    requirements: classifyRequirements({
+      themeName: visualIdentityOverride,
+      vibe: visualIdentityOverride,
+      colors: brief.colors,
+      milestone: brief.milestone,
+      formality: brief.formality,
+    }),
+  };
 }
 
 export interface ConceptPreflightResult {
