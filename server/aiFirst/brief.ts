@@ -39,6 +39,12 @@ export interface EventBrief {
   dna: Partial<Record<DnaAxis, number>>;
   /** Vision analysis of uploaded inspiration, when the host supplied any. */
   inspirationNotes: string;
+  /**
+   * A concrete identity the host supplied after the event was created. When
+   * present, this is the artwork identity for this generation; the saved
+   * event name and earlier theme remain event facts, not competing subjects.
+   */
+  visualIdentityOverride?: string;
   requirements: BriefRequirements;
 }
 
@@ -278,8 +284,15 @@ export function briefToPromptBlock(brief: EventBrief): string {
     `Event: ${brief.eventName || "(unnamed)"}${brief.eventType ? ` · ${brief.eventType}` : ""}`,
   ];
   if (brief.milestone) lines.push(`Milestone: ${brief.milestone}`);
-  if (brief.vibe) lines.push(`Host's words: ${brief.vibe}`);
-  if (brief.themeName) lines.push(`Theme: ${brief.themeName}`);
+  if (brief.visualIdentityOverride) {
+    lines.push(
+      `Visual identity for this generation: ${brief.visualIdentityOverride}`,
+      "This current visual identity replaces the event's earlier artwork theme. Keep the event title and occasion facts as copy, but do not infer artwork subjects from an older theme embedded in them.",
+    );
+  } else {
+    if (brief.vibe) lines.push(`Host's words: ${brief.vibe}`);
+    if (brief.themeName) lines.push(`Theme: ${brief.themeName}`);
+  }
   if (brief.colors.length) lines.push(`Colours: ${brief.colors.join(", ")}`);
   lines.push(`Formality: ${brief.formality}`);
   if (brief.dateLine) lines.push(`Date: ${brief.dateLine}${brief.season ? ` (${brief.season})` : ""}`);

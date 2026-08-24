@@ -30,6 +30,9 @@ import {
 import { LAUNCH_THEMES } from "@shared/themeCatalog";
 import { LAYOUT_FRAMES } from "@shared/inviteLayout";
 import { concept } from "./aiFirstFixtures";
+import { bindConceptsToBrief } from "../server/aiFirst/conceptBindings";
+import { buildEventBrief } from "../server/aiFirst/brief";
+import type { Event } from "@shared/schema";
 
 const art = (over: Partial<{ medium: string; composition: string; prompt: string }>) => ({
   medium: "watercolor",
@@ -87,6 +90,36 @@ describe("layout — before generation", () => {
     );
     expect(repair.issues.map((i) => i.code)).toContain("split-art-not-panel-shaped");
     expect(repair.layoutStyle).toBe("banner");
+  });
+
+  it("canonicalizes type after a deterministic split-to-banner repair", () => {
+    const wideSplit = concept({
+      layoutStyle: "split",
+      baseThemeId: "garden-editorial",
+      placementId: "left-column",
+      safeTypographyRegion: "right-panel",
+      art: art({ composition: "a wide panoramic performance stage" }),
+    });
+    const event = {
+      id: 1,
+      eventName: "Maya's Birthday",
+      eventType: "birthday",
+      vibeDescription: "cinematic K-pop performance",
+      themeName: "KPop Demon Hunters",
+      paletteColors: "[]",
+      eventDate: "8 August 2026",
+      location: "",
+      venueName: "",
+    } as unknown as Event;
+    const brief = buildEventBrief({ event, dna: {}, guestCount: 15 });
+
+    const [bound] = bindConceptsToBrief([wideSplit], brief);
+
+    expect(bound.layoutStyle).toBe("banner");
+    expect(safeTypographyPlacementCoverage(bound)).toBeGreaterThanOrEqual(MIN_SAFE_TYPE_PLACEMENT_COVERAGE);
+    expect(validateLayoutBeforeGeneration(bound).issues.map((issue) => issue.code)).not.toContain(
+      "safe-region-outside-type-area",
+    );
   });
 
   it("refuses a banner whose artwork draws its own mat", () => {

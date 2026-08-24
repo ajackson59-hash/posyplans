@@ -29,6 +29,7 @@ import { adaptStudioDirection } from "../server/aiFirst/fallback";
 import {
   concreteSubjectRequirementsForBrief,
   concreteSubjectReviewRequirementsForBrief,
+  briefForHostDirection,
   curatedThemeMatchesBrief,
   preflightConceptForBrief,
   subjectFamiliesForBrief,
@@ -180,6 +181,66 @@ describe("brief — requirements the server owns, not the model", () => {
     expect(generic.passed).toBe(false);
     expect(generic.message).toContain("KPop Demon Hunters");
     expect(direct.passed).toBe(true);
+  });
+
+  it("lets a newly named concrete identity replace an inherited event theme", () => {
+    const constructionBrief = brief({
+      eventName: "I'm 3 and Diggin' It",
+      eventType: "Birthday Party",
+      themeName: "Construction / Dump Truck",
+      vibeDescription: "A construction party for our favorite little builder.",
+    });
+    const direction =
+      "Make Rumi, Mira, and Zoey unmistakably central with their demon-hunting weapons and KPop Demon Hunters story-world cues.";
+
+    const effective = briefForHostDirection(constructionBrief, direction);
+    const prompt = buildUserPrompt({ brief: effective, direction });
+
+    expect(effective.visualIdentityOverride).toBe("KPop Demon Hunters");
+    expect(subjectFamiliesForBrief(effective).map((family) => family.id)).toEqual(["kpop-demon-hunters"]);
+    expect(prompt).toContain("Visual identity for this generation: KPop Demon Hunters");
+    expect(prompt).toContain("Rumi, Mira and Zoey");
+    expect(prompt).not.toContain("Construction subject map");
+  });
+
+  it("keeps the inherited identity for a generic style refinement", () => {
+    const constructionBrief = brief({
+      themeName: "Construction / Dump Truck",
+      vibeDescription: "A construction party for our favorite little builder.",
+    });
+
+    expect(briefForHostDirection(constructionBrief, "Make it more refined and cinematic")).toBe(constructionBrief);
+  });
+
+  it("treats a concrete design-inspiration identity like an explicit host direction", () => {
+    const constructionBrief = buildEventBrief({
+      event: event({
+        themeName: "Construction / Dump Truck",
+        vibeDescription: "A construction party for our favorite little builder.",
+      }),
+      dna: {},
+      guestCount: 15,
+      inspirationNotes: "KPop Demon Hunters with Rumi, Mira and Zoey on a supernatural performance stage.",
+    });
+
+    const effective = briefForHostDirection(constructionBrief);
+    expect(effective.visualIdentityOverride).toBe("KPop Demon Hunters");
+    expect(subjectFamiliesForBrief(effective).map((family) => family.id)).toEqual(["kpop-demon-hunters"]);
+  });
+
+  it("gives a newly typed concrete direction precedence over older inspiration subjects", () => {
+    const inspiredBrief = buildEventBrief({
+      event: event({ themeName: "garden", vibeDescription: "soft garden flowers" }),
+      dna: {},
+      guestCount: 15,
+      inspirationNotes: "A floral garden invitation with meadow flowers.",
+    });
+
+    const effective = briefForHostDirection(
+      inspiredBrief,
+      "Use KPop Demon Hunters with Rumi, Mira and Zoey as the central characters.",
+    );
+    expect(subjectFamiliesForBrief(effective).map((family) => family.id)).toEqual(["kpop-demon-hunters"]);
   });
 
   it("keeps preferred items out of the pass/fail gate", () => {
