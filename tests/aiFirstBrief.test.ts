@@ -197,6 +197,8 @@ describe("brief — requirements the server owns, not the model", () => {
     const prompt = buildUserPrompt({ brief: effective, direction });
 
     expect(effective.visualIdentityOverride).toBe("KPop Demon Hunters");
+    expect(effective.colors).toEqual([]);
+    expect(effective.requirements.required.join(" ")).not.toContain("colour family");
     expect(subjectFamiliesForBrief(effective).map((family) => family.id)).toEqual(["kpop-demon-hunters"]);
     expect(prompt).toContain("Visual identity for this generation: KPop Demon Hunters");
     expect(prompt).toContain("Rumi, Mira and Zoey");
