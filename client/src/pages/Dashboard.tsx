@@ -133,6 +133,7 @@ export default function Dashboard() {
     return attemptId && expectedAssetHash ? { attemptId, expectedAssetHash } : null;
   }, []);
   const [retainedReviewReady, setRetainedReviewReady] = useState(false);
+  const [retainedReviewError, setRetainedReviewError] = useState("");
 
   const reviewRetainedArtwork = useMutation({
     mutationFn: async () => {
@@ -147,6 +148,7 @@ export default function Dashboard() {
       );
     },
     onSuccess: () => {
+      setRetainedReviewError("");
       setRetainedReviewReady(true);
       toast({
         title: "Private design preview ready",
@@ -154,6 +156,7 @@ export default function Dashboard() {
       });
     },
     onError: (error: Error) => {
+      setRetainedReviewError(error.message);
       toast({
         title: "The retained design did not pass review",
         description: error.message,
@@ -836,12 +839,17 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <p className="font-serif text-lg font-semibold text-foreground">
-                    {retainedReviewReady ? "Private design preview ready" : "Review the saved artwork"}
+                    {retainedReviewReady
+                      ? "Private design preview ready"
+                      : retainedReviewError
+                        ? "The saved artwork needs another review"
+                        : "Review the saved artwork"}
                   </p>
                   <p className="mt-0.5 max-w-2xl text-sm text-muted-foreground">
                     {retainedReviewReady
                       ? "It passed Posy's quality review. Your live invitation is unchanged until you explicitly choose the design."
-                      : "This reviews the exact artwork already created. It will not generate another image or change the live invitation."}
+                      : retainedReviewError ||
+                        "This reviews the exact artwork already created. It will not generate another image or change the live invitation."}
                   </p>
                 </div>
               </div>
