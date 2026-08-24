@@ -43,7 +43,7 @@ Score each 1-5. 4 means "a professional stationery studio would ship this". 3 me
 - premiumFinish: 5 = genuinely premium editorial illustration. Score 1-2 for clipart, stock-template or generic AI look.
 - briefFidelity: 5 = the artwork unmistakably delivers the brief's stated identity.
 - compositionQuality: 5 = clear, balanced, intentional composition after applying the FINAL TYPE PROTECTION described by the user. For none, gradient or veil protection, any face, person, hero object or required subject inside the supplied LIVE TYPOGRAPHY BOX forces a score of 3 or lower. A plate is different: it is a nearly opaque paper panel in the final renderer, so judge the composition as though the pixels beneath that box are covered. Do not fail a plate merely because raw artwork lies beneath it. Do fail briefFidelity or compositionQuality if covering that box hides the only visible must-have, removes the theme's only recognizable subject, or leaves the visible composition outside the panel unbalanced.
-- ageAppropriate: 5 = correctly pitched for the celebrant's age. Babyish work for an adult, or content too mature for a child, scores 1.
+- ageAppropriate: 5 = correctly pitched for the celebrant's age. Babyish work for an adult, or content too mature for a child, scores 1. When the host explicitly requests an all-ages action or fantasy identity, do not fail this dimension merely because faithful imagery includes stylized fantasy weapons, non-graphic supernatural creatures, performance costumes or dramatic poses. Judge whether the treatment becomes graphic, sexualized or genuinely frightening beyond that requested identity's normal family-audience presentation.
 
 Judge BRIEF REQUIREMENTS holistically through briefFidelity and ageAppropriate. Do not repeat them in requiredPresent.
 
@@ -112,7 +112,11 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
 
   const userText = [
     `Celebration: ${brief.eventName || brief.eventType || "a celebration"}${brief.milestone ? ` · ${brief.milestone}` : ""}`,
-    brief.vibe ? `Intended feeling: ${brief.vibe}` : "",
+    brief.visualIdentityOverride
+      ? `Current host-selected visual identity: ${brief.visualIdentityOverride}`
+      : brief.vibe
+        ? `Intended feeling: ${brief.vibe}`
+        : "",
     `Direction: ${concept.conceptName} — ${concept.description}`,
     `LIVE TYPOGRAPHY BOX (percentage of final card): left ${typeBox.left.toFixed(0)}%, top ${typeBox.top.toFixed(0)}%, width ${typeBox.width.toFixed(0)}%, height ${typeBox.height.toFixed(0)}%.`,
     protectionInstruction,
