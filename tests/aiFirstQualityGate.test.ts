@@ -231,11 +231,11 @@ describe("composing for the crop the renderer will apply", () => {
     expect(buildArtworkPrompt(concept({ layoutStyle: "split" }))).toContain("central 45% of the width");
   });
 
-  it("stays quiet for the layouts that show almost the whole canvas", () => {
-    for (const layoutStyle of ["full-bleed", "backdrop", "banner"] as const) {
-      expect(safeFramingRequirement(layoutStyle)).toBe("");
-      expect(visibleFractionForLayout(layoutStyle).x).toBe(1);
-    }
+  it("still names a shallow cover crop because it can clip an edge detail", () => {
+    expect(safeFramingRequirement("full-bleed")).toContain("central 89% of the height");
+    expect(safeFramingRequirement("backdrop")).toContain("central 89% of the height");
+    expect(safeFramingRequirement("banner")).toContain("central 88% of the height");
+    expect(visibleFractionForLayout("full-bleed").x).toBe(1);
   });
 
   it("still demands full-edge coverage, so the crop advice cannot invite a margin", () => {

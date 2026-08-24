@@ -333,8 +333,13 @@ export const ARTWORK_EDGE_REQUIREMENT =
 /** Appended after the edge requirement — the artwork must carry no lettering. */
 export const ARTWORK_TEXT_REQUIREMENT = "No text, no letters, no words, no numbers, no logos, no watermarks.";
 
-/** Below this visible share of an axis, the model is told where the crop lands. */
-const FRAMING_ADVICE_THRESHOLD = 0.8;
+/**
+ * Below this visible share of an axis, the model is told where the crop lands.
+ * Keep this just below 1: even the portrait provider size loses 11% of its
+ * height in a 3:4 full-card frame, which is enough to clip a deliberate edge
+ * detail despite looking like a nearly exact aspect-ratio match.
+ */
+const FRAMING_ADVICE_THRESHOLD = 0.999;
 
 /**
  * The share of the generated image each axis keeps once the renderer's
