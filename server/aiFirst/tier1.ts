@@ -88,6 +88,16 @@ const MIN_MOTIF_SALIENCE_SHARE = 0.2;
 const MIN_OCR_TOKEN_LENGTH = 3;
 const OCR_MIN_CONFIDENCE = 60;
 /**
+ * Tesseract can invent one short fragment from highlights, jewellery or
+ * confetti. Treat one token as decisive only when it is longer and strongly
+ * recognized; otherwise require agreement across page-segmentation modes or
+ * enough medium-confidence text to form a phrase. Tier 2 still reviews every
+ * accepted image for text, logos and watermarks.
+ */
+const OCR_STRONG_TOKEN_LENGTH = 4;
+const OCR_STRONG_CONFIDENCE = 80;
+const OCR_PHRASE_MIN_ALNUM = 8;
+/**
  * The former raw-art limit was 150. A 0.86 local veil reduced that to 21 on
  * the rendered card, so 21 remains the launch bar. The renderer now uses a
  * slightly stronger 0.88 veil, creating deterministic safety margin without
@@ -534,6 +544,61 @@ export interface OcrResult {
   skipped: boolean;
 }
 
+interface OcrCandidate {
+  token: string;
+  normalized: string;
+  bestConfidence: number;
+  runs: Set<number>;
+}
+
+/**
+ * Converts Tesseract TSV output into evidence strong enough to block a paid
+ * image. A lone three-character fragment is not reliable OCR; real lettering
+ * is normally either recognized strongly, repeated by both segmentation
+ * modes, or present as a multi-token phrase.
+ */
+export function meaningfulOcrTokensFromTsv(tsvRuns: string[]): string[] {
+  const candidates = new Map<string, OcrCandidate>();
+
+  for (let runIndex = 0; runIndex < tsvRuns.length; runIndex += 1) {
+    const tsv = tsvRuns[runIndex];
+    for (const line of tsv.split("\n").slice(1)) {
+      const cols = line.split("\t");
+      if (cols.length < 12) continue;
+      const confidence = parseFloat(cols[10]);
+      const token = (cols[11] || "").trim();
+      if (!Number.isFinite(confidence) || confidence < OCR_MIN_CONFIDENCE) continue;
+      const alnum = token.replace(/[^A-Za-z0-9]/g, "");
+      if (alnum.length < MIN_OCR_TOKEN_LENGTH) continue;
+
+      const normalized = alnum.toLowerCase();
+      const current = candidates.get(normalized);
+      if (!current) {
+        candidates.set(normalized, { token, normalized, bestConfidence: confidence, runs: new Set([runIndex]) });
+        continue;
+      }
+      current.runs.add(runIndex);
+      if (confidence > current.bestConfidence) {
+        current.bestConfidence = confidence;
+        current.token = token;
+      }
+    }
+  }
+
+  const mediumConfidence = Array.from(candidates.values());
+  const phraseEvidence = mediumConfidence.length >= 2 &&
+    mediumConfidence.reduce((sum, candidate) => sum + candidate.normalized.length, 0) >= OCR_PHRASE_MIN_ALNUM;
+
+  return mediumConfidence
+    .filter((candidate) =>
+      phraseEvidence ||
+      candidate.runs.size >= 2 ||
+      (candidate.normalized.length >= OCR_STRONG_TOKEN_LENGTH &&
+        candidate.bestConfidence >= OCR_STRONG_CONFIDENCE),
+    )
+    .map((candidate) => candidate.token);
+}
+
 /**
  * Shells out to Tesseract at two scales. Deliberately not a dependency: if the
  * binary is missing the check reports `skipped` and the Tier 2 vision pass
@@ -547,7 +612,7 @@ export function detectText(bytes: Buffer): OcrResult {
     const file = join(dir, "art.png");
     writeFileSync(file, bytes);
 
-    const tokens = new Set<string>();
+    const tsvRuns: string[] = [];
     for (const psm of ["11", "6"]) {
       let tsv: string;
       try {
@@ -559,17 +624,10 @@ export function detectText(bytes: Buffer): OcrResult {
       } catch {
         return { found: false, tokens: [], skipped: true };
       }
-      for (const line of tsv.split("\n").slice(1)) {
-        const cols = line.split("\t");
-        if (cols.length < 12) continue;
-        const confidence = parseFloat(cols[10]);
-        const text = (cols[11] || "").trim();
-        if (!Number.isFinite(confidence) || confidence < OCR_MIN_CONFIDENCE) continue;
-        const alnum = text.replace(/[^A-Za-z0-9]/g, "");
-        if (alnum.length >= MIN_OCR_TOKEN_LENGTH) tokens.add(text);
-      }
+      tsvRuns.push(tsv);
     }
-    return { found: tokens.size > 0, tokens: Array.from(tokens), skipped: false };
+    const tokens = meaningfulOcrTokensFromTsv(tsvRuns);
+    return { found: tokens.length > 0, tokens, skipped: false };
   } catch {
     return { found: false, tokens: [], skipped: true };
   } finally {

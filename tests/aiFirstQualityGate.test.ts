@@ -11,6 +11,7 @@ import {
   focalVisibilityAfterOpacity,
   longestFlatBand,
   MAX_RENDERED_TYPE_REGION_LUMA_SPREAD,
+  meaningfulOcrTokensFromTsv,
   quietnessOfTypeRegion,
   retryCodesFor,
   runTier1Checks,
@@ -52,6 +53,35 @@ describe("tier 1 — a clean image", () => {
 
   it("costs nothing to run, so it can gate every attempt", () => {
     expect(tier1(artworkPng()).durationMs).toBeLessThan(2_000);
+  });
+});
+
+describe("tier 1 — OCR evidence", () => {
+  const tsv = (entries: Array<[number, string]>) => [
+    "level\tpage_num\tblock_num\tpar_num\tline_num\tword_num\tleft\ttop\twidth\theight\tconf\ttext",
+    ...entries.map(([confidence, token], index) =>
+      `5\t1\t1\t1\t1\t${index + 1}\t0\t0\t10\t10\t${confidence}\t${token}`,
+    ),
+  ].join("\n");
+
+  it("ignores one medium-confidence three-letter fragment", () => {
+    expect(meaningfulOcrTokensFromTsv([tsv([[72.8, "ype"]]), tsv([])])).toEqual([]);
+  });
+
+  it("blocks one strongly recognized word or number", () => {
+    expect(meaningfulOcrTokensFromTsv([tsv([[91, "RSVP"]]), tsv([])])).toEqual(["RSVP"]);
+    expect(meaningfulOcrTokensFromTsv([tsv([[94, "2026"]]), tsv([])])).toEqual(["2026"]);
+  });
+
+  it("blocks short lettering when both segmentation modes agree", () => {
+    expect(meaningfulOcrTokensFromTsv([tsv([[71, "VIP"]]), tsv([[76, "VIP"]])])).toEqual(["VIP"]);
+  });
+
+  it("blocks a medium-confidence phrase without requiring either token to be strong", () => {
+    expect(meaningfulOcrTokensFromTsv([tsv([[68, "SAVE"], [70, "DATE"]]), tsv([])])).toEqual([
+      "SAVE",
+      "DATE",
+    ]);
   });
 });
 
