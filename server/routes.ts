@@ -1,6 +1,7 @@
 import type { Express, Request } from "express";
 import { createServer } from 'node:http';
 import type { Server } from 'node:http';
+import { createHash } from "node:crypto";
 import { storage } from "./storage";
 import {
   insertEventSchema, updateEventSchema, insertGuestSchema, updateGuestSchema, rsvpSubmitSchema,
@@ -12,7 +13,7 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import type { Event, Guest } from "@shared/schema";
-import { sendInviteEmail } from "./email";
+import { sendEventRecoveryEmail, sendInviteEmail } from "./email";
 import { sendReminderSms } from "./sms";
 import { matchThemeLibrary, libraryEntryToSuggestion, buildResourceUrl, type ThemeSuggestion } from "./themeLibrary";
 import { generateThemeSuggestionAi } from "./themeAi";
@@ -91,16 +92,69 @@ function normalizePhone(value: string): string {
   return value.replace(/\D/g, "");
 }
 
-function requestOrigin(req: Request): string {
-  const forwardedProto = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
-  const forwardedHost = String(req.headers["x-forwarded-host"] || "").split(",")[0].trim();
-  const protocol = forwardedProto || req.protocol || "https";
-  const host = forwardedHost || req.get("host") || "posyplans.com";
-  return `${protocol}://${host}`;
+const PUBLIC_APP_ORIGIN = "https://posyplans.com";
+
+function guestRsvpUrl(_req: Request, event: Event, guest: Guest): string {
+  return `${PUBLIC_APP_ORIGIN}/rsvp/${event.shareSlug}/g/${guest.accessToken}`;
 }
 
-function guestRsvpUrl(req: Request, event: Event, guest: Guest): string {
-  return `${requestOrigin(req)}/rsvp/${event.shareSlug}/g/${guest.accessToken}`;
+const eventRecoverySchema = z.object({
+  email: z.string().trim().email().max(254),
+});
+const EVENT_RECOVERY_EMAIL_LIMIT = 3;
+const EVENT_RECOVERY_IP_LIMIT = 12;
+const EVENT_RECOVERY_WINDOW_MS = 60 * 60 * 1000;
+const eventRecoveryAttempts = new Map<string, { count: number; resetsAt: number }>();
+
+function hashRecoveryKey(value: string): string {
+  return createHash("sha256").update(value).digest("hex");
+}
+
+function consumeEventRecoveryLimit(key: string, limit: number, now: number): boolean {
+  const current = eventRecoveryAttempts.get(key);
+  if (!current || current.resetsAt <= now) {
+    eventRecoveryAttempts.set(key, { count: 1, resetsAt: now + EVENT_RECOVERY_WINDOW_MS });
+    if (eventRecoveryAttempts.size > 4000) {
+      eventRecoveryAttempts.forEach((entry, candidate) => {
+        if (entry.resetsAt <= now) eventRecoveryAttempts.delete(candidate);
+      });
+    }
+    return true;
+  }
+  if (current.count >= limit) return false;
+  current.count += 1;
+  return true;
+}
+
+function allowEventRecoveryAttempt(req: Request, email: string, now = Date.now()): boolean {
+  const forwardedIp = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
+  const ip = forwardedIp || req.ip || "unknown";
+  const emailAllowed = consumeEventRecoveryLimit(
+    `email:${hashRecoveryKey(email)}`,
+    EVENT_RECOVERY_EMAIL_LIMIT,
+    now,
+  );
+  const ipAllowed = consumeEventRecoveryLimit(
+    `ip:${hashRecoveryKey(ip)}`,
+    EVENT_RECOVERY_IP_LIMIT,
+    now,
+  );
+  return emailAllowed && ipAllowed;
+}
+
+function buildEventRecoveryBody(events: Event[]): string {
+  const links = events.slice(0, 20).map((event) => {
+    const detail = [event.eventType, event.eventDate].filter(Boolean).join(" · ");
+    const dashboardUrl = `${PUBLIC_APP_ORIGIN}/dashboard/${encodeURIComponent(event.ownerToken)}`;
+    return `${event.eventName}${detail ? ` — ${detail}` : ""}\n${dashboardUrl}`;
+  });
+
+  return [
+    "Hi,",
+    "Someone requested the private dashboard link for your Posy event. Use the secure link below to continue planning:",
+    links.join("\n\n"),
+    "If you didn't request this email, you can ignore it. Your event has not been changed.",
+  ].join("\n\n");
 }
 
 // This is defense in depth for the generic recovery form. The direct guest
@@ -198,26 +252,42 @@ export async function registerRoutes(
     res.json(updated);
   });
 
-  // Email-based event lookup — lets a returning host find their events by
-  // entering the email they used. Returns only the minimal info needed to
-  // redirect to the dashboard (no sensitive guest/budget data).
+  // Email-based event recovery. Owner tokens are bearer credentials, so they
+  // must never be returned to an unauthenticated browser after only an email
+  // match. Deliver the existing private dashboard links to the verified inbox
+  // instead, with a non-enumerating response and bounded resend attempts.
   app.post("/api/events/lookup", async (req, res) => {
-    const { email } = req.body as { email?: string };
-    if (!email || !email.trim()) {
-      return res.status(400).json({ error: "Email is required" });
+    const parsed = eventRecoverySchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "Enter a valid email address" });
+
+    const normalized = parsed.data.email.toLowerCase();
+    res.setHeader("Cache-Control", "no-store");
+    const genericResponse = {
+      ok: true,
+      message: "If an event is connected to that email, a private dashboard link is on its way.",
+    };
+
+    if (!allowEventRecoveryAttempt(req, normalized)) {
+      return res.status(202).json(genericResponse);
     }
-    const normalized = email.trim().toLowerCase();
-    const found = await storage.getEventsByEmail(normalized);
-    // Return only the fields needed for recovery — ownerToken, event name,
-    // date, and type. No guest lists, budgets, or other sensitive data.
-    const safe = found.map((e) => ({
-      ownerToken: e.ownerToken,
-      eventName: e.eventName,
-      eventType: e.eventType,
-      eventDate: e.eventDate,
-      createdAt: e.createdAt,
-    }));
-    res.json({ events: safe });
+
+    try {
+      const found = await storage.getEventsByEmail(normalized);
+      if (found.length > 0) {
+        const result = await sendEventRecoveryEmail({
+          to: normalized,
+          subject: found.length === 1 ? "Your Posy event link" : "Your Posy event links",
+          body: buildEventRecoveryBody(found),
+        });
+        if (!result.ok) console.error("Event recovery email delivery failed.");
+      }
+    } catch {
+      // The public response intentionally stays identical: recovery must not
+      // become an account-enumeration oracle during a storage/provider outage.
+      console.error("Event recovery request failed before delivery.");
+    }
+
+    return res.status(202).json(genericResponse);
   });
 
   app.get("/api/events/owner/:ownerToken", async (req, res) => {

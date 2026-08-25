@@ -34,7 +34,7 @@ function escapeHtml(value: string): string {
 // paragraph spacing, rather than a wall of unstyled plain text. Sending an
 // html part alongside text also matters for deliverability: text-only
 // mail from a shared sending address scores as spammier to most inboxes.
-function buildInviteEmailHtml(body: string): string {
+function buildEmailHtml(body: string, ctaLabel: string): string {
   const urlPattern = /(https?:\/\/[^\s]+)/g;
   const paragraphs = body
     .split(/\n{2,}/)
@@ -49,7 +49,7 @@ function buildInviteEmailHtml(body: string): string {
           .replace(/&gt;/g, ">")
           .replace(/&quot;/g, '"')
           .replace(/&#39;/g, "'");
-        return `<a href="${realUrl}" style="display:inline-block;margin-top:4px;padding:10px 20px;background:#5c6756;color:#ffffff;border-radius:6px;text-decoration:none;font-weight:600;">View &amp; RSVP</a>`;
+        return `<a href="${realUrl}" style="display:inline-block;margin-top:4px;padding:10px 20px;background:#5c6756;color:#ffffff;border-radius:6px;text-decoration:none;font-weight:600;">${escapeHtml(ctaLabel)}</a>`;
       }),
     );
 
@@ -79,11 +79,11 @@ function buildInviteEmailHtml(body: string): string {
 </html>`;
 }
 
-export async function sendInviteEmail(opts: {
+async function sendEmail(opts: {
   to: string;
   subject: string;
   body: string;
-}): Promise<SendEmailResult> {
+}, ctaLabel: string): Promise<SendEmailResult> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     return {
@@ -106,7 +106,7 @@ export async function sendInviteEmail(opts: {
         to: [opts.to],
         subject: opts.subject,
         text: opts.body,
-        html: buildInviteEmailHtml(opts.body),
+        html: buildEmailHtml(opts.body, ctaLabel),
       }),
     });
 
@@ -129,4 +129,20 @@ export async function sendInviteEmail(opts: {
       error: err instanceof Error ? err.message : "Couldn't send this email — please try again.",
     };
   }
+}
+
+export async function sendInviteEmail(opts: {
+  to: string;
+  subject: string;
+  body: string;
+}): Promise<SendEmailResult> {
+  return sendEmail(opts, "View & RSVP");
+}
+
+export async function sendEventRecoveryEmail(opts: {
+  to: string;
+  subject: string;
+  body: string;
+}): Promise<SendEmailResult> {
+  return sendEmail(opts, "Open event dashboard");
 }
