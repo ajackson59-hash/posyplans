@@ -163,7 +163,10 @@ describe("one-direction paid review canary", () => {
     expect(events.filter((event) => event.type === "direction")).toHaveLength(1);
     expect(events.filter((event) => event.type === "done")).toHaveLength(1);
     expect(attempts.all).toHaveLength(1);
-    expect(attempts.all[0]).toMatchObject({ model, quality: "high", size: "1024x1536" });
+    // Narrative artwork and live type now occupy separate renderer frames, so
+    // the provider is paid for the banner's landscape source rather than a
+    // portrait that a type plate later obscures.
+    expect(attempts.all[0]).toMatchObject({ model, quality: "high", size: "1536x1024" });
     expect(attempts.all[0].costUsdMicros).toBe(250_000);
   });
 });

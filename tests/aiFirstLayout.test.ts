@@ -50,16 +50,20 @@ describe("layout — before generation", () => {
     expect(repair.artworkOpacity).toBeUndefined();
   });
 
-  it("gives a full-bleed narrative scene a solid paper panel before any provider spend", () => {
+  it("moves a full-bleed narrative scene above the live type before any provider spend", () => {
     const repair = validateLayoutBeforeGeneration(
       concept({ layoutStyle: "full-bleed", focalStrategy: "narrative-scene", minOverlay: "veil" }),
     );
 
-    expect(repair.overlay).toBe("plate");
+    expect(repair.layoutStyle).toBe("banner");
+    expect(repair.overlay).toBe("veil");
     expect(repair.issues).toContainEqual(expect.objectContaining({
       code: "art-behind-type-needs-local-surface",
-      repair: "strengthen-overlay",
+      repair: "change-layout",
     }));
+    const artFrame = LAYOUT_FRAMES[repair.layoutStyle].art;
+    const typeFrame = LAYOUT_FRAMES[repair.layoutStyle].type;
+    expect(artFrame.top + artFrame.height).toBeLessThanOrEqual(typeFrame.top);
   });
 
   it("rescues a focal subject that a backdrop's 30% would erase", () => {
@@ -249,7 +253,11 @@ describe("layout — before generation", () => {
   });
 
   it("accepts a quiet centre that covers the actual centred placement", () => {
-    const centred = concept({ safeTypographyRegion: "center", placementId: "centre" });
+    const centred = concept({
+      focalStrategy: "iconic-detail",
+      safeTypographyRegion: "center",
+      placementId: "centre",
+    });
     expect(safeTypographyPlacementCoverage(centred)).toBeGreaterThanOrEqual(MIN_SAFE_TYPE_PLACEMENT_COVERAGE);
     expect(validateLayoutBeforeGeneration(centred).issues.map((i) => i.code)).not.toContain(
       "safe-region-outside-type-area",
