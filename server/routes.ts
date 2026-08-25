@@ -1364,7 +1364,23 @@ export async function registerRoutes(
 
     const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, updates);
     if (!updated) return res.status(404).json({ error: "Event not found" });
-    res.json(updated);
+
+    // Generated invitations can carry a multi-megabyte data URL. Returning the
+    // entire event after a tiny suite change made the database write succeed
+    // while the browser failed to parse the oversized response, so hosts saw a
+    // destructive error toast even though their liner or seal had saved.
+    // Keep this acknowledgement deliberately small; clients refetch the event
+    // after success and only need to know which suite values were persisted.
+    res.json({
+      ok: true,
+      suite: {
+        envelopeColor: updated.envelopeColor,
+        envelopeLinerPattern: updated.envelopeLinerPattern,
+        stampStyle: updated.stampStyle,
+        linerColor: updated.linerColor,
+        stampColor: updated.stampColor,
+      },
+    });
   });
 
   // Publish / unpublish the guest list. When "draft", the public RSVP page
