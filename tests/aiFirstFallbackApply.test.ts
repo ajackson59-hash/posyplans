@@ -118,7 +118,19 @@ function appFor(previewStore: InMemoryPreviewStore, usageStore: InMemoryUsageSto
   registerAiFirstRoutes(app, {
     storage: {
       getEventByOwnerToken: async (token: string) =>
-        token === OWNER ? { id: EVENT_ID, capturedEmail: "host@example.com", eventType: "birthday" } : undefined,
+        token === OWNER
+          ? {
+              id: EVENT_ID,
+              capturedEmail: "host@example.com",
+              eventName: "Ada's 4th Birthday",
+              eventType: "birthday",
+              eventDate: "12 September 2026",
+              location: "The Glasshouse",
+              hostNames: "Alex",
+              rsvpDeadline: "1 September 2026",
+              inviteSubject: "You're invited!",
+            }
+          : undefined,
       updateEventByOwnerToken: async (_token: string, data: Record<string, unknown>) => {
         updates.push(data);
         return { id: EVENT_ID, ...data };
@@ -225,6 +237,17 @@ describe("a direction that fell back to an adapted studio direction", () => {
     expect(snapshot!.assetHash).toBe(direction.assetHash);
     expect(snapshot!.artworkUrl).toBe(direction.illustrationUrl);
     expect(applied[AI_FIRST_CONCEPT_KEY].concept).toEqual(direction.concept);
+
+    // Applying generated artwork must never leak the underlying catalogue's
+    // sample date, venue or RSVP copy onto the public invitation.
+    expect(applied.theme.copy).toEqual({
+      eyebrow: "Hosted by Alex",
+      dateLine: "12 September 2026",
+      timeLine: "",
+      locationLine: "The Glasshouse",
+      rsvpLine: "Kindly reply by 1 September 2026",
+    });
+    expect(saved.inviteSubject).toBe("Ada's 4th Birthday");
 
     // Composition: the substituted card inherits the curated theme's own
     // layout and placement, and that is what is written down.
