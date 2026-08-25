@@ -164,7 +164,9 @@ describe("a clean run", () => {
     expect(imageCalls()).toBe(4);
     expect(summary.billedImages).toBe(4);
     expect(summary.retries).toBe(0);
-    expect(directionsOf(events).find((event) => event.direction.index === 0)?.direction.overlay).toBe("plate");
+    const narrative = directionsOf(events).find((event) => event.direction.index === 0)?.direction;
+    expect(narrative?.concept.layoutStyle).toBe("banner");
+    expect(narrative?.overlay).toBe("veil");
   });
 
   it("validates all concepts before revealing each approved artwork direction", async () => {
