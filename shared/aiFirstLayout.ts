@@ -56,6 +56,16 @@ const FOCAL_COMPOSITION = /\b(focal|single|centred|centered|portrait|subject|her
 /** Compositions that read as texture and survive being dropped to 30%. */
 const FIELD_COMPOSITION = /\b(scatter|scattered|field|pattern|repeat|allover|all-over|texture|wash|tile)\b/i;
 
+/**
+ * Evidence that the provider explicitly asked the artwork to draw the card's
+ * presentation edge. A bare `frame`, `framing`, `mat`, or `border` is not
+ * enough: construction art legitimately contains timber frames and scaffold
+ * framing, yoga art contains mats, and scene descriptions use camera framing.
+ * The old single-word test rejected those valid subjects before image spend.
+ */
+const BANNER_INTERNAL_MAT =
+  /\b(?:paper margins?|inset panels?|printed borders?|decorative borders?|ornamental borders?|card frames?|artwork frames?|image frames?|framed cards?|framed artwork|matted artwork|(?:border|frame) around (?:the )?(?:artwork|image|illustration|scene|composition|banner)|(?:artwork|image|illustration|scene|composition|banner) (?:inside|within) (?:an? |the )?(?:printed |painted |decorative |ornamental |thin |double |solid |paper )?(?:mat|border|frame|inset panel)|inside (?:an? |the )?(?:printed |painted |decorative |ornamental |thin |double |solid |paper )?(?:mat|border|frame|inset panel))\b/i;
+
 /** Artwork opacity a rescued backdrop is raised to: readable, still recessive. */
 export const BACKDROP_RESCUE_OPACITY = 0.62;
 
@@ -232,7 +242,7 @@ export function validateLayoutBeforeGeneration(concept: AiFirstConcept): LayoutR
 
   // A banner's artwork already sits inside a framed card; art that draws its
   // own mat produces the nested-border defect.
-  if (layoutStyle === "banner" && /\b(mat|matted|paper margin|border|frame|inset panel)\b/i.test(composition)) {
+  if (layoutStyle === "banner" && BANNER_INTERNAL_MAT.test(composition)) {
     issues.push({
       code: "banner-internal-mat",
       message: "banner artwork must not draw its own mat or frame — the renderer already frames the card",

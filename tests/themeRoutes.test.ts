@@ -262,6 +262,38 @@ describe("PATCH /invite/theme", () => {
   });
 });
 
+describe("PATCH /invite/suite", () => {
+  it("persists liner and seal choices without echoing large invitation artwork", async () => {
+    const app = await makeApp();
+    stored.inviteIllustrationUrl = `data:image/png;base64,${"A".repeat(5_000_000)}`;
+
+    const res = await request(app)
+      .patch(`/api/events/owner/${OWNER}/invite/suite`)
+      .send({
+        envelopeLinerPattern: "lattice",
+        linerColor: "#8a9a7b",
+        stampStyle: "wax-seal",
+        stampColor: "#a8763f",
+      });
+
+    expect(res.status).toBe(200);
+    expect(stored.envelopeLinerPattern).toBe("lattice");
+    expect(stored.stampStyle).toBe("wax-seal");
+    expect(res.body).toEqual({
+      ok: true,
+      suite: {
+        envelopeColor: "",
+        envelopeLinerPattern: "lattice",
+        stampStyle: "wax-seal",
+        linerColor: "#8a9a7b",
+        stampColor: "#a8763f",
+      },
+    });
+    expect(JSON.stringify(res.body)).not.toContain("data:image");
+    expect(JSON.stringify(res.body).length).toBeLessThan(500);
+  });
+});
+
 describe("catalog integrity", () => {
   it("ships eight themes with valid, renderable design data", () => {
     expect(LAUNCH_THEMES).toHaveLength(8);
