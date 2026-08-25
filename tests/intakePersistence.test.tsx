@@ -172,3 +172,64 @@ describe("Intake — genuine resume path", () => {
     });
   });
 });
+
+describe("Intake — clearing a previously-saved budget", () => {
+  // QA found that a host who set a budget, then went back and cleared the
+  // field, kept the old budget on the server: the client only included
+  // `budgetCeiling` in the PATCH body when it parsed to a number, so an
+  // empty field sent no key at all, and the intake route only ever sets
+  // keys present in the request body. The screen showed "Not set" locally
+  // while the server silently kept the stale value.
+  it("sends an explicit null, not an omitted key, when the budget field is cleared", async () => {
+    apiRequestJson.mockImplementation(async (_m: string, url: string) =>
+      url.includes("/master-planner/entitlement")
+        ? { freeDraftState: "none" }
+        : { event: { ...SERVER_DEFAULTS, budgetCeiling: 750 } },
+    );
+
+    renderIntake(`/intake/${TOKEN}`);
+
+    await screen.findByTestId("input-intake-event-name");
+    fireEvent.click(screen.getByTestId("button-intake-next-basics"));
+    await screen.findByTestId("input-intake-vibe");
+    fireEvent.click(screen.getByTestId("button-intake-next-vibe"));
+
+    const budgetInput = await screen.findByTestId("input-intake-budget");
+    expect((budgetInput as HTMLInputElement).value).toBe("750");
+
+    fireEvent.change(budgetInput, { target: { value: "" } });
+    apiRequest.mockClear();
+    fireEvent.click(screen.getByTestId("button-intake-next-sizing"));
+
+    await waitFor(() => expect(apiRequest).toHaveBeenCalled());
+    const [, , body] = apiRequest.mock.calls.find(([method]) => method === "PATCH")!;
+    expect(body).toHaveProperty("budgetCeiling", null);
+  });
+
+  it("sends an explicit null from the finish step too, not an omitted key", async () => {
+    apiRequestJson.mockImplementation(async (_m: string, url: string) =>
+      url.includes("/master-planner/entitlement")
+        ? { freeDraftState: "none" }
+        : { event: { ...SERVER_DEFAULTS, budgetCeiling: 750 } },
+    );
+
+    renderIntake(`/intake/${TOKEN}`);
+
+    await screen.findByTestId("input-intake-event-name");
+    fireEvent.click(screen.getByTestId("button-intake-next-basics"));
+    await screen.findByTestId("input-intake-vibe");
+    fireEvent.click(screen.getByTestId("button-intake-next-vibe"));
+
+    const budgetInput = await screen.findByTestId("input-intake-budget");
+    fireEvent.change(budgetInput, { target: { value: "" } });
+    fireEvent.click(screen.getByTestId("button-intake-next-sizing"));
+
+    await screen.findByTestId("button-intake-finish");
+    apiRequest.mockClear();
+    fireEvent.click(screen.getByTestId("button-intake-finish"));
+
+    await waitFor(() => expect(apiRequest).toHaveBeenCalled());
+    const [, , body] = apiRequest.mock.calls.find(([method]) => method === "PATCH")!;
+    expect(body).toHaveProperty("budgetCeiling", null);
+  });
+});

@@ -173,7 +173,11 @@ export const intakeSchema = z.object({
   eventType: z.string().optional(),
   eventDate: z.string().optional(),
   estimatedGuestCount: z.number().int().min(1).max(2000).optional(),
-  budgetCeiling: z.number().int().min(0).optional(),
+  // Nullable (not just optional): the intake wizard must be able to send an
+  // explicit `null` to clear a previously-saved budget. A merely-omitted key
+  // leaves the prior server-side value in place (see PATCH .../intake below),
+  // which silently kept a stale budget after a host cleared the field.
+  budgetCeiling: z.number().int().min(0).nullable().optional(),
   vibeDescription: z.string().max(500).optional(),
 });
 export type IntakeInput = z.infer<typeof intakeSchema>;

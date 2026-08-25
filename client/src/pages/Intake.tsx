@@ -197,10 +197,14 @@ export default function Intake() {
 
   const finish = useMutation({
     mutationFn: async () => {
-      const parsedBudget = budgetCeiling.trim() ? Number(budgetCeiling) : undefined;
+      // Always send budgetCeiling explicitly (a number, or null to clear) —
+      // never omit the key. Omitting it left a previously-saved budget
+      // silently in place on the server even after the host cleared the
+      // field, since PATCH .../intake only touches keys present in the body.
+      const parsedBudget = budgetCeiling.trim() ? Number(budgetCeiling) : NaN;
       await apiRequest("PATCH", `/api/events/owner/${ownerToken}/intake`, {
         estimatedGuestCount,
-        ...(parsedBudget !== undefined && !Number.isNaN(parsedBudget) ? { budgetCeiling: parsedBudget } : {}),
+        budgetCeiling: Number.isNaN(parsedBudget) ? null : parsedBudget,
       });
     },
     onSuccess: () => {
@@ -419,13 +423,14 @@ export default function Intake() {
                     data-testid="button-intake-next-sizing"
                     disabled={saveIntake.isPending}
                     onClick={() => {
-                      const parsedBudget = budgetCeiling.trim() ? Number(budgetCeiling) : undefined;
+                      // Always send budgetCeiling explicitly (a number, or
+                      // null to clear) — never omit the key. See the same
+                      // note in the `finish` mutation above.
+                      const parsedBudget = budgetCeiling.trim() ? Number(budgetCeiling) : NaN;
                       goNext(
                         {
                           estimatedGuestCount,
-                          ...(parsedBudget !== undefined && !Number.isNaN(parsedBudget)
-                            ? { budgetCeiling: parsedBudget }
-                            : {}),
+                          budgetCeiling: Number.isNaN(parsedBudget) ? null : parsedBudget,
                         },
                         "review",
                       );
