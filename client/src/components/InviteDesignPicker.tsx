@@ -246,7 +246,7 @@ export default function InviteDesignPicker({ ownerToken, event, onReviewEventSty
   // concept's derived defaults — already set.
   const updateSuite = useMutation({
     mutationFn: async (updates: { envelopeColor?: string; envelopeLinerPattern?: LinerPattern; stampStyle?: StampStyle; linerColor?: string; stampColor?: string }) =>
-      apiRequestJson<EventRecord>("PATCH", `/api/events/owner/${ownerToken}/invite/suite`, updates),
+      apiRequestJson<{ ok: true }>("PATCH", `/api/events/owner/${ownerToken}/invite/suite`, updates),
     onSuccess: () => {
       invalidateEvent();
     },
