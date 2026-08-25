@@ -135,6 +135,19 @@ describe("layout — before generation", () => {
     expect(issue?.repair).toBe("regenerate");
   });
 
+  it("does not mistake construction structure or camera framing for a card frame", () => {
+    for (const prompt of [
+      "A timber frame rises behind the birthday jobsite with scaffold framing and hard hats.",
+      "Blueprint frame lines map the build zone while wide cinematic framing keeps the crew visible.",
+      "A yoga mat rests beside the birthday picnic table.",
+    ]) {
+      const repair = validateLayoutBeforeGeneration(
+        concept({ layoutStyle: "banner", art: art({ prompt }) }),
+      );
+      expect(repair.issues.map((issue) => issue.code)).not.toContain("banner-internal-mat");
+    }
+  });
+
   it("gives busy all-over art a quiet place for the words", () => {
     const repair = validateLayoutBeforeGeneration(
       concept({
