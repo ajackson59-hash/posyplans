@@ -255,6 +255,35 @@ describe("whole-quartet creative preflight", () => {
     }
   });
 
+  it("allows construction frame language without treating it as a renderer-owned card frame", () => {
+    const structuralFrames = CONSTRUCTION_REVIEW_QUARTET.map((item, index) => {
+      if (index === 0) {
+        return concept({
+          ...item,
+          art: {
+            ...item.art,
+            prompt: item.art.prompt.replace("scaffold frames", "a timber frame"),
+          },
+        });
+      }
+      if (index === 2) {
+        return concept({
+          ...item,
+          art: {
+            ...item.art,
+            prompt: `${item.art.prompt} Blueprint frame lines organize the measured build zone.`,
+          },
+        });
+      }
+      return item;
+    });
+
+    const result = preflightConceptQuartet(structuralFrames, CONSTRUCTION_REVIEW_BRIEF);
+
+    expect(result.passed).toBe(true);
+    expect(result.errors).toEqual([]);
+  });
+
   it("blocks the canary's upper-third promise with a centred inherited placement before image spend", () => {
     const mismatched = CONSTRUCTION_REVIEW_QUARTET.map((item, index) =>
       index === 0
