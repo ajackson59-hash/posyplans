@@ -200,7 +200,7 @@ export default function InviteStudio({
 
   const suite = useMutation({
     mutationFn: (body: Record<string, unknown>) =>
-      apiRequestJson<EventRecord>("PATCH", `/api/events/owner/${ownerToken}/invite/suite`, body),
+      apiRequestJson<{ ok: true }>("PATCH", `/api/events/owner/${ownerToken}/invite/suite`, body),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [`/api/events/owner/${ownerToken}`] }),
     onError: () => {
       toast({ title: "Couldn't save the envelope", description: "Please try again.", variant: "destructive" });
