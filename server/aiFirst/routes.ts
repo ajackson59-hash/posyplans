@@ -14,7 +14,7 @@ import type { Express, Request, Response } from "express";
 import { readFeatureFlags } from "@shared/featureFlags";
 import { AI_FIRST_CONCEPT_KEY, themeFromSnapshot, type AiFirstSnapshot } from "@shared/aiFirstTheme";
 import { OVERLAY_COVERAGE, validateLayoutBeforeGeneration } from "@shared/aiFirstLayout";
-import { buildThemedConcept } from "@shared/themeCatalog";
+import { buildThemedConcept, themeCopyForEvent } from "@shared/themeCatalog";
 import { deriveThemeDna } from "@shared/themeDna";
 import { computeEventDna } from "@shared/eventDna";
 import { buildEventBrief, briefIsSufficient, SINGLE_BRIEF_QUESTION } from "./brief";
@@ -708,11 +708,26 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
       const { theme } = themeFromSnapshot(snapshot);
       // The applied concept is an ordinary themed concept plus the snapshot
       // that lets the renderer rebuild this synthetic theme on a later load.
-      const appliedConcept = { ...buildThemedConcept(theme), [AI_FIRST_CONCEPT_KEY]: snapshot };
+      // A generated theme carries catalogue sample copy so its preview can be
+      // rendered in isolation. Never persist those sample dates, venues or
+      // RSVP lines onto a real event: seed the same event-aware copy used by
+      // the curated-theme apply route.
+      const appliedConcept = {
+        ...buildThemedConcept(theme, { copy: themeCopyForEvent(theme, event) }),
+        [AI_FIRST_CONCEPT_KEY]: snapshot,
+      };
       const dna = deriveThemeDna(appliedConcept);
+
+      const currentSubject = String(event.inviteSubject || "").trim();
+      const inviteSubject = !currentSubject || /^you(?:'|’)re invited!?$/i.test(currentSubject)
+        ? String(event.eventName || "").trim()
+        : currentSubject;
 
       const updated = await deps.storage.updateEventByOwnerToken(String(req.params.ownerToken), {
         inviteDesignConceptJson: JSON.stringify(appliedConcept),
+        // Match the applied card to the event preview while preserving copy a
+        // host deliberately customized in the wording editor.
+        inviteSubject,
         inviteIllustrationUrl: record.assetUrl,
         paletteColors: JSON.stringify(appliedConcept.paletteColors),
         // Use the palette's lightest paper tone for the physical envelope.
