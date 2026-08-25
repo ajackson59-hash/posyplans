@@ -57,6 +57,7 @@ let storedGuests = [guest(), guest({ id: 18, accessToken: TOKEN_B, name: "Noah R
 const storageMock = {
   getEventByShareSlug: vi.fn(async (slug: string) => slug === baseEvent.shareSlug ? { ...baseEvent } : undefined),
   getEventByOwnerToken: vi.fn(async (token: string) => token === OWNER ? { ...baseEvent } : undefined),
+  getEventsByEmail: vi.fn(async (email: string) => email === "host@example.com" ? [{ ...baseEvent }] : []),
   listGuests: vi.fn(async () => storedGuests.map((item) => ({ ...item }))),
   getGuest: vi.fn(async (id: number) => storedGuests.find((item) => item.id === id)),
   getGuestByAccessToken: vi.fn(async (eventId: number, token: string) =>
@@ -76,10 +77,11 @@ const storageMock = {
 };
 
 const sendInviteEmail = vi.fn(async () => ({ ok: true }));
+const sendEventRecoveryEmail = vi.fn(async () => ({ ok: true }));
 const sendReminderSms = vi.fn(async () => ({ ok: true }));
 
 vi.mock("../server/storage", () => ({ storage: storageMock }));
-vi.mock("../server/email", () => ({ sendInviteEmail }));
+vi.mock("../server/email", () => ({ sendInviteEmail, sendEventRecoveryEmail }));
 vi.mock("../server/sms", () => ({ sendReminderSms }));
 
 const { registerRoutes } = await import("../server/routes");
@@ -94,8 +96,58 @@ async function makeApp() {
 beforeEach(() => {
   storedGuests = [guest(), guest({ id: 18, accessToken: TOKEN_B, name: "Noah Rivera", email: "noah@example.com" })];
   vi.clearAllMocks();
+  storageMock.getEventsByEmail.mockImplementation(async (email: string) =>
+    email === "host@example.com" ? [{ ...baseEvent }] : []);
   sendInviteEmail.mockResolvedValue({ ok: true });
+  sendEventRecoveryEmail.mockResolvedValue({ ok: true });
   sendReminderSms.mockResolvedValue({ ok: true });
+});
+
+describe("host event recovery", () => {
+  it("sends private owner links to the matched inbox without returning them to the browser", async () => {
+    const app = await makeApp();
+    const res = await request(app)
+      .post("/api/events/lookup")
+      .set("X-Forwarded-Host", "evil.example")
+      .send({ email: " HOST@EXAMPLE.COM " });
+
+    expect(res.status).toBe(202);
+    expect(res.headers["cache-control"]).toBe("no-store");
+    expect(res.body).toEqual({
+      ok: true,
+      message: "If an event is connected to that email, a private dashboard link is on its way.",
+    });
+    expect(JSON.stringify(res.body)).not.toContain(OWNER);
+    expect(storageMock.getEventsByEmail).toHaveBeenCalledWith("host@example.com");
+    expect(sendEventRecoveryEmail).toHaveBeenCalledWith(expect.objectContaining({
+      to: "host@example.com",
+      body: expect.stringContaining(`https://posyplans.com/dashboard/${OWNER}`),
+    }));
+    expect(sendEventRecoveryEmail.mock.calls[0][0].body).not.toContain("evil.example");
+  });
+
+  it("returns the same non-enumerating response when no event exists", async () => {
+    const app = await makeApp();
+    const known = await request(app).post("/api/events/lookup").send({ email: "host@example.com" });
+    const missing = await request(app).post("/api/events/lookup").send({ email: "missing@example.com" });
+
+    expect(missing.status).toBe(known.status);
+    expect(missing.body).toEqual(known.body);
+    expect(sendEventRecoveryEmail).toHaveBeenCalledTimes(1);
+  });
+
+  it("bounds repeated recovery emails for the same address", async () => {
+    storageMock.getEventsByEmail.mockResolvedValue([{ ...baseEvent }]);
+    const app = await makeApp();
+
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const res = await request(app).post("/api/events/lookup").send({ email: "rate-limit@example.com" });
+      expect(res.status).toBe(202);
+    }
+
+    expect(storageMock.getEventsByEmail).toHaveBeenCalledTimes(3);
+    expect(sendEventRecoveryEmail).toHaveBeenCalledTimes(3);
+  });
 });
 
 describe("personalized guest RSVP routes", () => {
