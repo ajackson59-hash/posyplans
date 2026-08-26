@@ -11,13 +11,16 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { AiFirstConcept } from "@shared/aiFirstInvite";
 import type { EventBrief } from "./brief";
 import { ConceptStreamParser } from "./conceptStream";
-import { preflightConceptQuartet } from "./conceptQuartet";
+import { allErrorsAreSingleConcept, preflightConceptQuartet } from "./conceptQuartet";
 import { bindConceptsToBrief } from "./conceptBindings";
 import { briefForHostDirection } from "./conceptPreflight";
 import { buildConceptCorrectionPrompt, buildSystemPrompt, buildUserPrompt } from "./prompt";
 
 export const CONCEPT_MODEL = "claude-sonnet-4-6";
 export const MAX_TEXT_ONLY_CONCEPT_CORRECTIONS = 1;
+// A run can still deliver a customer-safe set with fewer than four concepts.
+// Below this, a partial set is not worth showing over a text-only retry.
+export const MIN_VIABLE_CONCEPTS = 1;
 
 export interface ConceptOnlyProofInput {
   brief: EventBrief;
@@ -116,6 +119,34 @@ export async function runConceptOnlyProof(input: ConceptOnlyProofInput): Promise
 
   if (!attempt.quartet.passed) {
     const finalErrors = [...attempt.parserErrors, ...attempt.quartet.errors];
+
+    // Every logged production failure had at least two sound concepts out of
+    // four — the violation was isolated to one or two, never the whole set.
+    // When every remaining error is attributable to a specific concept (as
+    // opposed to a whole-quartet uniqueness/count violation that cannot be
+    // fixed by dropping one), and the parser itself produced no unattributed
+    // errors, drop only the flagged concept(s) and deliver the rest instead
+    // of discarding a set that is mostly fine.
+    const canDropBadConcepts =
+      attempt.parserErrors.length === 0 &&
+      attempt.quartet.concepts.length > 0 &&
+      allErrorsAreSingleConcept(attempt.quartet);
+    if (canDropBadConcepts) {
+      const survivors = attempt.quartet.concepts.filter((_, index) => !attempt.quartet.perConceptErrors.has(index));
+      if (survivors.length >= MIN_VIABLE_CONCEPTS) {
+        for (const error of finalErrors) {
+          input.onPreflightWarning?.(`dropped instead of failing the whole set: ${error}`);
+        }
+        return {
+          model: CONCEPT_MODEL,
+          concepts: survivors,
+          conceptRejections,
+          imageProviderCalls: 0,
+          billedArtworkAttempts: 0,
+        };
+      }
+    }
+
     for (const error of finalErrors) input.onPreflightWarning?.(error);
     throw new Error(
       `creative quartet failed zero-image preflight after ${MAX_TEXT_ONLY_CONCEPT_CORRECTIONS} text-only correction pass: ${finalErrors.join("; ")}`,

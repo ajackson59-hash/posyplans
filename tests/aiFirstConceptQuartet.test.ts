@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest";
 import type Anthropic from "@anthropic-ai/sdk";
 import { parseAiFirstConcept, type AiFirstConcept } from "@shared/aiFirstInvite";
 import type { EventBrief } from "../server/aiFirst/brief";
-import { preflightConceptQuartet } from "../server/aiFirst/conceptQuartet";
+import { allErrorsAreSingleConcept, preflightConceptQuartet } from "../server/aiFirst/conceptQuartet";
 import { subjectFamiliesForBrief } from "../server/aiFirst/conceptPreflight";
 import { runConceptOnlyProof } from "../server/aiFirst/conceptOnlyProof";
 import { runAiFirstPipeline } from "../server/aiFirst/pipeline";
@@ -446,6 +446,79 @@ describe("whole-quartet creative preflight", () => {
 
     expect(summary.directions).toBe(1);
     expect(imageCalls).toBe(1);
+  });
+
+  it("isolates a single concept's violation instead of failing the whole set", () => {
+    // Only concept 1 draws a self-framed banner mat, the exact production
+    // defect from the QA report. The other three concepts are untouched and
+    // sound, matching every logged production failure (at least two of four
+    // concepts were always fine).
+    const oneBadConcept = CONSTRUCTION_REVIEW_QUARTET.map((item, index) =>
+      index === 0
+        ? concept({
+            ...item,
+            art: {
+              ...item.art,
+              composition: "wide upper-banner scene inside a printed border",
+            },
+          })
+        : item,
+    );
+    const result = preflightConceptQuartet(oneBadConcept, CONSTRUCTION_REVIEW_BRIEF);
+    expect(result.passed).toBe(false);
+    expect(result.errors.join(" ")).toContain("must not draw its own mat or frame");
+    expect(allErrorsAreSingleConcept(result)).toBe(true);
+    expect(Array.from(result.perConceptErrors.keys())).toEqual([0]);
+  });
+
+  it("does not treat a whole-quartet uniqueness violation as a single-concept problem", () => {
+    const result = preflightConceptQuartet(FAILED_PROVIDER_QUARTET, CONSTRUCTION_REVIEW_BRIEF);
+    expect(result.passed).toBe(false);
+    // "4 distinct illustration media" and the repeated-machine checks are
+    // whole-quartet errors: dropping any single concept cannot fix them.
+    expect(allErrorsAreSingleConcept(result)).toBe(false);
+  });
+
+  it("delivers three sound concepts instead of failing the whole run when only one is bad", async () => {
+    const oneBadConcept = CONSTRUCTION_REVIEW_QUARTET.map((item, index) =>
+      index === 0
+        ? concept({
+            ...item,
+            art: {
+              ...item.art,
+              composition: "wide upper-banner scene inside a printed border",
+            },
+          })
+        : item,
+    );
+    const warnings: string[] = [];
+    const result = await runConceptOnlyProof({
+      brief: CONSTRUCTION_REVIEW_BRIEF,
+      anthropic: sequentialQuartetClient([oneBadConcept, oneBadConcept]).client,
+      onPreflightWarning: (message) => warnings.push(message),
+    });
+
+    expect(result.concepts).toHaveLength(3);
+    expect(result.concepts.map((c) => c.conceptName)).toEqual([
+      "Yellow Iron Study",
+      "Site Plan Celebration",
+      "Builder's Table",
+    ]);
+    expect(warnings.some((message) => message.includes("dropped instead of failing the whole set"))).toBe(true);
+  });
+
+  it("still fails the run when dropping the bad concept(s) would leave nothing viable", async () => {
+    // Every concept is individually broken (missing focalStrategy) — all
+    // four are per-concept violations, but dropping all four leaves zero
+    // concepts, below MIN_VIABLE_CONCEPTS, so the run must still fail rather
+    // than silently deliver nothing.
+    const allBad = CONSTRUCTION_REVIEW_QUARTET.map((item) => concept({ ...item, focalStrategy: undefined }));
+    await expect(
+      runConceptOnlyProof({
+        brief: CONSTRUCTION_REVIEW_BRIEF,
+        anthropic: sequentialQuartetClient([allBad, allBad]).client,
+      }),
+    ).rejects.toThrow("after 1 text-only correction pass");
   });
 
   it("blocks a direction that drops the backyard celebration even when construction is clear", () => {

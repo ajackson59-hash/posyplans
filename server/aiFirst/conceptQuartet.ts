@@ -32,6 +32,14 @@ export interface ConceptQuartetPreflight {
   errors: string[];
   concepts: AiFirstConcept[];
   reviewCards: ConceptReviewCard[];
+  /**
+   * Errors attributable to exactly one concept, keyed by that concept's index
+   * in `concepts`. A whole-quartet error (uniqueness/count checks that need
+   * all four concepts to evaluate) is never listed here — only in `errors`.
+   * This lets a caller drop the specific bad concept(s) and still deliver the
+   * rest of the set instead of discarding every concept over one violation.
+   */
+  perConceptErrors: Map<number, string[]>;
 }
 
 const OCCASION_ART_CUE =
@@ -146,6 +154,13 @@ export function preflightConceptQuartet(
 ): ConceptQuartetPreflight {
   const concepts = candidates.slice(0, REQUIRED_CONCEPT_QUARTET_SIZE);
   const errors: string[] = [];
+  const perConceptErrors = new Map<number, string[]>();
+  const addPerConceptError = (index: number, message: string): void => {
+    errors.push(message);
+    const existing = perConceptErrors.get(index) ?? [];
+    existing.push(message);
+    perConceptErrors.set(index, existing);
+  };
   const identity = briefIdentity(brief);
   const birthday = /\bbirthday\b/i.test(identity);
   const explicitBackyardCelebration = BACKYARD_CUE.test(identity);
@@ -164,33 +179,33 @@ export function preflightConceptQuartet(
     const subject = preflightConceptForBrief(concept, brief);
     const layout = validateLayoutBeforeGeneration(concept);
 
-    if (!concept.focalStrategy) errors.push(`${label} is missing focalStrategy`);
-    if (!concept.visualMood) errors.push(`${label} is missing visualMood`);
-    if (!subject.passed) errors.push(`${label}: ${subject.message}`);
+    if (!concept.focalStrategy) addPerConceptError(index, `${label} is missing focalStrategy`);
+    if (!concept.visualMood) addPerConceptError(index, `${label} is missing visualMood`);
+    if (!subject.passed) addPerConceptError(index, `${label}: ${subject.message}`);
     for (const issue of layout.issues.filter((finding) => finding.repair === "regenerate")) {
-      errors.push(`${label}: ${issue.message}`);
+      addPerConceptError(index, `${label}: ${issue.message}`);
     }
 
     if (birthday) {
-      if (!OCCASION_ART_CUE.test(artBrief)) errors.push(`${label} artwork omits the birthday/celebration identity`);
+      if (!OCCASION_ART_CUE.test(artBrief)) addPerConceptError(index, `${label} artwork omits the birthday/celebration identity`);
       if (milestone && !milestone.test(concept.description)) {
-        errors.push(`${label} host-facing description omits the ${brief.milestone} milestone`);
+        addPerConceptError(index, `${label} host-facing description omits the ${brief.milestone} milestone`);
       }
       if (milestone && !milestone.test(artBrief)) {
-        errors.push(`${label} artwork direction omits the ${brief.milestone} milestone`);
+        addPerConceptError(index, `${label} artwork direction omits the ${brief.milestone} milestone`);
       }
     }
 
     if (explicitBackyardCelebration && !BACKYARD_CUE.test(artBrief)) {
-      errors.push(`${label} artwork omits the backyard BBQ/outdoor celebration setting`);
+      addPerConceptError(index, `${label} artwork omits the backyard BBQ/outdoor celebration setting`);
     }
 
     if (construction && concept.focalStrategy) {
       if (!CONSTRUCTION_STRATEGY_CUES[concept.focalStrategy].test(artBrief)) {
-        errors.push(`${label} does not deliver its ${concept.focalStrategy} construction strategy`);
+        addPerConceptError(index, `${label} does not deliver its ${concept.focalStrategy} construction strategy`);
       }
       const cueGroups = CONSTRUCTION_CUE_GROUPS.filter((pattern) => pattern.test(artBrief)).length;
-      if (cueGroups < 2) errors.push(`${label} needs at least two coherent construction/jobsite cue groups`);
+      if (cueGroups < 2) addPerConceptError(index, `${label} needs at least two coherent construction/jobsite cue groups`);
     }
   });
 
@@ -235,5 +250,16 @@ export function preflightConceptQuartet(
       exactArtworkPrompt: exactArtworkPrompt(concept, brief),
     }));
 
-  return { passed: errors.length === 0, errors, concepts, reviewCards };
+  return { passed: errors.length === 0, errors, concepts, reviewCards, perConceptErrors };
+}
+
+/**
+ * True when every remaining error is attributable to a single concept — i.e.
+ * dropping the bad concept(s) would leave a set with zero outstanding errors.
+ * Whole-quartet errors (uniqueness/count checks) are never per-concept, so
+ * this is false whenever one of those fired.
+ */
+export function allErrorsAreSingleConcept(preflight: ConceptQuartetPreflight): boolean {
+  const perConceptTotal = Array.from(preflight.perConceptErrors.values()).reduce((sum, list) => sum + list.length, 0);
+  return perConceptTotal === preflight.errors.length;
 }

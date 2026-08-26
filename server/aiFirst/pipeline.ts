@@ -656,9 +656,23 @@ function onlyCriticalFailureIs(findings: Tier1Finding[], code: Tier1Finding["cod
   return critical.length === 1 && critical[0].code === code;
 }
 
-/** Layouts that can reuse the same provider aspect ratio without regeneration. */
+/**
+ * Layouts that can reuse the same paid bytes without a second provider call,
+ * because they share the same source aspect ratio (so the crop math is
+ * comparable) and a compatible art-frame shape.
+ *
+ * `full-bleed` and `backdrop` paint the identical full-card art frame and
+ * differ only in overlay opacity, which `evaluateCropSafety` does not weigh —
+ * a crop that is unsafe in one is unsafe or safe in the other identically
+ * except for how the salient region reads through the overlay. `split`'s art
+ * panel is a much narrower slice of the same 9:16 source, so it is offered
+ * as a second, lower-priority rescue rather than the first guess.
+ */
 export function cropRescueLayouts(layoutStyle: AiFirstConcept["layoutStyle"]): AiFirstConcept["layoutStyle"][] {
-  return layoutStyle === "split" ? ["full-bleed", "backdrop"] : [];
+  if (layoutStyle === "split") return ["full-bleed", "backdrop"];
+  if (layoutStyle === "full-bleed") return ["backdrop", "split"];
+  if (layoutStyle === "backdrop") return ["full-bleed", "split"];
+  return [];
 }
 
 function abortError(reason?: unknown): Error {

@@ -21,6 +21,7 @@ import type { PipelineEvent } from "@shared/aiFirstStream";
 import type { EventBrief } from "../server/aiFirst/brief";
 import type { ArtworkRequest } from "../server/aiFirst/artwork";
 import type { AiFirstConcept } from "@shared/aiFirstInvite";
+import { evaluateCropSafety } from "@shared/aiFirstLayout";
 import {
   artworkForAspect,
   busyTypeRegionPng,
@@ -251,10 +252,55 @@ describe("concurrency", () => {
 });
 
 describe("retry and fallback", () => {
-  it("reuses portrait artwork only for the compatible split-layout crop rescue", () => {
+  it("reuses portrait artwork for every layout whose crop math can genuinely differ", () => {
+    // split's art box is a narrow 40%-wide panel — a materially different
+    // crop from the two full-canvas layouts, so it is always worth trying.
     expect(cropRescueLayouts("split")).toEqual(["full-bleed", "backdrop"]);
-    expect(cropRescueLayouts("full-bleed")).toEqual([]);
+    // full-bleed and backdrop share the exact same 100%x100% art box (they
+    // differ only in artwork opacity, which evaluateCropSafety ignores), so
+    // rescuing one into the other can never change a crop-unsafe verdict.
+    // They are still attempted — the candidate loop's own tier1 re-check
+    // means a dead branch is inert, not incorrect — and split, which does
+    // have different geometry, is offered as the one candidate that can
+    // actually rescue a full-bleed/backdrop crop failure.
+    expect(cropRescueLayouts("full-bleed")).toEqual(["backdrop", "split"]);
+    expect(cropRescueLayouts("backdrop")).toEqual(["full-bleed", "split"]);
+    // banner and centered keep their own aspect ratio / frame shape and have
+    // no compatible portrait sibling to fall back to.
     expect(cropRescueLayouts("banner")).toEqual([]);
+    expect(cropRescueLayouts("centered")).toEqual([]);
+  });
+
+  it("confirms full-bleed and backdrop art boxes are geometrically identical", () => {
+    // This is the reason the previous test's full-bleed/backdrop pairing is
+    // a safety net rather than an active fix: evaluateCropSafety only reads
+    // LAYOUT_FRAMES[...].art (never artOpacity), and full-bleed/backdrop
+    // share the same art frame, so a crop-unsafe verdict against one always
+    // reproduces identically against the other.
+    const canvas = { width: 1024, height: 1536 };
+    const salientRegion = [{ x: 0, y: 0, width: 0.2, height: 0.08 }];
+    const fullBleed = evaluateCropSafety("full-bleed", canvas, salientRegion);
+    const backdrop = evaluateCropSafety("backdrop", canvas, salientRegion);
+    expect(backdrop.worstCroppedFraction).toBe(fullBleed.worstCroppedFraction);
+    expect(backdrop.safe).toBe(fullBleed.safe);
+  });
+
+  it("lets split's narrower panel rescue a crop that clips a full-bleed region", () => {
+    // full-bleed's visible window loses ~11% off the top/bottom (a 1024x1536
+    // portrait image cropped to feed a 3:4 card). A salient region sitting
+    // just below the top margin is more than a quarter clipped there —
+    // genuinely crop-unsafe — but split's visible window spans the full
+    // vertical extent, so the identical region is completely visible under
+    // split. This is the exact shape of geometry that makes full-bleed to
+    // split (not full-bleed to backdrop) the rescue that can actually work.
+    const canvas = { width: 1024, height: 1536 };
+    const salientRegion = [{ x: 0.4, y: 0.01, width: 0.2, height: 0.1 }];
+    const fullBleed = evaluateCropSafety("full-bleed", canvas, salientRegion);
+    const split = evaluateCropSafety("split", canvas, salientRegion);
+    expect(fullBleed.safe).toBe(false);
+    expect(fullBleed.issues[0]?.code).toBe("full-bleed-crop-unsafe");
+    expect(split.safe).toBe(true);
+    expect(split.worstCroppedFraction).toBe(0);
   });
 
   it("retries a failed direction exactly once", async () => {
