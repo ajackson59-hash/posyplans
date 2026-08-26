@@ -382,7 +382,9 @@ describe("terminal event ordering", () => {
     registerAiFirstRoutes(app, {
       storage: {
         getEventByOwnerToken: async (token: string) =>
-          token === "owner" ? { id: 1, capturedEmail: "host@example.com", eventType: "birthday" } : undefined,
+          token === "owner"
+            ? { id: 1, capturedEmail: "host@example.com", eventType: "birthday", sparkUnlockedAt: Date.now() }
+            : undefined,
         updateEventByOwnerToken: async () => undefined,
         getEmailEntitlement: async () => undefined,
         listMenuItems: async () => [],
@@ -429,7 +431,12 @@ describe("terminal event ordering", () => {
     const runStore = new InMemoryRunStore();
     registerAiFirstRoutes(app, {
       storage: {
-        getEventByOwnerToken: async () => ({ id: 1, capturedEmail: "host@example.com", eventType: "birthday" }),
+        getEventByOwnerToken: async () => ({
+          id: 1,
+          capturedEmail: "host@example.com",
+          eventType: "birthday",
+          sparkUnlockedAt: Date.now(),
+        }),
         updateEventByOwnerToken: async () => undefined,
         getEmailEntitlement: async () => undefined,
         listMenuItems: async () => [],
@@ -471,7 +478,12 @@ describe("terminal event ordering", () => {
     let pipelineCalls = 0;
     registerAiFirstRoutes(app, {
       storage: {
-        getEventByOwnerToken: async () => ({ id: 1, capturedEmail: "host@example.com", eventType: "birthday" }),
+        getEventByOwnerToken: async () => ({
+          id: 1,
+          capturedEmail: "host@example.com",
+          eventType: "birthday",
+          sparkUnlockedAt: Date.now(),
+        }),
         updateEventByOwnerToken: async () => undefined,
         getEmailEntitlement: async () => undefined,
         listMenuItems: async () => [],

@@ -1175,6 +1175,18 @@ export async function registerRoutes(
   app.post("/api/events/owner/:ownerToken/invite/preview-concept", async (req, res) => {
     const event = await storage.getEventByOwnerToken(req.params.ownerToken);
     if (!event) return res.status(404).json({ error: "Event not found" });
+
+    // Paid-access gate: this route calls the image model (real spend), so it
+    // needs the same entitlement check as the AI Master Planner and the
+    // AI-first pipeline. Previously ungated — the confirmed production
+    // paywall bypass (QA report, B2) reached real artwork spend and a
+    // published invitation through this "Advanced" concept picker, with no
+    // Spark purchase and no captured email at all.
+    const access = await canGenerateDraft(event.id);
+    if (!access.ok) {
+      return res.status(402).json({ error: "This event needs Spark or Plus to preview AI artwork." });
+    }
+
     const concept = req.body?.concept;
     if (!isValidInviteDesignConcept(concept)) {
       return res.status(400).json({ error: "Invalid design concept" });
@@ -1212,6 +1224,19 @@ export async function registerRoutes(
   app.post("/api/events/owner/:ownerToken/invite/apply-concept", async (req, res) => {
     const event = await storage.getEventByOwnerToken(req.params.ownerToken);
     if (!event) return res.status(404).json({ error: "Event not found" });
+
+    // Paid-access gate: same reasoning as preview-concept above. apply-concept
+    // is the route that actually generates (or reuses a just-previewed) real
+    // illustration and commits it to the event, so it's the exact spend path
+    // event 76 used to reach a published invitation while unpaid and
+    // un-emailed. A pre-generated illustrationUrl from preview-concept does
+    // NOT bypass this — preview-concept is gated too, so reaching this branch
+    // with a pre-generated url already required passing the same check.
+    const access = await canGenerateDraft(event.id);
+    if (!access.ok) {
+      return res.status(402).json({ error: "This event needs Spark or Plus to apply AI artwork." });
+    }
+
     const concept = req.body?.concept;
     if (!isValidInviteDesignConcept(concept)) {
       return res.status(400).json({ error: "Invalid design concept" });
