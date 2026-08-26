@@ -1,0 +1,45 @@
+// Gating logic for the pre-payment invitation preview (QA report B2a).
+//
+// Before this feature, the only ways to see real AI artwork were (a) already
+// paid (Spark/Plus), or a generic simulated demo modal. This lets an unpaid
+// host see ONE real, capped, blurred preview of their OWN invitation once
+// they've given an email — enough to build desire without giving away real
+// spend to anonymous, un-emailed traffic, and without ever letting a client
+// loop the provider call for free.
+//
+// Pure functions only — no I/O — so this is trivially unit-testable and easy
+// to reason about independent of the route/storage layer.
+
+import type { Event } from "../shared/schema";
+
+// Small and fixed on purpose: this is a marketing nudge, not the paid
+// product. Three tries is enough to survive one quality-gate rejection
+// without opening the door to unlimited free generations.
+export const MAX_PRE_PAYMENT_PREVIEW_ATTEMPTS = 3;
+
+export type PrePaymentPreviewDenialReason = "already_paid" | "needs_email" | "attempts_exhausted";
+
+export type PrePaymentPreviewAllowance =
+  | { ok: true }
+  | { ok: false; reason: PrePaymentPreviewDenialReason };
+
+// The route calls canGenerateDraft() FIRST and short-circuits paid events
+// (Spark unlock OR Plus subscription) before ever reaching this function —
+// that's the authoritative, async-aware paid check. The sparkUnlockedAt
+// check here is a cheap, synchronous, defense-in-depth guard for the Spark
+// case specifically; it does not know about Plus, so it must never be the
+// only paid check on the route.
+export function canAttemptPrePaymentPreview(
+  event: Pick<Event, "sparkUnlockedAt" | "capturedEmail" | "prePaymentPreviewAttempts">,
+): PrePaymentPreviewAllowance {
+  if (event.sparkUnlockedAt) {
+    return { ok: false, reason: "already_paid" };
+  }
+  if (!event.capturedEmail) {
+    return { ok: false, reason: "needs_email" };
+  }
+  if (event.prePaymentPreviewAttempts >= MAX_PRE_PAYMENT_PREVIEW_ATTEMPTS) {
+    return { ok: false, reason: "attempts_exhausted" };
+  }
+  return { ok: true };
+}

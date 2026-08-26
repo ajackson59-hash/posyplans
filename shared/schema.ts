@@ -139,6 +139,25 @@ export const events = pgTable("events", {
   // The Stripe checkout session that unlocked this event, kept for
   // idempotency so a re-confirm / replayed webhook never double-processes.
   sparkCheckoutSessionId: text("spark_checkout_session_id"), // nullable
+
+  /* ---- Pre-payment invitation preview (QA report B2a) ---- */
+  // A single real, capped invitation illustration generated BEFORE payment,
+  // once the host's email is captured, so the paywall can show "the real
+  // thing, blurred" instead of a generic simulated demo or nothing at all.
+  // Stored as a data URI, same convention as inviteIllustrationUrl. Empty
+  // string means no pre-payment preview has been generated yet. Serving
+  // logic (server/routes.ts) reveals these bytes at full resolution once the
+  // event is paid, and serves a heavily downsampled/blurred version before
+  // that — never the raw bytes to an unpaid visitor.
+  prePaymentPreviewUrl: text("pre_payment_preview_url").notNull().default(""),
+  // Set once prePaymentPreviewUrl is populated. System-controlled, same as
+  // capturedEmail/sparkUnlockedAt — never accepted on the generic PATCH.
+  prePaymentPreviewUsedAt: bigint("pre_payment_preview_used_at", { mode: "number" }), // nullable, millis
+  // Counts every generation attempt (successful or not), incremented BEFORE
+  // the provider call so a crash mid-call still counts against the cap. Caps
+  // real spend on an unpaid visitor at a small, fixed number of tries even if
+  // the quality gate keeps rejecting output. See server/prePaymentPreview.ts.
+  prePaymentPreviewAttempts: integer("pre_payment_preview_attempts").notNull().default(0),
 });
 
 export const RSVP_RESTRICTIONS = ["none", "no_children", "plus_one", "no_additional_guests"] as const;
@@ -162,6 +181,9 @@ export const insertEventSchema = createInsertSchema(events).omit({
   emailCapturedAt: true,
   sparkUnlockedAt: true,
   sparkCheckoutSessionId: true,
+  prePaymentPreviewUrl: true,
+  prePaymentPreviewUsedAt: true,
+  prePaymentPreviewAttempts: true,
 });
 export const updateEventSchema = insertEventSchema.partial();
 
