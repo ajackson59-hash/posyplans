@@ -104,7 +104,9 @@ function singleConceptClientWithPassingVision(): Anthropic {
 function makeStorage(overrides: Partial<Record<string, unknown>> = {}) {
   return {
     getEventByOwnerToken: async (token: string) =>
-      token === OWNER ? { id: EVENT_ID, capturedEmail: "host@example.com", eventType: "birthday" } : undefined,
+      token === OWNER
+        ? { id: EVENT_ID, capturedEmail: "host@example.com", eventType: "birthday", sparkUnlockedAt: Date.now() }
+        : undefined,
     updateEventByOwnerToken: async (_token: string, data: Record<string, unknown>) => ({ id: EVENT_ID, ...data }),
     getEmailEntitlement: async () => undefined,
     listMenuItems: async () => [],

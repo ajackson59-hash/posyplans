@@ -63,11 +63,37 @@ import { briefForHostDirection } from "./conceptPreflight";
 const breaker = new CircuitBreaker();
 const limiter = new RateLimiter();
 
+/**
+ * Paid-access gate for spending on artwork. Mirrors the same rule the
+ * legacy Master Planner route enforces (server/masterPlannerEntitlement.ts,
+ * canGenerateDraft): an event may only trigger a BILLED generation if it
+ * has bought its one-time Spark unlock, or the host's captured email holds
+ * an active or trialing Plus subscription. Before this check existed, this
+ * route had no payment gate at all — only kill-switch, rate-limit, and
+ * circuit-breaker checks, none of which look at who is paying. An
+ * anonymous, unpaid, un-emailed visitor could (and, confirmed in
+ * production on event 76, did) trigger real provider spend and publish a
+ * live invitation for $0. This must run before guardGeneration/the run
+ * claim, so a non-paying request never reaches rate-limit or provider
+ * logic and never becomes a "near miss" the host can retry into spend.
+ */
+function hasGenerationEntitlement(
+  event: { sparkUnlockedAt?: number | null },
+  entitlement: { planTier: string; trialEndsAt?: number | null } | undefined,
+): boolean {
+  if (event.sparkUnlockedAt) return true;
+  if (entitlement?.planTier === "plus_active") return true;
+  if (entitlement?.planTier === "plus_trial" && !!entitlement.trialEndsAt && entitlement.trialEndsAt > Date.now()) {
+    return true;
+  }
+  return false;
+}
+
 export interface AiFirstDeps {
   storage: {
     getEventByOwnerToken(token: string): Promise<any>;
     updateEventByOwnerToken(token: string, data: Record<string, unknown>): Promise<any>;
-    getEmailEntitlement(email: string): Promise<{ planTier: string } | undefined>;
+    getEmailEntitlement(email: string): Promise<{ planTier: string; trialEndsAt?: number | null } | undefined>;
     listMenuItems(eventId: number): Promise<any[]>;
     listBudgetItems(eventId: number): Promise<any[]>;
     listGuests(eventId: number): Promise<any[]>;
@@ -445,6 +471,21 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
 
       const email = event.capturedEmail ?? undefined;
       const entitlement = email ? await deps.storage.getEmailEntitlement(email) : undefined;
+
+      // Paid-access gate: zero provider calls, zero rate-limit consumption,
+      // and no run claimed for an event that hasn't bought Spark or an
+      // active/trialing Plus subscription. This is the fix for the
+      // confirmed production paywall bypass (QA report, B2): previously
+      // nothing before this point checked payment at all — an anonymous,
+      // unpaid, un-emailed visitor could trigger a fully billed generation.
+      if (!hasGenerationEntitlement(event, entitlement)) {
+        res.status(402).json({
+          error: "This event needs Spark or Plus to generate invitation artwork.",
+          denial: "needs-payment",
+        });
+        return;
+      }
+
       const tier = entitlement?.planTier as never;
       const usage = await deps.usageStore.snapshot(event.id, email, monthStart());
       // The durable row is the authority on "is a generation already active
