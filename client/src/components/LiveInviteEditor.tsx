@@ -349,7 +349,7 @@ export default function LiveInviteEditor({ ownerToken, event, onBrowse }: LiveIn
               {layoutStyle === "banner" && (
                 <>
                   {illustrationUrl && (
-                    <img src={illustrationUrl} alt="" className="h-40 w-full object-cover sm:h-52" data-testid="live-preview-image" />
+                    <img src={illustrationUrl} alt="" className="aspect-[3/2] w-full object-cover" data-testid="live-preview-image" />
                   )}
                   <div className="p-5">
                     <p className="text-base font-semibold" style={conceptHeadingStyle(liveConcept)} data-testid="live-preview-subject">

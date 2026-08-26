@@ -418,7 +418,7 @@ export default function Rsvp() {
                   src={event.inviteIllustrationUrl}
                   alt=""
                   data-testid="img-rsvp-artwork"
-                  className="h-48 w-full object-cover sm:h-56"
+                  className="aspect-[3/2] w-full object-cover"
                 />
               )}
               {event.inviteIllustrationUrl && concept.layoutStyle === "full-bleed" && (

@@ -271,7 +271,24 @@ describe("composing for the crop the renderer will apply", () => {
   it("still demands full-edge coverage, so the crop advice cannot invite a margin", () => {
     const prompt = buildArtworkPrompt(concept({ layoutStyle: "split" }));
     expect(prompt).toContain(ARTWORK_EDGE_REQUIREMENT);
-    expect(prompt).toContain("Background texture still reaches every edge");
+    expect(prompt).toContain("painted edge-to-edge with no blank margin");
+  });
+
+  it("tells the model background elements (sky, floor, horizon) must also stay inside the safe zone", () => {
+    // B1a: a banner-layout image that obeyed the old "background reaches every
+    // edge" wording literally would paint sky/floor right up to the crop line,
+    // which the renderer's object-cover crop then clips. The requirement must
+    // now name background/setting content explicitly and forbid a horizon or
+    // floor line sitting at the canvas edge.
+    const bannerRequirement = safeFramingRequirement("banner");
+    expect(bannerRequirement).toContain("central 88% of the height");
+    expect(bannerRequirement).toContain("background");
+    expect(bannerRequirement).toContain("sky, ground, walls");
+    expect(bannerRequirement).toContain("disposable bleed");
+    expect(bannerRequirement).toContain("Do not paint a horizon, sky-to-ground transition or floor line right at the canvas edge");
+
+    const prompt = buildArtworkPrompt(concept({ layoutStyle: "banner" }));
+    expect(prompt).toContain("disposable bleed");
   });
 });
 
