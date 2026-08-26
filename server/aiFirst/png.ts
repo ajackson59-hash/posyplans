@@ -11,7 +11,7 @@
 // undecodable, which the gate treats as a file-integrity failure rather than
 // crashing.
 
-import { inflateSync } from "node:zlib";
+import { crc32, deflateSync, inflateSync } from "node:zlib";
 
 export interface DecodedImage {
   width: number;
@@ -232,6 +232,103 @@ export function lumaGrid(image: DecodedImage, targetLongEdge = 160): {
     }
   }
   return { width, height, data };
+}
+
+/* ── Encoder + downsampler for the pre-payment blurred preview ────────
+ * (server/prePaymentPreview.ts, routes.ts). The decoder above already
+ * covers everything needed to read gpt-image-1 output; these two functions
+ * are the minimum needed to turn that into a genuinely-destroyed-detail
+ * preview server-side. "Genuinely destroyed" matters: a CSS blur on the
+ * full-resolution image is trivially undone via devtools/network tab, so
+ * the actual pixel data sent to an unpaid client must already be tiny.
+ */
+
+/**
+ * Box-averages an RGB image down to a small target long edge, keeping full
+ * colour (unlike lumaGrid above, which is greyscale-only for the quality
+ * gate). At the sizes this is used for (~24-28px long edge) the result
+ * carries no recoverable composition detail even at full opacity.
+ */
+export function boxDownsampleRgb(image: DecodedImage, targetLongEdge: number): DecodedImage {
+  const scale = Math.max(1, Math.round(Math.max(image.width, image.height) / targetLongEdge));
+  const width = Math.max(1, Math.floor(image.width / scale));
+  const height = Math.max(1, Math.floor(image.height / scale));
+  const rgb = new Uint8Array(width * height * 3);
+
+  for (let gy = 0; gy < height; gy += 1) {
+    for (let gx = 0; gx < width; gx += 1) {
+      let r = 0;
+      let g = 0;
+      let b = 0;
+      let n = 0;
+      for (let dy = 0; dy < scale; dy += 1) {
+        const y = gy * scale + dy;
+        if (y >= image.height) break;
+        for (let dx = 0; dx < scale; dx += 1) {
+          const x = gx * scale + dx;
+          if (x >= image.width) break;
+          const src = (y * image.width + x) * 3;
+          r += image.rgb[src];
+          g += image.rgb[src + 1];
+          b += image.rgb[src + 2];
+          n += 1;
+        }
+      }
+      const dst = (gy * width + gx) * 3;
+      if (n > 0) {
+        rgb[dst] = Math.round(r / n);
+        rgb[dst + 1] = Math.round(g / n);
+        rgb[dst + 2] = Math.round(b / n);
+      }
+    }
+  }
+  return { width, height, rgb };
+}
+
+/**
+ * Minimal PNG encoder: IHDR (8-bit truecolour, colour type 2) + one IDAT
+ * (filter-byte-0 scanlines, deflated) + IEND. The inverse of decodePng's
+ * IHDR/IDAT/IEND handling above, kept equally small on purpose — this only
+ * ever needs to round-trip images this module itself produced or read.
+ */
+export function encodePng(image: DecodedImage): Buffer {
+  const { width, height, rgb } = image;
+  const stride = width * 3;
+  const raw = Buffer.alloc((stride + 1) * height);
+  for (let y = 0; y < height; y += 1) {
+    const rowStart = y * (stride + 1);
+    raw[rowStart] = 0; // filter type "None"
+    for (let x = 0; x < stride; x += 1) {
+      raw[rowStart + 1 + x] = rgb[y * stride + x];
+    }
+  }
+
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(width, 0);
+  ihdr.writeUInt32BE(height, 4);
+  ihdr[8] = 8; // bit depth
+  ihdr[9] = 2; // colour type: truecolour
+  ihdr[10] = 0; // compression
+  ihdr[11] = 0; // filter
+  ihdr[12] = 0; // interlace
+
+  const idat = deflateSync(raw);
+
+  return Buffer.concat([
+    SIGNATURE,
+    chunk("IHDR", ihdr),
+    chunk("IDAT", idat),
+    chunk("IEND", Buffer.alloc(0)),
+  ]);
+}
+
+function chunk(type: string, data: Buffer): Buffer {
+  const typeBuf = Buffer.from(type, "ascii");
+  const length = Buffer.alloc(4);
+  length.writeUInt32BE(data.length, 0);
+  const crc = Buffer.alloc(4);
+  crc.writeUInt32BE(crc32(Buffer.concat([typeBuf, data])) >>> 0, 0);
+  return Buffer.concat([length, typeBuf, data, crc]);
 }
 
 export function mean(values: ArrayLike<number>): number {

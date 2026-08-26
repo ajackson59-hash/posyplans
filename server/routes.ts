@@ -22,6 +22,8 @@ import { generateInviteToneAi, type InviteTone } from "./inviteAi";
 import { generateBudgetSuggestionAi } from "./budgetAi";
 import { generateInviteDesignConcepts, extractInspirationNotes } from "./inviteDesignAi";
 import { generateInviteIllustration, generateInviteIllustrationWithQualityGate } from "./illustrationGen";
+import { canAttemptPrePaymentPreview, MAX_PRE_PAYMENT_PREVIEW_ATTEMPTS } from "./prePaymentPreview";
+import { boxDownsampleRgb, decodePng, encodePng, PngDecodeError } from "./aiFirst/png";
 import { isValidInviteDesignConcept, type InviteDesignConcept, parseInviteDesignConcept, getFontPairing, FONT_PAIRINGS, LAYOUT_STYLES, BORDER_STYLES } from "@shared/inviteDesign";
 import { deriveThemeDna, isLinerPattern, isStampStyle } from "@shared/themeDna";
 import {
@@ -223,33 +225,6 @@ export async function registerRoutes(
     if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
     const event = await storage.createEvent(parsed.data);
     res.json(event);
-  });
-
-  // Email capture — stamps the host's email onto the event so they can
-  // recover access later. The client (DraftGenerating.tsx) already calls
-  // this route, but it was missing on the server, causing captured_email to
-  // stay NULL on every event. Requires the ownerToken to verify ownership.
-  app.post("/api/events/:eventId/email-capture", async (req, res) => {
-    const eventId = Number(req.params.eventId);
-    if (!Number.isFinite(eventId) || eventId <= 0) {
-      return res.status(400).json({ error: "Invalid event ID" });
-    }
-    const { email, ownerToken } = req.body as { email?: string; ownerToken?: string };
-    if (!email || !email.trim()) {
-      return res.status(400).json({ error: "Email is required" });
-    }
-    if (!ownerToken) {
-      return res.status(400).json({ error: "Owner token is required" });
-    }
-    // Verify ownership before stamping the email
-    const event = await storage.getEventById(eventId);
-    if (!event || event.ownerToken !== ownerToken) {
-      return res.status(404).json({ error: "Event not found" });
-    }
-    await storage.setEventCapturedEmail(eventId, email);
-    // Return the updated event so the client can refetch entitlements
-    const updated = await storage.getEventById(eventId);
-    res.json(updated);
   });
 
   // Email-based event recovery. Owner tokens are bearer credentials, so they
@@ -1267,6 +1242,124 @@ export async function registerRoutes(
     }
   });
 
+  // ── Pre-payment invitation preview (QA report B2a) ─────────────────
+  // Lets an unpaid-but-emailed host see ONE real, capped, blurred preview of
+  // their own invitation before checkout — real AI generation (not a
+  // simulated demo), but bounded so an anonymous or looping client can never
+  // turn this into free unlimited spend. See server/prePaymentPreview.ts for
+  // the gating rules and server/aiFirst/png.ts for the blur implementation.
+  //
+  // Deliberately reuses the same generator functions as preview-concept /
+  // apply-concept above (medium-quality single-concept illustration) rather
+  // than the heavier post-payment quartet pipeline in server/aiFirst/ — this
+  // is a marketing nudge, not the paid product, and doesn't need Theme DNA,
+  // four concepts, or SSE progress streaming.
+  app.post("/api/events/owner/:ownerToken/prepayment-preview", async (req, res) => {
+    const event = await storage.getEventByOwnerToken(req.params.ownerToken);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+
+    // Already paid (Spark or Plus) — this route exists only to nudge an
+    // unpaid visitor toward checkout, so a paid event should use the normal
+    // generation flow instead of spending again on a throwaway preview.
+    const access = await canGenerateDraft(event.id);
+    if (access.ok) {
+      return res.status(409).json({ error: "This event is already unlocked — use the normal invitation flow." });
+    }
+
+    // Idempotent replay: a client that already has a preview (e.g. a second
+    // tab, or a re-render before the first response arrived) gets an instant
+    // "ready" without spending again — the actual bytes are served from the
+    // asset route below, keyed off the same stored data URI.
+    if (event.prePaymentPreviewUrl) {
+      return res.json({ ready: true });
+    }
+
+    const allowance = canAttemptPrePaymentPreview(event);
+    if (!allowance.ok) {
+      if (allowance.reason === "needs_email") {
+        return res.status(400).json({ error: "Enter your email first so Posy can save your preview." });
+      }
+      if (allowance.reason === "already_paid") {
+        return res.status(409).json({ error: "This event is already unlocked — use the normal invitation flow." });
+      }
+      return res.status(429).json({
+        error: `Posy couldn't put together a preview after ${MAX_PRE_PAYMENT_PREVIEW_ATTEMPTS} tries — continue to checkout and your full plan will still be built once unlocked.`,
+      });
+    }
+
+    // Reserve the attempt BEFORE calling the image model, so a crash or
+    // timeout mid-call still counts against the cap instead of letting a
+    // retrying client spend unboundedly.
+    await storage.updateEventById(event.id, { prePaymentPreviewAttempts: event.prePaymentPreviewAttempts + 1 });
+
+    try {
+      const concepts = await generateInviteDesignConcepts({
+        themePrompt: event.themeName || event.eventName,
+        eventName: event.eventName,
+        eventType: event.eventType,
+        eventDate: event.eventDate,
+        location: event.location,
+        hostNames: event.hostNames,
+        themeName: event.themeName,
+      });
+      const concept = concepts[0];
+      if (!concept) throw new Error("No design concept returned");
+
+      const aspectRatio = concept.layoutStyle === "banner" ? "16:9" : concept.layoutStyle === "full-bleed" ? "9:16" : "1:1";
+      const illustrationUrl = await generateInviteIllustrationWithQualityGate(concept, aspectRatio);
+
+      await storage.updateEventById(event.id, {
+        prePaymentPreviewUrl: illustrationUrl,
+        prePaymentPreviewUsedAt: Date.now(),
+      });
+      // Never return the raw data URL to an unpaid client — the asset route
+      // below is the only path to actual pixels, and it blurs them pre-payment.
+      res.json({ ready: true });
+    } catch (err) {
+      console.error("prepayment-preview generation failed:", err);
+      res.status(502).json({ error: "Couldn't put together a preview right now — you can still continue to checkout." });
+    }
+  });
+
+  // Serves the stored pre-payment preview's actual pixels. This is the ONLY
+  // route that reads prePaymentPreviewUrl's bytes, and it doubles as the
+  // automatic "reveal in full quality" the moment the event becomes paid —
+  // no separate reveal endpoint needed. Never cached by any shared cache:
+  // the same URL must serve different bytes depending on the caller's own
+  // paid status, which is exactly what a shared cache would get wrong.
+  app.get("/api/events/owner/:ownerToken/prepayment-preview/asset", async (req, res) => {
+    const event = await storage.getEventByOwnerToken(req.params.ownerToken);
+    if (!event || !event.prePaymentPreviewUrl) {
+      return res.status(404).json({ error: "No preview available yet" });
+    }
+
+    const match = /^data:image\/png;base64,(.+)$/.exec(event.prePaymentPreviewUrl);
+    if (!match) {
+      console.error(`prepayment-preview asset: stored preview for event ${event.id} isn't a PNG data URL`);
+      return res.status(500).json({ error: "Couldn't render preview" });
+    }
+    const fullBytes = Buffer.from(match[1], "base64");
+
+    res.set("Cache-Control", "private, no-store");
+    res.set("Content-Type", "image/png");
+
+    const access = await canGenerateDraft(event.id);
+    if (access.ok) {
+      // Paid: this IS the reveal — full-resolution bytes, unblurred.
+      return res.send(fullBytes);
+    }
+
+    try {
+      const decoded = decodePng(fullBytes);
+      const blurred = boxDownsampleRgb(decoded, 28);
+      res.send(encodePng(blurred));
+    } catch (err) {
+      const detail = err instanceof PngDecodeError ? err.message : String(err);
+      console.error(`prepayment-preview asset: couldn't blur stored preview for event ${event.id}: ${detail}`);
+      res.status(500).json({ error: "Couldn't render preview" });
+    }
+  });
+
   // ── Curated theme: instant, AI-free ───────────────────────────────
   // Applying one of the eight launch themes is a pure data write. The artwork
   // is a static asset that already exists, so there is no image model on this
@@ -1681,6 +1774,16 @@ export async function registerRoutes(
   // token rides in the body here since the path is eventId-scoped per spec.
   // Never upserts into email_entitlements: Stripe checkout/webhook remain the
   // single source of truth for what a given email is actually entitled to.
+  //
+  // (B2a note: an earlier, cruder duplicate of this exact path used to be
+  // registered above in this file. Express gives the FIRST matching
+  // registration the request, so that duplicate silently made this whole
+  // route dead code — every caller actually got the earlier handler's raw
+  // Event body instead of an EntitlementSummary, which made the "Use my
+  // Plus email" button on the paywall show a false "couldn't find a Plus
+  // plan" toast on every use, success or not. Removed the duplicate so this
+  // route (and its EntitlementSummary response, which callers already
+  // expect) actually runs.)
   app.post("/api/events/:eventId/email-capture", async (req, res) => {
     const eventId = Number(req.params.eventId);
     if (!Number.isInteger(eventId)) return res.status(400).json({ error: "Invalid event id." });
