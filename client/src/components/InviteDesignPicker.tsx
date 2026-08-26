@@ -1092,11 +1092,11 @@ export default function InviteDesignPicker({ ownerToken, event, onReviewEventSty
                         <img
                           src={previewUrl}
                           alt=""
-                          className="h-20 w-full object-cover sm:h-24"
+                          className="aspect-[3/2] w-full object-cover"
                           data-testid={`img-concept-preview-${i}`}
                         />
                       ) : (
-                        <div className={`flex h-20 w-full items-center justify-center sm:h-24 ${(isPreviewing || (generatingAll && !failedPreviews.has(i))) ? "skeleton-shimmer animate-pulse" : ""}`} style={placeholderArt} data-testid={`art-placeholder-concept-${i}`}>
+                        <div className={`flex aspect-[3/2] w-full items-center justify-center ${(isPreviewing || (generatingAll && !failedPreviews.has(i))) ? "skeleton-shimmer animate-pulse" : ""}`} style={placeholderArt} data-testid={`art-placeholder-concept-${i}`}>
                           <span className="rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                             {isPreviewing ? "Generating…" : failedPreviews.has(i) ? "Style shown — art still processing" : generatingAll ? "In queue…" : "Illustration generates after you apply"}
                           </span>

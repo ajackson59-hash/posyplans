@@ -376,9 +376,15 @@ export function safeFramingRequirement(layout: AiFirstConcept["layoutStyle"]): s
     clauses.push(`the central ${Math.round(visible.y * 100)}% of the height`);
   }
   if (clauses.length === 0) return "";
-  return `Compose so the subject and every important detail sit within ${clauses.join(
-    " and ",
-  )} — the rest is cropped away. Background texture still reaches every edge.`;
+  return (
+    `Compose so the subject, every important detail, AND the scene's background (sky, ground, walls, ` +
+    `horizon — anything that reads as part of the setting, not just the foreground subject) all sit ` +
+    `within ${clauses.join(" and ")} — the rest is cropped away and must be treated as disposable bleed, ` +
+    `not essential scene content. Do not paint a horizon, sky-to-ground transition or floor line right at ` +
+    `the canvas edge; keep it inside the safe zone with room to spare. The canvas must still be fully ` +
+    `painted edge-to-edge with no blank margin — only the placement of meaningful content within it is ` +
+    `constrained.`
+  );
 }
 
 /**

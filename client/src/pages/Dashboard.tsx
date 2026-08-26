@@ -1406,7 +1406,7 @@ export default function Dashboard() {
                           src={event.inviteIllustrationUrl}
                           alt=""
                           data-testid="img-invite-artwork"
-                          className="mb-3 h-40 w-full rounded-md object-cover"
+                          className="mb-3 aspect-[3/2] w-full rounded-md object-cover"
                         />
                       )}
                       {event.inviteIllustrationUrl && concept.layoutStyle === "full-bleed" && (
