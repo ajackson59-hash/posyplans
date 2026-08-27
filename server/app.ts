@@ -112,10 +112,23 @@ export function createExpressApp(): { app: express.Express; httpServer: Server }
 // same cached promise instantly.
 let readyPromise: Promise<void> | null = null;
 
+export function registerApiNotFoundHandler(app: express.Express): void {
+  // Keep unknown API requests out of Express's default HTML error page. Page
+  // requests intentionally fall through so local production can serve the SPA
+  // shell and Vercel can keep handling its /index.html rewrite.
+  app.use("/api", (_req, res) => {
+    res.status(404).json({
+      error: "We couldn't find that Posy API route.",
+      code: "api_not_found",
+    });
+  });
+}
+
 export function ensureRoutesRegistered(app: express.Express, httpServer: Server): Promise<void> {
   if (!readyPromise) {
     readyPromise = (async () => {
       await registerRoutes(httpServer, app);
+      registerApiNotFoundHandler(app);
 
       app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
         const status = err.status || err.statusCode || 500;
