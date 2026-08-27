@@ -33,9 +33,9 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 ));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/ms/index.js
+// ../posyplans-repair/node_modules/ms/index.js
 var require_ms = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/ms/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/ms/index.js"(exports2, module2) {
     var s = 1e3;
     var m = s * 60;
     var h = m * 60;
@@ -149,9 +149,9 @@ var require_ms = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/debug/src/common.js
+// ../posyplans-repair/node_modules/debug/src/common.js
 var require_common = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/debug/src/common.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/debug/src/common.js"(exports2, module2) {
     function setup(env) {
       createDebug.debug = createDebug;
       createDebug.default = createDebug;
@@ -326,9 +326,9 @@ var require_common = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/debug/src/browser.js
+// ../posyplans-repair/node_modules/debug/src/browser.js
 var require_browser = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/debug/src/browser.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/debug/src/browser.js"(exports2, module2) {
     exports2.formatArgs = formatArgs;
     exports2.save = save;
     exports2.load = load;
@@ -496,9 +496,9 @@ var require_browser = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/debug/src/node.js
+// ../posyplans-repair/node_modules/debug/src/node.js
 var require_node = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/debug/src/node.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/debug/src/node.js"(exports2, module2) {
     var tty = require("tty");
     var util2 = require("util");
     exports2.init = init;
@@ -670,9 +670,9 @@ var require_node = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/debug/src/index.js
+// ../posyplans-repair/node_modules/debug/src/index.js
 var require_src = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/debug/src/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/debug/src/index.js"(exports2, module2) {
     if (typeof process === "undefined" || process.type === "renderer" || process.browser === true || process.__nwjs) {
       module2.exports = require_browser();
     } else {
@@ -681,9 +681,9 @@ var require_src = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/depd/index.js
+// ../posyplans-repair/node_modules/depd/index.js
 var require_depd = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/depd/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/depd/index.js"(exports2, module2) {
     var relative2 = require("path").relative;
     module2.exports = depd;
     var basePath = process.cwd();
@@ -987,9 +987,9 @@ var require_depd = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/setprototypeof/index.js
+// ../posyplans-repair/node_modules/setprototypeof/index.js
 var require_setprototypeof = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/setprototypeof/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/setprototypeof/index.js"(exports2, module2) {
     "use strict";
     module2.exports = Object.setPrototypeOf || ({ __proto__: [] } instanceof Array ? setProtoOf : mixinProperties);
     function setProtoOf(obj, proto) {
@@ -1007,9 +1007,9 @@ var require_setprototypeof = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/statuses/codes.json
+// ../posyplans-repair/node_modules/statuses/codes.json
 var require_codes = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/statuses/codes.json"(exports2, module2) {
+  "../posyplans-repair/node_modules/statuses/codes.json"(exports2, module2) {
     module2.exports = {
       "100": "Continue",
       "101": "Switching Protocols",
@@ -1078,9 +1078,9 @@ var require_codes = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/statuses/index.js
+// ../posyplans-repair/node_modules/statuses/index.js
 var require_statuses = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/statuses/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/statuses/index.js"(exports2, module2) {
     "use strict";
     var codes = require_codes();
     module2.exports = status;
@@ -1149,9 +1149,9 @@ var require_statuses = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/inherits/inherits_browser.js
+// ../posyplans-repair/node_modules/inherits/inherits_browser.js
 var require_inherits_browser = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/inherits/inherits_browser.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/inherits/inherits_browser.js"(exports2, module2) {
     if (typeof Object.create === "function") {
       module2.exports = function inherits(ctor, superCtor) {
         if (superCtor) {
@@ -1181,9 +1181,9 @@ var require_inherits_browser = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/inherits/inherits.js
+// ../posyplans-repair/node_modules/inherits/inherits.js
 var require_inherits = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/inherits/inherits.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/inherits/inherits.js"(exports2, module2) {
     try {
       util2 = require("util");
       if (typeof util2.inherits !== "function") throw "";
@@ -1195,9 +1195,9 @@ var require_inherits = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/toidentifier/index.js
+// ../posyplans-repair/node_modules/toidentifier/index.js
 var require_toidentifier = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/toidentifier/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/toidentifier/index.js"(exports2, module2) {
     "use strict";
     module2.exports = toIdentifier;
     function toIdentifier(str) {
@@ -1208,9 +1208,9 @@ var require_toidentifier = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/http-errors/index.js
+// ../posyplans-repair/node_modules/http-errors/index.js
 var require_http_errors = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/http-errors/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/http-errors/index.js"(exports2, module2) {
     "use strict";
     var deprecate = require_depd()("http-errors");
     var setPrototypeOf = require_setprototypeof();
@@ -1372,9 +1372,9 @@ var require_http_errors = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/bytes/index.js
+// ../posyplans-repair/node_modules/bytes/index.js
 var require_bytes = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/bytes/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/bytes/index.js"(exports2, module2) {
     "use strict";
     module2.exports = bytes;
     module2.exports.format = format2;
@@ -1461,9 +1461,9 @@ var require_bytes = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/safer-buffer/safer.js
+// ../posyplans-repair/node_modules/safer-buffer/safer.js
 var require_safer = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/safer-buffer/safer.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/safer-buffer/safer.js"(exports2, module2) {
     "use strict";
     var buffer2 = require("buffer");
     var Buffer2 = buffer2.Buffer;
@@ -1529,9 +1529,9 @@ var require_safer = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/lib/bom-handling.js
+// ../posyplans-repair/node_modules/iconv-lite/lib/bom-handling.js
 var require_bom_handling = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/lib/bom-handling.js"(exports2) {
+  "../posyplans-repair/node_modules/iconv-lite/lib/bom-handling.js"(exports2) {
     "use strict";
     var BOMChar = "\uFEFF";
     exports2.PrependBOM = PrependBOMWrapper;
@@ -1575,9 +1575,9 @@ var require_bom_handling = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/lib/helpers/merge-exports.js
+// ../posyplans-repair/node_modules/iconv-lite/lib/helpers/merge-exports.js
 var require_merge_exports = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/lib/helpers/merge-exports.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/iconv-lite/lib/helpers/merge-exports.js"(exports2, module2) {
     "use strict";
     var hasOwn2 = typeof Object.hasOwn === "undefined" ? Function.call.bind(Object.prototype.hasOwnProperty) : Object.hasOwn;
     function mergeModules(target, module3) {
@@ -1591,9 +1591,9 @@ var require_merge_exports = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/internal.js
+// ../posyplans-repair/node_modules/iconv-lite/encodings/internal.js
 var require_internal = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/internal.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/iconv-lite/encodings/internal.js"(exports2, module2) {
     "use strict";
     var Buffer2 = require_safer().Buffer;
     module2.exports = {
@@ -1772,9 +1772,9 @@ var require_internal = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/utf32.js
+// ../posyplans-repair/node_modules/iconv-lite/encodings/utf32.js
 var require_utf32 = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/utf32.js"(exports2) {
+  "../posyplans-repair/node_modules/iconv-lite/encodings/utf32.js"(exports2) {
     "use strict";
     var Buffer2 = require_safer().Buffer;
     exports2._utf32 = Utf32Codec;
@@ -2007,9 +2007,9 @@ var require_utf32 = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/utf16.js
+// ../posyplans-repair/node_modules/iconv-lite/encodings/utf16.js
 var require_utf16 = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/utf16.js"(exports2) {
+  "../posyplans-repair/node_modules/iconv-lite/encodings/utf16.js"(exports2) {
     "use strict";
     var Buffer2 = require_safer().Buffer;
     exports2.utf16be = Utf16BECodec;
@@ -2150,9 +2150,9 @@ var require_utf16 = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/utf7.js
+// ../posyplans-repair/node_modules/iconv-lite/encodings/utf7.js
 var require_utf7 = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/utf7.js"(exports2) {
+  "../posyplans-repair/node_modules/iconv-lite/encodings/utf7.js"(exports2) {
     "use strict";
     var Buffer2 = require_safer().Buffer;
     exports2.utf7 = Utf7Codec;
@@ -2168,8 +2168,8 @@ var require_utf7 = __commonJS({
       this.iconv = codec.iconv;
     }
     Utf7Encoder.prototype.write = function(str) {
-      return Buffer2.from(str.replace(nonDirectChars, function(chunk) {
-        return "+" + (chunk === "+" ? "" : this.iconv.encode(chunk, "utf16-be").toString("base64").replace(/=+$/, "")) + "-";
+      return Buffer2.from(str.replace(nonDirectChars, function(chunk2) {
+        return "+" + (chunk2 === "+" ? "" : this.iconv.encode(chunk2, "utf16-be").toString("base64").replace(/=+$/, "")) + "-";
       }.bind(this)));
     };
     Utf7Encoder.prototype.end = function() {
@@ -2368,9 +2368,9 @@ var require_utf7 = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/sbcs-codec.js
+// ../posyplans-repair/node_modules/iconv-lite/encodings/sbcs-codec.js
 var require_sbcs_codec = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/sbcs-codec.js"(exports2) {
+  "../posyplans-repair/node_modules/iconv-lite/encodings/sbcs-codec.js"(exports2) {
     "use strict";
     var Buffer2 = require_safer().Buffer;
     exports2._sbcs = SBCSCodec;
@@ -2430,9 +2430,9 @@ var require_sbcs_codec = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/sbcs-data.js
+// ../posyplans-repair/node_modules/iconv-lite/encodings/sbcs-data.js
 var require_sbcs_data = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/sbcs-data.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/iconv-lite/encodings/sbcs-data.js"(exports2, module2) {
     "use strict";
     module2.exports = {
       // Not supported by iconv, not sure why.
@@ -2585,9 +2585,9 @@ var require_sbcs_data = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/sbcs-data-generated.js
+// ../posyplans-repair/node_modules/iconv-lite/encodings/sbcs-data-generated.js
 var require_sbcs_data_generated = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/sbcs-data-generated.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/iconv-lite/encodings/sbcs-data-generated.js"(exports2, module2) {
     "use strict";
     module2.exports = {
       "437": "cp437",
@@ -3040,9 +3040,9 @@ var require_sbcs_data_generated = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/dbcs-codec.js
+// ../posyplans-repair/node_modules/iconv-lite/encodings/dbcs-codec.js
 var require_dbcs_codec = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/dbcs-codec.js"(exports2) {
+  "../posyplans-repair/node_modules/iconv-lite/encodings/dbcs-codec.js"(exports2) {
     "use strict";
     var Buffer2 = require_safer().Buffer;
     exports2._dbcs = DBCSCodec;
@@ -3157,12 +3157,12 @@ var require_dbcs_codec = __commonJS({
       }
       return node;
     };
-    DBCSCodec.prototype._addDecodeChunk = function(chunk) {
-      var curAddr = parseInt(chunk[0], 16);
+    DBCSCodec.prototype._addDecodeChunk = function(chunk2) {
+      var curAddr = parseInt(chunk2[0], 16);
       var writeTable = this._getDecodeTrieNode(curAddr);
       curAddr = curAddr & 255;
-      for (var k = 1; k < chunk.length; k++) {
-        var part = chunk[k];
+      for (var k = 1; k < chunk2.length; k++) {
+        var part = chunk2[k];
         if (typeof part === "string") {
           for (var l = 0; l < part.length; ) {
             var code = part.charCodeAt(l++);
@@ -3171,7 +3171,7 @@ var require_dbcs_codec = __commonJS({
               if (codeTrail >= 56320 && codeTrail < 57344) {
                 writeTable[curAddr++] = 65536 + (code - 55296) * 1024 + (codeTrail - 56320);
               } else {
-                throw new Error("Incorrect surrogate pair in " + this.encodingName + " at chunk " + chunk[0]);
+                throw new Error("Incorrect surrogate pair in " + this.encodingName + " at chunk " + chunk2[0]);
               }
             } else if (code > 4080 && code <= 4095) {
               var len = 4095 - code + 2;
@@ -3191,11 +3191,11 @@ var require_dbcs_codec = __commonJS({
             writeTable[curAddr++] = charCode++;
           }
         } else {
-          throw new Error("Incorrect type '" + typeof part + "' given in " + this.encodingName + " at chunk " + chunk[0]);
+          throw new Error("Incorrect type '" + typeof part + "' given in " + this.encodingName + " at chunk " + chunk2[0]);
         }
       }
       if (curAddr > 255) {
-        throw new Error("Incorrect chunk in " + this.encodingName + " at addr " + chunk[0] + ": too long" + curAddr);
+        throw new Error("Incorrect chunk in " + this.encodingName + " at addr " + chunk2[0] + ": too long" + curAddr);
       }
     };
     DBCSCodec.prototype._getEncodeBucket = function(uCode) {
@@ -3500,9 +3500,9 @@ var require_dbcs_codec = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/shiftjis.json
+// ../posyplans-repair/node_modules/iconv-lite/encodings/tables/shiftjis.json
 var require_shiftjis = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/shiftjis.json"(exports2, module2) {
+  "../posyplans-repair/node_modules/iconv-lite/encodings/tables/shiftjis.json"(exports2, module2) {
     module2.exports = [
       ["0", "\0", 128],
       ["a1", "\uFF61", 62],
@@ -3631,9 +3631,9 @@ var require_shiftjis = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/eucjp.json
+// ../posyplans-repair/node_modules/iconv-lite/encodings/tables/eucjp.json
 var require_eucjp = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/eucjp.json"(exports2, module2) {
+  "../posyplans-repair/node_modules/iconv-lite/encodings/tables/eucjp.json"(exports2, module2) {
     module2.exports = [
       ["0", "\0", 127],
       ["8ea1", "\uFF61", 62],
@@ -3819,9 +3819,9 @@ var require_eucjp = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/cp936.json
+// ../posyplans-repair/node_modules/iconv-lite/encodings/tables/cp936.json
 var require_cp936 = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/cp936.json"(exports2, module2) {
+  "../posyplans-repair/node_modules/iconv-lite/encodings/tables/cp936.json"(exports2, module2) {
     module2.exports = [
       ["0", "\0", 127, "\u20AC"],
       ["8140", "\u4E02\u4E04\u4E05\u4E06\u4E0F\u4E12\u4E17\u4E1F\u4E20\u4E21\u4E23\u4E26\u4E29\u4E2E\u4E2F\u4E31\u4E33\u4E35\u4E37\u4E3C\u4E40\u4E41\u4E42\u4E44\u4E46\u4E4A\u4E51\u4E55\u4E57\u4E5A\u4E5B\u4E62\u4E63\u4E64\u4E65\u4E67\u4E68\u4E6A", 5, "\u4E72\u4E74", 9, "\u4E7F", 6, "\u4E87\u4E8A"],
@@ -4089,9 +4089,9 @@ var require_cp936 = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/gbk-added.json
+// ../posyplans-repair/node_modules/iconv-lite/encodings/tables/gbk-added.json
 var require_gbk_added = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/gbk-added.json"(exports2, module2) {
+  "../posyplans-repair/node_modules/iconv-lite/encodings/tables/gbk-added.json"(exports2, module2) {
     module2.exports = [
       ["a140", "\uE4C6", 62],
       ["a180", "\uE505", 32],
@@ -4151,16 +4151,16 @@ var require_gbk_added = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/gb18030-ranges.json
+// ../posyplans-repair/node_modules/iconv-lite/encodings/tables/gb18030-ranges.json
 var require_gb18030_ranges = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/gb18030-ranges.json"(exports2, module2) {
+  "../posyplans-repair/node_modules/iconv-lite/encodings/tables/gb18030-ranges.json"(exports2, module2) {
     module2.exports = { uChars: [128, 165, 169, 178, 184, 216, 226, 235, 238, 244, 248, 251, 253, 258, 276, 284, 300, 325, 329, 334, 364, 463, 465, 467, 469, 471, 473, 475, 477, 506, 594, 610, 712, 716, 730, 930, 938, 962, 970, 1026, 1104, 1106, 8209, 8215, 8218, 8222, 8231, 8241, 8244, 8246, 8252, 8365, 8452, 8454, 8458, 8471, 8482, 8556, 8570, 8596, 8602, 8713, 8720, 8722, 8726, 8731, 8737, 8740, 8742, 8748, 8751, 8760, 8766, 8777, 8781, 8787, 8802, 8808, 8816, 8854, 8858, 8870, 8896, 8979, 9322, 9372, 9548, 9588, 9616, 9622, 9634, 9652, 9662, 9672, 9676, 9680, 9702, 9735, 9738, 9793, 9795, 11906, 11909, 11913, 11917, 11928, 11944, 11947, 11951, 11956, 11960, 11964, 11979, 12284, 12292, 12312, 12319, 12330, 12351, 12436, 12447, 12535, 12543, 12586, 12842, 12850, 12964, 13200, 13215, 13218, 13253, 13263, 13267, 13270, 13384, 13428, 13727, 13839, 13851, 14617, 14703, 14801, 14816, 14964, 15183, 15471, 15585, 16471, 16736, 17208, 17325, 17330, 17374, 17623, 17997, 18018, 18212, 18218, 18301, 18318, 18760, 18811, 18814, 18820, 18823, 18844, 18848, 18872, 19576, 19620, 19738, 19887, 40870, 59244, 59336, 59367, 59413, 59417, 59423, 59431, 59437, 59443, 59452, 59460, 59478, 59493, 63789, 63866, 63894, 63976, 63986, 64016, 64018, 64021, 64025, 64034, 64037, 64042, 65074, 65093, 65107, 65112, 65127, 65132, 65375, 65510, 65536], gbChars: [0, 36, 38, 45, 50, 81, 89, 95, 96, 100, 103, 104, 105, 109, 126, 133, 148, 172, 175, 179, 208, 306, 307, 308, 309, 310, 311, 312, 313, 341, 428, 443, 544, 545, 558, 741, 742, 749, 750, 805, 819, 820, 7922, 7924, 7925, 7927, 7934, 7943, 7944, 7945, 7950, 8062, 8148, 8149, 8152, 8164, 8174, 8236, 8240, 8262, 8264, 8374, 8380, 8381, 8384, 8388, 8390, 8392, 8393, 8394, 8396, 8401, 8406, 8416, 8419, 8424, 8437, 8439, 8445, 8482, 8485, 8496, 8521, 8603, 8936, 8946, 9046, 9050, 9063, 9066, 9076, 9092, 9100, 9108, 9111, 9113, 9131, 9162, 9164, 9218, 9219, 11329, 11331, 11334, 11336, 11346, 11361, 11363, 11366, 11370, 11372, 11375, 11389, 11682, 11686, 11687, 11692, 11694, 11714, 11716, 11723, 11725, 11730, 11736, 11982, 11989, 12102, 12336, 12348, 12350, 12384, 12393, 12395, 12397, 12510, 12553, 12851, 12962, 12973, 13738, 13823, 13919, 13933, 14080, 14298, 14585, 14698, 15583, 15847, 16318, 16434, 16438, 16481, 16729, 17102, 17122, 17315, 17320, 17402, 17418, 17859, 17909, 17911, 17915, 17916, 17936, 17939, 17961, 18664, 18703, 18814, 18962, 19043, 33469, 33470, 33471, 33484, 33485, 33490, 33497, 33501, 33505, 33513, 33520, 33536, 33550, 37845, 37921, 37948, 38029, 38038, 38064, 38065, 38066, 38069, 38075, 38076, 38078, 39108, 39109, 39113, 39114, 39115, 39116, 39265, 39394, 189e3] };
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/cp949.json
+// ../posyplans-repair/node_modules/iconv-lite/encodings/tables/cp949.json
 var require_cp949 = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/cp949.json"(exports2, module2) {
+  "../posyplans-repair/node_modules/iconv-lite/encodings/tables/cp949.json"(exports2, module2) {
     module2.exports = [
       ["0", "\0", 127],
       ["8141", "\uAC02\uAC03\uAC05\uAC06\uAC0B", 4, "\uAC18\uAC1E\uAC1F\uAC21\uAC22\uAC23\uAC25", 6, "\uAC2E\uAC32\uAC33\uAC34"],
@@ -4437,9 +4437,9 @@ var require_cp949 = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/cp950.json
+// ../posyplans-repair/node_modules/iconv-lite/encodings/tables/cp950.json
 var require_cp950 = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/cp950.json"(exports2, module2) {
+  "../posyplans-repair/node_modules/iconv-lite/encodings/tables/cp950.json"(exports2, module2) {
     module2.exports = [
       ["0", "\0", 127],
       ["a140", "\u3000\uFF0C\u3001\u3002\uFF0E\u2027\uFF1B\uFF1A\uFF1F\uFF01\uFE30\u2026\u2025\uFE50\uFE51\uFE52\xB7\uFE54\uFE55\uFE56\uFE57\uFF5C\u2013\uFE31\u2014\uFE33\u2574\uFE34\uFE4F\uFF08\uFF09\uFE35\uFE36\uFF5B\uFF5D\uFE37\uFE38\u3014\u3015\uFE39\uFE3A\u3010\u3011\uFE3B\uFE3C\u300A\u300B\uFE3D\uFE3E\u3008\u3009\uFE3F\uFE40\u300C\u300D\uFE41\uFE42\u300E\u300F\uFE43\uFE44\uFE59\uFE5A"],
@@ -4620,9 +4620,9 @@ var require_cp950 = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/big5-added.json
+// ../posyplans-repair/node_modules/iconv-lite/encodings/tables/big5-added.json
 var require_big5_added = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/tables/big5-added.json"(exports2, module2) {
+  "../posyplans-repair/node_modules/iconv-lite/encodings/tables/big5-added.json"(exports2, module2) {
     module2.exports = [
       ["8740", "\u43F0\u4C32\u4603\u45A6\u4578\u{27267}\u4D77\u45B3\u{27CB1}\u4CE2\u{27CC5}\u3B95\u4736\u4744\u4C47\u4C40\u{242BF}\u{23617}\u{27352}\u{26E8B}\u{270D2}\u4C57\u{2A351}\u474F\u45DA\u4C85\u{27C6C}\u4D07\u4AA4\u46A1\u{26B23}\u7225\u{25A54}\u{21A63}\u{23E06}\u{23F61}\u664D\u56FB"],
       ["8767", "\u7D95\u591D\u{28BB9}\u3DF4\u9734\u{27BEF}\u5BDB\u{21D5E}\u5AA4\u3625\u{29EB0}\u5AD1\u5BB7\u5CFC\u676E\u8593\u{29945}\u7461\u749D\u3875\u{21D53}\u{2369E}\u{26021}\u3EEC"],
@@ -4748,9 +4748,9 @@ var require_big5_added = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/dbcs-data.js
+// ../posyplans-repair/node_modules/iconv-lite/encodings/dbcs-data.js
 var require_dbcs_data = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/dbcs-data.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/iconv-lite/encodings/dbcs-data.js"(exports2, module2) {
     "use strict";
     module2.exports = {
       // == Japanese/ShiftJIS ====================================================
@@ -4995,9 +4995,9 @@ var require_dbcs_data = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/index.js
+// ../posyplans-repair/node_modules/iconv-lite/encodings/index.js
 var require_encodings = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/encodings/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/iconv-lite/encodings/index.js"(exports2, module2) {
     "use strict";
     var mergeModules = require_merge_exports();
     var modules = [
@@ -5020,9 +5020,9 @@ var require_encodings = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/lib/streams.js
+// ../posyplans-repair/node_modules/iconv-lite/lib/streams.js
 var require_streams = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/lib/streams.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/iconv-lite/lib/streams.js"(exports2, module2) {
     "use strict";
     var Buffer2 = require_safer().Buffer;
     module2.exports = function(streamModule) {
@@ -5036,12 +5036,12 @@ var require_streams = __commonJS({
       IconvLiteEncoderStream.prototype = Object.create(Transform.prototype, {
         constructor: { value: IconvLiteEncoderStream }
       });
-      IconvLiteEncoderStream.prototype._transform = function(chunk, encoding, done) {
-        if (typeof chunk !== "string") {
+      IconvLiteEncoderStream.prototype._transform = function(chunk2, encoding, done) {
+        if (typeof chunk2 !== "string") {
           return done(new Error("Iconv encoding stream needs strings as its input."));
         }
         try {
-          var res = this.conv.write(chunk);
+          var res = this.conv.write(chunk2);
           if (res && res.length) this.push(res);
           done();
         } catch (e) {
@@ -5060,8 +5060,8 @@ var require_streams = __commonJS({
       IconvLiteEncoderStream.prototype.collect = function(cb) {
         var chunks = [];
         this.on("error", cb);
-        this.on("data", function(chunk) {
-          chunks.push(chunk);
+        this.on("data", function(chunk2) {
+          chunks.push(chunk2);
         });
         this.on("end", function() {
           cb(null, Buffer2.concat(chunks));
@@ -5077,12 +5077,12 @@ var require_streams = __commonJS({
       IconvLiteDecoderStream.prototype = Object.create(Transform.prototype, {
         constructor: { value: IconvLiteDecoderStream }
       });
-      IconvLiteDecoderStream.prototype._transform = function(chunk, encoding, done) {
-        if (!Buffer2.isBuffer(chunk) && !(chunk instanceof Uint8Array)) {
+      IconvLiteDecoderStream.prototype._transform = function(chunk2, encoding, done) {
+        if (!Buffer2.isBuffer(chunk2) && !(chunk2 instanceof Uint8Array)) {
           return done(new Error("Iconv decoding stream needs buffers as its input."));
         }
         try {
-          var res = this.conv.write(chunk);
+          var res = this.conv.write(chunk2);
           if (res && res.length) this.push(res, this.encoding);
           done();
         } catch (e) {
@@ -5101,8 +5101,8 @@ var require_streams = __commonJS({
       IconvLiteDecoderStream.prototype.collect = function(cb) {
         var res = "";
         this.on("error", cb);
-        this.on("data", function(chunk) {
-          res += chunk;
+        this.on("data", function(chunk2) {
+          res += chunk2;
         });
         this.on("end", function() {
           cb(null, res);
@@ -5117,9 +5117,9 @@ var require_streams = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/lib/index.js
+// ../posyplans-repair/node_modules/iconv-lite/lib/index.js
 var require_lib = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/iconv-lite/lib/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/iconv-lite/lib/index.js"(exports2, module2) {
     "use strict";
     var Buffer2 = require_safer().Buffer;
     var bomHandling = require_bom_handling();
@@ -5249,9 +5249,9 @@ var require_lib = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/unpipe/index.js
+// ../posyplans-repair/node_modules/unpipe/index.js
 var require_unpipe = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/unpipe/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/unpipe/index.js"(exports2, module2) {
     "use strict";
     module2.exports = unpipe;
     function hasPipeDataListeners(stream) {
@@ -5287,9 +5287,9 @@ var require_unpipe = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/raw-body/index.js
+// ../posyplans-repair/node_modules/raw-body/index.js
 var require_raw_body = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/raw-body/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/raw-body/index.js"(exports2, module2) {
     "use strict";
     var asyncHooks = tryRequireAsyncHooks();
     var bytes = require_bytes();
@@ -5417,9 +5417,9 @@ var require_raw_body = __commonJS({
           type: "request.aborted"
         }));
       }
-      function onData(chunk) {
+      function onData(chunk2) {
         if (complete) return;
-        received += chunk.length;
+        received += chunk2.length;
         if (limit2 !== null && received > limit2) {
           done(createError(413, "request entity too large", {
             limit: limit2,
@@ -5427,9 +5427,9 @@ var require_raw_body = __commonJS({
             type: "entity.too.large"
           }));
         } else if (decoder) {
-          buffer2 += decoder.write(chunk);
+          buffer2 += decoder.write(chunk2);
         } else {
-          buffer2.push(chunk);
+          buffer2.push(chunk2);
         }
       }
       function onEnd(err) {
@@ -5476,9 +5476,9 @@ var require_raw_body = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/ee-first/index.js
+// ../posyplans-repair/node_modules/ee-first/index.js
 var require_ee_first = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/ee-first/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/ee-first/index.js"(exports2, module2) {
     "use strict";
     module2.exports = first;
     function first(stuff, done) {
@@ -5532,9 +5532,9 @@ var require_ee_first = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/on-finished/index.js
+// ../posyplans-repair/node_modules/on-finished/index.js
 var require_on_finished = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/on-finished/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/on-finished/index.js"(exports2, module2) {
     "use strict";
     module2.exports = onFinished;
     module2.exports.isFinished = isFinished;
@@ -5636,9 +5636,9 @@ var require_on_finished = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/type-is/node_modules/content-type/dist/index.js
+// ../posyplans-repair/node_modules/type-is/node_modules/content-type/dist/index.js
 var require_dist = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/type-is/node_modules/content-type/dist/index.js"(exports2) {
+  "../posyplans-repair/node_modules/type-is/node_modules/content-type/dist/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.format = format2;
@@ -5767,9 +5767,9 @@ var require_dist = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/mime-db/db.json
+// ../posyplans-repair/node_modules/mime-db/db.json
 var require_db = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/mime-db/db.json"(exports2, module2) {
+  "../posyplans-repair/node_modules/mime-db/db.json"(exports2, module2) {
     module2.exports = {
       "application/1d-interleaved-parityfec": {
         source: "iana"
@@ -15115,16 +15115,16 @@ var require_db = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/mime-db/index.js
+// ../posyplans-repair/node_modules/mime-db/index.js
 var require_mime_db = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/mime-db/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/mime-db/index.js"(exports2, module2) {
     module2.exports = require_db();
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/mime-types/mimeScore.js
+// ../posyplans-repair/node_modules/mime-types/mimeScore.js
 var require_mimeScore = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/mime-types/mimeScore.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/mime-types/mimeScore.js"(exports2, module2) {
     var FACET_SCORES = {
       "prs.": 100,
       "x-": 200,
@@ -15166,9 +15166,9 @@ var require_mimeScore = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/mime-types/index.js
+// ../posyplans-repair/node_modules/mime-types/index.js
 var require_mime_types = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/mime-types/index.js"(exports2) {
+  "../posyplans-repair/node_modules/mime-types/index.js"(exports2) {
     "use strict";
     var db2 = require_mime_db();
     var extname = require("path").extname;
@@ -15272,9 +15272,9 @@ var require_mime_types = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/media-typer/index.js
+// ../posyplans-repair/node_modules/media-typer/index.js
 var require_media_typer = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/media-typer/index.js"(exports2) {
+  "../posyplans-repair/node_modules/media-typer/index.js"(exports2) {
     "use strict";
     var SUBTYPE_NAME_REGEXP = /^[A-Za-z0-9][A-Za-z0-9!#$&^_.-]{0,126}$/;
     var TYPE_NAME_REGEXP = /^[A-Za-z0-9][A-Za-z0-9!#$&^_-]{0,126}$/;
@@ -15342,9 +15342,9 @@ var require_media_typer = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/type-is/index.js
+// ../posyplans-repair/node_modules/type-is/index.js
 var require_type_is = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/type-is/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/type-is/index.js"(exports2, module2) {
     "use strict";
     var contentType = require_dist();
     var mime = require_mime_types();
@@ -15433,9 +15433,9 @@ var require_type_is = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/node_modules/content-type/dist/index.js
+// ../posyplans-repair/node_modules/body-parser/node_modules/content-type/dist/index.js
 var require_dist2 = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/node_modules/content-type/dist/index.js"(exports2) {
+  "../posyplans-repair/node_modules/body-parser/node_modules/content-type/dist/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.format = format2;
@@ -15564,9 +15564,9 @@ var require_dist2 = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/lib/utils.js
+// ../posyplans-repair/node_modules/body-parser/lib/utils.js
 var require_utils = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/lib/utils.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/body-parser/lib/utils.js"(exports2, module2) {
     "use strict";
     var bytes = require_bytes();
     var contentType = require_dist2();
@@ -15616,9 +15616,9 @@ var require_utils = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/lib/read.js
+// ../posyplans-repair/node_modules/body-parser/lib/read.js
 var require_read = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/lib/read.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/body-parser/lib/read.js"(exports2, module2) {
     "use strict";
     var createError = require_http_errors();
     var getBody = require_raw_body();
@@ -15774,9 +15774,9 @@ var require_read = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/lib/types/json.js
+// ../posyplans-repair/node_modules/body-parser/lib/types/json.js
 var require_json = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/lib/types/json.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/body-parser/lib/types/json.js"(exports2, module2) {
     "use strict";
     var debug = require_src()("body-parser:json");
     var read = require_read();
@@ -15873,9 +15873,9 @@ var require_json = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/lib/types/raw.js
+// ../posyplans-repair/node_modules/body-parser/lib/types/raw.js
 var require_raw = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/lib/types/raw.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/body-parser/lib/types/raw.js"(exports2, module2) {
     "use strict";
     var debug = require_src()("body-parser:raw");
     var read = require_read();
@@ -15895,9 +15895,9 @@ var require_raw = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/lib/types/text.js
+// ../posyplans-repair/node_modules/body-parser/lib/types/text.js
 var require_text = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/lib/types/text.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/body-parser/lib/types/text.js"(exports2, module2) {
     "use strict";
     var debug = require_src()("body-parser:text");
     var read = require_read();
@@ -15912,24 +15912,24 @@ var require_text = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-errors/type.js
+// ../posyplans-repair/node_modules/es-errors/type.js
 var require_type = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-errors/type.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/es-errors/type.js"(exports2, module2) {
     "use strict";
     module2.exports = TypeError;
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/object-inspect/util.inspect.js
+// ../posyplans-repair/node_modules/object-inspect/util.inspect.js
 var require_util_inspect = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/object-inspect/util.inspect.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/object-inspect/util.inspect.js"(exports2, module2) {
     module2.exports = require("util").inspect;
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/object-inspect/index.js
+// ../posyplans-repair/node_modules/object-inspect/index.js
 var require_object_inspect = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/object-inspect/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/object-inspect/index.js"(exports2, module2) {
     var hasMap = typeof Map === "function" && Map.prototype;
     var mapSizeDescriptor = Object.getOwnPropertyDescriptor && hasMap ? Object.getOwnPropertyDescriptor(Map.prototype, "size") : null;
     var mapSize = hasMap && mapSizeDescriptor && typeof mapSizeDescriptor.get === "function" ? mapSizeDescriptor.get : null;
@@ -16458,9 +16458,9 @@ var require_object_inspect = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/side-channel-list/index.js
+// ../posyplans-repair/node_modules/side-channel-list/index.js
 var require_side_channel_list = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/side-channel-list/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/side-channel-list/index.js"(exports2, module2) {
     "use strict";
     var inspect = require_object_inspect();
     var $TypeError = require_type();
@@ -16551,113 +16551,113 @@ var require_side_channel_list = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-object-atoms/index.js
+// ../posyplans-repair/node_modules/es-object-atoms/index.js
 var require_es_object_atoms = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-object-atoms/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/es-object-atoms/index.js"(exports2, module2) {
     "use strict";
     module2.exports = Object;
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-errors/index.js
+// ../posyplans-repair/node_modules/es-errors/index.js
 var require_es_errors = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-errors/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/es-errors/index.js"(exports2, module2) {
     "use strict";
     module2.exports = Error;
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-errors/eval.js
+// ../posyplans-repair/node_modules/es-errors/eval.js
 var require_eval = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-errors/eval.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/es-errors/eval.js"(exports2, module2) {
     "use strict";
     module2.exports = EvalError;
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-errors/range.js
+// ../posyplans-repair/node_modules/es-errors/range.js
 var require_range = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-errors/range.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/es-errors/range.js"(exports2, module2) {
     "use strict";
     module2.exports = RangeError;
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-errors/ref.js
+// ../posyplans-repair/node_modules/es-errors/ref.js
 var require_ref = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-errors/ref.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/es-errors/ref.js"(exports2, module2) {
     "use strict";
     module2.exports = ReferenceError;
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-errors/syntax.js
+// ../posyplans-repair/node_modules/es-errors/syntax.js
 var require_syntax = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-errors/syntax.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/es-errors/syntax.js"(exports2, module2) {
     "use strict";
     module2.exports = SyntaxError;
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-errors/uri.js
+// ../posyplans-repair/node_modules/es-errors/uri.js
 var require_uri = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-errors/uri.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/es-errors/uri.js"(exports2, module2) {
     "use strict";
     module2.exports = URIError;
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/abs.js
+// ../posyplans-repair/node_modules/math-intrinsics/abs.js
 var require_abs = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/abs.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/math-intrinsics/abs.js"(exports2, module2) {
     "use strict";
     module2.exports = Math.abs;
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/floor.js
+// ../posyplans-repair/node_modules/math-intrinsics/floor.js
 var require_floor = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/floor.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/math-intrinsics/floor.js"(exports2, module2) {
     "use strict";
     module2.exports = Math.floor;
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/max.js
+// ../posyplans-repair/node_modules/math-intrinsics/max.js
 var require_max = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/max.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/math-intrinsics/max.js"(exports2, module2) {
     "use strict";
     module2.exports = Math.max;
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/min.js
+// ../posyplans-repair/node_modules/math-intrinsics/min.js
 var require_min = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/min.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/math-intrinsics/min.js"(exports2, module2) {
     "use strict";
     module2.exports = Math.min;
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/pow.js
+// ../posyplans-repair/node_modules/math-intrinsics/pow.js
 var require_pow = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/pow.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/math-intrinsics/pow.js"(exports2, module2) {
     "use strict";
     module2.exports = Math.pow;
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/round.js
+// ../posyplans-repair/node_modules/math-intrinsics/round.js
 var require_round = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/round.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/math-intrinsics/round.js"(exports2, module2) {
     "use strict";
     module2.exports = Math.round;
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/isNaN.js
+// ../posyplans-repair/node_modules/math-intrinsics/isNaN.js
 var require_isNaN = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/isNaN.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/math-intrinsics/isNaN.js"(exports2, module2) {
     "use strict";
     module2.exports = Number.isNaN || function isNaN2(a) {
       return a !== a;
@@ -16665,9 +16665,9 @@ var require_isNaN = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/sign.js
+// ../posyplans-repair/node_modules/math-intrinsics/sign.js
 var require_sign = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/math-intrinsics/sign.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/math-intrinsics/sign.js"(exports2, module2) {
     "use strict";
     var $isNaN = require_isNaN();
     module2.exports = function sign(number) {
@@ -16679,17 +16679,17 @@ var require_sign = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/gopd/gOPD.js
+// ../posyplans-repair/node_modules/gopd/gOPD.js
 var require_gOPD = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/gopd/gOPD.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/gopd/gOPD.js"(exports2, module2) {
     "use strict";
     module2.exports = Object.getOwnPropertyDescriptor;
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/gopd/index.js
+// ../posyplans-repair/node_modules/gopd/index.js
 var require_gopd = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/gopd/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/gopd/index.js"(exports2, module2) {
     "use strict";
     var $gOPD = require_gOPD();
     if ($gOPD) {
@@ -16703,9 +16703,9 @@ var require_gopd = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-define-property/index.js
+// ../posyplans-repair/node_modules/es-define-property/index.js
 var require_es_define_property = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/es-define-property/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/es-define-property/index.js"(exports2, module2) {
     "use strict";
     var $defineProperty = Object.defineProperty || false;
     if ($defineProperty) {
@@ -16719,9 +16719,9 @@ var require_es_define_property = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/has-symbols/shams.js
+// ../posyplans-repair/node_modules/has-symbols/shams.js
 var require_shams = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/has-symbols/shams.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/has-symbols/shams.js"(exports2, module2) {
     "use strict";
     module2.exports = function hasSymbols() {
       if (typeof Symbol !== "function" || typeof Object.getOwnPropertySymbols !== "function") {
@@ -16774,9 +16774,9 @@ var require_shams = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/has-symbols/index.js
+// ../posyplans-repair/node_modules/has-symbols/index.js
 var require_has_symbols = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/has-symbols/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/has-symbols/index.js"(exports2, module2) {
     "use strict";
     var origSymbol = typeof Symbol !== "undefined" && Symbol;
     var hasSymbolSham = require_shams();
@@ -16798,26 +16798,26 @@ var require_has_symbols = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/get-proto/Reflect.getPrototypeOf.js
+// ../posyplans-repair/node_modules/get-proto/Reflect.getPrototypeOf.js
 var require_Reflect_getPrototypeOf = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/get-proto/Reflect.getPrototypeOf.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/get-proto/Reflect.getPrototypeOf.js"(exports2, module2) {
     "use strict";
     module2.exports = typeof Reflect !== "undefined" && Reflect.getPrototypeOf || null;
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/get-proto/Object.getPrototypeOf.js
+// ../posyplans-repair/node_modules/get-proto/Object.getPrototypeOf.js
 var require_Object_getPrototypeOf = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/get-proto/Object.getPrototypeOf.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/get-proto/Object.getPrototypeOf.js"(exports2, module2) {
     "use strict";
     var $Object = require_es_object_atoms();
     module2.exports = $Object.getPrototypeOf || null;
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/function-bind/implementation.js
+// ../posyplans-repair/node_modules/function-bind/implementation.js
 var require_implementation = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/function-bind/implementation.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/function-bind/implementation.js"(exports2, module2) {
     "use strict";
     var ERROR_MESSAGE = "Function.prototype.bind called on incompatible ";
     var toStr = Object.prototype.toString;
@@ -16891,42 +16891,42 @@ var require_implementation = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/function-bind/index.js
+// ../posyplans-repair/node_modules/function-bind/index.js
 var require_function_bind = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/function-bind/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/function-bind/index.js"(exports2, module2) {
     "use strict";
     var implementation = require_implementation();
     module2.exports = Function.prototype.bind || implementation;
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/call-bind-apply-helpers/functionCall.js
+// ../posyplans-repair/node_modules/call-bind-apply-helpers/functionCall.js
 var require_functionCall = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/call-bind-apply-helpers/functionCall.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/call-bind-apply-helpers/functionCall.js"(exports2, module2) {
     "use strict";
     module2.exports = Function.prototype.call;
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/call-bind-apply-helpers/functionApply.js
+// ../posyplans-repair/node_modules/call-bind-apply-helpers/functionApply.js
 var require_functionApply = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/call-bind-apply-helpers/functionApply.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/call-bind-apply-helpers/functionApply.js"(exports2, module2) {
     "use strict";
     module2.exports = Function.prototype.apply;
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/call-bind-apply-helpers/reflectApply.js
+// ../posyplans-repair/node_modules/call-bind-apply-helpers/reflectApply.js
 var require_reflectApply = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/call-bind-apply-helpers/reflectApply.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/call-bind-apply-helpers/reflectApply.js"(exports2, module2) {
     "use strict";
     module2.exports = typeof Reflect !== "undefined" && Reflect && Reflect.apply;
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/call-bind-apply-helpers/actualApply.js
+// ../posyplans-repair/node_modules/call-bind-apply-helpers/actualApply.js
 var require_actualApply = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/call-bind-apply-helpers/actualApply.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/call-bind-apply-helpers/actualApply.js"(exports2, module2) {
     "use strict";
     var bind = require_function_bind();
     var $apply = require_functionApply();
@@ -16936,9 +16936,9 @@ var require_actualApply = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/call-bind-apply-helpers/index.js
+// ../posyplans-repair/node_modules/call-bind-apply-helpers/index.js
 var require_call_bind_apply_helpers = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/call-bind-apply-helpers/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/call-bind-apply-helpers/index.js"(exports2, module2) {
     "use strict";
     var bind = require_function_bind();
     var $TypeError = require_type();
@@ -16953,9 +16953,9 @@ var require_call_bind_apply_helpers = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/dunder-proto/get.js
+// ../posyplans-repair/node_modules/dunder-proto/get.js
 var require_get = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/dunder-proto/get.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/dunder-proto/get.js"(exports2, module2) {
     "use strict";
     var callBind = require_call_bind_apply_helpers();
     var gOPD = require_gopd();
@@ -16984,9 +16984,9 @@ var require_get = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/get-proto/index.js
+// ../posyplans-repair/node_modules/get-proto/index.js
 var require_get_proto = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/get-proto/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/get-proto/index.js"(exports2, module2) {
     "use strict";
     var reflectGetProto = require_Reflect_getPrototypeOf();
     var originalGetProto = require_Object_getPrototypeOf();
@@ -17004,9 +17004,9 @@ var require_get_proto = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/hasown/index.js
+// ../posyplans-repair/node_modules/hasown/index.js
 var require_hasown = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/hasown/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/hasown/index.js"(exports2, module2) {
     "use strict";
     var call = Function.prototype.call;
     var $hasOwn = Object.prototype.hasOwnProperty;
@@ -17015,9 +17015,9 @@ var require_hasown = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/get-intrinsic/index.js
+// ../posyplans-repair/node_modules/get-intrinsic/index.js
 var require_get_intrinsic = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/get-intrinsic/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/get-intrinsic/index.js"(exports2, module2) {
     "use strict";
     var undefined2;
     var $Object = require_es_object_atoms();
@@ -17346,9 +17346,9 @@ var require_get_intrinsic = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/call-bound/index.js
+// ../posyplans-repair/node_modules/call-bound/index.js
 var require_call_bound = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/call-bound/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/call-bound/index.js"(exports2, module2) {
     "use strict";
     var GetIntrinsic = require_get_intrinsic();
     var callBindBasic = require_call_bind_apply_helpers();
@@ -17369,9 +17369,9 @@ var require_call_bound = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/side-channel-map/index.js
+// ../posyplans-repair/node_modules/side-channel-map/index.js
 var require_side_channel_map = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/side-channel-map/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/side-channel-map/index.js"(exports2, module2) {
     "use strict";
     var GetIntrinsic = require_get_intrinsic();
     var callBound = require_call_bound();
@@ -17425,9 +17425,9 @@ var require_side_channel_map = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/side-channel-weakmap/index.js
+// ../posyplans-repair/node_modules/side-channel-weakmap/index.js
 var require_side_channel_weakmap = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/side-channel-weakmap/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/side-channel-weakmap/index.js"(exports2, module2) {
     "use strict";
     var GetIntrinsic = require_get_intrinsic();
     var callBound = require_call_bound();
@@ -17498,9 +17498,9 @@ var require_side_channel_weakmap = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/side-channel/index.js
+// ../posyplans-repair/node_modules/side-channel/index.js
 var require_side_channel = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/side-channel/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/side-channel/index.js"(exports2, module2) {
     "use strict";
     var $TypeError = require_type();
     var inspect = require_object_inspect();
@@ -17538,9 +17538,9 @@ var require_side_channel = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/qs/lib/formats.js
+// ../posyplans-repair/node_modules/qs/lib/formats.js
 var require_formats = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/qs/lib/formats.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/qs/lib/formats.js"(exports2, module2) {
     "use strict";
     var replace = String.prototype.replace;
     var percentTwenties = /%20/g;
@@ -17564,9 +17564,9 @@ var require_formats = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/qs/lib/utils.js
+// ../posyplans-repair/node_modules/qs/lib/utils.js
 var require_utils2 = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/qs/lib/utils.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/qs/lib/utils.js"(exports2, module2) {
     "use strict";
     var formats = require_formats();
     var getSideChannel = require_side_channel();
@@ -17866,9 +17866,9 @@ var require_utils2 = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/qs/lib/stringify.js
+// ../posyplans-repair/node_modules/qs/lib/stringify.js
 var require_stringify = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/qs/lib/stringify.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/qs/lib/stringify.js"(exports2, module2) {
     "use strict";
     var getSideChannel = require_side_channel();
     var utils = require_utils2();
@@ -18154,9 +18154,9 @@ var require_stringify = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/qs/lib/parse.js
+// ../posyplans-repair/node_modules/qs/lib/parse.js
 var require_parse = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/qs/lib/parse.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/qs/lib/parse.js"(exports2, module2) {
     "use strict";
     var utils = require_utils2();
     var has2 = Object.prototype.hasOwnProperty;
@@ -18483,9 +18483,9 @@ var require_parse = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/qs/lib/index.js
+// ../posyplans-repair/node_modules/qs/lib/index.js
 var require_lib2 = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/qs/lib/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/qs/lib/index.js"(exports2, module2) {
     "use strict";
     var stringify3 = require_stringify();
     var parse4 = require_parse();
@@ -18498,9 +18498,9 @@ var require_lib2 = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/lib/types/urlencoded.js
+// ../posyplans-repair/node_modules/body-parser/lib/types/urlencoded.js
 var require_urlencoded = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/lib/types/urlencoded.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/body-parser/lib/types/urlencoded.js"(exports2, module2) {
     "use strict";
     var createError = require_http_errors();
     var debug = require_src()("body-parser:urlencoded");
@@ -18584,9 +18584,9 @@ var require_urlencoded = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/index.js
+// ../posyplans-repair/node_modules/body-parser/index.js
 var require_body_parser = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/body-parser/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/body-parser/index.js"(exports2, module2) {
     "use strict";
     exports2 = module2.exports = bodyParser;
     exports2.json = require_json();
@@ -18599,9 +18599,9 @@ var require_body_parser = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/merge-descriptors/index.js
+// ../posyplans-repair/node_modules/merge-descriptors/index.js
 var require_merge_descriptors = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/merge-descriptors/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/merge-descriptors/index.js"(exports2, module2) {
     "use strict";
     function mergeDescriptors(destination, source, overwrite = true) {
       if (!destination) {
@@ -18623,9 +18623,9 @@ var require_merge_descriptors = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/encodeurl/index.js
+// ../posyplans-repair/node_modules/encodeurl/index.js
 var require_encodeurl = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/encodeurl/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/encodeurl/index.js"(exports2, module2) {
     "use strict";
     module2.exports = encodeUrl;
     var ENCODE_CHARS_REGEXP = /(?:[^\x21\x23-\x3B\x3D\x3F-\x5F\x61-\x7A\x7C\x7E]|%(?:[^0-9A-Fa-f]|[0-9A-Fa-f][^0-9A-Fa-f]|$))+/g;
@@ -18637,9 +18637,9 @@ var require_encodeurl = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/escape-html/index.js
+// ../posyplans-repair/node_modules/escape-html/index.js
 var require_escape_html = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/escape-html/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/escape-html/index.js"(exports2, module2) {
     "use strict";
     var matchHtmlRegExp = /["'&<>]/;
     module2.exports = escapeHtml2;
@@ -18684,9 +18684,9 @@ var require_escape_html = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/parseurl/index.js
+// ../posyplans-repair/node_modules/parseurl/index.js
 var require_parseurl = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/parseurl/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/parseurl/index.js"(exports2, module2) {
     "use strict";
     var url = require("url");
     var parse4 = url.parse;
@@ -18768,9 +18768,9 @@ var require_parseurl = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/finalhandler/index.js
+// ../posyplans-repair/node_modules/finalhandler/index.js
 var require_finalhandler = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/finalhandler/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/finalhandler/index.js"(exports2, module2) {
     "use strict";
     var debug = require_src()("finalhandler");
     var encodeUrl = require_encodeurl();
@@ -18895,9 +18895,9 @@ var require_finalhandler = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/express/lib/view.js
+// ../posyplans-repair/node_modules/express/lib/view.js
 var require_view = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/express/lib/view.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/express/lib/view.js"(exports2, module2) {
     "use strict";
     var debug = require_src()("express:view");
     var path8 = require("node:path");
@@ -18989,9 +18989,9 @@ var require_view = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/content-type/index.js
+// ../posyplans-repair/node_modules/content-type/index.js
 var require_content_type = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/content-type/index.js"(exports2) {
+  "../posyplans-repair/node_modules/content-type/index.js"(exports2) {
     "use strict";
     var PARAM_REGEXP = /; *([!#$%&'*+.^_`|~0-9A-Za-z-]+) *= *("(?:[\u000b\u0020\u0021\u0023-\u005b\u005d-\u007e\u0080-\u00ff]|\\[\u000b\u0020-\u00ff])*"|[!#$%&'*+.^_`|~0-9A-Za-z-]+) */g;
     var TEXT_REGEXP = /^[\u000b\u0020-\u007e\u0080-\u00ff]+$/;
@@ -19093,9 +19093,9 @@ var require_content_type = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/etag/index.js
+// ../posyplans-repair/node_modules/etag/index.js
 var require_etag = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/etag/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/etag/index.js"(exports2, module2) {
     "use strict";
     module2.exports = etag;
     var crypto6 = require("crypto");
@@ -19135,9 +19135,9 @@ var require_etag = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/forwarded/index.js
+// ../posyplans-repair/node_modules/forwarded/index.js
 var require_forwarded = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/forwarded/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/forwarded/index.js"(exports2, module2) {
     "use strict";
     module2.exports = forwarded;
     function forwarded(req) {
@@ -19182,9 +19182,9 @@ var require_forwarded = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/ipaddr.js/lib/ipaddr.js
+// ../posyplans-repair/node_modules/ipaddr.js/lib/ipaddr.js
 var require_ipaddr = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/ipaddr.js/lib/ipaddr.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/ipaddr.js/lib/ipaddr.js"(exports2, module2) {
     (function() {
       var expandIPv6, ipaddr, ipv4Part, ipv4Regexes, ipv6Part, ipv6Regexes, matchCIDR, root, zoneIndex;
       ipaddr = {};
@@ -19804,9 +19804,9 @@ var require_ipaddr = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/proxy-addr/index.js
+// ../posyplans-repair/node_modules/proxy-addr/index.js
 var require_proxy_addr = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/proxy-addr/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/proxy-addr/index.js"(exports2, module2) {
     "use strict";
     module2.exports = proxyaddr;
     module2.exports.all = alladdrs;
@@ -19963,9 +19963,9 @@ var require_proxy_addr = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/express/lib/utils.js
+// ../posyplans-repair/node_modules/express/lib/utils.js
 var require_utils3 = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/express/lib/utils.js"(exports2) {
+  "../posyplans-repair/node_modules/express/lib/utils.js"(exports2) {
     "use strict";
     var { METHODS } = require("node:http");
     var contentType = require_content_type();
@@ -20090,9 +20090,9 @@ var require_utils3 = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/wrappy/wrappy.js
+// ../posyplans-repair/node_modules/wrappy/wrappy.js
 var require_wrappy = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/wrappy/wrappy.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/wrappy/wrappy.js"(exports2, module2) {
     module2.exports = wrappy;
     function wrappy(fn, cb) {
       if (fn && cb) return wrappy(fn)(cb);
@@ -20120,9 +20120,9 @@ var require_wrappy = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/once/once.js
+// ../posyplans-repair/node_modules/once/once.js
 var require_once = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/once/once.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/once/once.js"(exports2, module2) {
     var wrappy = require_wrappy();
     module2.exports = wrappy(once);
     module2.exports.strict = wrappy(onceStrict);
@@ -20164,9 +20164,9 @@ var require_once = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/is-promise/index.js
+// ../posyplans-repair/node_modules/is-promise/index.js
 var require_is_promise = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/is-promise/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/is-promise/index.js"(exports2, module2) {
     module2.exports = isPromise;
     module2.exports.default = isPromise;
     function isPromise(obj) {
@@ -20175,9 +20175,9 @@ var require_is_promise = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/path-to-regexp/dist/index.js
+// ../posyplans-repair/node_modules/path-to-regexp/dist/index.js
 var require_dist3 = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/path-to-regexp/dist/index.js"(exports2) {
+  "../posyplans-repair/node_modules/path-to-regexp/dist/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.PathError = exports2.TokenData = void 0;
@@ -20544,9 +20544,9 @@ var require_dist3 = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/router/lib/layer.js
+// ../posyplans-repair/node_modules/router/lib/layer.js
 var require_layer = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/router/lib/layer.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/router/lib/layer.js"(exports2, module2) {
     "use strict";
     var isPromise = require_is_promise();
     var pathRegexp = require_dist3();
@@ -20694,9 +20694,9 @@ var require_layer = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/router/lib/route.js
+// ../posyplans-repair/node_modules/router/lib/route.js
 var require_route = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/router/lib/route.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/router/lib/route.js"(exports2, module2) {
     "use strict";
     var debug = require_src()("router:route");
     var Layer = require_layer();
@@ -20814,9 +20814,9 @@ var require_route = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/router/index.js
+// ../posyplans-repair/node_modules/router/index.js
 var require_router = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/router/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/router/index.js"(exports2, module2) {
     "use strict";
     var isPromise = require_is_promise();
     var Layer = require_layer();
@@ -21212,9 +21212,9 @@ var require_router = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/express/lib/application.js
+// ../posyplans-repair/node_modules/express/lib/application.js
 var require_application = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/express/lib/application.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/express/lib/application.js"(exports2, module2) {
     "use strict";
     var finalhandler = require_finalhandler();
     var debug = require_src()("express:application");
@@ -21473,9 +21473,9 @@ var require_application = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/negotiator/lib/charset.js
+// ../posyplans-repair/node_modules/negotiator/lib/charset.js
 var require_charset = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/negotiator/lib/charset.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/negotiator/lib/charset.js"(exports2, module2) {
     "use strict";
     module2.exports = preferredCharsets;
     module2.exports.preferredCharsets = preferredCharsets;
@@ -21560,9 +21560,9 @@ var require_charset = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/negotiator/lib/encoding.js
+// ../posyplans-repair/node_modules/negotiator/lib/encoding.js
 var require_encoding = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/negotiator/lib/encoding.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/negotiator/lib/encoding.js"(exports2, module2) {
     "use strict";
     module2.exports = preferredEncodings;
     module2.exports.preferredEncodings = preferredEncodings;
@@ -21673,9 +21673,9 @@ var require_encoding = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/negotiator/lib/language.js
+// ../posyplans-repair/node_modules/negotiator/lib/language.js
 var require_language = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/negotiator/lib/language.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/negotiator/lib/language.js"(exports2, module2) {
     "use strict";
     module2.exports = preferredLanguages;
     module2.exports.preferredLanguages = preferredLanguages;
@@ -21768,9 +21768,9 @@ var require_language = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/negotiator/lib/mediaType.js
+// ../posyplans-repair/node_modules/negotiator/lib/mediaType.js
 var require_mediaType = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/negotiator/lib/mediaType.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/negotiator/lib/mediaType.js"(exports2, module2) {
     "use strict";
     module2.exports = preferredMediaTypes;
     module2.exports.preferredMediaTypes = preferredMediaTypes;
@@ -21930,9 +21930,9 @@ var require_mediaType = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/negotiator/index.js
+// ../posyplans-repair/node_modules/negotiator/index.js
 var require_negotiator = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/negotiator/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/negotiator/index.js"(exports2, module2) {
     "use strict";
     var preferredCharsets = require_charset();
     var preferredEncodings = require_encoding();
@@ -21986,9 +21986,9 @@ var require_negotiator = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/accepts/index.js
+// ../posyplans-repair/node_modules/accepts/index.js
 var require_accepts = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/accepts/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/accepts/index.js"(exports2, module2) {
     "use strict";
     var Negotiator = require_negotiator();
     var mime = require_mime_types();
@@ -22067,9 +22067,9 @@ var require_accepts = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/fresh/index.js
+// ../posyplans-repair/node_modules/fresh/index.js
 var require_fresh = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/fresh/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/fresh/index.js"(exports2, module2) {
     "use strict";
     var CACHE_CONTROL_NO_CACHE_REGEXP = /(?:^|,)\s*?no-cache\s*?(?:,|$)/;
     module2.exports = fresh;
@@ -22139,9 +22139,9 @@ var require_fresh = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/range-parser/index.js
+// ../posyplans-repair/node_modules/range-parser/index.js
 var require_range_parser = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/range-parser/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/range-parser/index.js"(exports2, module2) {
     "use strict";
     module2.exports = rangeParser;
     function rangeParser(size2, str, options) {
@@ -22232,9 +22232,9 @@ var require_range_parser = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/express/lib/request.js
+// ../posyplans-repair/node_modules/express/lib/request.js
 var require_request = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/express/lib/request.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/express/lib/request.js"(exports2, module2) {
     "use strict";
     var accepts = require_accepts();
     var isIP = require("node:net").isIP;
@@ -22380,9 +22380,9 @@ var require_request = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/content-disposition/index.js
+// ../posyplans-repair/node_modules/content-disposition/index.js
 var require_content_disposition = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/content-disposition/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/content-disposition/index.js"(exports2, module2) {
     "use strict";
     module2.exports = contentDisposition;
     module2.exports.parse = parse4;
@@ -22589,9 +22589,9 @@ var require_content_disposition = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/cookie-signature/index.js
+// ../posyplans-repair/node_modules/cookie-signature/index.js
 var require_cookie_signature = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/cookie-signature/index.js"(exports2) {
+  "../posyplans-repair/node_modules/cookie-signature/index.js"(exports2) {
     var crypto6 = require("crypto");
     exports2.sign = function(val, secret) {
       if ("string" != typeof val) throw new TypeError("Cookie value must be provided as a string.");
@@ -22607,9 +22607,9 @@ var require_cookie_signature = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/cookie/index.js
+// ../posyplans-repair/node_modules/cookie/index.js
 var require_cookie = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/cookie/index.js"(exports2) {
+  "../posyplans-repair/node_modules/cookie/index.js"(exports2) {
     "use strict";
     exports2.parse = parse4;
     exports2.serialize = serialize;
@@ -22773,9 +22773,9 @@ var require_cookie = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/send/index.js
+// ../posyplans-repair/node_modules/send/index.js
 var require_send = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/send/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/send/index.js"(exports2, module2) {
     "use strict";
     var createError = require_http_errors();
     var debug = require_src()("send");
@@ -23256,9 +23256,9 @@ var require_send = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/vary/index.js
+// ../posyplans-repair/node_modules/vary/index.js
 var require_vary = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/vary/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/vary/index.js"(exports2, module2) {
     "use strict";
     module2.exports = vary;
     module2.exports.append = append;
@@ -23329,9 +23329,9 @@ var require_vary = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/express/lib/response.js
+// ../posyplans-repair/node_modules/express/lib/response.js
 var require_response = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/express/lib/response.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/express/lib/response.js"(exports2, module2) {
     "use strict";
     var contentDisposition = require_content_disposition();
     var createError = require_http_errors();
@@ -23380,12 +23380,12 @@ var require_response = __commonJS({
       }).join(", "));
     };
     res.send = function send2(body) {
-      var chunk = body;
+      var chunk2 = body;
       var encoding;
       var req = this.req;
       var type;
       var app2 = this.app;
-      switch (typeof chunk) {
+      switch (typeof chunk2) {
         // string defaulting to html
         case "string":
           if (!this.get("Content-Type")) {
@@ -23395,18 +23395,18 @@ var require_response = __commonJS({
         case "boolean":
         case "number":
         case "object":
-          if (chunk === null) {
-            chunk = "";
-          } else if (ArrayBuffer.isView(chunk)) {
+          if (chunk2 === null) {
+            chunk2 = "";
+          } else if (ArrayBuffer.isView(chunk2)) {
             if (!this.get("Content-Type")) {
               this.type("bin");
             }
           } else {
-            return this.json(chunk);
+            return this.json(chunk2);
           }
           break;
       }
-      if (typeof chunk === "string") {
+      if (typeof chunk2 === "string") {
         encoding = "utf8";
         type = this.get("Content-Type");
         if (typeof type === "string") {
@@ -23416,21 +23416,21 @@ var require_response = __commonJS({
       var etagFn = app2.get("etag fn");
       var generateETag = !this.get("ETag") && typeof etagFn === "function";
       var len;
-      if (chunk !== void 0) {
-        if (Buffer2.isBuffer(chunk)) {
-          len = chunk.length;
-        } else if (!generateETag && chunk.length < 1e3) {
-          len = Buffer2.byteLength(chunk, encoding);
+      if (chunk2 !== void 0) {
+        if (Buffer2.isBuffer(chunk2)) {
+          len = chunk2.length;
+        } else if (!generateETag && chunk2.length < 1e3) {
+          len = Buffer2.byteLength(chunk2, encoding);
         } else {
-          chunk = Buffer2.from(chunk, encoding);
+          chunk2 = Buffer2.from(chunk2, encoding);
           encoding = void 0;
-          len = chunk.length;
+          len = chunk2.length;
         }
         this.set("Content-Length", len);
       }
       var etag;
       if (generateETag && len !== void 0) {
-        if (etag = etagFn(chunk, encoding)) {
+        if (etag = etagFn(chunk2, encoding)) {
           this.set("ETag", etag);
         }
       }
@@ -23439,17 +23439,17 @@ var require_response = __commonJS({
         this.removeHeader("Content-Type");
         this.removeHeader("Content-Length");
         this.removeHeader("Transfer-Encoding");
-        chunk = "";
+        chunk2 = "";
       }
       if (this.statusCode === 205) {
         this.set("Content-Length", "0");
         this.removeHeader("Transfer-Encoding");
-        chunk = "";
+        chunk2 = "";
       }
       if (req.method === "HEAD") {
         this.end();
       } else {
-        this.end(chunk, encoding);
+        this.end(chunk2, encoding);
       }
       return this;
     };
@@ -23799,9 +23799,9 @@ var require_response = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/serve-static/index.js
+// ../posyplans-repair/node_modules/serve-static/index.js
 var require_serve_static = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/serve-static/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/serve-static/index.js"(exports2, module2) {
     "use strict";
     var encodeUrl = require_encodeurl();
     var escapeHtml2 = require_escape_html();
@@ -23903,9 +23903,9 @@ var require_serve_static = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/express/lib/express.js
+// ../posyplans-repair/node_modules/express/lib/express.js
 var require_express = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/express/lib/express.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/express/lib/express.js"(exports2, module2) {
     "use strict";
     var bodyParser = require_body_parser();
     var EventEmitter2 = require("node:events").EventEmitter;
@@ -23943,15 +23943,15 @@ var require_express = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/express/index.js
+// ../posyplans-repair/node_modules/express/index.js
 var require_express2 = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/express/index.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/express/index.js"(exports2, module2) {
     "use strict";
     module2.exports = require_express();
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/tslib.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/tslib.mjs
 function __classPrivateFieldSet(receiver, state, value, kind, f) {
   if (kind === "m")
     throw new TypeError("Private method is not writable");
@@ -23969,14 +23969,14 @@ function __classPrivateFieldGet(receiver, state, kind, f) {
   return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 }
 var init_tslib = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/tslib.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/tslib.mjs"() {
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/uuid.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/utils/uuid.mjs
 var uuid4;
 var init_uuid = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/uuid.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/utils/uuid.mjs"() {
     uuid4 = function() {
       const { crypto: crypto6 } = globalThis;
       if (crypto6?.randomUUID) {
@@ -23990,7 +23990,7 @@ var init_uuid = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/errors.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/errors.mjs
 function isAbortError(err) {
   return typeof err === "object" && err !== null && // Spec-compliant fetch implementations
   ("name" in err && err.name === "AbortError" || // Expo fetch
@@ -23998,7 +23998,7 @@ function isAbortError(err) {
 }
 var castToError;
 var init_errors = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/errors.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/errors.mjs"() {
     castToError = (err) => {
       if (err instanceof Error)
         return err;
@@ -24026,10 +24026,10 @@ var init_errors = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/error.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/core/error.mjs
 var AnthropicError, APIError, APIUserAbortError, APIConnectionError, APIConnectionTimeoutError, RetryableError, BadRequestError, AuthenticationError, PermissionDeniedError, NotFoundError, ConflictError, UnprocessableEntityError, RateLimitError, InternalServerError;
 var init_error = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/error.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/core/error.mjs"() {
     init_errors();
     AnthropicError = class extends Error {
     };
@@ -24131,7 +24131,7 @@ var init_error = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/values.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/utils/values.mjs
 function maybeObj(x) {
   if (typeof x !== "object") {
     return {};
@@ -24150,7 +24150,7 @@ function hasOwn(obj, key) {
 }
 var startsWithSchemeRegexp, isAbsoluteURL, isArray, isReadonlyArray, validatePositiveInteger, safeJSON;
 var init_values = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/values.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/utils/values.mjs"() {
     init_error();
     startsWithSchemeRegexp = /^[a-z][a-z0-9+.-]*:/i;
     isAbsoluteURL = (url) => {
@@ -24177,10 +24177,10 @@ var init_values = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/sleep.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/utils/sleep.mjs
 var sleep;
 var init_sleep = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/sleep.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/utils/sleep.mjs"() {
     sleep = (ms, signal) => new Promise((resolve4) => {
       if (signal?.aborted)
         return resolve4();
@@ -24197,15 +24197,15 @@ var init_sleep = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/version.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/version.mjs
 var VERSION;
 var init_version = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/version.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/version.mjs"() {
     VERSION = "0.111.0";
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/detect-platform.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/detect-platform.mjs
 function getDetectedPlatform() {
   if (typeof Deno !== "undefined" && Deno.build != null) {
     return "deno";
@@ -24243,7 +24243,7 @@ function getBrowserInfo() {
 }
 var isRunningInBrowser, getPlatformProperties, normalizeArch, normalizePlatform, _platformHeaders, getPlatformHeaders;
 var init_detect_platform = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/detect-platform.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/detect-platform.mjs"() {
     init_version();
     isRunningInBrowser = () => {
       return (
@@ -24344,7 +24344,7 @@ var init_detect_platform = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/shims.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/shims.mjs
 function getDefaultFetch() {
   if (typeof fetch !== "undefined") {
     return fetch;
@@ -24416,14 +24416,14 @@ async function CancelReadableStream(stream) {
   await cancelPromise;
 }
 var init_shims = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/shims.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/shims.mjs"() {
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/request-options.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/request-options.mjs
 var FallbackEncoder;
 var init_request_options = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/request-options.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/request-options.mjs"() {
     FallbackEncoder = ({ headers, body }) => {
       return {
         bodyHeaders: {
@@ -24435,10 +24435,10 @@ var init_request_options = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/qs/formats.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/qs/formats.mjs
 var default_format, default_formatter, formatters, RFC1738;
 var init_formats = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/qs/formats.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/qs/formats.mjs"() {
     default_format = "RFC3986";
     default_formatter = (v) => String(v);
     formatters = {
@@ -24449,7 +24449,7 @@ var init_formats = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/qs/utils.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/qs/utils.mjs
 function is_buffer(obj) {
   if (!obj || typeof obj !== "object") {
     return false;
@@ -24468,7 +24468,7 @@ function maybe_map(val, fn) {
 }
 var has, hex_table, limit, encode;
 var init_utils = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/qs/utils.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/qs/utils.mjs"() {
     init_formats();
     init_values();
     has = (obj, key) => (has = Object.hasOwn ?? Function.prototype.call.bind(Object.prototype.hasOwnProperty), has(obj, key));
@@ -24535,7 +24535,7 @@ var init_utils = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/qs/stringify.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/qs/stringify.mjs
 function is_non_nullish_primitive(v) {
   return typeof v === "string" || typeof v === "number" || typeof v === "boolean" || typeof v === "symbol" || typeof v === "bigint";
 }
@@ -24775,7 +24775,7 @@ function stringify2(object, opts = {}) {
 }
 var array_prefix_generators, push_to_array, toISOString, defaults, sentinel;
 var init_stringify = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/qs/stringify.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/qs/stringify.mjs"() {
     init_utils();
     init_formats();
     init_values();
@@ -24820,17 +24820,17 @@ var init_stringify = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/query.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/utils/query.mjs
 function stringifyQuery(query) {
   return stringify2(query, { arrayFormat: "brackets" });
 }
 var init_query = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/query.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/utils/query.mjs"() {
     init_stringify();
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/credentials/types.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/credentials/types.mjs
 function requireSecureTokenEndpoint(baseURL) {
   if (!baseURL)
     return;
@@ -24977,7 +24977,7 @@ async function readLimitedText(resp) {
 }
 var GRANT_TYPE_JWT_BEARER, GRANT_TYPE_REFRESH_TOKEN, TOKEN_ENDPOINT, OAUTH_API_BETA_HEADER, FEDERATION_BETA_HEADER, ADVISORY_REFRESH_THRESHOLD_IN_SECONDS, MANDATORY_REFRESH_THRESHOLD_IN_SECONDS, ADVISORY_REFRESH_BACKOFF_IN_SECONDS, MAX_TOKEN_RESPONSE_BYTES, MAX_ERROR_BODY_CHARS, SAFE_ERROR_KEYS, WorkloadIdentityError;
 var init_types = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/credentials/types.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/credentials/types.mjs"() {
     init_error();
     GRANT_TYPE_JWT_BEARER = "urn:ietf:params:oauth:grant-type:jwt-bearer";
     GRANT_TYPE_REFRESH_TOKEN = "refresh_token";
@@ -25001,19 +25001,19 @@ var init_types = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/time.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/utils/time.mjs
 function nowAsSeconds() {
   return Math.floor(Date.now() / 1e3);
 }
 var init_time = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/time.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/utils/time.mjs"() {
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/credentials/token-cache.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/credentials/token-cache.mjs
 var TokenCache;
 var init_token_cache = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/credentials/token-cache.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/credentials/token-cache.mjs"() {
     init_types();
     init_time();
     TokenCache = class {
@@ -25106,10 +25106,10 @@ var init_token_cache = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/env.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/utils/env.mjs
 var readEnv;
 var init_env = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/env.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/utils/env.mjs"() {
     readEnv = (env) => {
       if (typeof globalThis.process !== "undefined") {
         return globalThis.process.env?.[env]?.trim() || void 0;
@@ -25122,7 +25122,7 @@ var init_env = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/bytes.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/utils/bytes.mjs
 function concatBytes(buffers) {
   let length = 0;
   for (const buffer2 of buffers) {
@@ -25146,19 +25146,19 @@ function decodeUTF8(bytes) {
 }
 var encodeUTF8_, decodeUTF8_;
 var init_bytes = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/bytes.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/utils/bytes.mjs"() {
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/base64.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/utils/base64.mjs
 var init_base64 = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/base64.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/utils/base64.mjs"() {
     init_error();
     init_bytes();
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/log.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/utils/log.mjs
 function noop3() {
 }
 function makeLogFn(fnLevel, logger, logLevel) {
@@ -25200,7 +25200,7 @@ function defaultLogger() {
 }
 var defaultLogLevel, levelNumbers, parseLogLevel, noopLogger, cachedLoggers, lastEnvLevel, cachedDefaultLogger, formatRequestDetails;
 var init_log = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/log.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/utils/log.mjs"() {
     init_values();
     init_env();
     defaultLogLevel = "warn";
@@ -25250,9 +25250,9 @@ var init_log = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/utils.mjs
 var init_utils2 = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/utils.mjs"() {
     init_values();
     init_base64();
     init_env();
@@ -25263,7 +25263,7 @@ var init_utils2 = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/credentials.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/core/credentials.mjs
 function validateProfileName(name) {
   if (!name) {
     throw new Error("profile name is empty");
@@ -25280,7 +25280,7 @@ function validateProfileName(name) {
 }
 var CREDENTIALS_FILE_VERSION, PROFILE_NAME_PATTERN, loadConfigWithSource, getCredentialsPath, getRootConfigPath, supportsLocalConfigFiles, getActiveProfileName;
 var init_credentials = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/credentials.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/core/credentials.mjs"() {
     init_detect_platform();
     init_utils2();
     CREDENTIALS_FILE_VERSION = "1.0";
@@ -25444,7 +25444,7 @@ var init_credentials = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/credentials/identity-token.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/credentials/identity-token.mjs
 function identityTokenFromFile(path8) {
   if (!path8) {
     throw new AnthropicError("Identity token file path is empty");
@@ -25471,12 +25471,12 @@ function identityTokenFromValue(token) {
   return () => token;
 }
 var init_identity_token = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/credentials/identity-token.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/credentials/identity-token.mjs"() {
     init_error();
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/credentials/oidc-federation.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/credentials/oidc-federation.mjs
 function oidcFederationProvider(config) {
   return async () => {
     requireSecureTokenEndpoint(config.baseURL);
@@ -25534,14 +25534,14 @@ function oidcFederationProvider(config) {
   };
 }
 var init_oidc_federation = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/credentials/oidc-federation.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/credentials/oidc-federation.mjs"() {
     init_types();
     init_time();
     init_version();
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/credentials/user-oauth.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/credentials/user-oauth.mjs
 function userOAuthProvider(config) {
   return async (opts) => {
     const fs6 = await import("node:fs");
@@ -25615,7 +25615,7 @@ function userOAuthProvider(config) {
   };
 }
 var init_user_oauth = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/credentials/user-oauth.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/credentials/user-oauth.mjs"() {
     init_credentials();
     init_types();
     init_time();
@@ -25623,7 +25623,7 @@ var init_user_oauth = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/credentials/credential-chain.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/credentials/credential-chain.mjs
 function resolveCredentialsFromConfig(config, options) {
   const credentialsPath = config.authentication.credentials_path ?? null;
   const effectiveBaseURL = (config.base_url || options.baseURL).replace(/\/+$/, "");
@@ -25755,7 +25755,7 @@ function cachedExchangeProvider(exchange, credentialsPath, onCacheWriteError, on
   };
 }
 var init_credential_chain = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/credentials/credential-chain.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/credentials/credential-chain.mjs"() {
     init_env();
     init_credentials();
     init_types();
@@ -25766,7 +25766,7 @@ var init_credential_chain = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/decoders/line.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/decoders/line.mjs
 function findNewlineIndex(buffer2, startIndex) {
   const newline = 10;
   const carriage = 13;
@@ -25798,7 +25798,7 @@ function findDoubleNewlineIndex(buffer2) {
 }
 var _LineDecoder_buffer, _LineDecoder_carriageReturnIndex, LineDecoder;
 var init_line = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/decoders/line.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/decoders/line.mjs"() {
     init_tslib();
     init_bytes();
     LineDecoder = class {
@@ -25808,11 +25808,11 @@ var init_line = __esm({
         __classPrivateFieldSet(this, _LineDecoder_buffer, new Uint8Array(), "f");
         __classPrivateFieldSet(this, _LineDecoder_carriageReturnIndex, null, "f");
       }
-      decode(chunk) {
-        if (chunk == null) {
+      decode(chunk2) {
+        if (chunk2 == null) {
           return [];
         }
-        const binaryChunk = chunk instanceof ArrayBuffer ? new Uint8Array(chunk) : typeof chunk === "string" ? encodeUTF8(chunk) : chunk;
+        const binaryChunk = chunk2 instanceof ArrayBuffer ? new Uint8Array(chunk2) : typeof chunk2 === "string" ? encodeUTF8(chunk2) : chunk2;
         __classPrivateFieldSet(this, _LineDecoder_buffer, concatBytes([__classPrivateFieldGet(this, _LineDecoder_buffer, "f"), binaryChunk]), "f");
         const lines = [];
         let patternIndex;
@@ -25848,7 +25848,7 @@ var init_line = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/streaming.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/core/streaming.mjs
 async function* _iterSSEMessages(response, controller) {
   if (!response.body) {
     controller.abort();
@@ -25875,11 +25875,11 @@ async function* _iterSSEMessages(response, controller) {
 }
 async function* iterSSEChunks(iterator) {
   let data = new Uint8Array();
-  for await (const chunk of iterator) {
-    if (chunk == null) {
+  for await (const chunk2 of iterator) {
+    if (chunk2 == null) {
       continue;
     }
-    const binaryChunk = chunk instanceof ArrayBuffer ? new Uint8Array(chunk) : typeof chunk === "string" ? encodeUTF8(chunk) : chunk;
+    const binaryChunk = chunk2 instanceof ArrayBuffer ? new Uint8Array(chunk2) : typeof chunk2 === "string" ? encodeUTF8(chunk2) : chunk2;
     let newData = new Uint8Array(data.length + binaryChunk.length);
     newData.set(data);
     newData.set(binaryChunk, data.length);
@@ -25903,7 +25903,7 @@ function partition(str, delimiter2) {
 }
 var _Stream_client, Stream3, SSEDecoder;
 var init_streaming = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/streaming.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/core/streaming.mjs"() {
     init_tslib();
     init_error();
     init_shims();
@@ -25991,8 +25991,8 @@ var init_streaming = __esm({
         async function* iterLines() {
           const lineDecoder = new LineDecoder();
           const iter = ReadableStreamToAsyncIterable(readableStream);
-          for await (const chunk of iter) {
-            for (const line2 of lineDecoder.decode(chunk)) {
+          for await (const chunk2 of iter) {
+            for (const line2 of lineDecoder.decode(chunk2)) {
               yield line2;
             }
           }
@@ -26124,7 +26124,7 @@ var init_streaming = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/parse.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/parse.mjs
 async function defaultParseResponse(client, props) {
   const { response, requestLogID, retryOfRequestLogID, startTime } = props;
   const body = await (async () => {
@@ -26171,13 +26171,13 @@ function addRequestID(value, response) {
   });
 }
 var init_parse = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/parse.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/parse.mjs"() {
     init_streaming();
     init_log();
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/middleware.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/core/middleware.mjs
 function isFetchOriginError(err) {
   return typeof err === "object" && err !== null && fetchOriginErrors.has(err);
 }
@@ -26273,7 +26273,7 @@ function applyMiddleware(fetchFn, middleware, options, client) {
 }
 var fetchOriginErrors;
 var init_middleware = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/middleware.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/core/middleware.mjs"() {
     init_errors();
     init_parse();
     init_log();
@@ -26283,10 +26283,10 @@ var init_middleware = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/api-promise.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/core/api-promise.mjs
 var _APIPromise_client, APIPromise;
 var init_api_promise = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/api-promise.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/core/api-promise.mjs"() {
     init_tslib();
     init_parse();
     APIPromise = class _APIPromise extends Promise {
@@ -26352,10 +26352,10 @@ var init_api_promise = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/pagination.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/core/pagination.mjs
 var _AbstractPage_client, AbstractPage, PagePromise, Page, PageCursor, BidirectionalPageCursor;
 var init_pagination = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/pagination.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/core/pagination.mjs"() {
     init_tslib();
     init_error();
     init_parse();
@@ -26510,7 +26510,7 @@ var init_pagination = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/uploads.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/uploads.mjs
 function makeFile(fileBits, fileName, options) {
   checkFileSupport();
   return new File(fileBits, fileName ?? "unknown_file", options);
@@ -26541,7 +26541,7 @@ function supportsFormData(fetchObject) {
 }
 var checkFileSupport, isAsyncIterable, multipartFormRequestOptions, supportsFormDataMap, createForm, isNamedBlob, addFormValue;
 var init_uploads = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/uploads.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/uploads.mjs"() {
     init_shims();
     checkFileSupport = () => {
       if (typeof File === "undefined") {
@@ -26594,7 +26594,7 @@ var init_uploads = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/to-file.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/to-file.mjs
 async function toFile(value, name, options) {
   checkFileSupport();
   value = await value;
@@ -26631,8 +26631,8 @@ async function getBytes(value) {
   } else if (isBlobLike(value)) {
     parts.push(value instanceof Blob ? value : await value.arrayBuffer());
   } else if (isAsyncIterable(value)) {
-    for await (const chunk of value) {
-      parts.push(...await getBytes(chunk));
+    for await (const chunk2 of value) {
+      parts.push(...await getBytes(chunk2));
     }
   } else {
     const constructor = value?.constructor?.name;
@@ -26648,7 +26648,7 @@ function propsForError(value) {
 }
 var isBlobLike, isFileLike, isResponseLike;
 var init_to_file = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/to-file.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/to-file.mjs"() {
     init_uploads();
     init_uploads();
     isBlobLike = (value) => value != null && typeof value === "object" && typeof value.size === "number" && typeof value.type === "string" && typeof value.text === "function" && typeof value.slice === "function" && typeof value.arrayBuffer === "function";
@@ -26657,23 +26657,23 @@ var init_to_file = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/uploads.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/core/uploads.mjs
 var init_uploads2 = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/uploads.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/core/uploads.mjs"() {
     init_to_file();
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/shared.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/shared.mjs
 var init_shared = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/shared.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/shared.mjs"() {
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/resource.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/core/resource.mjs
 var APIResource;
 var init_resource = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/core/resource.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/core/resource.mjs"() {
     APIResource = class {
       constructor(client) {
         this._client = client;
@@ -26682,7 +26682,7 @@ var init_resource = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/headers.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/headers.mjs
 function* iterateHeaders(headers) {
   if (!headers)
     return;
@@ -26723,7 +26723,7 @@ function* iterateHeaders(headers) {
 }
 var brand_privateNullableHeaders, clearSentinel, APPEND_HEADERS, appendHeaderValue, buildHeaders;
 var init_headers = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/headers.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/headers.mjs"() {
     init_values();
     brand_privateNullableHeaders = Symbol.for("brand.privateNullableHeaders");
     clearSentinel = Symbol("clear");
@@ -26775,13 +26775,13 @@ var init_headers = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/path.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/utils/path.mjs
 function encodeURIPath(str) {
   return str.replace(/[^A-Za-z0-9\-._~!$&'()*+,;=:@]+/g, encodeURIComponent);
 }
 var EMPTY, createPathTagFunction, path;
 var init_path = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/path.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/utils/path.mjs"() {
     init_error();
     EMPTY = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.create(null));
     createPathTagFunction = (pathEncoder = encodeURIPath) => function path8(statics, ...params) {
@@ -26836,10 +26836,10 @@ ${underline}`);
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/deployment-runs.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/deployment-runs.mjs
 var DeploymentRuns;
 var init_deployment_runs = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/deployment-runs.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/deployment-runs.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -26892,10 +26892,10 @@ var init_deployment_runs = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/deployments.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/deployments.mjs
 var Deployments;
 var init_deployments = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/deployments.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/deployments.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -27089,10 +27089,10 @@ var init_deployments = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/dreams.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/dreams.mjs
 var Dreams;
 var init_dreams = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/dreams.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/dreams.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -27206,7 +27206,7 @@ var init_dreams = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/stainless-helper-header.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/stainless-helper-header.mjs
 function helperHeader(value) {
   return { [STAINLESS_HELPER_HEADER]: value };
 }
@@ -27253,17 +27253,17 @@ function stainlessHelperHeaderFromFile(file) {
 }
 var STAINLESS_HELPER_HEADER, STAINLESS_HELPER_METHOD_HEADER, SDK_HELPER_SYMBOL;
 var init_stainless_helper_header = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/stainless-helper-header.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/stainless-helper-header.mjs"() {
     STAINLESS_HELPER_HEADER = "x-stainless-helper";
     STAINLESS_HELPER_METHOD_HEADER = "x-stainless-helper-method";
     SDK_HELPER_SYMBOL = Symbol("anthropic.sdk.stainlessHelper");
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/files.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/files.mjs
 var Files;
 var init_files = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/files.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/files.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -27385,10 +27385,10 @@ var init_files = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/models.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/models.mjs
 var Models;
 var init_models = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/models.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/models.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -27446,10 +27446,10 @@ var init_models = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/user-profiles.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/user-profiles.mjs
 var UserProfiles;
 var init_user_profiles = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/user-profiles.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/user-profiles.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -27565,9 +27565,9 @@ var init_user_profiles = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/standardwebhooks/dist/timing_safe_equal.js
+// ../posyplans-repair/node_modules/standardwebhooks/dist/timing_safe_equal.js
 var require_timing_safe_equal = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/standardwebhooks/dist/timing_safe_equal.js"(exports2) {
+  "../posyplans-repair/node_modules/standardwebhooks/dist/timing_safe_equal.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.timingSafeEqual = void 0;
@@ -27600,9 +27600,9 @@ var require_timing_safe_equal = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@stablelib/base64/lib/base64.js
+// ../posyplans-repair/node_modules/@stablelib/base64/lib/base64.js
 var require_base64 = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@stablelib/base64/lib/base64.js"(exports2) {
+  "../posyplans-repair/node_modules/@stablelib/base64/lib/base64.js"(exports2) {
     "use strict";
     var __extends = exports2 && exports2.__extends || /* @__PURE__ */ (function() {
       var extendStatics = function(d, b2) {
@@ -27813,9 +27813,9 @@ var require_base64 = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/fast-sha256/sha256.js
+// ../posyplans-repair/node_modules/fast-sha256/sha256.js
 var require_sha256 = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/fast-sha256/sha256.js"(exports2, module2) {
+  "../posyplans-repair/node_modules/fast-sha256/sha256.js"(exports2, module2) {
     (function(root, factory) {
       var exports3 = {};
       factory(exports3);
@@ -28237,9 +28237,9 @@ var require_sha256 = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/standardwebhooks/dist/index.js
+// ../posyplans-repair/node_modules/standardwebhooks/dist/index.js
 var require_dist4 = __commonJS({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/standardwebhooks/dist/index.js"(exports2) {
+  "../posyplans-repair/node_modules/standardwebhooks/dist/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.Webhook = exports2.WebhookVerificationError = void 0;
@@ -28344,10 +28344,10 @@ var require_dist4 = __commonJS({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/webhooks.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/webhooks.mjs
 var import_standardwebhooks, Webhooks;
 var init_webhooks = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/webhooks.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/webhooks.mjs"() {
     init_resource();
     import_standardwebhooks = __toESM(require_dist4(), 1);
     Webhooks = class extends APIResource {
@@ -28365,10 +28365,10 @@ var init_webhooks = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/agents/versions.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/agents/versions.mjs
 var Versions;
 var init_versions = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/agents/versions.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/agents/versions.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -28402,10 +28402,10 @@ var init_versions = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/agents/agents.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/agents/agents.mjs
 var Agents;
 var init_agents = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/agents/agents.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/agents/agents.mjs"() {
     init_resource();
     init_versions();
     init_versions();
@@ -28533,7 +28533,7 @@ var init_agents = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/abort.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/utils/abort.mjs
 function linkAbort(external, controller) {
   if (!external)
     return () => {
@@ -28548,11 +28548,11 @@ function linkAbort(external, controller) {
   return () => external.removeEventListener("abort", onAbort);
 }
 var init_abort = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/abort.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/utils/abort.mjs"() {
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/backoff.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/utils/backoff.mjs
 function isStatus(e, code) {
   return e instanceof APIError && e.status === code;
 }
@@ -28572,12 +28572,12 @@ function applyJitter(ms) {
   return ms * (1 - Math.random() * 0.25);
 }
 var init_backoff = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/backoff.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/utils/backoff.mjs"() {
     init_error();
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/helper-client.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/helper-client.mjs
 function copyClientForHelper(client, { authToken, helper }) {
   if (!authToken) {
     throw new AnthropicError(`copyClientForHelper: expected a non-empty authToken but received ${JSON.stringify(authToken)}`);
@@ -28603,14 +28603,14 @@ function copyClientForHelper(client, { authToken, helper }) {
   });
 }
 var init_helper_client = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/helper-client.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/helper-client.mjs"() {
     init_error();
     init_headers();
     init_stainless_helper_header();
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/environments/poller.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/environments/poller.mjs
 function backoff3(attempt) {
   return backoff2(attempt, POLL_BACKOFF_BASE_MS, POLL_BACKOFF_CAP_MS);
 }
@@ -28621,7 +28621,7 @@ function defaultWorkerId() {
 }
 var _WorkPoller_runnerClient, _WorkPoller_consumed, _WorkPoller_controller, _WorkPoller_detachExternal, _WorkPoller_autoStop, _WorkPoller_drain, _WorkPoller_blockMs, _WorkPoller_reclaimOlderThanMs, _WorkPoller_requestOpts, POLL_BLOCK_MS, POLL_BACKOFF_BASE_MS, POLL_BACKOFF_CAP_MS, WorkPoller;
 var init_poller = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/environments/poller.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/environments/poller.mjs"() {
     init_tslib();
     init_error();
     init_log();
@@ -28743,10 +28743,10 @@ var init_poller = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/async-queue.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/utils/async-queue.mjs
 var _AsyncQueue_items, _AsyncQueue_waiters, _AsyncQueue_closed, AsyncQueue;
 var init_async_queue = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/async-queue.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/utils/async-queue.mjs"() {
     init_tslib();
     AsyncQueue = class {
       constructor() {
@@ -28812,10 +28812,10 @@ var init_async_queue = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/tools/ToolError.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/tools/ToolError.mjs
 var ToolError;
 var init_ToolError = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/tools/ToolError.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/tools/ToolError.mjs"() {
     ToolError = class extends Error {
       constructor(content) {
         const message2 = typeof content === "string" ? content : content.map((block) => {
@@ -28831,7 +28831,7 @@ var init_ToolError = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/tools/BetaRunnableTool.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/tools/BetaRunnableTool.mjs
 function toolName(tool) {
   return "name" in tool ? tool.name : tool.mcp_server_name;
 }
@@ -28848,12 +28848,12 @@ async function runRunnableTool(tool, rawInput, context) {
   }
 }
 var init_BetaRunnableTool = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/tools/BetaRunnableTool.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/tools/BetaRunnableTool.mjs"() {
     init_ToolError();
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/tools/SessionToolRunner.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/tools/SessionToolRunner.mjs
 function isEndTurnIdle(ev) {
   return ev.type === "session.status_idle" && ev.stop_reason?.type === "end_turn";
 }
@@ -28886,7 +28886,7 @@ function toSessionContent(content) {
 }
 var _IdleClock_maxIdleMs, _IdleClock_onExpire, _IdleClock_blockers, _IdleClock_armPending, _IdleClock_timer, _SessionToolRunner_instances, _SessionToolRunner_consumed, _SessionToolRunner_controller, _SessionToolRunner_detachExternal, _SessionToolRunner_requestOpts, _SessionToolRunner_toolByName, _SessionToolRunner_logger, _SessionToolRunner_seen, _SessionToolRunner_answered, _SessionToolRunner_confirmationVerdicts, _SessionToolRunner_awaitingConfirmation, _SessionToolRunner_results, _SessionToolRunner_inFlightCount, _SessionToolRunner_onIdle, _SessionToolRunner_idleClock, _SessionToolRunner_requestOptions, _SessionToolRunner_streamLoop, _SessionToolRunner_reconcile, _SessionToolRunner_ingestHistory, _SessionToolRunner_handleStreamEvent, _SessionToolRunner_routeToolEvent, _SessionToolRunner_noteConfirmation, _SessionToolRunner_applyVerdict, _SessionToolRunner_surfaceCall, _SessionToolRunner_execute, _SessionToolRunner_sendResult, _SessionToolRunner_drain, STREAM_BACKOFF_START_MS, STREAM_BACKOFF_CAP_MS, TOOL_TIMEOUT_MS, DRAIN_TIMEOUT_MS, SEND_RETRIES, DEFAULT_MAX_IDLE_MS, IdleClock, SessionToolRunner;
 var init_SessionToolRunner = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/tools/SessionToolRunner.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/tools/SessionToolRunner.mjs"() {
     init_tslib();
     init_error();
     init_log();
@@ -29361,14 +29361,14 @@ var init_SessionToolRunner = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/transform-json-schema.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/transform-json-schema.mjs
 var init_transform_json_schema = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/transform-json-schema.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/transform-json-schema.mjs"() {
     init_utils2();
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/helpers/beta/json-schema.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/helpers/beta/json-schema.mjs
 function betaTool(options) {
   if (options.inputSchema.type !== "object") {
     throw new Error(`JSON schema for tool "${options.name}" must be an object, but got ${options.inputSchema.type}`);
@@ -29384,13 +29384,13 @@ function betaTool(options) {
   };
 }
 var init_json_schema = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/helpers/beta/json-schema.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/helpers/beta/json-schema.mjs"() {
     init_sdk();
     init_transform_json_schema();
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/promise.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/utils/promise.mjs
 function promiseWithResolvers() {
   let resolve4;
   let reject;
@@ -29401,11 +29401,11 @@ function promiseWithResolvers() {
   return { promise, resolve: resolve4, reject };
 }
 var init_promise = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/utils/promise.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/utils/promise.mjs"() {
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/tools/agent-toolset/fs-util.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/tools/agent-toolset/fs-util.mjs
 async function realpathOrSelf(p) {
   try {
     return await fs2.realpath(p);
@@ -29503,7 +29503,7 @@ function fsErrorMessage(err, file) {
 }
 var fs2, path2, import_node_crypto, DIR_CREATE_MODE, FILE_CREATE_MODE;
 var init_fs_util = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/tools/agent-toolset/fs-util.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/tools/agent-toolset/fs-util.mjs"() {
     fs2 = __toESM(require("node:fs/promises"), 1);
     path2 = __toESM(require("node:path"), 1);
     import_node_crypto = require("node:crypto");
@@ -29513,7 +29513,7 @@ var init_fs_util = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/tools/agent-toolset/skills.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/tools/agent-toolset/skills.mjs
 async function setupSkills(ctx) {
   const { client, sessionId } = ctx;
   if (!client || !sessionId)
@@ -29663,7 +29663,7 @@ async function readHead(file, n) {
 }
 var fs3, fssync, path3, import_node_child_process, import_node_util, import_node_stream, import_promises, execFileAsync;
 var init_skills = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/tools/agent-toolset/skills.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/tools/agent-toolset/skills.mjs"() {
     fs3 = __toESM(require("node:fs/promises"), 1);
     fssync = __toESM(require("node:fs"), 1);
     path3 = __toESM(require("node:path"), 1);
@@ -29678,7 +29678,7 @@ var init_skills = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/tools/agent-toolset/node.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/tools/agent-toolset/node.mjs
 var node_exports = {};
 __export(node_exports, {
   BashSession: () => BashSession,
@@ -30127,7 +30127,7 @@ async function findRg() {
 }
 var fs4, fssync2, path4, cp, crypto3, readline, _BashSession_instances, _BashSession_proc, _BashSession_buf, _BashSession_truncated, _BashSession_closed, _BashSession_waiting, _BashSession_append, BASH_OUTPUT_LIMIT, BASH_DEFAULT_TIMEOUT_MS, DEFAULT_MAX_FILE_BYTES, GREP_OUTPUT_LIMIT, GREP_MAX_LINE_LENGTH, GLOB_RESULT_LIMIT, ANSI_RE, fsGlob, BashSession, WALK_MAX_DEPTH, WALK_MAX_ENTRIES;
 var init_node = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/tools/agent-toolset/node.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/tools/agent-toolset/node.mjs"() {
     init_tslib();
     fs4 = __toESM(require("node:fs/promises"), 1);
     fssync2 = __toESM(require("node:fs"), 1);
@@ -30275,7 +30275,7 @@ ${out}`;
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/environments/worker.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/environments/worker.mjs
 async function forceStop(client, work, log2, requestOptions) {
   try {
     await client.beta.environments.work.stop(
@@ -30329,7 +30329,7 @@ async function heartbeatLoop(client, work, ctrl, logger, requestOptions) {
 }
 var _EnvironmentWorker_instances, _EnvironmentWorker_signal, _EnvironmentWorker_handleItem, HEARTBEAT_DEFAULT_MS, NO_HEARTBEAT_SENTINEL, EnvironmentWorker;
 var init_worker = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/environments/worker.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/environments/worker.mjs"() {
     init_tslib();
     init_error();
     init_log();
@@ -30487,10 +30487,10 @@ var init_worker = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/environments/work.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/environments/work.mjs
 var Work;
 var init_work = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/environments/work.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/environments/work.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -30760,10 +30760,10 @@ var init_work = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/environments/environments.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/environments/environments.mjs
 var Environments;
 var init_environments = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/environments/environments.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/environments/environments.mjs"() {
     init_resource();
     init_work();
     init_work();
@@ -30910,10 +30910,10 @@ var init_environments = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memories.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memories.mjs
 var Memories;
 var init_memories = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memories.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memories.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -31041,10 +31041,10 @@ var init_memories = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memory-versions.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memory-versions.mjs
 var MemoryVersions;
 var init_memory_versions = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memory-versions.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memory-versions.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -31123,10 +31123,10 @@ var init_memory_versions = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memory-stores.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memory-stores.mjs
 var MemoryStores;
 var init_memory_stores = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memory-stores.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/memory-stores/memory-stores.mjs"() {
     init_resource();
     init_memories();
     init_memories();
@@ -31268,17 +31268,17 @@ var init_memory_stores = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/error.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/error.mjs
 var init_error2 = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/error.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/error.mjs"() {
     init_error();
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/decoders/jsonl.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/decoders/jsonl.mjs
 var JSONLDecoder;
 var init_jsonl = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/decoders/jsonl.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/decoders/jsonl.mjs"() {
     init_error();
     init_shims();
     init_line();
@@ -31289,8 +31289,8 @@ var init_jsonl = __esm({
       }
       async *decoder() {
         const lineDecoder = new LineDecoder();
-        for await (const chunk of this.iterator) {
-          for (const line2 of lineDecoder.decode(chunk)) {
+        for await (const chunk2 of this.iterator) {
+          for (const line2 of lineDecoder.decode(chunk2)) {
             yield JSON.parse(line2);
           }
         }
@@ -31315,10 +31315,10 @@ var init_jsonl = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/messages/batches.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/messages/batches.mjs
 var Batches;
 var init_batches = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/messages/batches.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/messages/batches.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -31521,10 +31521,10 @@ var init_batches = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/constants.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/constants.mjs
 var MODEL_NONSTREAMING_TOKENS;
 var init_constants = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/constants.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/constants.mjs"() {
     MODEL_NONSTREAMING_TOKENS = {
       "claude-opus-4-20250514": 8192,
       "claude-opus-4-0": 8192,
@@ -31538,7 +31538,7 @@ var init_constants = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/beta-parser.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/beta-parser.mjs
 function getOutputFormat(params) {
   return params?.output_format ?? params?.output_config?.format;
 }
@@ -31611,22 +31611,22 @@ function parseBetaOutputFormat(params, content) {
   }
 }
 var init_beta_parser = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/beta-parser.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/beta-parser.mjs"() {
     init_error();
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/streaming.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/streaming.mjs
 var init_streaming2 = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/streaming.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/streaming.mjs"() {
     init_streaming();
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/_vendor/partial-json-parser/parser.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/_vendor/partial-json-parser/parser.mjs
 var tokenize, strip, unstrip, generate, partialParse;
 var init_parser = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/_vendor/partial-json-parser/parser.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/_vendor/partial-json-parser/parser.mjs"() {
     tokenize = (input) => {
       let current = 0;
       let tokens = [];
@@ -31850,7 +31850,7 @@ var init_parser = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/message-stream-utils.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/message-stream-utils.mjs
 function withLazyInput(prev, jsonBuf) {
   const next = {};
   for (const key of Object.keys(prev)) {
@@ -31875,13 +31875,13 @@ function withLazyInput(prev, jsonBuf) {
 }
 var JSON_BUF_PROPERTY;
 var init_message_stream_utils = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/internal/message-stream-utils.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/internal/message-stream-utils.mjs"() {
     init_parser();
     JSON_BUF_PROPERTY = "__json_buf";
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/BetaMessageStream.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/BetaMessageStream.mjs
 function tracksToolInput(content) {
   return content.type === "tool_use" || content.type === "server_tool_use" || content.type === "mcp_tool_use";
 }
@@ -31889,7 +31889,7 @@ function checkNever(x) {
 }
 var _BetaMessageStream_instances, _BetaMessageStream_currentMessageSnapshot, _BetaMessageStream_params, _BetaMessageStream_connectedPromise, _BetaMessageStream_resolveConnectedPromise, _BetaMessageStream_rejectConnectedPromise, _BetaMessageStream_endPromise, _BetaMessageStream_resolveEndPromise, _BetaMessageStream_rejectEndPromise, _BetaMessageStream_listeners, _BetaMessageStream_ended, _BetaMessageStream_errored, _BetaMessageStream_aborted, _BetaMessageStream_catchingPromiseCreated, _BetaMessageStream_response, _BetaMessageStream_request_id, _BetaMessageStream_logger, _BetaMessageStream_getFinalMessage, _BetaMessageStream_getFinalText, _BetaMessageStream_handleError, _BetaMessageStream_beginRequest, _BetaMessageStream_addStreamEvent, _BetaMessageStream_endRequest, _BetaMessageStream_accumulateMessage, _BetaMessageStream_toolInputParseError, BetaMessageStream;
 var init_BetaMessageStream = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/BetaMessageStream.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/BetaMessageStream.mjs"() {
     init_tslib();
     init_stainless_helper_header();
     init_error2();
@@ -32483,10 +32483,10 @@ var init_BetaMessageStream = __esm({
               if (done) {
                 return { value: void 0, done: true };
               }
-              return new Promise((resolve4, reject) => readQueue.push({ resolve: resolve4, reject })).then((chunk2) => chunk2 ? { value: chunk2, done: false } : { value: void 0, done: true });
+              return new Promise((resolve4, reject) => readQueue.push({ resolve: resolve4, reject })).then((chunk3) => chunk3 ? { value: chunk3, done: false } : { value: void 0, done: true });
             }
-            const chunk = pushQueue.shift();
-            return { value: chunk, done: false };
+            const chunk2 = pushQueue.shift();
+            return { value: chunk2, done: false };
           },
           return: async () => {
             this.abort();
@@ -32502,10 +32502,10 @@ var init_BetaMessageStream = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/tools/CompactionControl.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/tools/CompactionControl.mjs
 var DEFAULT_TOKEN_THRESHOLD, DEFAULT_SUMMARY_PROMPT;
 var init_CompactionControl = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/tools/CompactionControl.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/tools/CompactionControl.mjs"() {
     DEFAULT_TOKEN_THRESHOLD = 1e5;
     DEFAULT_SUMMARY_PROMPT = `You have been working on the task described above but have not yet completed it. Write a continuation summary that will allow you (or another instance of yourself) to resume work efficiently in a future context window where the conversation history will be replaced with this summary. Your summary should be structured, concise, and actionable. Include:
 1. Task Overview
@@ -32533,7 +32533,7 @@ Wrap your summary in <summary></summary> tags.`;
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/tools/BetaToolRunner.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/tools/BetaToolRunner.mjs
 async function generateToolResponse(params, lastMessage = params.messages.at(-1), requestOptions) {
   if (!lastMessage || lastMessage.role !== "assistant" || !lastMessage.content || typeof lastMessage.content === "string") {
     return null;
@@ -32583,7 +32583,7 @@ async function generateToolResponse(params, lastMessage = params.messages.at(-1)
 }
 var _BetaToolRunner_instances, _BetaToolRunner_consumed, _BetaToolRunner_mutated, _BetaToolRunner_state, _BetaToolRunner_options, _BetaToolRunner_message, _BetaToolRunner_toolResponse, _BetaToolRunner_completion, _BetaToolRunner_iterationCount, _BetaToolRunner_checkAndCompact, _BetaToolRunner_generateToolResponse, BetaToolRunner;
 var init_BetaToolRunner = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/tools/BetaToolRunner.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/tools/BetaToolRunner.mjs"() {
     init_tslib();
     init_ToolError();
     init_error();
@@ -32884,7 +32884,7 @@ var init_BetaToolRunner = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/messages/messages.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/messages/messages.mjs
 function transformOutputFormat(params) {
   if (!params.output_format) {
     return params;
@@ -32903,7 +32903,7 @@ function transformOutputFormat(params) {
 }
 var DEPRECATED_MODELS, MODELS_TO_WARN_WITH_THINKING_ENABLED, Messages;
 var init_messages = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/messages/messages.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/messages/messages.mjs"() {
     init_error2();
     init_batches();
     init_resource();
@@ -33051,10 +33051,10 @@ Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resour
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/sessions/events.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/sessions/events.mjs
 var Events;
 var init_events = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/sessions/events.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/sessions/events.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -33171,10 +33171,10 @@ var init_events = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/sessions/resources.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/sessions/resources.mjs
 var Resources;
 var init_resources = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/sessions/resources.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/sessions/resources.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -33304,10 +33304,10 @@ var init_resources = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/sessions/threads/events.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/sessions/threads/events.mjs
 var Events2;
 var init_events2 = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/sessions/threads/events.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/sessions/threads/events.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -33365,10 +33365,10 @@ var init_events2 = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/sessions/threads/threads.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/sessions/threads/threads.mjs
 var Threads;
 var init_threads = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/sessions/threads/threads.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/sessions/threads/threads.mjs"() {
     init_resource();
     init_events2();
     init_events2();
@@ -33453,10 +33453,10 @@ var init_threads = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/sessions/sessions.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/sessions/sessions.mjs
 var Sessions;
 var init_sessions = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/sessions/sessions.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/sessions/sessions.mjs"() {
     init_resource();
     init_events();
     init_events();
@@ -33611,10 +33611,10 @@ var init_sessions = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/skills/versions.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/skills/versions.mjs
 var Versions2;
 var init_versions2 = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/skills/versions.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/skills/versions.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -33741,10 +33741,10 @@ var init_versions2 = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/skills/skills.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/skills/skills.mjs
 var Skills;
 var init_skills2 = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/skills/skills.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/skills/skills.mjs"() {
     init_resource();
     init_versions2();
     init_versions2();
@@ -33841,10 +33841,10 @@ var init_skills2 = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/vaults/credentials.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/vaults/credentials.mjs
 var Credentials;
 var init_credentials2 = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/vaults/credentials.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/vaults/credentials.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -34019,10 +34019,10 @@ var init_credentials2 = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/vaults/vaults.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/vaults/vaults.mjs
 var Vaults;
 var init_vaults = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/vaults/vaults.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/vaults/vaults.mjs"() {
     init_resource();
     init_credentials2();
     init_credentials2();
@@ -34168,10 +34168,10 @@ var init_vaults = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/beta.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/beta.mjs
 var Beta;
 var init_beta = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/beta/beta.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/beta/beta.mjs"() {
     init_resource();
     init_deployment_runs();
     init_deployment_runs();
@@ -34237,10 +34237,10 @@ var init_beta = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/completions.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/completions.mjs
 var Completions;
 var init_completions = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/completions.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/completions.mjs"() {
     init_resource();
     init_headers();
     Completions = class extends APIResource {
@@ -34261,7 +34261,7 @@ var init_completions = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/parser.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/parser.mjs
 function getOutputFormat2(params) {
   return params?.output_config?.format;
 }
@@ -34322,12 +34322,12 @@ function parseOutputFormat(params, content) {
   }
 }
 var init_parser2 = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/parser.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/parser.mjs"() {
     init_error();
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/MessageStream.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/MessageStream.mjs
 function tracksToolInput2(content) {
   return content.type === "tool_use" || content.type === "server_tool_use";
 }
@@ -34335,7 +34335,7 @@ function checkNever2(x) {
 }
 var _MessageStream_instances, _MessageStream_currentMessageSnapshot, _MessageStream_params, _MessageStream_connectedPromise, _MessageStream_resolveConnectedPromise, _MessageStream_rejectConnectedPromise, _MessageStream_endPromise, _MessageStream_resolveEndPromise, _MessageStream_rejectEndPromise, _MessageStream_listeners, _MessageStream_ended, _MessageStream_errored, _MessageStream_aborted, _MessageStream_catchingPromiseCreated, _MessageStream_response, _MessageStream_request_id, _MessageStream_logger, _MessageStream_getFinalMessage, _MessageStream_getFinalText, _MessageStream_handleError, _MessageStream_beginRequest, _MessageStream_addStreamEvent, _MessageStream_endRequest, _MessageStream_accumulateMessage, MessageStream;
 var init_MessageStream = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/MessageStream.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/MessageStream.mjs"() {
     init_tslib();
     init_stainless_helper_header();
     init_errors();
@@ -34888,10 +34888,10 @@ var init_MessageStream = __esm({
               if (done) {
                 return { value: void 0, done: true };
               }
-              return new Promise((resolve4, reject) => readQueue.push({ resolve: resolve4, reject })).then((chunk2) => chunk2 ? { value: chunk2, done: false } : { value: void 0, done: true });
+              return new Promise((resolve4, reject) => readQueue.push({ resolve: resolve4, reject })).then((chunk3) => chunk3 ? { value: chunk3, done: false } : { value: void 0, done: true });
             }
-            const chunk = pushQueue.shift();
-            return { value: chunk, done: false };
+            const chunk2 = pushQueue.shift();
+            return { value: chunk2, done: false };
           },
           return: async () => {
             this.abort();
@@ -34907,10 +34907,10 @@ var init_MessageStream = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/messages/batches.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/messages/batches.mjs
 var Batches2;
 var init_batches2 = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/messages/batches.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/messages/batches.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -35067,10 +35067,10 @@ var init_batches2 = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/messages/messages.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/messages/messages.mjs
 var Messages2, DEPRECATED_MODELS2, MODELS_TO_WARN_WITH_THINKING_ENABLED2;
 var init_messages2 = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/messages/messages.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/messages/messages.mjs"() {
     init_resource();
     init_headers();
     init_stainless_helper_header();
@@ -35213,10 +35213,10 @@ Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resour
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/models.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/models.mjs
 var Models2;
 var init_models2 = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/models.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/models.mjs"() {
     init_resource();
     init_pagination();
     init_headers();
@@ -35259,9 +35259,9 @@ var init_models2 = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/index.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/index.mjs
 var init_resources2 = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/resources/index.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/resources/index.mjs"() {
     init_shared();
     init_beta();
     init_completions();
@@ -35270,10 +35270,10 @@ var init_resources2 = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/client.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/client.mjs
 var _BaseAnthropic_instances, _a, _BaseAnthropic_encoder, _BaseAnthropic_baseURLOverridden, HUMAN_PROMPT, AI_PROMPT, BaseAnthropic, Anthropic;
 var init_client = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/client.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/client.mjs"() {
     init_tslib();
     init_uuid();
     init_values();
@@ -36045,10 +36045,10 @@ var init_client = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/middleware.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/middleware.mjs
 var encoder;
 var init_middleware2 = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/lib/middleware.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/lib/middleware.mjs"() {
     init_error();
     init_streaming();
     init_errors();
@@ -36060,9 +36060,9 @@ var init_middleware2 = __esm({
   }
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/index.mjs
+// ../posyplans-repair/node_modules/@anthropic-ai/sdk/index.mjs
 var init_sdk = __esm({
-  "../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/@anthropic-ai/sdk/index.mjs"() {
+  "../posyplans-repair/node_modules/@anthropic-ai/sdk/index.mjs"() {
     init_client();
     init_uploads2();
     init_api_promise();
@@ -36084,7 +36084,10 @@ module.exports = __toCommonJS(vercel_entry_exports);
 var import_express = __toESM(require_express2(), 1);
 var import_node_http = require("node:http");
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/entity.js
+// server/routes.ts
+var import_node_crypto5 = require("node:crypto");
+
+// ../posyplans-repair/node_modules/drizzle-orm/entity.js
 var entityKind = Symbol.for("drizzle:entityKind");
 var hasOwnEntityKind = Symbol.for("drizzle:hasOwnEntityKind");
 function is(value, type) {
@@ -36111,7 +36114,7 @@ function is(value, type) {
   return false;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/column.js
+// ../posyplans-repair/node_modules/drizzle-orm/column.js
 var Column = class {
   constructor(table, config) {
     this.table = table;
@@ -36162,7 +36165,7 @@ var Column = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/column-builder.js
+// ../posyplans-repair/node_modules/drizzle-orm/column-builder.js
 var ColumnBuilder = class {
   static [entityKind] = "ColumnBuilder";
   config;
@@ -36265,10 +36268,10 @@ var ColumnBuilder = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/table.utils.js
+// ../posyplans-repair/node_modules/drizzle-orm/table.utils.js
 var TableName = Symbol.for("drizzle:Name");
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/foreign-keys.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/foreign-keys.js
 var ForeignKeyBuilder = class {
   static [entityKind] = "PgForeignKeyBuilder";
   /** @internal */
@@ -36325,12 +36328,12 @@ var ForeignKey = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/tracing-utils.js
+// ../posyplans-repair/node_modules/drizzle-orm/tracing-utils.js
 function iife(fn, ...args) {
   return fn(...args);
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/unique-constraint.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/unique-constraint.js
 function uniqueKeyName(table, columns) {
   return `${table[TableName]}_${columns.join("_")}_unique`;
 }
@@ -36380,7 +36383,7 @@ var UniqueConstraint = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/utils/array.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/utils/array.js
 function parsePgArrayValue(arrayString, startFrom, inQuotes) {
   for (let i = startFrom; i < arrayString.length; i++) {
     const char2 = arrayString[i];
@@ -36456,7 +36459,7 @@ function makePgArray(array) {
   }).join(",")}}`;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/common.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/common.js
 var PgColumnBuilder = class extends ColumnBuilder {
   foreignKeyConfigs = [];
   static [entityKind] = "PgColumnBuilder";
@@ -36640,7 +36643,7 @@ var PgArray = class _PgArray extends PgColumn {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/enum.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/enum.js
 var PgEnumObjectColumnBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgEnumObjectColumnBuilder";
   constructor(name, enumInstance) {
@@ -36698,7 +36701,7 @@ var PgEnumColumn = class extends PgColumn {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/subquery.js
+// ../posyplans-repair/node_modules/drizzle-orm/subquery.js
 var Subquery = class {
   static [entityKind] = "Subquery";
   constructor(sql3, fields, alias, isWith = false, usedTables = []) {
@@ -36719,10 +36722,10 @@ var WithSubquery = class extends Subquery {
   static [entityKind] = "WithSubquery";
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/version.js
+// ../posyplans-repair/node_modules/drizzle-orm/version.js
 var version = "0.45.2";
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/tracing.js
+// ../posyplans-repair/node_modules/drizzle-orm/tracing.js
 var otel;
 var rawTracer;
 var tracer = {
@@ -36757,10 +36760,10 @@ var tracer = {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/view-common.js
+// ../posyplans-repair/node_modules/drizzle-orm/view-common.js
 var ViewBaseConfig = Symbol.for("drizzle:ViewBaseConfig");
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/table.js
+// ../posyplans-repair/node_modules/drizzle-orm/table.js
 var Schema = Symbol.for("drizzle:Schema");
 var Columns = Symbol.for("drizzle:Columns");
 var ExtraConfigColumns = Symbol.for("drizzle:ExtraConfigColumns");
@@ -36825,7 +36828,7 @@ function getTableUniqueName(table) {
   return `${table[Schema] ?? "public"}.${table[TableName]}`;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/sql/sql.js
+// ../posyplans-repair/node_modules/drizzle-orm/sql/sql.js
 var FakePrimitiveParam = class {
   static [entityKind] = "FakePrimitiveParam";
 };
@@ -36859,11 +36862,11 @@ var StringChunk = class {
 var SQL = class _SQL {
   constructor(queryChunks) {
     this.queryChunks = queryChunks;
-    for (const chunk of queryChunks) {
-      if (is(chunk, Table)) {
-        const schemaName = chunk[Table.Symbol.Schema];
+    for (const chunk2 of queryChunks) {
+      if (is(chunk2, Table)) {
+        const schemaName = chunk2[Table.Symbol.Schema];
         this.usedTables.push(
-          schemaName === void 0 ? chunk[Table.Symbol.Name] : schemaName + "." + chunk[Table.Symbol.Name]
+          schemaName === void 0 ? chunk2[Table.Symbol.Name] : schemaName + "." + chunk2[Table.Symbol.Name]
         );
       }
     }
@@ -36901,65 +36904,65 @@ var SQL = class _SQL {
       inlineParams,
       paramStartIndex
     } = config;
-    return mergeQueries(chunks.map((chunk) => {
-      if (is(chunk, StringChunk)) {
-        return { sql: chunk.value.join(""), params: [] };
+    return mergeQueries(chunks.map((chunk2) => {
+      if (is(chunk2, StringChunk)) {
+        return { sql: chunk2.value.join(""), params: [] };
       }
-      if (is(chunk, Name)) {
-        return { sql: escapeName(chunk.value), params: [] };
+      if (is(chunk2, Name)) {
+        return { sql: escapeName(chunk2.value), params: [] };
       }
-      if (chunk === void 0) {
+      if (chunk2 === void 0) {
         return { sql: "", params: [] };
       }
-      if (Array.isArray(chunk)) {
+      if (Array.isArray(chunk2)) {
         const result = [new StringChunk("(")];
-        for (const [i, p] of chunk.entries()) {
+        for (const [i, p] of chunk2.entries()) {
           result.push(p);
-          if (i < chunk.length - 1) {
+          if (i < chunk2.length - 1) {
             result.push(new StringChunk(", "));
           }
         }
         result.push(new StringChunk(")"));
         return this.buildQueryFromSourceParams(result, config);
       }
-      if (is(chunk, _SQL)) {
-        return this.buildQueryFromSourceParams(chunk.queryChunks, {
+      if (is(chunk2, _SQL)) {
+        return this.buildQueryFromSourceParams(chunk2.queryChunks, {
           ...config,
-          inlineParams: inlineParams || chunk.shouldInlineParams
+          inlineParams: inlineParams || chunk2.shouldInlineParams
         });
       }
-      if (is(chunk, Table)) {
-        const schemaName = chunk[Table.Symbol.Schema];
-        const tableName = chunk[Table.Symbol.Name];
+      if (is(chunk2, Table)) {
+        const schemaName = chunk2[Table.Symbol.Schema];
+        const tableName = chunk2[Table.Symbol.Name];
         return {
-          sql: schemaName === void 0 || chunk[IsAlias] ? escapeName(tableName) : escapeName(schemaName) + "." + escapeName(tableName),
+          sql: schemaName === void 0 || chunk2[IsAlias] ? escapeName(tableName) : escapeName(schemaName) + "." + escapeName(tableName),
           params: []
         };
       }
-      if (is(chunk, Column)) {
-        const columnName = casing.getColumnCasing(chunk);
+      if (is(chunk2, Column)) {
+        const columnName = casing.getColumnCasing(chunk2);
         if (_config.invokeSource === "indexes") {
           return { sql: escapeName(columnName), params: [] };
         }
-        const schemaName = chunk.table[Table.Symbol.Schema];
+        const schemaName = chunk2.table[Table.Symbol.Schema];
         return {
-          sql: chunk.table[IsAlias] || schemaName === void 0 ? escapeName(chunk.table[Table.Symbol.Name]) + "." + escapeName(columnName) : escapeName(schemaName) + "." + escapeName(chunk.table[Table.Symbol.Name]) + "." + escapeName(columnName),
+          sql: chunk2.table[IsAlias] || schemaName === void 0 ? escapeName(chunk2.table[Table.Symbol.Name]) + "." + escapeName(columnName) : escapeName(schemaName) + "." + escapeName(chunk2.table[Table.Symbol.Name]) + "." + escapeName(columnName),
           params: []
         };
       }
-      if (is(chunk, View)) {
-        const schemaName = chunk[ViewBaseConfig].schema;
-        const viewName = chunk[ViewBaseConfig].name;
+      if (is(chunk2, View)) {
+        const schemaName = chunk2[ViewBaseConfig].schema;
+        const viewName = chunk2[ViewBaseConfig].name;
         return {
-          sql: schemaName === void 0 || chunk[ViewBaseConfig].isAlias ? escapeName(viewName) : escapeName(schemaName) + "." + escapeName(viewName),
+          sql: schemaName === void 0 || chunk2[ViewBaseConfig].isAlias ? escapeName(viewName) : escapeName(schemaName) + "." + escapeName(viewName),
           params: []
         };
       }
-      if (is(chunk, Param)) {
-        if (is(chunk.value, Placeholder)) {
-          return { sql: escapeParam(paramStartIndex.value++, chunk), params: [chunk], typings: ["none"] };
+      if (is(chunk2, Param)) {
+        if (is(chunk2.value, Placeholder)) {
+          return { sql: escapeParam(paramStartIndex.value++, chunk2), params: [chunk2], typings: ["none"] };
         }
-        const mappedValue = chunk.value === null ? null : chunk.encoder.mapToDriverValue(chunk.value);
+        const mappedValue = chunk2.value === null ? null : chunk2.encoder.mapToDriverValue(chunk2.value);
         if (is(mappedValue, _SQL)) {
           return this.buildQueryFromSourceParams([mappedValue], config);
         }
@@ -36968,67 +36971,67 @@ var SQL = class _SQL {
         }
         let typings = ["none"];
         if (prepareTyping) {
-          typings = [prepareTyping(chunk.encoder)];
+          typings = [prepareTyping(chunk2.encoder)];
         }
         return { sql: escapeParam(paramStartIndex.value++, mappedValue), params: [mappedValue], typings };
       }
-      if (is(chunk, Placeholder)) {
-        return { sql: escapeParam(paramStartIndex.value++, chunk), params: [chunk], typings: ["none"] };
+      if (is(chunk2, Placeholder)) {
+        return { sql: escapeParam(paramStartIndex.value++, chunk2), params: [chunk2], typings: ["none"] };
       }
-      if (is(chunk, _SQL.Aliased) && chunk.fieldAlias !== void 0) {
-        return { sql: escapeName(chunk.fieldAlias), params: [] };
+      if (is(chunk2, _SQL.Aliased) && chunk2.fieldAlias !== void 0) {
+        return { sql: escapeName(chunk2.fieldAlias), params: [] };
       }
-      if (is(chunk, Subquery)) {
-        if (chunk._.isWith) {
-          return { sql: escapeName(chunk._.alias), params: [] };
+      if (is(chunk2, Subquery)) {
+        if (chunk2._.isWith) {
+          return { sql: escapeName(chunk2._.alias), params: [] };
         }
         return this.buildQueryFromSourceParams([
           new StringChunk("("),
-          chunk._.sql,
+          chunk2._.sql,
           new StringChunk(") "),
-          new Name(chunk._.alias)
+          new Name(chunk2._.alias)
         ], config);
       }
-      if (isPgEnum(chunk)) {
-        if (chunk.schema) {
-          return { sql: escapeName(chunk.schema) + "." + escapeName(chunk.enumName), params: [] };
+      if (isPgEnum(chunk2)) {
+        if (chunk2.schema) {
+          return { sql: escapeName(chunk2.schema) + "." + escapeName(chunk2.enumName), params: [] };
         }
-        return { sql: escapeName(chunk.enumName), params: [] };
+        return { sql: escapeName(chunk2.enumName), params: [] };
       }
-      if (isSQLWrapper(chunk)) {
-        if (chunk.shouldOmitSQLParens?.()) {
-          return this.buildQueryFromSourceParams([chunk.getSQL()], config);
+      if (isSQLWrapper(chunk2)) {
+        if (chunk2.shouldOmitSQLParens?.()) {
+          return this.buildQueryFromSourceParams([chunk2.getSQL()], config);
         }
         return this.buildQueryFromSourceParams([
           new StringChunk("("),
-          chunk.getSQL(),
+          chunk2.getSQL(),
           new StringChunk(")")
         ], config);
       }
       if (inlineParams) {
-        return { sql: this.mapInlineParam(chunk, config), params: [] };
+        return { sql: this.mapInlineParam(chunk2, config), params: [] };
       }
-      return { sql: escapeParam(paramStartIndex.value++, chunk), params: [chunk], typings: ["none"] };
+      return { sql: escapeParam(paramStartIndex.value++, chunk2), params: [chunk2], typings: ["none"] };
     }));
   }
-  mapInlineParam(chunk, { escapeString }) {
-    if (chunk === null) {
+  mapInlineParam(chunk2, { escapeString }) {
+    if (chunk2 === null) {
       return "null";
     }
-    if (typeof chunk === "number" || typeof chunk === "boolean") {
-      return chunk.toString();
+    if (typeof chunk2 === "number" || typeof chunk2 === "boolean") {
+      return chunk2.toString();
     }
-    if (typeof chunk === "string") {
-      return escapeString(chunk);
+    if (typeof chunk2 === "string") {
+      return escapeString(chunk2);
     }
-    if (typeof chunk === "object") {
-      const mappedValueAsString = chunk.toString();
+    if (typeof chunk2 === "object") {
+      const mappedValueAsString = chunk2.toString();
       if (mappedValueAsString === "[object Object]") {
-        return escapeString(JSON.stringify(chunk));
+        return escapeString(JSON.stringify(chunk2));
       }
       return escapeString(mappedValueAsString);
     }
-    throw new Error("Unexpected param value: " + chunk);
+    throw new Error("Unexpected param value: " + chunk2);
   }
   getSQL() {
     return this;
@@ -37120,11 +37123,11 @@ function sql(strings, ...params) {
   sql22.raw = raw;
   function join6(chunks, separator) {
     const result = [];
-    for (const [i, chunk] of chunks.entries()) {
+    for (const [i, chunk2] of chunks.entries()) {
       if (i > 0 && separator !== void 0) {
         result.push(separator);
       }
-      result.push(chunk);
+      result.push(chunk2);
     }
     return new SQL(result);
   }
@@ -37222,7 +37225,7 @@ Subquery.prototype.getSQL = function() {
   return new SQL([this]);
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/alias.js
+// ../posyplans-repair/node_modules/drizzle-orm/alias.js
 var ColumnAliasProxyHandler = class {
   constructor(table) {
     this.table = table;
@@ -37318,7 +37321,7 @@ function mapColumnsInSQLToAlias(query, alias) {
   }));
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/utils.js
+// ../posyplans-repair/node_modules/drizzle-orm/utils.js
 function mapResultRow(columns, row, joinsNotNullableMap) {
   const nullifyMap = {};
   const result = columns.reduce(
@@ -37472,7 +37475,7 @@ function isConfig(data) {
 }
 var textDecoder = typeof TextDecoder === "undefined" ? null : new TextDecoder();
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/int.common.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/int.common.js
 var PgIntColumnBaseBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgIntColumnBaseBuilder";
   generatedAlwaysAsIdentity(sequence) {
@@ -37511,7 +37514,7 @@ var PgIntColumnBaseBuilder = class extends PgColumnBuilder {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/bigint.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/bigint.js
 var PgBigInt53Builder = class extends PgIntColumnBaseBuilder {
   static [entityKind] = "PgBigInt53Builder";
   constructor(name) {
@@ -37565,7 +37568,7 @@ function bigint(a, b2) {
   return new PgBigInt64Builder(name);
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/bigserial.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/bigserial.js
 var PgBigSerial53Builder = class extends PgColumnBuilder {
   static [entityKind] = "PgBigSerial53Builder";
   constructor(name) {
@@ -37625,7 +37628,7 @@ function bigserial(a, b2) {
   return new PgBigSerial64Builder(name);
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/boolean.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/boolean.js
 var PgBooleanBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgBooleanBuilder";
   constructor(name) {
@@ -37646,7 +37649,7 @@ function boolean(name) {
   return new PgBooleanBuilder(name ?? "");
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/char.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/char.js
 var PgCharBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgCharBuilder";
   constructor(name, config) {
@@ -37675,7 +37678,7 @@ function char(a, b2 = {}) {
   return new PgCharBuilder(name, config);
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/cidr.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/cidr.js
 var PgCidrBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgCidrBuilder";
   constructor(name) {
@@ -37696,7 +37699,7 @@ function cidr(name) {
   return new PgCidrBuilder(name ?? "");
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/custom.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/custom.js
 var PgCustomColumnBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgCustomColumnBuilder";
   constructor(name, fieldConfig, customTypeParams) {
@@ -37740,7 +37743,7 @@ function customType(customTypeParams) {
   };
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/date.common.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/date.common.js
 var PgDateColumnBaseBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgDateColumnBaseBuilder";
   defaultNow() {
@@ -37748,7 +37751,7 @@ var PgDateColumnBaseBuilder = class extends PgColumnBuilder {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/date.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/date.js
 var PgDateBuilder = class extends PgDateColumnBaseBuilder {
   static [entityKind] = "PgDateBuilder";
   constructor(name) {
@@ -37803,7 +37806,7 @@ function date(a, b2) {
   return new PgDateStringBuilder(name);
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/double-precision.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/double-precision.js
 var PgDoublePrecisionBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgDoublePrecisionBuilder";
   constructor(name) {
@@ -37833,7 +37836,7 @@ function doublePrecision(name) {
   return new PgDoublePrecisionBuilder(name ?? "");
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/inet.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/inet.js
 var PgInetBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgInetBuilder";
   constructor(name) {
@@ -37854,7 +37857,7 @@ function inet(name) {
   return new PgInetBuilder(name ?? "");
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/integer.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/integer.js
 var PgIntegerBuilder = class extends PgIntColumnBaseBuilder {
   static [entityKind] = "PgIntegerBuilder";
   constructor(name) {
@@ -37881,7 +37884,7 @@ function integer(name) {
   return new PgIntegerBuilder(name ?? "");
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/interval.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/interval.js
 var PgIntervalBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgIntervalBuilder";
   constructor(name, intervalConfig) {
@@ -37908,7 +37911,7 @@ function interval(a, b2 = {}) {
   return new PgIntervalBuilder(name, config);
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/json.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/json.js
 var PgJsonBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgJsonBuilder";
   constructor(name) {
@@ -37945,7 +37948,7 @@ function json(name) {
   return new PgJsonBuilder(name ?? "");
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/jsonb.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/jsonb.js
 var PgJsonbBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgJsonbBuilder";
   constructor(name) {
@@ -37982,7 +37985,7 @@ function jsonb(name) {
   return new PgJsonbBuilder(name ?? "");
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/line.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/line.js
 var PgLineBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgLineBuilder";
   constructor(name) {
@@ -38043,7 +38046,7 @@ function line(a, b2) {
   return new PgLineABCBuilder(name);
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/macaddr.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/macaddr.js
 var PgMacaddrBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgMacaddrBuilder";
   constructor(name) {
@@ -38064,7 +38067,7 @@ function macaddr(name) {
   return new PgMacaddrBuilder(name ?? "");
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/macaddr8.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/macaddr8.js
 var PgMacaddr8Builder = class extends PgColumnBuilder {
   static [entityKind] = "PgMacaddr8Builder";
   constructor(name) {
@@ -38085,7 +38088,7 @@ function macaddr8(name) {
   return new PgMacaddr8Builder(name ?? "");
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/numeric.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/numeric.js
 var PgNumericBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgNumericBuilder";
   constructor(name, precision, scale) {
@@ -38202,7 +38205,7 @@ function numeric(a, b2) {
   return mode === "number" ? new PgNumericNumberBuilder(name, config?.precision, config?.scale) : mode === "bigint" ? new PgNumericBigIntBuilder(name, config?.precision, config?.scale) : new PgNumericBuilder(name, config?.precision, config?.scale);
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/point.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/point.js
 var PgPointTupleBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgPointTupleBuilder";
   constructor(name) {
@@ -38269,7 +38272,7 @@ function point(a, b2) {
   return new PgPointObjectBuilder(name);
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/postgis_extension/utils.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/postgis_extension/utils.js
 function hexToBytes(hex2) {
   const bytes = [];
   for (let c = 0; c < hex2.length; c += 2) {
@@ -38308,7 +38311,7 @@ function parseEWKB(hex2) {
   throw new Error("Unsupported geometry type");
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/postgis_extension/geometry.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/postgis_extension/geometry.js
 var PgGeometryBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgGeometryBuilder";
   constructor(name) {
@@ -38368,7 +38371,7 @@ function geometry(a, b2) {
   return new PgGeometryObjectBuilder(name);
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/real.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/real.js
 var PgRealBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgRealBuilder";
   constructor(name, length) {
@@ -38399,7 +38402,7 @@ function real(name) {
   return new PgRealBuilder(name ?? "");
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/serial.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/serial.js
 var PgSerialBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgSerialBuilder";
   constructor(name) {
@@ -38422,7 +38425,7 @@ function serial(name) {
   return new PgSerialBuilder(name ?? "");
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/smallint.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/smallint.js
 var PgSmallIntBuilder = class extends PgIntColumnBaseBuilder {
   static [entityKind] = "PgSmallIntBuilder";
   constructor(name) {
@@ -38449,7 +38452,7 @@ function smallint(name) {
   return new PgSmallIntBuilder(name ?? "");
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/smallserial.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/smallserial.js
 var PgSmallSerialBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgSmallSerialBuilder";
   constructor(name) {
@@ -38475,7 +38478,7 @@ function smallserial(name) {
   return new PgSmallSerialBuilder(name ?? "");
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/text.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/text.js
 var PgTextBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgTextBuilder";
   constructor(name, config) {
@@ -38499,7 +38502,7 @@ function text(a, b2 = {}) {
   return new PgTextBuilder(name, config);
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/time.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/time.js
 var PgTimeBuilder = class extends PgDateColumnBaseBuilder {
   constructor(name, withTimezone, precision) {
     super(name, "string", "PgTime");
@@ -38533,7 +38536,7 @@ function time(a, b2 = {}) {
   return new PgTimeBuilder(name, config.withTimezone ?? false, config.precision);
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/timestamp.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/timestamp.js
 var PgTimestampBuilder = class extends PgDateColumnBaseBuilder {
   static [entityKind] = "PgTimestampBuilder";
   constructor(name, withTimezone, precision) {
@@ -38614,7 +38617,7 @@ function timestamp(a, b2 = {}) {
   return new PgTimestampBuilder(name, config?.withTimezone ?? false, config?.precision);
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/uuid.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/uuid.js
 var PgUUIDBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgUUIDBuilder";
   constructor(name) {
@@ -38641,7 +38644,7 @@ function uuid(name) {
   return new PgUUIDBuilder(name ?? "");
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/varchar.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/varchar.js
 var PgVarcharBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgVarcharBuilder";
   constructor(name, config) {
@@ -38670,7 +38673,7 @@ function varchar(a, b2 = {}) {
   return new PgVarcharBuilder(name, config);
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/vector_extension/bit.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/vector_extension/bit.js
 var PgBinaryVectorBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgBinaryVectorBuilder";
   constructor(name, config) {
@@ -38697,7 +38700,7 @@ function bit(a, b2) {
   return new PgBinaryVectorBuilder(name, config);
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/vector_extension/halfvec.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/vector_extension/halfvec.js
 var PgHalfVectorBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgHalfVectorBuilder";
   constructor(name, config) {
@@ -38730,7 +38733,7 @@ function halfvec(a, b2) {
   return new PgHalfVectorBuilder(name, config);
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/vector_extension/sparsevec.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/vector_extension/sparsevec.js
 var PgSparseVectorBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgSparseVectorBuilder";
   constructor(name, config) {
@@ -38757,7 +38760,7 @@ function sparsevec(a, b2) {
   return new PgSparseVectorBuilder(name, config);
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/vector_extension/vector.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/vector_extension/vector.js
 var PgVectorBuilder = class extends PgColumnBuilder {
   static [entityKind] = "PgVectorBuilder";
   constructor(name, config) {
@@ -38790,7 +38793,7 @@ function vector(a, b2) {
   return new PgVectorBuilder(name, config);
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/query-promise.js
+// ../posyplans-repair/node_modules/drizzle-orm/query-promise.js
 var QueryPromise = class {
   static [entityKind] = "QueryPromise";
   [Symbol.toStringTag] = "QueryPromise";
@@ -38814,7 +38817,7 @@ var QueryPromise = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/selection-proxy.js
+// ../posyplans-repair/node_modules/drizzle-orm/selection-proxy.js
 var SelectionProxyHandler = class _SelectionProxyHandler {
   static [entityKind] = "SelectionProxyHandler";
   config;
@@ -38882,7 +38885,7 @@ var SelectionProxyHandler = class _SelectionProxyHandler {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/columns/all.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/columns/all.js
 function getPgColumnBuilders() {
   return {
     bigint,
@@ -38920,7 +38923,7 @@ function getPgColumnBuilders() {
   };
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/table.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/table.js
 var InlineForeignKeys = Symbol.for("drizzle:PgInlineForeignKeys");
 var EnableRLS = Symbol.for("drizzle:EnableRLS");
 var PgTable = class extends Table {
@@ -38976,7 +38979,7 @@ var pgTable = (name, columns, extraConfig) => {
   return pgTableWithSchema(name, columns, extraConfig, void 0);
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/indexes.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/indexes.js
 var IndexBuilderOn = class {
   constructor(unique, name) {
     this.unique = unique;
@@ -39088,7 +39091,7 @@ function uniqueIndex(name) {
   return new IndexBuilderOn(true, name);
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/primary-keys.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/primary-keys.js
 var PrimaryKeyBuilder = class {
   static [entityKind] = "PgPrimaryKeyBuilder";
   /** @internal */
@@ -39118,7 +39121,7 @@ var PrimaryKey = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/casing.js
+// ../posyplans-repair/node_modules/drizzle-orm/casing.js
 function toSnakeCase(input) {
   const words = input.replace(/['\u2019]/g, "").match(/[\da-z]+|[A-Z]+(?![a-z])|[A-Z][\da-z]+/g) ?? [];
   return words.map((word) => word.toLowerCase()).join("_");
@@ -39170,7 +39173,7 @@ var CasingCache = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/errors.js
+// ../posyplans-repair/node_modules/drizzle-orm/errors.js
 var DrizzleError = class extends Error {
   static [entityKind] = "DrizzleError";
   constructor({ message: message2, cause }) {
@@ -39197,7 +39200,7 @@ var TransactionRollbackError = class extends DrizzleError {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/sql/expressions/conditions.js
+// ../posyplans-repair/node_modules/drizzle-orm/sql/expressions/conditions.js
 function bindIfParam(value, column) {
   if (isDriverValueEncoder(column) && !isSQLWrapper(value) && !is(value, Param) && !is(value, Placeholder) && !is(value, Column) && !is(value, Table) && !is(value, View)) {
     return new Param(value, column);
@@ -39312,7 +39315,7 @@ function notIlike(column, value) {
   return sql`${column} not ilike ${value}`;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/sql/expressions/select.js
+// ../posyplans-repair/node_modules/drizzle-orm/sql/expressions/select.js
 function asc(column) {
   return sql`${column} asc`;
 }
@@ -39320,7 +39323,7 @@ function desc(column) {
   return sql`${column} desc`;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/relations.js
+// ../posyplans-repair/node_modules/drizzle-orm/relations.js
 var Relation = class {
   constructor(sourceTable, referencedTable, relationName) {
     this.sourceTable = sourceTable;
@@ -39581,12 +39584,12 @@ function mapRelationalRow(tablesConfig, tableConfig, row, buildQueryResultSelect
   return result;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/view-base.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/view-base.js
 var PgViewBase = class extends View {
   static [entityKind] = "PgViewBase";
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/dialect.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/dialect.js
 var PgDialect = class {
   static [entityKind] = "PgDialect";
   /** @internal */
@@ -39695,13 +39698,13 @@ var PgDialect = class {
   buildSelection(fields, { isSingleTable = false } = {}) {
     const columnsLen = fields.length;
     const chunks = fields.flatMap(({ field }, i) => {
-      const chunk = [];
+      const chunk2 = [];
       if (is(field, SQL.Aliased) && field.isSelectionField) {
-        chunk.push(sql.identifier(field.fieldAlias));
+        chunk2.push(sql.identifier(field.fieldAlias));
       } else if (is(field, SQL.Aliased) || is(field, SQL)) {
         const query = is(field, SQL.Aliased) ? field.sql : field;
         if (isSingleTable) {
-          chunk.push(
+          chunk2.push(
             new SQL(
               query.queryChunks.map((c) => {
                 if (is(c, PgColumn)) {
@@ -39712,16 +39715,16 @@ var PgDialect = class {
             )
           );
         } else {
-          chunk.push(query);
+          chunk2.push(query);
         }
         if (is(field, SQL.Aliased)) {
-          chunk.push(sql` as ${sql.identifier(field.fieldAlias)}`);
+          chunk2.push(sql` as ${sql.identifier(field.fieldAlias)}`);
         }
       } else if (is(field, Column)) {
         if (isSingleTable) {
-          chunk.push(sql.identifier(this.casing.getColumnCasing(field)));
+          chunk2.push(sql.identifier(this.casing.getColumnCasing(field)));
         } else {
-          chunk.push(field);
+          chunk2.push(field);
         }
       } else if (is(field, Subquery)) {
         const entries = Object.entries(field._.selectedFields);
@@ -39732,12 +39735,12 @@ var PgDialect = class {
             field._.sql.decoder = fieldDecoder;
           }
         }
-        chunk.push(field);
+        chunk2.push(field);
       }
       if (i < columnsLen - 1) {
-        chunk.push(sql`, `);
+        chunk2.push(sql`, `);
       }
-      return chunk;
+      return chunk2;
     });
     return sql.join(chunks);
   }
@@ -39889,9 +39892,9 @@ var PgDialect = class {
           orderByValues.push(sql.identifier(singleOrderBy.name));
         } else if (is(singleOrderBy, SQL)) {
           for (let i = 0; i < singleOrderBy.queryChunks.length; i++) {
-            const chunk = singleOrderBy.queryChunks[i];
-            if (is(chunk, PgColumn)) {
-              singleOrderBy.queryChunks[i] = sql.identifier(chunk.name);
+            const chunk2 = singleOrderBy.queryChunks[i];
+            if (is(chunk2, PgColumn)) {
+              singleOrderBy.queryChunks[i] = sql.identifier(chunk2.name);
             }
           }
           orderByValues.push(sql`${singleOrderBy}`);
@@ -40691,7 +40694,7 @@ var PgDialect = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/query-builders/query-builder.js
+// ../posyplans-repair/node_modules/drizzle-orm/query-builders/query-builder.js
 var TypedQueryBuilder = class {
   static [entityKind] = "TypedQueryBuilder";
   /** @internal */
@@ -40700,7 +40703,7 @@ var TypedQueryBuilder = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/query-builders/select.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/query-builders/select.js
 var PgSelectBuilder = class {
   static [entityKind] = "PgSelectBuilder";
   fields;
@@ -41516,7 +41519,7 @@ var intersectAll = createSetOperator("intersect", true);
 var except = createSetOperator("except", false);
 var exceptAll = createSetOperator("except", true);
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/query-builders/query-builder.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/query-builders/query-builder.js
 var QueryBuilder = class {
   static [entityKind] = "PgQueryBuilder";
   dialect;
@@ -41603,7 +41606,7 @@ var QueryBuilder = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/utils.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/utils.js
 function extractUsedTable(table) {
   if (is(table, PgTable)) {
     return [table[Schema] ? `${table[Schema]}.${table[Table.Symbol.BaseName]}` : table[Table.Symbol.BaseName]];
@@ -41617,7 +41620,7 @@ function extractUsedTable(table) {
   return [];
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/query-builders/delete.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/query-builders/delete.js
 var PgDeleteBase = class extends QueryPromise {
   constructor(table, session, dialect, withList) {
     super();
@@ -41713,7 +41716,7 @@ var PgDeleteBase = class extends QueryPromise {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/query-builders/insert.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/query-builders/insert.js
 var PgInsertBuilder = class {
   constructor(table, session, dialect, withList, overridingSystemValue_) {
     this.table = table;
@@ -41906,7 +41909,7 @@ var PgInsertBase = class extends QueryPromise {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/query-builders/refresh-materialized-view.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/query-builders/refresh-materialized-view.js
 var PgRefreshMaterializedView = class extends QueryPromise {
   constructor(view, session, dialect) {
     super();
@@ -41960,7 +41963,7 @@ var PgRefreshMaterializedView = class extends QueryPromise {
   };
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/query-builders/update.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/query-builders/update.js
 var PgUpdateBuilder = class {
   constructor(table, session, dialect, withList) {
     this.table = table;
@@ -42172,7 +42175,7 @@ var PgUpdateBase = class extends QueryPromise {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/query-builders/count.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/query-builders/count.js
 var PgCountBuilder = class _PgCountBuilder extends SQL {
   constructor(params) {
     super(_PgCountBuilder.buildEmbeddedCount(params.source, params.filters).queryChunks);
@@ -42223,7 +42226,7 @@ var PgCountBuilder = class _PgCountBuilder extends SQL {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/query-builders/query.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/query-builders/query.js
 var RelationalQueryBuilder = class {
   constructor(fullSchema, schema, tableNamesMap, table, tableConfig, dialect, session) {
     this.fullSchema = fullSchema;
@@ -42336,7 +42339,7 @@ var PgRelationalQuery = class extends QueryPromise {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/query-builders/raw.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/query-builders/raw.js
 var PgRaw = class extends QueryPromise {
   constructor(execute, sql3, query, mapBatchResult) {
     super();
@@ -42365,7 +42368,7 @@ var PgRaw = class extends QueryPromise {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/db.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/db.js
 var PgDatabase = class {
   constructor(dialect, session, schema) {
     this.dialect = dialect;
@@ -42644,7 +42647,7 @@ var PgDatabase = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/cache/core/cache.js
+// ../posyplans-repair/node_modules/drizzle-orm/cache/core/cache.js
 var Cache = class {
   static [entityKind] = "Cache";
 };
@@ -42671,7 +42674,7 @@ async function hashQuery(sql3, params) {
   return hashHex;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/pg-core/session.js
+// ../posyplans-repair/node_modules/drizzle-orm/pg-core/session.js
 var PgPreparedQuery = class {
   constructor(query, cache, queryMetadata, cacheConfig) {
     this.query = query;
@@ -42831,7 +42834,7 @@ var PgTransaction = class extends PgDatabase {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/logger.js
+// ../posyplans-repair/node_modules/drizzle-orm/logger.js
 var ConsoleLogWriter = class {
   static [entityKind] = "ConsoleLogWriter";
   write(message2) {
@@ -42862,7 +42865,7 @@ var NoopLogger = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/zod/v3/external.js
+// ../posyplans-repair/node_modules/zod/v3/external.js
 var external_exports = {};
 __export(external_exports, {
   BRAND: () => BRAND,
@@ -42974,7 +42977,7 @@ __export(external_exports, {
   void: () => voidType
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/zod/v3/helpers/util.js
+// ../posyplans-repair/node_modules/zod/v3/helpers/util.js
 var util;
 (function(util2) {
   util2.assertEqual = (_) => {
@@ -43108,7 +43111,7 @@ var getParsedType = (data) => {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/zod/v3/ZodError.js
+// ../posyplans-repair/node_modules/zod/v3/ZodError.js
 var ZodIssueCode = util.arrayToEnum([
   "invalid_type",
   "invalid_literal",
@@ -43226,7 +43229,7 @@ ZodError.create = (issues) => {
   return error;
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/zod/v3/locales/en.js
+// ../posyplans-repair/node_modules/zod/v3/locales/en.js
 var errorMap = (issue, _ctx) => {
   let message2;
   switch (issue.code) {
@@ -43329,7 +43332,7 @@ var errorMap = (issue, _ctx) => {
 };
 var en_default = errorMap;
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/zod/v3/errors.js
+// ../posyplans-repair/node_modules/zod/v3/errors.js
 var overrideErrorMap = en_default;
 function setErrorMap(map) {
   overrideErrorMap = map;
@@ -43338,7 +43341,7 @@ function getErrorMap() {
   return overrideErrorMap;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/zod/v3/helpers/parseUtil.js
+// ../posyplans-repair/node_modules/zod/v3/helpers/parseUtil.js
 var makeIssue = (params) => {
   const { data, path: path8, errorMaps, issueData } = params;
   const fullPath = [...path8, ...issueData.path || []];
@@ -43448,14 +43451,14 @@ var isDirty = (x) => x.status === "dirty";
 var isValid = (x) => x.status === "valid";
 var isAsync = (x) => typeof Promise !== "undefined" && x instanceof Promise;
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/zod/v3/helpers/errorUtil.js
+// ../posyplans-repair/node_modules/zod/v3/helpers/errorUtil.js
 var errorUtil;
 (function(errorUtil2) {
   errorUtil2.errToObj = (message2) => typeof message2 === "string" ? { message: message2 } : message2 || {};
   errorUtil2.toString = (message2) => typeof message2 === "string" ? message2 : message2?.message;
 })(errorUtil || (errorUtil = {}));
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/zod/v3/types.js
+// ../posyplans-repair/node_modules/zod/v3/types.js
 var ParseInputLazyPath = class {
   constructor(parent, value, path8, key) {
     this._cachedPath = [];
@@ -46903,7 +46906,7 @@ var coerce = {
 };
 var NEVER = INVALID;
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-zod/index.mjs
+// ../posyplans-repair/node_modules/drizzle-zod/index.mjs
 var CONSTANTS = {
   INT8_MIN: -128,
   INT8_MAX: 127,
@@ -47286,8 +47289,27 @@ var events = pgTable("events", {
   // nullable, millis
   // The Stripe checkout session that unlocked this event, kept for
   // idempotency so a re-confirm / replayed webhook never double-processes.
-  sparkCheckoutSessionId: text("spark_checkout_session_id")
+  sparkCheckoutSessionId: text("spark_checkout_session_id"),
   // nullable
+  /* ---- Pre-payment invitation preview (QA report B2a) ---- */
+  // A single real, capped invitation illustration generated BEFORE payment,
+  // once the host's email is captured, so the paywall can show "the real
+  // thing, blurred" instead of a generic simulated demo or nothing at all.
+  // Stored as a data URI, same convention as inviteIllustrationUrl. Empty
+  // string means no pre-payment preview has been generated yet. Serving
+  // logic (server/routes.ts) reveals these bytes at full resolution once the
+  // event is paid, and serves a heavily downsampled/blurred version before
+  // that — never the raw bytes to an unpaid visitor.
+  prePaymentPreviewUrl: text("pre_payment_preview_url").notNull().default(""),
+  // Set once prePaymentPreviewUrl is populated. System-controlled, same as
+  // capturedEmail/sparkUnlockedAt — never accepted on the generic PATCH.
+  prePaymentPreviewUsedAt: bigint("pre_payment_preview_used_at", { mode: "number" }),
+  // nullable, millis
+  // Counts every generation attempt (successful or not), incremented BEFORE
+  // the provider call so a crash mid-call still counts against the cap. Caps
+  // real spend on an unpaid visitor at a small, fixed number of tries even if
+  // the quality gate keeps rejecting output. See server/prePaymentPreview.ts.
+  prePaymentPreviewAttempts: integer("pre_payment_preview_attempts").notNull().default(0)
 });
 var insertEventSchema = createInsertSchema(events).omit({
   id: true,
@@ -47299,7 +47321,10 @@ var insertEventSchema = createInsertSchema(events).omit({
   capturedEmail: true,
   emailCapturedAt: true,
   sparkUnlockedAt: true,
-  sparkCheckoutSessionId: true
+  sparkCheckoutSessionId: true,
+  prePaymentPreviewUrl: true,
+  prePaymentPreviewUsedAt: true,
+  prePaymentPreviewAttempts: true
 });
 var updateEventSchema = insertEventSchema.partial();
 var intakeSchema = external_exports.object({
@@ -47307,12 +47332,20 @@ var intakeSchema = external_exports.object({
   eventType: external_exports.string().optional(),
   eventDate: external_exports.string().optional(),
   estimatedGuestCount: external_exports.number().int().min(1).max(2e3).optional(),
-  budgetCeiling: external_exports.number().int().min(0).optional(),
+  // Nullable (not just optional): the intake wizard must be able to send an
+  // explicit `null` to clear a previously-saved budget. A merely-omitted key
+  // leaves the prior server-side value in place (see PATCH .../intake below),
+  // which silently kept a stale budget after a host cleared the field.
+  budgetCeiling: external_exports.number().int().min(0).nullable().optional(),
   vibeDescription: external_exports.string().max(500).optional()
 });
 var guests = pgTable("guests", {
   id: serial("id").primaryKey(),
   eventId: integer("event_id").notNull(),
+  // Opaque bearer credential used by the guest-facing RSVP route. It is
+  // deliberately unrelated to the sequential guest id, so a public event
+  // link cannot be used to enumerate invitees or submit on their behalf.
+  accessToken: text("access_token").notNull().default(sql`replace(gen_random_uuid()::text, '-', '')`),
   name: text("name").notNull(),
   email: text("email").notNull().default(""),
   phone: text("phone").notNull().default(""),
@@ -47345,10 +47378,13 @@ var guests = pgTable("guests", {
   // set when an automated reminder text was sent
   smsSendError: text("sms_send_error")
   // last automated SMS send error, if any
-});
+}, (table) => [
+  uniqueIndex("guests_access_token_unique").on(table.accessToken)
+]);
 var insertGuestSchema = createInsertSchema(guests).omit({
   id: true,
   eventId: true,
+  accessToken: true,
   rsvpStatus: true,
   attendingCount: true,
   attendingAdults: true,
@@ -47672,11 +47708,11 @@ var aiFirstArtworkAttempts = pgTable(
   (table) => [index("ai_first_artwork_attempts_event_id_idx").on(table.eventId)]
 );
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/postgres/src/index.js
+// ../posyplans-repair/node_modules/postgres/src/index.js
 var import_os = __toESM(require("os"), 1);
 var import_fs = __toESM(require("fs"), 1);
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/postgres/src/query.js
+// ../posyplans-repair/node_modules/postgres/src/query.js
 var originCache = /* @__PURE__ */ new Map();
 var originStackCache = /* @__PURE__ */ new Map();
 var originError = Symbol("OriginError");
@@ -47813,7 +47849,7 @@ function cachedError(xs) {
   return originCache.get(xs);
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/postgres/src/errors.js
+// ../posyplans-repair/node_modules/postgres/src/errors.js
 var PostgresError = class extends Error {
   constructor(x) {
     super(x.message);
@@ -47863,7 +47899,7 @@ function notSupported(x) {
   return error;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/postgres/src/types.js
+// ../posyplans-repair/node_modules/postgres/src/types.js
 var types = {
   string: {
     to: 25,
@@ -48149,14 +48185,14 @@ fromKebab.column = { to: fromKebab };
 var kebab = { ...toKebab };
 kebab.column.to = fromKebab;
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/postgres/src/connection.js
+// ../posyplans-repair/node_modules/postgres/src/connection.js
 var import_net = __toESM(require("net"), 1);
 var import_tls = __toESM(require("tls"), 1);
 var import_crypto = __toESM(require("crypto"), 1);
 var import_stream = __toESM(require("stream"), 1);
 var import_perf_hooks = require("perf_hooks");
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/postgres/src/result.js
+// ../posyplans-repair/node_modules/postgres/src/result.js
 var Result = class extends Array {
   constructor() {
     super();
@@ -48173,7 +48209,7 @@ var Result = class extends Array {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/postgres/src/queue.js
+// ../posyplans-repair/node_modules/postgres/src/queue.js
 var queue_default = Queue;
 function Queue(initial = []) {
   let xs = initial.slice();
@@ -48200,7 +48236,7 @@ function Queue(initial = []) {
   };
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/postgres/src/bytes.js
+// ../posyplans-repair/node_modules/postgres/src/bytes.js
 var size = 256;
 var buffer = Buffer.allocUnsafe(size);
 var messages = "BCcDdEFfHPpQSX".split("").reduce((acc, x) => {
@@ -48273,7 +48309,7 @@ function reset() {
   return b;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/postgres/src/connection.js
+// ../posyplans-repair/node_modules/postgres/src/connection.js
 var connection_default = Connection;
 var uid = 1;
 var Sync = bytes_default().S().end();
@@ -48346,7 +48382,7 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
     target_session_attrs
   } = options;
   const sent = queue_default(), id = uid++, backend = { pid: null, secret: null }, idleTimer = timer(end, options.idle_timeout), lifeTimer = timer(end, options.max_lifetime), connectTimer = timer(connectTimedOut, options.connect_timeout);
-  let socket = null, cancelMessage, errorResponse = null, result = new Result(), incoming = Buffer.alloc(0), needsTypes = options.fetch_types, backendParameters = {}, statements = {}, statementId = Math.random().toString(36).slice(2), statementCount = 1, closedTime = 0, remaining = 0, hostIndex = 0, retries = 0, length = 0, delay = 0, rows = 0, serverSignature = null, nextWriteTimer = null, terminated = false, incomings = null, results = null, initial = null, ending = null, stream = null, chunk = null, ended = null, nonce = null, query = null, final = null;
+  let socket = null, cancelMessage, errorResponse = null, result = new Result(), incoming = Buffer.alloc(0), needsTypes = options.fetch_types, backendParameters = {}, statements = {}, statementId = Math.random().toString(36).slice(2), statementCount = 1, closedTime = 0, remaining = 0, hostIndex = 0, retries = 0, length = 0, delay = 0, rows = 0, serverSignature = null, nextWriteTimer = null, terminated = false, incomings = null, results = null, initial = null, ending = null, stream = null, chunk2 = null, ended = null, nonce = null, query = null, final = null;
   const connection2 = {
     queue: queues.closed,
     idleTimer,
@@ -48443,16 +48479,16 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
     typeof options.debug === "function" && options.debug(id, string, parameters, types2);
   }
   function write(x, fn) {
-    chunk = chunk ? Buffer.concat([chunk, x]) : Buffer.from(x);
-    if (fn || chunk.length >= 1024)
+    chunk2 = chunk2 ? Buffer.concat([chunk2, x]) : Buffer.from(x);
+    if (fn || chunk2.length >= 1024)
       return nextWrite(fn);
     nextWriteTimer === null && (nextWriteTimer = setImmediate(nextWrite));
     return true;
   }
   function nextWrite(fn) {
-    const x = socket.write(chunk, fn);
+    const x = socket.write(chunk2, fn);
     nextWriteTimer !== null && clearImmediate(nextWriteTimer);
-    chunk = nextWriteTimer = null;
+    chunk2 = nextWriteTimer = null;
     return x;
   }
   function connectTimedOut() {
@@ -48949,8 +48985,8 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
   function CopyInResponse() {
     stream = new import_stream.default.Writable({
       autoDestroy: true,
-      write(chunk2, encoding, callback) {
-        socket.write(bytes_default().d().raw(chunk2).end(), callback);
+      write(chunk3, encoding, callback) {
+        socket.write(bytes_default().d().raw(chunk3).end(), callback);
       },
       destroy(error2, callback) {
         callback(error2);
@@ -48980,8 +49016,8 @@ function Connection(options, queues = {}, { onopen = noop, onend = noop, onclose
         socket.resume();
       },
       /* c8 ignore next 11 */
-      write(chunk2, encoding, callback) {
-        socket.write(bytes_default().d().raw(chunk2).end(), callback);
+      write(chunk3, encoding, callback) {
+        socket.write(bytes_default().d().raw(chunk3).end(), callback);
       },
       destroy(error2, callback) {
         callback(error2);
@@ -49113,7 +49149,7 @@ function timer(fn, seconds) {
   }
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/postgres/src/subscribe.js
+// ../posyplans-repair/node_modules/postgres/src/subscribe.js
 var noop2 = () => {
 };
 function Subscribe(postgres2, options) {
@@ -49325,7 +49361,7 @@ function parseEvent(x) {
   return (command || "*") + (path8 ? ":" + (path8.indexOf(".") === -1 ? "public." + path8 : path8) : "") + (key ? "=" + key : "");
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/postgres/src/large.js
+// ../posyplans-repair/node_modules/postgres/src/large.js
 var import_stream2 = __toESM(require("stream"), 1);
 function largeObject(sql3, oid, mode = 131072 | 262144) {
   return new Promise(async (resolve4, reject) => {
@@ -49382,8 +49418,8 @@ function largeObject(sql3, oid, mode = 131072 | 262144) {
         start && await lo.seek(start);
         return new import_stream2.default.Writable({
           highWaterMark,
-          write(chunk, encoding, callback) {
-            lo.write(chunk).then(() => callback(), callback);
+          write(chunk2, encoding, callback) {
+            lo.write(chunk2).then(() => callback(), callback);
           }
         });
       }
@@ -49391,7 +49427,7 @@ function largeObject(sql3, oid, mode = 131072 | 262144) {
   });
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/postgres/src/index.js
+// ../posyplans-repair/node_modules/postgres/src/index.js
 Object.assign(Postgres, {
   PostgresError,
   toPascal,
@@ -49794,7 +49830,7 @@ function osUsername() {
   }
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/postgres-js/session.js
+// ../posyplans-repair/node_modules/drizzle-orm/postgres-js/session.js
 var PostgresJsPreparedQuery = class extends PgPreparedQuery {
   constructor(client, queryString, params, logger, cache, queryMetadata, cacheConfig, fields, _isResponseInArrayMode, customResultMapper) {
     super({ sql: queryString, params }, cache, queryMetadata, cacheConfig);
@@ -49930,7 +49966,7 @@ var PostgresJsTransaction = class _PostgresJsTransaction extends PgTransaction {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/drizzle-orm/postgres-js/driver.js
+// ../posyplans-repair/node_modules/drizzle-orm/postgres-js/driver.js
 var PostgresJsDatabase = class extends PgDatabase {
   static [entityKind] = "PostgresJsDatabase";
 };
@@ -50016,6 +50052,10 @@ var DatabaseStorage = class {
     const shareSlug = randomToken(10);
     const rows = await db.insert(events).values({
       ...data,
+      // New invitations stay private until the host has reviewed and
+      // deliberately published them. The database default remains published
+      // only to preserve the behavior of pre-existing rows.
+      inviteStatus: "draft",
       ownerToken,
       shareSlug,
       createdAt: Date.now()
@@ -50067,6 +50107,19 @@ var DatabaseStorage = class {
   }
   async getGuest(guestId) {
     const rows = await db.select().from(guests).where(eq(guests.id, guestId));
+    return rows[0];
+  }
+  async getGuestByAccessToken(eventId, accessToken2) {
+    const rows = await db.select().from(guests).where(and(
+      eq(guests.eventId, eventId),
+      eq(guests.accessToken, accessToken2)
+    ));
+    return rows[0];
+  }
+  async rotateGuestAccessToken(eventId, guestId) {
+    const existing = await this.getGuest(guestId);
+    if (!existing || existing.eventId !== eventId) return void 0;
+    const rows = await db.update(guests).set({ accessToken: randomToken(32) }).where(and(eq(guests.id, guestId), eq(guests.eventId, eventId))).returning();
     return rows[0];
   }
   async listBudgetItems(eventId) {
@@ -50261,12 +50314,12 @@ var DEFAULT_FROM = "Posy <onboarding@resend.dev>";
 function escapeHtml(value) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
-function buildInviteEmailHtml(body) {
+function buildEmailHtml(body, ctaLabel, footer) {
   const urlPattern = /(https?:\/\/[^\s]+)/g;
   const paragraphs = body.split(/\n{2,}/).map((block) => escapeHtml(block).replace(/\n/g, "<br>")).map(
     (block) => block.replace(urlPattern, (escapedUrl) => {
       const realUrl = escapedUrl.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'");
-      return `<a href="${realUrl}" style="display:inline-block;margin-top:4px;padding:10px 20px;background:#5c6756;color:#ffffff;border-radius:6px;text-decoration:none;font-weight:600;">View &amp; RSVP</a>`;
+      return `<a href="${realUrl}" style="display:inline-block;margin-top:4px;padding:10px 20px;background:#5c6756;color:#ffffff;border-radius:6px;text-decoration:none;font-weight:600;">${escapeHtml(ctaLabel)}</a>`;
     })
   );
   return `<!DOCTYPE html>
@@ -50284,7 +50337,7 @@ function buildInviteEmailHtml(body) {
             </tr>
             <tr>
               <td style="padding-top:28px;border-top:1px solid #ece8e1;margin-top:24px;font-size:12px;color:#a3a894;">
-                Sent by Posy on behalf of your host. If this wasn't meant for you, you can ignore it.
+                ${escapeHtml(footer)}
               </td>
             </tr>
           </table>
@@ -50294,7 +50347,7 @@ function buildInviteEmailHtml(body) {
   </body>
 </html>`;
 }
-async function sendInviteEmail(opts) {
+async function sendEmail(opts, ctaLabel, footer) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     return {
@@ -50315,7 +50368,7 @@ async function sendInviteEmail(opts) {
         to: [opts.to],
         subject: opts.subject,
         text: opts.body,
-        html: buildInviteEmailHtml(opts.body)
+        html: buildEmailHtml(opts.body, ctaLabel, footer)
       })
     });
     if (!response.ok) {
@@ -50335,6 +50388,20 @@ async function sendInviteEmail(opts) {
       error: err instanceof Error ? err.message : "Couldn't send this email \u2014 please try again."
     };
   }
+}
+async function sendInviteEmail(opts) {
+  return sendEmail(
+    opts,
+    "View & RSVP",
+    "Sent by Posy on behalf of your host. If this wasn't meant for you, you can ignore it."
+  );
+}
+async function sendEventRecoveryEmail(opts) {
+  return sendEmail(
+    opts,
+    "Open event dashboard",
+    "This email contains a private Posy event link. If you weren't expecting it, you can ignore it."
+  );
 }
 
 // server/sms.ts
@@ -51201,51 +51268,6 @@ async function generateBudgetSuggestionAi(params) {
   return { items, suggestedTotal, tip: parsed.tip };
 }
 
-// server/fuzzyMatch.ts
-function levenshtein(a, b2) {
-  if (a === b2) return 0;
-  if (a.length === 0) return b2.length;
-  if (b2.length === 0) return a.length;
-  const prev = new Array(b2.length + 1);
-  const curr = new Array(b2.length + 1);
-  for (let j = 0; j <= b2.length; j++) prev[j] = j;
-  for (let i = 1; i <= a.length; i++) {
-    curr[0] = i;
-    for (let j = 1; j <= b2.length; j++) {
-      const cost = a[i - 1] === b2[j - 1] ? 0 : 1;
-      curr[j] = Math.min(
-        prev[j] + 1,
-        // deletion
-        curr[j - 1] + 1,
-        // insertion
-        prev[j - 1] + cost
-        // substitution
-      );
-    }
-    for (let j = 0; j <= b2.length; j++) prev[j] = curr[j];
-  }
-  return prev[b2.length];
-}
-function toleranceFor(len) {
-  if (len <= 3) return 0;
-  if (len <= 6) return 1;
-  return 2;
-}
-function isFuzzyNameMatch(query, name) {
-  const q = query.trim().toLowerCase();
-  if (!q) return false;
-  const nameWords = name.toLowerCase().split(/\s+/).filter(Boolean);
-  const queryWords = q.split(/\s+/).filter(Boolean);
-  return queryWords.some(
-    (qw) => nameWords.some((nw) => {
-      const tolerance = toleranceFor(Math.max(qw.length, nw.length));
-      if (tolerance === 0) return qw === nw;
-      if (Math.abs(qw.length - nw.length) > tolerance) return false;
-      return levenshtein(qw, nw) <= tolerance;
-    })
-  );
-}
-
 // server/inviteDesignAi.ts
 init_sdk();
 
@@ -51892,6 +51914,8 @@ The illustrationPrompt is the most important field \u2014 it directly controls t
 
   A) SUBJECT-DRIVEN THEMES (the theme names a concrete subject that IS the party): construction, dinosaur, princess, superhero, unicorn, mermaid, space/astronaut, pirate, dragon, cars/trucks, safari/jungle, under-the-sea, farm (for kids), fairy, ninja, sports (basketball/soccer/etc.), music/rock, movie/character themes, holiday themes (halloween, christmas), etc. For these, the subject IS the point \u2014 hosts and guests EXPECT to see that subject prominently illustrated. Feature the subject in at least 3 of the 4 shown concepts, rendered in each lane's style (a construction party gets: watercolor bulldozer for editorial-premium, cartoon dump truck for playful-illustrated, bold flat hard-hat icon for bold-graphic, storybook excavator scene for storybook-whimsical, single minimal orange cone for minimal-modern, hand-drawn wooden-toy truck for handcrafted-rustic). NEVER default to generic confetti, geometric shapes, or botanicals when the theme names a specific subject. NEVER produce a concept that a host would look at and think "that has nothing to do with my theme".
 
+  NAMED CHARACTER THEMES: When the host explicitly names a film, franchise or character theme, retain that exact named identity and its recognizable requested characters. Do not translate it into a merely adjacent aesthetic. For example, \u201CKPop Demon Hunters\u201D must visibly feature the recognizable heroine trio and supernatural demon-hunting story-world cues\u2014not just generic neon, microphones or an unnamed K-pop group. Never add a franchise logo, rendered title, watermark or copied invitation layout.
+
   B) AESTHETIC/MOOD THEMES (the theme names a vibe, era, or aesthetic \u2014 not a subject): rustic farmhouse, minimalist beach, moody garden, tropical, boho, industrial, art deco, mid-century, coastal, Tuscan, garden party (adult), cocktail party, dinner party, holiday-mood (fall, winter), etc. For these, use abstract/botanical/geometric design-forward interpretations. Rustic farmhouse \u2192 wildflowers, eucalyptus, wheat stalks (NEVER roosters, pigs, cows, barns). Minimalist beach \u2192 abstract wave lines, single shell, sand-tone gradients (NEVER literal sand castles or beach umbrellas). Garden party \u2192 botanical florals (NEVER literal picnic tables). Think like a premium stationery designer.
 
   C) INSPIRATION IMAGES TAKE PRECEDENCE: If the host uploaded inspiration images and the extracted notes mention concrete subjects (hard hats, machinery, dinosaurs, specific characters, etc.), those subjects are the source of truth \u2014 feature them, don't override them with abstract shapes. The host chose those images to show you exactly what they want. Ignore the "aesthetic themes stay abstract" guidance when inspiration images provide concrete subject direction.
@@ -51928,8 +51952,8 @@ var INSPIRATION_EXTRACTION_SYSTEM = `You are a design analyst. You are shown 1-3
 
 Critical rules:
 - DO extract generic subject types (hard hats, dinosaurs, flowers, mountains, animals-by-generic-category). These guide what appears in the illustration.
-- Do NOT identify, name, or suggest copying any specific character, mascot, logo, brand, celebrity, or another party's exact invitation design/artwork. Generic "a cartoon dinosaur" is fine; naming a specific character or franchise is not.
-- Never suggest reproducing a recognizable copyrighted or trademarked element. If the image contains such elements, describe only the generic subject category and style (colors, composition, texture, mood).
+- DO identify a clearly recognizable named film, franchise or character theme. The host's defining subject must not be erased into a generic aesthetic; name the recognizable character group and the visual traits that make the requested theme direct.
+- Do NOT reproduce a logo, rendered title, watermark, another party's wording, or another invitation's exact composition. Separate subject identity from copied layout: preserve the requested characters and story-world cues while describing a fresh invitation composition.
 - Output plain prose, no lists, no preamble, under 60 words.`;
 async function extractInspirationNotes(inspirationImages) {
   const images = inspirationImages.map(parseImageDataUrl).filter((x) => x !== null).slice(0, 3);
@@ -51974,7 +51998,7 @@ async function generateInviteDesignConcepts(params) {
     params.themeName && `Existing app theme on file: ${params.themeName}`,
     params.dnaSummary && `Host's established style so far: ${params.dnaSummary}`,
     params.formatGuidance && `Guest count and scale guidance: ${params.formatGuidance}`,
-    params.inspirationNotes && `Direction from the host's inspiration images \u2014 use BOTH the generic subject matter AND the style/mood/palette. The host chose these images to show you what they want illustrated. Do NOT copy any specific named character, logo, brand, or another party's exact design, but generic subjects (hard hats, dinosaurs, wildflowers, etc.) SHOULD be featured in the concepts: ${params.inspirationNotes}`,
+    params.inspirationNotes && `Direction from the host's inspiration images \u2014 use BOTH the subject identity AND the style/mood/palette. The host chose these images to show you what they want illustrated. Preserve any explicitly requested recognizable film, franchise or character theme; do not generalize it into a lookalike mood. Do NOT reproduce a logo, rendered title, watermark, wording or another party's exact composition: ${params.inspirationNotes}`,
     preferredStyleLanesLine,
     previousConceptsSummary,
     params.feedback && `Host's refinement feedback: "${params.feedback}"`
@@ -52172,6 +52196,269 @@ async function generateInviteIllustrationWithQualityGate(concept, aspectRatio) {
   return illustrationUrl;
 }
 
+// server/prePaymentPreview.ts
+var MAX_PRE_PAYMENT_PREVIEW_ATTEMPTS = 3;
+var PRE_PAYMENT_PREVIEW_LONG_EDGE = 160;
+function canAttemptPrePaymentPreview(event) {
+  if (event.sparkUnlockedAt) {
+    return { ok: false, reason: "already_paid" };
+  }
+  if (event.prePaymentPreviewAttempts >= MAX_PRE_PAYMENT_PREVIEW_ATTEMPTS) {
+    return { ok: false, reason: "attempts_exhausted" };
+  }
+  return { ok: true };
+}
+
+// server/aiFirst/png.ts
+var import_node_zlib = require("node:zlib");
+var SIGNATURE = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+var PngDecodeError = class extends Error {
+};
+var CHANNELS = { 0: 1, 2: 3, 4: 2, 6: 4 };
+function decodePng(buffer2) {
+  if (buffer2.length < 8 || !buffer2.subarray(0, 8).equals(SIGNATURE)) {
+    throw new PngDecodeError("not a PNG (bad signature)");
+  }
+  let header = null;
+  const idat = [];
+  let offset = 8;
+  let sawEnd = false;
+  while (offset + 8 <= buffer2.length) {
+    const length = buffer2.readUInt32BE(offset);
+    const type = buffer2.toString("ascii", offset + 4, offset + 8);
+    const dataStart = offset + 8;
+    const dataEnd = dataStart + length;
+    if (dataEnd + 4 > buffer2.length) throw new PngDecodeError(`truncated chunk ${type}`);
+    if (type === "IHDR") {
+      header = {
+        width: buffer2.readUInt32BE(dataStart),
+        height: buffer2.readUInt32BE(dataStart + 4),
+        bitDepth: buffer2[dataStart + 8],
+        colorType: buffer2[dataStart + 9],
+        interlace: buffer2[dataStart + 12]
+      };
+    } else if (type === "IDAT") {
+      idat.push(buffer2.subarray(dataStart, dataEnd));
+    } else if (type === "IEND") {
+      sawEnd = true;
+      break;
+    }
+    offset = dataEnd + 4;
+  }
+  if (!header) throw new PngDecodeError("no IHDR chunk");
+  if (!sawEnd) throw new PngDecodeError("no IEND chunk \u2014 file is truncated");
+  if (idat.length === 0) throw new PngDecodeError("no image data");
+  if (header.bitDepth !== 8) throw new PngDecodeError(`unsupported bit depth ${header.bitDepth}`);
+  if (header.interlace !== 0) throw new PngDecodeError("interlaced PNGs are not supported");
+  const channels = CHANNELS[header.colorType];
+  if (!channels) throw new PngDecodeError(`unsupported colour type ${header.colorType}`);
+  let raw;
+  try {
+    raw = (0, import_node_zlib.inflateSync)(Buffer.concat(idat));
+  } catch (err) {
+    throw new PngDecodeError(`IDAT inflate failed: ${err.message}`);
+  }
+  const { width, height } = header;
+  const stride = width * channels;
+  if (raw.length < (stride + 1) * height) {
+    throw new PngDecodeError("inflated data is shorter than the declared image");
+  }
+  const pixels = unfilter(raw, width, height, channels);
+  return { width, height, rgb: toRgb(pixels, width, height, channels, header.colorType) };
+}
+function unfilter(raw, width, height, channels) {
+  const stride = width * channels;
+  const out = Buffer.alloc(stride * height);
+  for (let y = 0; y < height; y += 1) {
+    const filter = raw[y * (stride + 1)];
+    const src = y * (stride + 1) + 1;
+    const dst = y * stride;
+    const prev = dst - stride;
+    for (let x = 0; x < stride; x += 1) {
+      const value = raw[src + x];
+      const a = x >= channels ? out[dst + x - channels] : 0;
+      const b2 = y > 0 ? out[prev + x] : 0;
+      const c = x >= channels && y > 0 ? out[prev + x - channels] : 0;
+      let recon;
+      switch (filter) {
+        case 0:
+          recon = value;
+          break;
+        case 1:
+          recon = value + a;
+          break;
+        case 2:
+          recon = value + b2;
+          break;
+        case 3:
+          recon = value + (a + b2 >> 1);
+          break;
+        case 4:
+          recon = value + paeth(a, b2, c);
+          break;
+        default:
+          throw new PngDecodeError(`unknown scanline filter ${filter} on row ${y}`);
+      }
+      out[dst + x] = recon & 255;
+    }
+  }
+  return out;
+}
+function paeth(a, b2, c) {
+  const p = a + b2 - c;
+  const pa = Math.abs(p - a);
+  const pb = Math.abs(p - b2);
+  const pc = Math.abs(p - c);
+  if (pa <= pb && pa <= pc) return a;
+  return pb <= pc ? b2 : c;
+}
+function toRgb(pixels, width, height, channels, colorType) {
+  const rgb = new Uint8Array(width * height * 3);
+  const count = width * height;
+  for (let i = 0; i < count; i += 1) {
+    const src = i * channels;
+    const dst = i * 3;
+    let r;
+    let g;
+    let b2;
+    let alpha = 255;
+    if (colorType === 0) {
+      r = g = b2 = pixels[src];
+    } else if (colorType === 4) {
+      r = g = b2 = pixels[src];
+      alpha = pixels[src + 1];
+    } else if (colorType === 2) {
+      r = pixels[src];
+      g = pixels[src + 1];
+      b2 = pixels[src + 2];
+    } else {
+      r = pixels[src];
+      g = pixels[src + 1];
+      b2 = pixels[src + 2];
+      alpha = pixels[src + 3];
+    }
+    if (alpha === 255) {
+      rgb[dst] = r;
+      rgb[dst + 1] = g;
+      rgb[dst + 2] = b2;
+    } else {
+      const a = alpha / 255;
+      rgb[dst] = Math.round(r * a + 255 * (1 - a));
+      rgb[dst + 1] = Math.round(g * a + 255 * (1 - a));
+      rgb[dst + 2] = Math.round(b2 * a + 255 * (1 - a));
+    }
+  }
+  return rgb;
+}
+function lumaAt(image, x, y) {
+  const i = (y * image.width + x) * 3;
+  return 0.2126 * image.rgb[i] + 0.7152 * image.rgb[i + 1] + 0.0722 * image.rgb[i + 2];
+}
+function lumaGrid(image, targetLongEdge = 160) {
+  const scale = Math.max(1, Math.round(Math.max(image.width, image.height) / targetLongEdge));
+  const width = Math.max(1, Math.floor(image.width / scale));
+  const height = Math.max(1, Math.floor(image.height / scale));
+  const data = new Float32Array(width * height);
+  for (let gy = 0; gy < height; gy += 1) {
+    for (let gx = 0; gx < width; gx += 1) {
+      let sum = 0;
+      let n = 0;
+      for (let dy = 0; dy < scale; dy += 1) {
+        const y = gy * scale + dy;
+        if (y >= image.height) break;
+        for (let dx = 0; dx < scale; dx += 1) {
+          const x = gx * scale + dx;
+          if (x >= image.width) break;
+          sum += lumaAt(image, x, y);
+          n += 1;
+        }
+      }
+      data[gy * width + gx] = n > 0 ? sum / n : 0;
+    }
+  }
+  return { width, height, data };
+}
+function boxDownsampleRgb(image, targetLongEdge) {
+  const scale = Math.max(1, Math.round(Math.max(image.width, image.height) / targetLongEdge));
+  const width = Math.max(1, Math.floor(image.width / scale));
+  const height = Math.max(1, Math.floor(image.height / scale));
+  const rgb = new Uint8Array(width * height * 3);
+  for (let gy = 0; gy < height; gy += 1) {
+    for (let gx = 0; gx < width; gx += 1) {
+      let r = 0;
+      let g = 0;
+      let b2 = 0;
+      let n = 0;
+      for (let dy = 0; dy < scale; dy += 1) {
+        const y = gy * scale + dy;
+        if (y >= image.height) break;
+        for (let dx = 0; dx < scale; dx += 1) {
+          const x = gx * scale + dx;
+          if (x >= image.width) break;
+          const src = (y * image.width + x) * 3;
+          r += image.rgb[src];
+          g += image.rgb[src + 1];
+          b2 += image.rgb[src + 2];
+          n += 1;
+        }
+      }
+      const dst = (gy * width + gx) * 3;
+      if (n > 0) {
+        rgb[dst] = Math.round(r / n);
+        rgb[dst + 1] = Math.round(g / n);
+        rgb[dst + 2] = Math.round(b2 / n);
+      }
+    }
+  }
+  return { width, height, rgb };
+}
+function encodePng(image) {
+  const { width, height, rgb } = image;
+  const stride = width * 3;
+  const raw = Buffer.alloc((stride + 1) * height);
+  for (let y = 0; y < height; y += 1) {
+    const rowStart = y * (stride + 1);
+    raw[rowStart] = 0;
+    for (let x = 0; x < stride; x += 1) {
+      raw[rowStart + 1 + x] = rgb[y * stride + x];
+    }
+  }
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(width, 0);
+  ihdr.writeUInt32BE(height, 4);
+  ihdr[8] = 8;
+  ihdr[9] = 2;
+  ihdr[10] = 0;
+  ihdr[11] = 0;
+  ihdr[12] = 0;
+  const idat = (0, import_node_zlib.deflateSync)(raw);
+  return Buffer.concat([
+    SIGNATURE,
+    chunk("IHDR", ihdr),
+    chunk("IDAT", idat),
+    chunk("IEND", Buffer.alloc(0))
+  ]);
+}
+function chunk(type, data) {
+  const typeBuf = Buffer.from(type, "ascii");
+  const length = Buffer.alloc(4);
+  length.writeUInt32BE(data.length, 0);
+  const crc = Buffer.alloc(4);
+  crc.writeUInt32BE((0, import_node_zlib.crc32)(Buffer.concat([typeBuf, data])) >>> 0, 0);
+  return Buffer.concat([length, typeBuf, data, crc]);
+}
+function mean(values2) {
+  let sum = 0;
+  for (let i = 0; i < values2.length; i += 1) sum += values2[i];
+  return values2.length > 0 ? sum / values2.length : 0;
+}
+function stdev(values2) {
+  const m = mean(values2);
+  let sum = 0;
+  for (let i = 0; i < values2.length; i += 1) sum += (values2[i] - m) ** 2;
+  return values2.length > 0 ? Math.sqrt(sum / values2.length) : 0;
+}
+
 // shared/themeDna.ts
 var LINER_PATTERNS = [
   "solid",
@@ -52361,7 +52648,7 @@ function isStampStyle(value) {
   return typeof value === "string" && STAMP_STYLES.includes(value);
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/toDate.mjs
+// ../posyplans-repair/node_modules/date-fns/toDate.mjs
 function toDate(argument) {
   const argStr = Object.prototype.toString.call(argument);
   if (argument instanceof Date || typeof argument === "object" && argStr === "[object Date]") {
@@ -52373,7 +52660,7 @@ function toDate(argument) {
   }
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/constructFrom.mjs
+// ../posyplans-repair/node_modules/date-fns/constructFrom.mjs
 function constructFrom(date2, value) {
   if (date2 instanceof Date) {
     return new date2.constructor(value);
@@ -52382,7 +52669,7 @@ function constructFrom(date2, value) {
   }
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/addDays.mjs
+// ../posyplans-repair/node_modules/date-fns/addDays.mjs
 function addDays(date2, amount) {
   const _date = toDate(date2);
   if (isNaN(amount)) return constructFrom(date2, NaN);
@@ -52393,7 +52680,7 @@ function addDays(date2, amount) {
   return _date;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/constants.mjs
+// ../posyplans-repair/node_modules/date-fns/constants.mjs
 var daysInYear = 365.2425;
 var maxTime = Math.pow(10, 8) * 24 * 60 * 60 * 1e3;
 var minTime = -maxTime;
@@ -52409,13 +52696,13 @@ var secondsInYear = secondsInDay * daysInYear;
 var secondsInMonth = secondsInYear / 12;
 var secondsInQuarter = secondsInMonth * 3;
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/_lib/defaultOptions.mjs
+// ../posyplans-repair/node_modules/date-fns/_lib/defaultOptions.mjs
 var defaultOptions = {};
 function getDefaultOptions() {
   return defaultOptions;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/startOfWeek.mjs
+// ../posyplans-repair/node_modules/date-fns/startOfWeek.mjs
 function startOfWeek(date2, options) {
   const defaultOptions2 = getDefaultOptions();
   const weekStartsOn = options?.weekStartsOn ?? options?.locale?.options?.weekStartsOn ?? defaultOptions2.weekStartsOn ?? defaultOptions2.locale?.options?.weekStartsOn ?? 0;
@@ -52427,12 +52714,12 @@ function startOfWeek(date2, options) {
   return _date;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/startOfISOWeek.mjs
+// ../posyplans-repair/node_modules/date-fns/startOfISOWeek.mjs
 function startOfISOWeek(date2) {
   return startOfWeek(date2, { weekStartsOn: 1 });
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/getISOWeekYear.mjs
+// ../posyplans-repair/node_modules/date-fns/getISOWeekYear.mjs
 function getISOWeekYear(date2) {
   const _date = toDate(date2);
   const year = _date.getFullYear();
@@ -52453,14 +52740,14 @@ function getISOWeekYear(date2) {
   }
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/startOfDay.mjs
+// ../posyplans-repair/node_modules/date-fns/startOfDay.mjs
 function startOfDay(date2) {
   const _date = toDate(date2);
   _date.setHours(0, 0, 0, 0);
   return _date;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/_lib/getTimezoneOffsetInMilliseconds.mjs
+// ../posyplans-repair/node_modules/date-fns/_lib/getTimezoneOffsetInMilliseconds.mjs
 function getTimezoneOffsetInMilliseconds(date2) {
   const _date = toDate(date2);
   const utcDate = new Date(
@@ -52478,7 +52765,7 @@ function getTimezoneOffsetInMilliseconds(date2) {
   return +date2 - +utcDate;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/differenceInCalendarDays.mjs
+// ../posyplans-repair/node_modules/date-fns/differenceInCalendarDays.mjs
 function differenceInCalendarDays(dateLeft, dateRight) {
   const startOfDayLeft = startOfDay(dateLeft);
   const startOfDayRight = startOfDay(dateRight);
@@ -52487,7 +52774,7 @@ function differenceInCalendarDays(dateLeft, dateRight) {
   return Math.round((timestampLeft - timestampRight) / millisecondsInDay);
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/startOfISOWeekYear.mjs
+// ../posyplans-repair/node_modules/date-fns/startOfISOWeekYear.mjs
 function startOfISOWeekYear(date2) {
   const year = getISOWeekYear(date2);
   const fourthOfJanuary = constructFrom(date2, 0);
@@ -52496,7 +52783,7 @@ function startOfISOWeekYear(date2) {
   return startOfISOWeek(fourthOfJanuary);
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/max.mjs
+// ../posyplans-repair/node_modules/date-fns/max.mjs
 function max(dates) {
   let result;
   dates.forEach(function(dirtyDate) {
@@ -52508,12 +52795,12 @@ function max(dates) {
   return result || /* @__PURE__ */ new Date(NaN);
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/isDate.mjs
+// ../posyplans-repair/node_modules/date-fns/isDate.mjs
 function isDate(value) {
   return value instanceof Date || typeof value === "object" && Object.prototype.toString.call(value) === "[object Date]";
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/isValid.mjs
+// ../posyplans-repair/node_modules/date-fns/isValid.mjs
 function isValid2(date2) {
   if (!isDate(date2) && typeof date2 !== "number") {
     return false;
@@ -52522,7 +52809,7 @@ function isValid2(date2) {
   return !isNaN(Number(_date));
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/startOfYear.mjs
+// ../posyplans-repair/node_modules/date-fns/startOfYear.mjs
 function startOfYear(date2) {
   const cleanDate = toDate(date2);
   const _date = constructFrom(date2, 0);
@@ -52531,7 +52818,7 @@ function startOfYear(date2) {
   return _date;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/locale/en-US/_lib/formatDistance.mjs
+// ../posyplans-repair/node_modules/date-fns/locale/en-US/_lib/formatDistance.mjs
 var formatDistanceLocale = {
   lessThanXSeconds: {
     one: "less than a second",
@@ -52615,7 +52902,7 @@ var formatDistance = (token, count, options) => {
   return result;
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/locale/_lib/buildFormatLongFn.mjs
+// ../posyplans-repair/node_modules/date-fns/locale/_lib/buildFormatLongFn.mjs
 function buildFormatLongFn(args) {
   return (options = {}) => {
     const width = options.width ? String(options.width) : args.defaultWidth;
@@ -52624,7 +52911,7 @@ function buildFormatLongFn(args) {
   };
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/locale/en-US/_lib/formatLong.mjs
+// ../posyplans-repair/node_modules/date-fns/locale/en-US/_lib/formatLong.mjs
 var dateFormats = {
   full: "EEEE, MMMM do, y",
   long: "MMMM do, y",
@@ -52658,7 +52945,7 @@ var formatLong = {
   })
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/locale/en-US/_lib/formatRelative.mjs
+// ../posyplans-repair/node_modules/date-fns/locale/en-US/_lib/formatRelative.mjs
 var formatRelativeLocale = {
   lastWeek: "'last' eeee 'at' p",
   yesterday: "'yesterday at' p",
@@ -52669,7 +52956,7 @@ var formatRelativeLocale = {
 };
 var formatRelative = (token, _date, _baseDate, _options) => formatRelativeLocale[token];
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/locale/_lib/buildLocalizeFn.mjs
+// ../posyplans-repair/node_modules/date-fns/locale/_lib/buildLocalizeFn.mjs
 function buildLocalizeFn(args) {
   return (value, options) => {
     const context = options?.context ? String(options.context) : "standalone";
@@ -52688,7 +52975,7 @@ function buildLocalizeFn(args) {
   };
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/locale/en-US/_lib/localize.mjs
+// ../posyplans-repair/node_modules/date-fns/locale/en-US/_lib/localize.mjs
 var eraValues = {
   narrow: ["B", "A"],
   abbreviated: ["BC", "AD"],
@@ -52850,7 +53137,7 @@ var localize = {
   })
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/locale/_lib/buildMatchFn.mjs
+// ../posyplans-repair/node_modules/date-fns/locale/_lib/buildMatchFn.mjs
 function buildMatchFn(args) {
   return (string, options = {}) => {
     const width = options.width;
@@ -52892,7 +53179,7 @@ function findIndex(array, predicate) {
   return void 0;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/locale/_lib/buildMatchPatternFn.mjs
+// ../posyplans-repair/node_modules/date-fns/locale/_lib/buildMatchPatternFn.mjs
 function buildMatchPatternFn(args) {
   return (string, options = {}) => {
     const matchResult = string.match(args.matchPattern);
@@ -52907,7 +53194,7 @@ function buildMatchPatternFn(args) {
   };
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/locale/en-US/_lib/match.mjs
+// ../posyplans-repair/node_modules/date-fns/locale/en-US/_lib/match.mjs
 var matchOrdinalNumberPattern = /^(\d+)(th|st|nd|rd)?/i;
 var parseOrdinalNumberPattern = /\d+/i;
 var matchEraPatterns = {
@@ -53026,7 +53313,7 @@ var match = {
   })
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/locale/en-US.mjs
+// ../posyplans-repair/node_modules/date-fns/locale/en-US.mjs
 var enUS = {
   code: "en-US",
   formatDistance,
@@ -53040,7 +53327,7 @@ var enUS = {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/getDayOfYear.mjs
+// ../posyplans-repair/node_modules/date-fns/getDayOfYear.mjs
 function getDayOfYear(date2) {
   const _date = toDate(date2);
   const diff = differenceInCalendarDays(_date, startOfYear(_date));
@@ -53048,14 +53335,14 @@ function getDayOfYear(date2) {
   return dayOfYear;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/getISOWeek.mjs
+// ../posyplans-repair/node_modules/date-fns/getISOWeek.mjs
 function getISOWeek(date2) {
   const _date = toDate(date2);
   const diff = +startOfISOWeek(_date) - +startOfISOWeekYear(_date);
   return Math.round(diff / millisecondsInWeek) + 1;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/getWeekYear.mjs
+// ../posyplans-repair/node_modules/date-fns/getWeekYear.mjs
 function getWeekYear(date2, options) {
   const _date = toDate(date2);
   const year = _date.getFullYear();
@@ -53078,7 +53365,7 @@ function getWeekYear(date2, options) {
   }
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/startOfWeekYear.mjs
+// ../posyplans-repair/node_modules/date-fns/startOfWeekYear.mjs
 function startOfWeekYear(date2, options) {
   const defaultOptions2 = getDefaultOptions();
   const firstWeekContainsDate = options?.firstWeekContainsDate ?? options?.locale?.options?.firstWeekContainsDate ?? defaultOptions2.firstWeekContainsDate ?? defaultOptions2.locale?.options?.firstWeekContainsDate ?? 1;
@@ -53090,21 +53377,21 @@ function startOfWeekYear(date2, options) {
   return _date;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/getWeek.mjs
+// ../posyplans-repair/node_modules/date-fns/getWeek.mjs
 function getWeek(date2, options) {
   const _date = toDate(date2);
   const diff = +startOfWeek(_date, options) - +startOfWeekYear(_date, options);
   return Math.round(diff / millisecondsInWeek) + 1;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/_lib/addLeadingZeros.mjs
+// ../posyplans-repair/node_modules/date-fns/_lib/addLeadingZeros.mjs
 function addLeadingZeros(number, targetLength) {
   const sign = number < 0 ? "-" : "";
   const output = Math.abs(number).toString().padStart(targetLength, "0");
   return sign + output;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/_lib/format/lightFormatters.mjs
+// ../posyplans-repair/node_modules/date-fns/_lib/format/lightFormatters.mjs
 var lightFormatters = {
   // Year
   y(date2, token) {
@@ -53164,7 +53451,7 @@ var lightFormatters = {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/_lib/format/formatters.mjs
+// ../posyplans-repair/node_modules/date-fns/_lib/format/formatters.mjs
 var dayPeriodEnum = {
   am: "am",
   pm: "pm",
@@ -53811,7 +54098,7 @@ function formatTimezone(offset, delimiter2 = "") {
   return sign + hours + delimiter2 + minutes;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/_lib/format/longFormatters.mjs
+// ../posyplans-repair/node_modules/date-fns/_lib/format/longFormatters.mjs
 var dateLongFormatter = (pattern, formatLong2) => {
   switch (pattern) {
     case "P":
@@ -53868,7 +54155,7 @@ var longFormatters = {
   P: dateTimeLongFormatter
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/_lib/protectedTokens.mjs
+// ../posyplans-repair/node_modules/date-fns/_lib/protectedTokens.mjs
 var dayOfYearTokenRE = /^D+$/;
 var weekYearTokenRE = /^Y+$/;
 var throwTokens = ["D", "DD", "YY", "YYYY"];
@@ -53888,7 +54175,7 @@ function message(token, format2, input) {
   return `Use \`${token.toLowerCase()}\` instead of \`${token}\` (in \`${format2}\`) for formatting ${subject} to the input \`${input}\`; see: https://github.com/date-fns/date-fns/blob/master/docs/unicodeTokens.md`;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/format.mjs
+// ../posyplans-repair/node_modules/date-fns/format.mjs
 var formattingTokensRegExp = /[yYQqMLwIdDecihHKkms]o|(\w)\1*|''|'(''|[^'])+('|$)|./g;
 var longFormattingTokensRegExp = /P+p+|P+|p+|''|'(''|[^'])+('|$)|./g;
 var escapedStringRegExp = /^'([^]*?)'?$/;
@@ -53954,12 +54241,12 @@ function cleanEscapedString(input) {
   return matched[1].replace(doubleQuoteRegExp, "'");
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/getDefaultOptions.mjs
+// ../posyplans-repair/node_modules/date-fns/getDefaultOptions.mjs
 function getDefaultOptions2() {
   return Object.assign({}, getDefaultOptions());
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/getISODay.mjs
+// ../posyplans-repair/node_modules/date-fns/getISODay.mjs
 function getISODay(date2) {
   const _date = toDate(date2);
   let day = _date.getDay();
@@ -53969,7 +54256,7 @@ function getISODay(date2) {
   return day;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/transpose.mjs
+// ../posyplans-repair/node_modules/date-fns/transpose.mjs
 function transpose(fromDate, constructor) {
   const date2 = constructor instanceof Date ? constructFrom(constructor, 0) : new constructor(0);
   date2.setFullYear(
@@ -53986,7 +54273,7 @@ function transpose(fromDate, constructor) {
   return date2;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/Setter.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/Setter.mjs
 var TIMEZONE_UNIT_PRIORITY = 10;
 var Setter = class {
   subPriority = 0;
@@ -54021,7 +54308,7 @@ var DateToSystemTimezoneSetter = class extends Setter {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/Parser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/Parser.mjs
 var Parser = class {
   run(dateString, token, match2, options) {
     const result = this.parse(dateString, token, match2, options);
@@ -54044,7 +54331,7 @@ var Parser = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/EraParser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/EraParser.mjs
 var EraParser = class extends Parser {
   priority = 140;
   parse(dateString, token, match2) {
@@ -54072,7 +54359,7 @@ var EraParser = class extends Parser {
   incompatibleTokens = ["R", "u", "t", "T"];
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/constants.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/constants.mjs
 var numericPatterns = {
   month: /^(1[0-2]|0?\d)/,
   // 0 to 12
@@ -54120,7 +54407,7 @@ var timezonePatterns = {
   extendedOptionalSeconds: /^([+-])(\d{2}):(\d{2})(:(\d{2}))?|Z/
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/utils.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/utils.mjs
 function mapValue(parseFnResult, mapFn) {
   if (!parseFnResult) {
     return parseFnResult;
@@ -54226,7 +54513,7 @@ function isLeapYearIndex(year) {
   return year % 400 === 0 || year % 4 === 0 && year % 100 !== 0;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/YearParser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/YearParser.mjs
 var YearParser = class extends Parser {
   priority = 130;
   incompatibleTokens = ["Y", "R", "u", "w", "I", "i", "e", "c", "t", "T"];
@@ -54270,7 +54557,7 @@ var YearParser = class extends Parser {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/LocalWeekYearParser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/LocalWeekYearParser.mjs
 var LocalWeekYearParser = class extends Parser {
   priority = 130;
   parse(dateString, token, match2) {
@@ -54332,7 +54619,7 @@ var LocalWeekYearParser = class extends Parser {
   ];
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/ISOWeekYearParser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/ISOWeekYearParser.mjs
 var ISOWeekYearParser = class extends Parser {
   priority = 130;
   parse(dateString, token) {
@@ -54366,7 +54653,7 @@ var ISOWeekYearParser = class extends Parser {
   ];
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/ExtendedYearParser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/ExtendedYearParser.mjs
 var ExtendedYearParser = class extends Parser {
   priority = 130;
   parse(dateString, token) {
@@ -54383,7 +54670,7 @@ var ExtendedYearParser = class extends Parser {
   incompatibleTokens = ["G", "y", "Y", "R", "w", "I", "i", "e", "c", "t", "T"];
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/QuarterParser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/QuarterParser.mjs
 var QuarterParser = class extends Parser {
   priority = 120;
   parse(dateString, token, match2) {
@@ -54451,7 +54738,7 @@ var QuarterParser = class extends Parser {
   ];
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/StandAloneQuarterParser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/StandAloneQuarterParser.mjs
 var StandAloneQuarterParser = class extends Parser {
   priority = 120;
   parse(dateString, token, match2) {
@@ -54519,7 +54806,7 @@ var StandAloneQuarterParser = class extends Parser {
   ];
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/MonthParser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/MonthParser.mjs
 var MonthParser = class extends Parser {
   incompatibleTokens = [
     "Y",
@@ -54588,7 +54875,7 @@ var MonthParser = class extends Parser {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/StandAloneMonthParser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/StandAloneMonthParser.mjs
 var StandAloneMonthParser = class extends Parser {
   priority = 110;
   parse(dateString, token, match2) {
@@ -54657,7 +54944,7 @@ var StandAloneMonthParser = class extends Parser {
   ];
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/setWeek.mjs
+// ../posyplans-repair/node_modules/date-fns/setWeek.mjs
 function setWeek(date2, week, options) {
   const _date = toDate(date2);
   const diff = getWeek(_date, options) - week;
@@ -54665,7 +54952,7 @@ function setWeek(date2, week, options) {
   return _date;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/LocalWeekParser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/LocalWeekParser.mjs
 var LocalWeekParser = class extends Parser {
   priority = 100;
   parse(dateString, token, match2) {
@@ -54701,7 +54988,7 @@ var LocalWeekParser = class extends Parser {
   ];
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/setISOWeek.mjs
+// ../posyplans-repair/node_modules/date-fns/setISOWeek.mjs
 function setISOWeek(date2, week) {
   const _date = toDate(date2);
   const diff = getISOWeek(_date) - week;
@@ -54709,7 +54996,7 @@ function setISOWeek(date2, week) {
   return _date;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/ISOWeekParser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/ISOWeekParser.mjs
 var ISOWeekParser = class extends Parser {
   priority = 100;
   parse(dateString, token, match2) {
@@ -54746,7 +55033,7 @@ var ISOWeekParser = class extends Parser {
   ];
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/DateParser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/DateParser.mjs
 var DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 var DAYS_IN_MONTH_LEAP_YEAR = [
   31,
@@ -54806,7 +55093,7 @@ var DateParser = class extends Parser {
   ];
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/DayOfYearParser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/DayOfYearParser.mjs
 var DayOfYearParser = class extends Parser {
   priority = 90;
   subpriority = 1;
@@ -54854,7 +55141,7 @@ var DayOfYearParser = class extends Parser {
   ];
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/setDay.mjs
+// ../posyplans-repair/node_modules/date-fns/setDay.mjs
 function setDay(date2, day, options) {
   const defaultOptions2 = getDefaultOptions();
   const weekStartsOn = options?.weekStartsOn ?? options?.locale?.options?.weekStartsOn ?? defaultOptions2.weekStartsOn ?? defaultOptions2.locale?.options?.weekStartsOn ?? 0;
@@ -54867,7 +55154,7 @@ function setDay(date2, day, options) {
   return addDays(_date, diff);
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/DayParser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/DayParser.mjs
 var DayParser = class extends Parser {
   priority = 90;
   parse(dateString, token, match2) {
@@ -54909,7 +55196,7 @@ var DayParser = class extends Parser {
   incompatibleTokens = ["D", "i", "e", "c", "t", "T"];
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/LocalDayParser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/LocalDayParser.mjs
 var LocalDayParser = class extends Parser {
   priority = 90;
   parse(dateString, token, match2, options) {
@@ -54981,7 +55268,7 @@ var LocalDayParser = class extends Parser {
   ];
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/StandAloneLocalDayParser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/StandAloneLocalDayParser.mjs
 var StandAloneLocalDayParser = class extends Parser {
   priority = 90;
   parse(dateString, token, match2, options) {
@@ -55053,7 +55340,7 @@ var StandAloneLocalDayParser = class extends Parser {
   ];
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/setISODay.mjs
+// ../posyplans-repair/node_modules/date-fns/setISODay.mjs
 function setISODay(date2, day) {
   const _date = toDate(date2);
   const currentDay = getISODay(_date);
@@ -55061,7 +55348,7 @@ function setISODay(date2, day) {
   return addDays(_date, diff);
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/ISODayParser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/ISODayParser.mjs
 var ISODayParser = class extends Parser {
   priority = 90;
   parse(dateString, token, match2) {
@@ -55163,7 +55450,7 @@ var ISODayParser = class extends Parser {
   ];
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/AMPMParser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/AMPMParser.mjs
 var AMPMParser = class extends Parser {
   priority = 80;
   parse(dateString, token, match2) {
@@ -55204,7 +55491,7 @@ var AMPMParser = class extends Parser {
   incompatibleTokens = ["b", "B", "H", "k", "t", "T"];
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/AMPMMidnightParser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/AMPMMidnightParser.mjs
 var AMPMMidnightParser = class extends Parser {
   priority = 80;
   parse(dateString, token, match2) {
@@ -55245,7 +55532,7 @@ var AMPMMidnightParser = class extends Parser {
   incompatibleTokens = ["a", "B", "H", "k", "t", "T"];
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/DayPeriodParser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/DayPeriodParser.mjs
 var DayPeriodParser = class extends Parser {
   priority = 80;
   parse(dateString, token, match2) {
@@ -55286,7 +55573,7 @@ var DayPeriodParser = class extends Parser {
   incompatibleTokens = ["a", "b", "t", "T"];
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/Hour1to12Parser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/Hour1to12Parser.mjs
 var Hour1to12Parser = class extends Parser {
   priority = 70;
   parse(dateString, token, match2) {
@@ -55316,7 +55603,7 @@ var Hour1to12Parser = class extends Parser {
   incompatibleTokens = ["H", "K", "k", "t", "T"];
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/Hour0to23Parser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/Hour0to23Parser.mjs
 var Hour0to23Parser = class extends Parser {
   priority = 70;
   parse(dateString, token, match2) {
@@ -55339,7 +55626,7 @@ var Hour0to23Parser = class extends Parser {
   incompatibleTokens = ["a", "b", "h", "K", "k", "t", "T"];
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/Hour0To11Parser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/Hour0To11Parser.mjs
 var Hour0To11Parser = class extends Parser {
   priority = 70;
   parse(dateString, token, match2) {
@@ -55367,7 +55654,7 @@ var Hour0To11Parser = class extends Parser {
   incompatibleTokens = ["h", "H", "k", "t", "T"];
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/Hour1To24Parser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/Hour1To24Parser.mjs
 var Hour1To24Parser = class extends Parser {
   priority = 70;
   parse(dateString, token, match2) {
@@ -55391,7 +55678,7 @@ var Hour1To24Parser = class extends Parser {
   incompatibleTokens = ["a", "b", "h", "H", "K", "t", "T"];
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/MinuteParser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/MinuteParser.mjs
 var MinuteParser = class extends Parser {
   priority = 60;
   parse(dateString, token, match2) {
@@ -55414,7 +55701,7 @@ var MinuteParser = class extends Parser {
   incompatibleTokens = ["t", "T"];
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/SecondParser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/SecondParser.mjs
 var SecondParser = class extends Parser {
   priority = 50;
   parse(dateString, token, match2) {
@@ -55437,7 +55724,7 @@ var SecondParser = class extends Parser {
   incompatibleTokens = ["t", "T"];
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/FractionOfSecondParser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/FractionOfSecondParser.mjs
 var FractionOfSecondParser = class extends Parser {
   priority = 30;
   parse(dateString, token) {
@@ -55451,7 +55738,7 @@ var FractionOfSecondParser = class extends Parser {
   incompatibleTokens = ["t", "T"];
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/ISOTimezoneWithZParser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/ISOTimezoneWithZParser.mjs
 var ISOTimezoneWithZParser = class extends Parser {
   priority = 10;
   parse(dateString, token) {
@@ -55488,7 +55775,7 @@ var ISOTimezoneWithZParser = class extends Parser {
   incompatibleTokens = ["t", "T", "x"];
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/ISOTimezoneParser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/ISOTimezoneParser.mjs
 var ISOTimezoneParser = class extends Parser {
   priority = 10;
   parse(dateString, token) {
@@ -55525,7 +55812,7 @@ var ISOTimezoneParser = class extends Parser {
   incompatibleTokens = ["t", "T", "X"];
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/TimestampSecondsParser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/TimestampSecondsParser.mjs
 var TimestampSecondsParser = class extends Parser {
   priority = 40;
   parse(dateString) {
@@ -55537,7 +55824,7 @@ var TimestampSecondsParser = class extends Parser {
   incompatibleTokens = "*";
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers/TimestampMillisecondsParser.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers/TimestampMillisecondsParser.mjs
 var TimestampMillisecondsParser = class extends Parser {
   priority = 20;
   parse(dateString) {
@@ -55549,7 +55836,7 @@ var TimestampMillisecondsParser = class extends Parser {
   incompatibleTokens = "*";
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse/_lib/parsers.mjs
+// ../posyplans-repair/node_modules/date-fns/parse/_lib/parsers.mjs
 var parsers2 = {
   G: new EraParser(),
   y: new YearParser(),
@@ -55584,7 +55871,7 @@ var parsers2 = {
   T: new TimestampMillisecondsParser()
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/date-fns/parse.mjs
+// ../posyplans-repair/node_modules/date-fns/parse.mjs
 var formattingTokensRegExp2 = /[yYQqMLwIdDecihHKkms]o|(\w)\1*|''|'(''|[^'])+('|$)|./g;
 var longFormattingTokensRegExp2 = /P+p+|P+|p+|''|'(''|[^'])+('|$)|./g;
 var escapedStringRegExp2 = /^'([^]*?)'?$/;
@@ -57577,7 +57864,7 @@ function serializeConsentCookie(value) {
   return `pp_consent=${encodeURIComponent(value)}; Path=/; Max-Age=${ONE_YEAR_SECONDS}; SameSite=Lax`;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/Error.js
+// ../posyplans-repair/node_modules/stripe/esm/Error.js
 var Error_exports = {};
 __export(Error_exports, {
   RateLimitError: () => RateLimitError2,
@@ -57785,7 +58072,7 @@ var TemporarySessionExpiredError = class extends StripeError {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/net/HttpClient.js
+// ../posyplans-repair/node_modules/stripe/esm/net/HttpClient.js
 var HttpClient = class _HttpClient {
   /** The client name used for diagnostics. */
   getClientName() {
@@ -57825,7 +58112,7 @@ var HttpClientResponse = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/Types.js
+// ../posyplans-repair/node_modules/stripe/esm/Types.js
 var DEFAULT_BASE_ADDRESSES = {
   api: "api.stripe.com",
   files: "files.stripe.com",
@@ -57833,7 +58120,7 @@ var DEFAULT_BASE_ADDRESSES = {
   meter_events: "meter-events.stripe.com"
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/utils.js
+// ../posyplans-repair/node_modules/stripe/esm/utils.js
 function queryStringifyRequestData(data) {
   return stringifyRequestData(data);
 }
@@ -58094,7 +58381,7 @@ function attachCallSiteToError(err, callSiteStack) {
 ${callerFrames}`;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/RequestSender.js
+// ../posyplans-repair/node_modules/stripe/esm/RequestSender.js
 var RequestSender = class _RequestSender {
   constructor(stripe, maxBufferedRequestMetric) {
     this._stripe = stripe;
@@ -58476,7 +58763,7 @@ var RequestSender = class _RequestSender {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/Decimal.js
+// ../posyplans-repair/node_modules/stripe/esm/Decimal.js
 var ROUNDING_PRESETS = {
   "ubb-usage-count": { mode: "significant-figures", value: 15 },
   "v1-api": { mode: "decimal-places", value: 12 }
@@ -59180,7 +59467,7 @@ var Decimal = {
   zero: new DecimalImpl(0n, 0)
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/V2Coercion.js
+// ../posyplans-repair/node_modules/stripe/esm/V2Coercion.js
 var coerceV2RequestData = (data, schema) => {
   if (data == null) {
     return data;
@@ -59261,7 +59548,7 @@ var coerceV2ResponseData = (data, schema) => {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/autoPagination.js
+// ../posyplans-repair/node_modules/stripe/esm/autoPagination.js
 var V1Iterator = class {
   constructor(firstPagePromise, params, options, method, path8, spec, stripeResource) {
     this.index = 0;
@@ -59545,7 +59832,7 @@ function wrapAsyncIteratorWithCallback(asyncIteratorNext, onItem) {
   });
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/StripeResource.js
+// ../posyplans-repair/node_modules/stripe/esm/StripeResource.js
 var StripeResource = class {
   constructor(stripe, deprecatedUrlData) {
     this.resourcePath = "";
@@ -59625,7 +59912,7 @@ var StripeResource = class {
 };
 StripeResource.MAX_BUFFERED_REQUEST_METRICS = 100;
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/StripeContext.js
+// ../posyplans-repair/node_modules/stripe/esm/StripeContext.js
 var StripeContext = class _StripeContext {
   /**
    * Creates a new StripeContext with the given segments.
@@ -59675,17 +59962,17 @@ var StripeContext = class _StripeContext {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/platform/NodePlatformFunctions.js
+// ../posyplans-repair/node_modules/stripe/esm/platform/NodePlatformFunctions.js
 var crypto5 = __toESM(require("crypto"), 1);
 var fs5 = __toESM(require("fs"), 1);
 var os2 = __toESM(require("os"), 1);
 var path5 = __toESM(require("path"), 1);
 var import_events3 = require("events");
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/crypto/NodeCryptoProvider.js
+// ../posyplans-repair/node_modules/stripe/esm/crypto/NodeCryptoProvider.js
 var crypto4 = __toESM(require("crypto"), 1);
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/crypto/CryptoProvider.js
+// ../posyplans-repair/node_modules/stripe/esm/crypto/CryptoProvider.js
 var CryptoProvider = class {
   /**
    * Computes a SHA-256 HMAC given a secret and a payload (encoded in UTF-8).
@@ -59722,7 +60009,7 @@ var CryptoProvider = class {
 var CryptoProviderOnlySupportsAsyncError = class extends Error {
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/crypto/NodeCryptoProvider.js
+// ../posyplans-repair/node_modules/stripe/esm/crypto/NodeCryptoProvider.js
 var NodeCryptoProvider = class extends CryptoProvider {
   /** @override */
   computeHMACSignature(payload, secret) {
@@ -59739,7 +60026,7 @@ var NodeCryptoProvider = class extends CryptoProvider {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/net/NodeHttpClient.js
+// ../posyplans-repair/node_modules/stripe/esm/net/NodeHttpClient.js
 var http_ = __toESM(require("http"), 1);
 var https_ = __toESM(require("https"), 1);
 var http = http_.default || http_;
@@ -59811,8 +60098,8 @@ var NodeHttpClientResponse = class extends HttpClientResponse {
     return new Promise((resolve4, reject) => {
       let response = "";
       this._res.setEncoding("utf8");
-      this._res.on("data", (chunk) => {
-        response += chunk;
+      this._res.on("data", (chunk2) => {
+        response += chunk2;
       });
       this._res.once("end", () => {
         try {
@@ -59828,7 +60115,7 @@ var NodeHttpClientResponse = class extends HttpClientResponse {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/net/FetchHttpClient.js
+// ../posyplans-repair/node_modules/stripe/esm/net/FetchHttpClient.js
 var FetchHttpClient = class _FetchHttpClient extends HttpClient {
   constructor(fetchFn) {
     super();
@@ -59943,7 +60230,7 @@ var FetchHttpClientResponse = class _FetchHttpClientResponse extends HttpClientR
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/crypto/SubtleCryptoProvider.js
+// ../posyplans-repair/node_modules/stripe/esm/crypto/SubtleCryptoProvider.js
 var SubtleCryptoProvider = class extends CryptoProvider {
   constructor(subtleCrypto) {
     super();
@@ -59978,7 +60265,7 @@ for (let i = 0; i < byteHexMapping.length; i++) {
   byteHexMapping[i] = i.toString(16).padStart(2, "0");
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/platform/PlatformFunctions.js
+// ../posyplans-repair/node_modules/stripe/esm/platform/PlatformFunctions.js
 var PlatformFunctions = class {
   constructor() {
     this._fetchFn = null;
@@ -60089,7 +60376,7 @@ var PlatformFunctions = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/platform/NodePlatformFunctions.js
+// ../posyplans-repair/node_modules/stripe/esm/platform/NodePlatformFunctions.js
 var StreamProcessingError = class extends StripeError {
 };
 var NodePlatformFunctions = class extends PlatformFunctions {
@@ -60230,7 +60517,7 @@ var NodePlatformFunctions = class extends PlatformFunctions {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/Webhooks.js
+// ../posyplans-repair/node_modules/stripe/esm/Webhooks.js
 function createWebhooks(platformFunctions) {
   const Webhook2 = {
     DEFAULT_TOLERANCE: 300,
@@ -60419,10 +60706,10 @@ function createWebhooks(platformFunctions) {
   return Webhook2;
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/apiVersion.js
+// ../posyplans-repair/node_modules/stripe/esm/apiVersion.js
 var ApiVersion = "2026-06-24.dahlia";
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources.js
+// ../posyplans-repair/node_modules/stripe/esm/resources.js
 var resources_exports3 = {};
 __export(resources_exports3, {
   Account: () => AccountResource3,
@@ -60503,7 +60790,7 @@ __export(resources_exports3, {
   WebhookEndpoints: () => WebhookEndpointResource
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/ResourceNamespace.js
+// ../posyplans-repair/node_modules/stripe/esm/ResourceNamespace.js
 function ResourceNamespace(stripe, resources) {
   for (const name in resources) {
     if (!Object.prototype.hasOwnProperty.call(resources, name)) {
@@ -60520,7 +60807,7 @@ function resourceNamespace(namespace, resources) {
   };
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Core/AccountLinks.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/V2/Core/AccountLinks.js
 var AccountLinkResource = class extends StripeResource {
   /**
    * Creates an AccountLink object that includes a single-use URL that an account can use to access a Stripe-hosted flow for collecting or updating required information.
@@ -60531,7 +60818,7 @@ var AccountLinkResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Core/AccountTokens.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/V2/Core/AccountTokens.js
 var AccountTokenResource = class extends StripeResource {
   /**
    * Create an account token with a publishable key and pass it to the Accounts v2 API to
@@ -60573,7 +60860,7 @@ var AccountTokenResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/FinancialConnections/Accounts.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/FinancialConnections/Accounts.js
 var AccountResource = class extends StripeResource {
   /**
    * Returns a list of Financial Connections Account objects.
@@ -60623,7 +60910,7 @@ var AccountResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Core/Accounts/Persons.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/V2/Core/Accounts/Persons.js
 var PersonResource = class extends StripeResource {
   /**
    * Returns a paginated list of Persons associated with an Account.
@@ -60729,7 +61016,7 @@ var PersonResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Core/Accounts/PersonTokens.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/V2/Core/Accounts/PersonTokens.js
 var PersonTokenResource = class extends StripeResource {
   /**
    * Creates a single-use token that represents the details for a person. Use this when you create or update persons associated with an Account v2. Learn more about [account tokens](https://docs.stripe.com/connect/account-tokens).
@@ -60758,7 +61045,7 @@ var PersonTokenResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Core/Accounts.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/V2/Core/Accounts.js
 var AccountResource2 = class extends StripeResource {
   constructor(stripe) {
     super(stripe);
@@ -60950,7 +61237,7 @@ var AccountResource2 = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Entitlements/ActiveEntitlements.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Entitlements/ActiveEntitlements.js
 var ActiveEntitlementResource = class extends StripeResource {
   /**
    * Retrieve a list of active entitlements for a customer
@@ -60968,7 +61255,7 @@ var ActiveEntitlementResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Billing/Alerts.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Billing/Alerts.js
 var AlertResource = class extends StripeResource {
   /**
    * Lists billing active and inactive alerts
@@ -61010,7 +61297,7 @@ var AlertResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Tax/Associations.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Tax/Associations.js
 var AssociationResource = class extends StripeResource {
   /**
    * Finds a tax association object by PaymentIntent id.
@@ -61020,7 +61307,7 @@ var AssociationResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Issuing/Authorizations.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Issuing/Authorizations.js
 var AuthorizationResource = class extends StripeResource {
   /**
    * Returns a list of Issuing Authorization objects. The objects are sorted in descending order by creation date, with the most recently created object appearing first.
@@ -61890,7 +62177,7 @@ var AuthorizationResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/Issuing/Authorizations.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/TestHelpers/Issuing/Authorizations.js
 var AuthorizationResource2 = class extends StripeResource {
   /**
    * Create a test-mode authorization.
@@ -63204,7 +63491,7 @@ var AuthorizationResource2 = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Tax/Calculations.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Tax/Calculations.js
 var CalculationResource = class extends StripeResource {
   /**
    * Retrieves a Tax Calculation object, if the calculation hasn't expired.
@@ -63228,7 +63515,7 @@ var CalculationResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Issuing/Cardholders.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Issuing/Cardholders.js
 var CardholderResource = class extends StripeResource {
   /**
    * Returns a list of Issuing Cardholder objects. The objects are sorted in descending order by creation date, with the most recently created object appearing first.
@@ -63258,7 +63545,7 @@ var CardholderResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Issuing/Cards.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Issuing/Cards.js
 var CardResource = class extends StripeResource {
   /**
    * Returns a list of Issuing Card objects. The objects are sorted in descending order by creation date, with the most recently created object appearing first.
@@ -63288,7 +63575,7 @@ var CardResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/Issuing/Cards.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/TestHelpers/Issuing/Cards.js
 var CardResource2 = class extends StripeResource {
   /**
    * Updates the shipping status of the specified Issuing Card object to delivered.
@@ -63322,7 +63609,7 @@ var CardResource2 = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/BillingPortal/Configurations.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/BillingPortal/Configurations.js
 var ConfigurationResource = class extends StripeResource {
   /**
    * Returns a list of configurations that describe the functionality of the customer portal.
@@ -63352,7 +63639,7 @@ var ConfigurationResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Terminal/Configurations.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Terminal/Configurations.js
 var ConfigurationResource2 = class extends StripeResource {
   /**
    * Deletes a Configuration object.
@@ -63388,7 +63675,7 @@ var ConfigurationResource2 = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/ConfirmationTokens.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/TestHelpers/ConfirmationTokens.js
 var ConfirmationTokenResource = class extends StripeResource {
   /**
    * Creates a test mode Confirmation Token server side for your integration tests.
@@ -63398,7 +63685,7 @@ var ConfirmationTokenResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Terminal/ConnectionTokens.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Terminal/ConnectionTokens.js
 var ConnectionTokenResource = class extends StripeResource {
   /**
    * To connect to a reader the Stripe Terminal SDK needs to retrieve a short-lived connection token from Stripe, proxied through your server. On your backend, add an endpoint that creates and returns a connection token.
@@ -63408,7 +63695,7 @@ var ConnectionTokenResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Billing/CreditBalanceSummary.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Billing/CreditBalanceSummary.js
 var CreditBalanceSummaryResource = class extends StripeResource {
   /**
    * Retrieves the credit balance summary for a customer.
@@ -63418,7 +63705,7 @@ var CreditBalanceSummaryResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Billing/CreditBalanceTransactions.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Billing/CreditBalanceTransactions.js
 var CreditBalanceTransactionResource = class extends StripeResource {
   /**
    * Retrieve a list of credit balance transactions.
@@ -63436,7 +63723,7 @@ var CreditBalanceTransactionResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Billing/CreditGrants.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Billing/CreditGrants.js
 var CreditGrantResource = class extends StripeResource {
   /**
    * Retrieve a list of credit grants.
@@ -63478,7 +63765,7 @@ var CreditGrantResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Treasury/CreditReversals.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Treasury/CreditReversals.js
 var CreditReversalResource = class extends StripeResource {
   /**
    * Returns a list of CreditReversals.
@@ -63502,7 +63789,7 @@ var CreditReversalResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/Customers.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/TestHelpers/Customers.js
 var CustomerResource = class extends StripeResource {
   /**
    * Create an incoming testmode bank transfer
@@ -63512,7 +63799,7 @@ var CustomerResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Treasury/DebitReversals.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Treasury/DebitReversals.js
 var DebitReversalResource = class extends StripeResource {
   /**
    * Returns a list of DebitReversals.
@@ -63536,7 +63823,7 @@ var DebitReversalResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Issuing/Disputes.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Issuing/Disputes.js
 var DisputeResource = class extends StripeResource {
   /**
    * Returns a list of Issuing Dispute objects. The objects are sorted in descending order by creation date, with the most recently created object appearing first.
@@ -63572,7 +63859,7 @@ var DisputeResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Radar/EarlyFraudWarnings.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Radar/EarlyFraudWarnings.js
 var EarlyFraudWarningResource = class extends StripeResource {
   /**
    * Returns a list of early fraud warnings.
@@ -63592,7 +63879,7 @@ var EarlyFraudWarningResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Core/EventDestinations.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/V2/Core/EventDestinations.js
 var EventDestinationResource = class extends StripeResource {
   /**
    * Lists all event destinations.
@@ -63646,7 +63933,7 @@ var EventDestinationResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Core/Events.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/V2/Core/Events.js
 var EventResource = class extends StripeResource {
   /**
    * List events, going back up to 30 days.
@@ -63700,7 +63987,7 @@ var EventResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Entitlements/Features.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Entitlements/Features.js
 var FeatureResource = class extends StripeResource {
   /**
    * Retrieve a list of features
@@ -63730,7 +64017,7 @@ var FeatureResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Treasury/FinancialAccounts.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Treasury/FinancialAccounts.js
 var FinancialAccountResource = class extends StripeResource {
   /**
    * Returns a list of FinancialAccounts.
@@ -63778,7 +64065,7 @@ var FinancialAccountResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Commerce/ProductCatalog/Imports.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/V2/Commerce/ProductCatalog/Imports.js
 var ImportResource = class extends StripeResource {
   /**
    * Returns a list of ProductCatalogImport objects.
@@ -63929,7 +64216,7 @@ var ImportResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/Treasury/InboundTransfers.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/TestHelpers/Treasury/InboundTransfers.js
 var InboundTransferResource = class extends StripeResource {
   /**
    * Transitions a test mode created InboundTransfer to the failed status. The InboundTransfer must already be in the processing state.
@@ -63951,7 +64238,7 @@ var InboundTransferResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Treasury/InboundTransfers.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Treasury/InboundTransfers.js
 var InboundTransferResource2 = class extends StripeResource {
   /**
    * Returns a list of InboundTransfers sent from the specified FinancialAccount.
@@ -63981,7 +64268,7 @@ var InboundTransferResource2 = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Terminal/Locations.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Terminal/Locations.js
 var LocationResource = class extends StripeResource {
   /**
    * Deletes a Location object.
@@ -64018,7 +64305,7 @@ var LocationResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Billing/MeterEventAdjustments.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Billing/MeterEventAdjustments.js
 var MeterEventAdjustmentResource = class extends StripeResource {
   /**
    * Creates a billing meter event adjustment.
@@ -64028,7 +64315,7 @@ var MeterEventAdjustmentResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Billing/MeterEventAdjustments.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/V2/Billing/MeterEventAdjustments.js
 var MeterEventAdjustmentResource2 = class extends StripeResource {
   /**
    * Creates a meter event adjustment to cancel a previously sent meter event.
@@ -64038,7 +64325,7 @@ var MeterEventAdjustmentResource2 = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Billing/MeterEventSession.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/V2/Billing/MeterEventSession.js
 var MeterEventSessionResource = class extends StripeResource {
   /**
    * Creates a meter event session to send usage on the high-throughput meter event stream. Authentication tokens are only valid for 15 minutes, so you need to create a new meter event session when your token expires.
@@ -64048,7 +64335,7 @@ var MeterEventSessionResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Billing/MeterEventStream.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/V2/Billing/MeterEventStream.js
 var MeterEventStreamResource = class extends StripeResource {
   /**
    * Creates meter events. Events are processed asynchronously, including validation. Requires a meter event session for authentication. Supports up to 10,000 requests per second in livemode. For even higher rate-limits, contact sales.
@@ -64061,7 +64348,7 @@ var MeterEventStreamResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Billing/MeterEvents.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Billing/MeterEvents.js
 var MeterEventResource = class extends StripeResource {
   /**
    * Creates a billing meter event.
@@ -64071,7 +64358,7 @@ var MeterEventResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Billing/MeterEvents.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/V2/Billing/MeterEvents.js
 var MeterEventResource2 = class extends StripeResource {
   /**
    * Creates a meter event. Events are validated synchronously, but are processed asynchronously. Supports up to 1,000 events per second in livemode. For higher rate-limits, please use meter event streams instead.
@@ -64081,7 +64368,7 @@ var MeterEventResource2 = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Billing/Meters.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Billing/Meters.js
 var MeterResource = class extends StripeResource {
   /**
    * Retrieve a list of billing meters.
@@ -64131,7 +64418,7 @@ var MeterResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Terminal/OnboardingLinks.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Terminal/OnboardingLinks.js
 var OnboardingLinkResource = class extends StripeResource {
   /**
    * Creates a new OnboardingLink object that contains a redirect_url used for onboarding onto Tap to Pay on iPhone.
@@ -64141,7 +64428,7 @@ var OnboardingLinkResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Climate/Orders.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Climate/Orders.js
 var OrderResource = class extends StripeResource {
   /**
    * Lists all Climate order objects. The orders are returned sorted by creation date, with the
@@ -64218,7 +64505,7 @@ var OrderResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/Treasury/OutboundPayments.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/TestHelpers/Treasury/OutboundPayments.js
 var OutboundPaymentResource = class extends StripeResource {
   /**
    * Updates a test mode created OutboundPayment with tracking details. The OutboundPayment must not be cancelable, and cannot be in the canceled or failed states.
@@ -64246,7 +64533,7 @@ var OutboundPaymentResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Treasury/OutboundPayments.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Treasury/OutboundPayments.js
 var OutboundPaymentResource2 = class extends StripeResource {
   /**
    * Returns a list of OutboundPayments sent from the specified FinancialAccount.
@@ -64276,7 +64563,7 @@ var OutboundPaymentResource2 = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/Treasury/OutboundTransfers.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/TestHelpers/Treasury/OutboundTransfers.js
 var OutboundTransferResource = class extends StripeResource {
   /**
    * Updates a test mode created OutboundTransfer with tracking details. The OutboundTransfer must not be cancelable, and cannot be in the canceled or failed states.
@@ -64304,7 +64591,7 @@ var OutboundTransferResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Treasury/OutboundTransfers.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Treasury/OutboundTransfers.js
 var OutboundTransferResource2 = class extends StripeResource {
   /**
    * Returns a list of OutboundTransfers sent from the specified FinancialAccount.
@@ -64334,7 +64621,7 @@ var OutboundTransferResource2 = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Radar/PaymentEvaluations.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Radar/PaymentEvaluations.js
 var PaymentEvaluationResource = class extends StripeResource {
   /**
    * Request a Radar API fraud risk score from Stripe for a payment before sending it for external processor authorization.
@@ -64344,7 +64631,7 @@ var PaymentEvaluationResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Issuing/PersonalizationDesigns.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Issuing/PersonalizationDesigns.js
 var PersonalizationDesignResource = class extends StripeResource {
   /**
    * Returns a list of personalization design objects. The objects are sorted in descending order by creation date, with the most recently created object appearing first.
@@ -64374,7 +64661,7 @@ var PersonalizationDesignResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/Issuing/PersonalizationDesigns.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/TestHelpers/Issuing/PersonalizationDesigns.js
 var PersonalizationDesignResource2 = class extends StripeResource {
   /**
    * Updates the status of the specified testmode personalization design object to active.
@@ -64396,7 +64683,7 @@ var PersonalizationDesignResource2 = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Issuing/PhysicalBundles.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Issuing/PhysicalBundles.js
 var PhysicalBundleResource = class extends StripeResource {
   /**
    * Returns a list of physical bundle objects. The objects are sorted in descending order by creation date, with the most recently created object appearing first.
@@ -64414,7 +64701,7 @@ var PhysicalBundleResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Climate/Products.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Climate/Products.js
 var ProductResource = class extends StripeResource {
   /**
    * Lists all available Climate product objects.
@@ -64449,7 +64736,7 @@ var ProductResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Terminal/Readers.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Terminal/Readers.js
 var ReaderResource = class extends StripeResource {
   /**
    * Deletes a Reader object.
@@ -64533,7 +64820,7 @@ var ReaderResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/Terminal/Readers.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/TestHelpers/Terminal/Readers.js
 var ReaderResource2 = class extends StripeResource {
   /**
    * Presents a payment method on a simulated reader. Can be used to simulate accepting a payment, saving a card or refunding a transaction.
@@ -64555,7 +64842,7 @@ var ReaderResource2 = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/Treasury/ReceivedCredits.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/TestHelpers/Treasury/ReceivedCredits.js
 var ReceivedCreditResource = class extends StripeResource {
   /**
    * Use this endpoint to simulate a test mode ReceivedCredit initiated by a third party. In live mode, you can't directly create ReceivedCredits initiated by third parties.
@@ -64565,7 +64852,7 @@ var ReceivedCreditResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Treasury/ReceivedCredits.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Treasury/ReceivedCredits.js
 var ReceivedCreditResource2 = class extends StripeResource {
   /**
    * Returns a list of ReceivedCredits.
@@ -64583,7 +64870,7 @@ var ReceivedCreditResource2 = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/Treasury/ReceivedDebits.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/TestHelpers/Treasury/ReceivedDebits.js
 var ReceivedDebitResource = class extends StripeResource {
   /**
    * Use this endpoint to simulate a test mode ReceivedDebit initiated by a third party. In live mode, you can't directly create ReceivedDebits initiated by third parties.
@@ -64593,7 +64880,7 @@ var ReceivedDebitResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Treasury/ReceivedDebits.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Treasury/ReceivedDebits.js
 var ReceivedDebitResource2 = class extends StripeResource {
   /**
    * Returns a list of ReceivedDebits.
@@ -64611,7 +64898,7 @@ var ReceivedDebitResource2 = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/Refunds.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/TestHelpers/Refunds.js
 var RefundResource = class extends StripeResource {
   /**
    * Expire a refund with a status of requires_action.
@@ -64621,7 +64908,7 @@ var RefundResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Tax/Registrations.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Tax/Registrations.js
 var RegistrationResource = class extends StripeResource {
   /**
    * Returns a list of Tax Registration objects.
@@ -64653,7 +64940,7 @@ var RegistrationResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Reporting/ReportRuns.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Reporting/ReportRuns.js
 var ReportRunResource = class extends StripeResource {
   /**
    * Returns a list of Report Runs, with the most recent appearing first.
@@ -64677,7 +64964,7 @@ var ReportRunResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Reporting/ReportTypes.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Reporting/ReportTypes.js
 var ReportTypeResource = class extends StripeResource {
   /**
    * Returns a full list of Report Types.
@@ -64695,7 +64982,7 @@ var ReportTypeResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Forwarding/Requests.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Forwarding/Requests.js
 var RequestResource = class extends StripeResource {
   /**
    * Lists all ForwardingRequest objects.
@@ -64719,7 +65006,7 @@ var RequestResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Sigma/ScheduledQueryRuns.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Sigma/ScheduledQueryRuns.js
 var ScheduledQueryRunResource = class extends StripeResource {
   /**
    * Returns a list of scheduled query runs.
@@ -64737,7 +65024,7 @@ var ScheduledQueryRunResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Apps/Secrets.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Apps/Secrets.js
 var SecretResource = class extends StripeResource {
   /**
    * List all secrets stored on the given scope.
@@ -64767,7 +65054,7 @@ var SecretResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/BillingPortal/Sessions.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/BillingPortal/Sessions.js
 var SessionResource = class extends StripeResource {
   /**
    * Creates a session of the customer portal.
@@ -64777,7 +65064,7 @@ var SessionResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Checkout/Sessions.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Checkout/Sessions.js
 var SessionResource2 = class extends StripeResource {
   /**
    * Returns a list of Checkout Sessions.
@@ -65345,7 +65632,7 @@ var SessionResource2 = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/FinancialConnections/Sessions.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/FinancialConnections/Sessions.js
 var SessionResource3 = class extends StripeResource {
   /**
    * Retrieves the details of a Financial Connections Session
@@ -65361,7 +65648,7 @@ var SessionResource3 = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Tax/Settings.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Tax/Settings.js
 var SettingResource = class extends StripeResource {
   /**
    * Retrieves Tax Settings for a merchant.
@@ -65377,7 +65664,7 @@ var SettingResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Climate/Suppliers.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Climate/Suppliers.js
 var SupplierResource = class extends StripeResource {
   /**
    * Lists all available Climate supplier objects.
@@ -65395,7 +65682,7 @@ var SupplierResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/TestClocks.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/TestHelpers/TestClocks.js
 var TestClockResource = class extends StripeResource {
   /**
    * Deletes a test clock.
@@ -65431,7 +65718,7 @@ var TestClockResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Issuing/Tokens.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Issuing/Tokens.js
 var TokenResource = class extends StripeResource {
   /**
    * Lists all Issuing Token objects for a given card.
@@ -65455,7 +65742,7 @@ var TokenResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Treasury/TransactionEntries.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Treasury/TransactionEntries.js
 var TransactionEntryResource = class extends StripeResource {
   /**
    * Retrieves a list of TransactionEntry objects.
@@ -65852,7 +66139,7 @@ var TransactionEntryResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/FinancialConnections/Transactions.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/FinancialConnections/Transactions.js
 var TransactionResource = class extends StripeResource {
   /**
    * Returns a list of Financial Connections Transaction objects.
@@ -65870,7 +66157,7 @@ var TransactionResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Issuing/Transactions.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Issuing/Transactions.js
 var TransactionResource2 = class extends StripeResource {
   /**
    * Returns a list of Issuing Transaction objects. The objects are sorted in descending order by creation date, with the most recently created object appearing first.
@@ -66150,7 +66437,7 @@ var TransactionResource2 = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Tax/Transactions.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Tax/Transactions.js
 var TransactionResource3 = class extends StripeResource {
   /**
    * Retrieves a Tax Transaction object.
@@ -66180,7 +66467,7 @@ var TransactionResource3 = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/Issuing/Transactions.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/TestHelpers/Issuing/Transactions.js
 var TransactionResource4 = class extends StripeResource {
   /**
    * Refund a test-mode Transaction.
@@ -66557,7 +66844,7 @@ var TransactionResource4 = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Treasury/Transactions.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Treasury/Transactions.js
 var TransactionResource5 = class extends StripeResource {
   /**
    * Retrieves a list of Transaction objects.
@@ -67006,7 +67293,7 @@ var TransactionResource5 = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Radar/ValueListItems.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Radar/ValueListItems.js
 var ValueListItemResource = class extends StripeResource {
   /**
    * Deletes a ValueListItem object, removing it from its parent value list.
@@ -67036,7 +67323,7 @@ var ValueListItemResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Radar/ValueLists.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Radar/ValueLists.js
 var ValueListResource = class extends StripeResource {
   /**
    * Deletes a ValueList object, also deleting any items contained within the value list. To be deleted, a value list must not be referenced in any rules.
@@ -67072,7 +67359,7 @@ var ValueListResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Identity/VerificationReports.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Identity/VerificationReports.js
 var VerificationReportResource = class extends StripeResource {
   /**
    * List all verification reports.
@@ -67090,7 +67377,7 @@ var VerificationReportResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Identity/VerificationSessions.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Identity/VerificationSessions.js
 var VerificationSessionResource = class extends StripeResource {
   /**
    * Returns a list of VerificationSessions
@@ -67164,7 +67451,7 @@ var VerificationSessionResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Accounts.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Accounts.js
 var AccountResource3 = class extends StripeResource {
   /**
    * With [Connect](https://docs.stripe.com/connect), you can delete accounts you manage.
@@ -67340,7 +67627,7 @@ var AccountResource3 = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/AccountLinks.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/AccountLinks.js
 var AccountLinkResource2 = class extends StripeResource {
   /**
    * Creates an AccountLink object that includes a single-use Stripe URL that the platform can redirect their user to in order to take them through the Connect Onboarding flow.
@@ -67350,7 +67637,7 @@ var AccountLinkResource2 = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/AccountSessions.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/AccountSessions.js
 var AccountSessionResource = class extends StripeResource {
   /**
    * Creates a AccountSession object that includes a single-use token that the platform can use on their front-end to grant client-side API access.
@@ -67360,7 +67647,7 @@ var AccountSessionResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/ApplePayDomains.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/ApplePayDomains.js
 var ApplePayDomainResource = class extends StripeResource {
   /**
    * Delete an apple pay domain.
@@ -67390,7 +67677,7 @@ var ApplePayDomainResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/ApplicationFees.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/ApplicationFees.js
 var ApplicationFeeResource = class extends StripeResource {
   /**
    * Returns a list of application fees you've previously collected. The application fees are returned in sorted order, with the most recent fees appearing first.
@@ -67444,7 +67731,7 @@ var ApplicationFeeResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Balance.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Balance.js
 var BalanceResource = class extends StripeResource {
   /**
    * Retrieves the current account balance, based on the authentication that was used to make the request.
@@ -67455,7 +67742,7 @@ var BalanceResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/BalanceSettings.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/BalanceSettings.js
 var BalanceSettingResource = class extends StripeResource {
   /**
    * Retrieves balance settings for a given connected account.
@@ -67473,7 +67760,7 @@ var BalanceSettingResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/BalanceTransactions.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/BalanceTransactions.js
 var BalanceTransactionResource = class extends StripeResource {
   /**
    * Returns a list of transactions that have contributed to the Stripe account balance (for example, charges, transfers, and so on). The transactions return in sorted order, with the most recent transactions appearing first.
@@ -67495,7 +67782,7 @@ var BalanceTransactionResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Charges.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Charges.js
 var ChargeResource = class extends StripeResource {
   /**
    * Returns a list of charges you've previously created. The charges are returned in sorted order, with the most recent charges appearing first.
@@ -67548,7 +67835,7 @@ var ChargeResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/ConfirmationTokens.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/ConfirmationTokens.js
 var ConfirmationTokenResource2 = class extends StripeResource {
   /**
    * Retrieves an existing ConfirmationToken object
@@ -67558,7 +67845,7 @@ var ConfirmationTokenResource2 = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/CountrySpecs.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/CountrySpecs.js
 var CountrySpecResource = class extends StripeResource {
   /**
    * Lists all Country Spec objects available in the API.
@@ -67576,7 +67863,7 @@ var CountrySpecResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Coupons.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Coupons.js
 var CouponResource = class extends StripeResource {
   /**
    * You can delete coupons via the [coupon management](https://dashboard.stripe.com/coupons) page of the Stripe dashboard. However, deleting a coupon does not affect any customers who have already applied the coupon; it means that new customers can't redeem the coupon. You can also delete coupons via the API.
@@ -67614,7 +67901,7 @@ var CouponResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/CreditNotes.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/CreditNotes.js
 var CreditNoteResource = class extends StripeResource {
   /**
    * Returns a list of credit notes.
@@ -67901,7 +68188,7 @@ var CreditNoteResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Customers.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Customers.js
 var CustomerResource2 = class extends StripeResource {
   /**
    * Permanently deletes a customer. It cannot be undone. Also immediately cancels any active subscriptions on the customer.
@@ -68564,7 +68851,7 @@ var CustomerResource2 = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/CustomerSessions.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/CustomerSessions.js
 var CustomerSessionResource = class extends StripeResource {
   /**
    * Creates a Customer Session object that includes a single-use client secret that you can use on your front-end to grant client-side API access for certain customer resources.
@@ -68574,7 +68861,7 @@ var CustomerSessionResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Disputes.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Disputes.js
 var DisputeResource2 = class extends StripeResource {
   /**
    * Returns a list of your disputes.
@@ -68608,7 +68895,7 @@ var DisputeResource2 = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/EphemeralKeys.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/EphemeralKeys.js
 var EphemeralKeyResource = class extends StripeResource {
   /**
    * Invalidates a short-lived API key for a given resource.
@@ -68627,7 +68914,7 @@ var EphemeralKeyResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Events.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Events.js
 var EventResource2 = class extends StripeResource {
   /**
    * List events, going back up to 30 days. Each event data is rendered according to Stripe API version at its creation time, specified in [event object](https://docs.stripe.com/api/events/object) api_version attribute (not according to your current Stripe API version or Stripe-Version header).
@@ -68645,7 +68932,7 @@ var EventResource2 = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/ExchangeRates.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/ExchangeRates.js
 var ExchangeRateResource = class extends StripeResource {
   /**
    * [Deprecated] The ExchangeRate APIs are deprecated. Please use the [FX Quotes API](https://docs.stripe.com/payments/currencies/localize-prices/fx-quotes-api) instead.
@@ -68669,7 +68956,7 @@ var ExchangeRateResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/multipart.js
+// ../posyplans-repair/node_modules/stripe/esm/multipart.js
 var multipartDataGenerator = (method, data, headers) => {
   const segno = (Math.round(Math.random() * 1e16) + Math.round(Math.random() * 1e16)).toString();
   headers["Content-Type"] = `multipart/form-data; boundary=${segno}`;
@@ -68720,7 +69007,7 @@ function multipartRequestDataProcessor(method, data, headers, callback) {
   }).catch((err) => callback(err, null));
 }
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Files.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Files.js
 var FileResource = class extends StripeResource {
   constructor() {
     super(...arguments);
@@ -68755,7 +69042,7 @@ var FileResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/FileLinks.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/FileLinks.js
 var FileLinkResource = class extends StripeResource {
   /**
    * Returns a list of file links.
@@ -68785,7 +69072,7 @@ var FileLinkResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Invoices.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Invoices.js
 var InvoiceResource = class extends StripeResource {
   /**
    * Permanently deletes a one-off invoice draft. This cannot be undone. Attempts to delete invoices that are no longer in a draft state will fail; once an invoice has been finalized or if an invoice is for a subscription, it must be [voided](https://docs.stripe.com/api/invoices/void).
@@ -69648,7 +69935,7 @@ var InvoiceResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/InvoiceItems.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/InvoiceItems.js
 var InvoiceItemResource = class extends StripeResource {
   /**
    * Deletes an invoice item, removing it from an invoice. Deleting invoice items is only possible when they're not attached to invoices, or if it's attached to a draft invoice.
@@ -69789,7 +70076,7 @@ var InvoiceItemResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/InvoicePayments.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/InvoicePayments.js
 var InvoicePaymentResource = class extends StripeResource {
   /**
    * When retrieving an invoice, there is an includable payments property containing the first handful of those items. There is also a URL where you can retrieve the full (paginated) list of payments.
@@ -69807,7 +70094,7 @@ var InvoicePaymentResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/InvoiceRenderingTemplates.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/InvoiceRenderingTemplates.js
 var InvoiceRenderingTemplateResource = class extends StripeResource {
   /**
    * List all templates, ordered by creation date, with the most recently created template appearing first.
@@ -69837,7 +70124,7 @@ var InvoiceRenderingTemplateResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Mandates.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Mandates.js
 var MandateResource = class extends StripeResource {
   /**
    * Retrieves a Mandate object.
@@ -69847,7 +70134,7 @@ var MandateResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/OAuth.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/OAuth.js
 var OAuthResource = class extends StripeResource {
   constructor() {
     super(...arguments);
@@ -69887,7 +70174,7 @@ var OAuthResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/PaymentAttemptRecords.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/PaymentAttemptRecords.js
 var PaymentAttemptRecordResource = class extends StripeResource {
   /**
    * List all the Payment Attempt Records attached to the specified Payment Record.
@@ -69905,7 +70192,7 @@ var PaymentAttemptRecordResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/PaymentIntents.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/PaymentIntents.js
 var PaymentIntentResource = class extends StripeResource {
   /**
    * Returns a list of PaymentIntents.
@@ -70071,7 +70358,7 @@ var PaymentIntentResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/PaymentLinks.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/PaymentLinks.js
 var PaymentLinkResource = class extends StripeResource {
   /**
    * Returns a list of your payment links.
@@ -70502,7 +70789,7 @@ var PaymentLinkResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/PaymentMethods.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/PaymentMethods.js
 var PaymentMethodResource = class extends StripeResource {
   /**
    * Returns a list of all PaymentMethods.
@@ -70558,7 +70845,7 @@ var PaymentMethodResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/PaymentMethodConfigurations.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/PaymentMethodConfigurations.js
 var PaymentMethodConfigurationResource = class extends StripeResource {
   /**
    * List payment method configurations
@@ -70588,7 +70875,7 @@ var PaymentMethodConfigurationResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/PaymentMethodDomains.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/PaymentMethodDomains.js
 var PaymentMethodDomainResource = class extends StripeResource {
   /**
    * Lists the details of existing payment method domains.
@@ -70629,7 +70916,7 @@ var PaymentMethodDomainResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/PaymentRecords.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/PaymentRecords.js
 var PaymentRecordResource = class extends StripeResource {
   /**
    * Retrieves a Payment Record with the given ID
@@ -70688,7 +70975,7 @@ var PaymentRecordResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Payouts.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Payouts.js
 var PayoutResource = class extends StripeResource {
   /**
    * Returns a list of existing payouts sent to third-party bank accounts or payouts that Stripe sent to you. The payouts return in sorted order, with the most recently created payouts appearing first.
@@ -70736,7 +71023,7 @@ var PayoutResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Plans.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Plans.js
 var PlanResource = class extends StripeResource {
   /**
    * Deleting plans means new subscribers can't be added. Existing subscribers aren't affected.
@@ -70890,7 +71177,7 @@ var PlanResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Prices.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Prices.js
 var PriceResource = class extends StripeResource {
   /**
    * Returns a list of your active prices, excluding [inline prices](https://docs.stripe.com/docs/products-prices/pricing-models#inline-pricing). For the list of inactive prices, set active to false.
@@ -71250,7 +71537,7 @@ var PriceResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Products.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Products.js
 var ProductResource2 = class extends StripeResource {
   /**
    * Delete a product. Deleting a product is only possible if it has no prices associated with it. Additionally, deleting a product with type=good is only possible if it has no SKUs associated with it.
@@ -71354,7 +71641,7 @@ var ProductResource2 = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/PromotionCodes.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/PromotionCodes.js
 var PromotionCodeResource = class extends StripeResource {
   /**
    * Returns a list of your promotion codes.
@@ -71384,7 +71671,7 @@ var PromotionCodeResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Quotes.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Quotes.js
 var QuoteResource = class extends StripeResource {
   /**
    * Returns a list of your quotes.
@@ -72255,7 +72542,7 @@ var QuoteResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Refunds.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Refunds.js
 var RefundResource2 = class extends StripeResource {
   /**
    * Returns a list of all refunds you created. We return the refunds in sorted order, with the most recent refunds appearing first. The 10 most recent refunds are always available by default on the Charge object.
@@ -72305,7 +72592,7 @@ var RefundResource2 = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Reviews.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Reviews.js
 var ReviewResource = class extends StripeResource {
   /**
    * Returns a list of Review objects that have open set to true. The objects are sorted in descending order by creation date, with the most recently created object appearing first.
@@ -72329,7 +72616,7 @@ var ReviewResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/SetupAttempts.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/SetupAttempts.js
 var SetupAttemptResource = class extends StripeResource {
   /**
    * Returns a list of SetupAttempts that associate with a provided SetupIntent.
@@ -72341,7 +72628,7 @@ var SetupAttemptResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/SetupIntents.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/SetupIntents.js
 var SetupIntentResource = class extends StripeResource {
   /**
    * Returns a list of SetupIntents.
@@ -72411,7 +72698,7 @@ var SetupIntentResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/ShippingRates.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/ShippingRates.js
 var ShippingRateResource = class extends StripeResource {
   /**
    * Returns a list of your shipping rates.
@@ -72441,7 +72728,7 @@ var ShippingRateResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Sources.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Sources.js
 var SourceResource = class extends StripeResource {
   /**
    * Retrieves an existing source object. Supply the unique source ID from a source creation request and Stripe will return the corresponding up-to-date source object information.
@@ -72479,7 +72766,7 @@ var SourceResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Subscriptions.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Subscriptions.js
 var SubscriptionResource = class extends StripeResource {
   /**
    * Cancels a customer's subscription immediately. The customer won't be charged again for the subscription. After it's canceled, the subscription is largely immutable. You can still update its [metadata](https://docs.stripe.com/metadata) and cancellation_details.
@@ -73422,7 +73709,7 @@ var SubscriptionResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/SubscriptionItems.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/SubscriptionItems.js
 var SubscriptionItemResource = class extends StripeResource {
   /**
    * Deletes an item from the subscription. Removing a subscription item from a subscription will not cancel the subscription.
@@ -73819,7 +74106,7 @@ var SubscriptionItemResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/SubscriptionSchedules.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/SubscriptionSchedules.js
 var SubscriptionScheduleResource = class extends StripeResource {
   /**
    * Retrieves the list of your subscription schedules.
@@ -73945,7 +74232,7 @@ var SubscriptionScheduleResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TaxCodes.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/TaxCodes.js
 var TaxCodeResource = class extends StripeResource {
   /**
    * A list of [all tax codes available](https://stripe.com/docs/tax/tax-categories) to add to Products in order to allow specific tax calculations.
@@ -73963,7 +74250,7 @@ var TaxCodeResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TaxIds.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/TaxIds.js
 var TaxIdResource = class extends StripeResource {
   /**
    * Deletes an existing account or customer tax_id object.
@@ -73993,7 +74280,7 @@ var TaxIdResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TaxRates.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/TaxRates.js
 var TaxRateResource = class extends StripeResource {
   /**
    * Returns a list of your tax rates. Tax rates are returned sorted by creation date, with the most recently created tax rates appearing first.
@@ -74023,7 +74310,7 @@ var TaxRateResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Tokens.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Tokens.js
 var TokenResource2 = class extends StripeResource {
   /**
    * Retrieves the token with the given ID.
@@ -74040,7 +74327,7 @@ var TokenResource2 = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Topups.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Topups.js
 var TopupResource = class extends StripeResource {
   /**
    * Returns a list of top-ups.
@@ -74076,7 +74363,7 @@ var TopupResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Transfers.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Transfers.js
 var TransferResource = class extends StripeResource {
   /**
    * Returns a list of existing transfers sent to connected accounts. The transfers are returned in sorted order, with the most recently created transfers appearing first.
@@ -74140,7 +74427,7 @@ var TransferResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/WebhookEndpoints.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/WebhookEndpoints.js
 var WebhookEndpointResource = class extends StripeResource {
   /**
    * You can also delete webhook endpoints via the [webhook endpoint management](https://dashboard.stripe.com/account/webhooks) page of the Stripe dashboard.
@@ -74176,7 +74463,7 @@ var WebhookEndpointResource = class extends StripeResource {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources.js
+// ../posyplans-repair/node_modules/stripe/esm/resources.js
 var Apps = resourceNamespace("apps", { Secrets: SecretResource });
 var Billing = resourceNamespace("billing", {
   Alerts: AlertResource,
@@ -74307,7 +74594,7 @@ var V2 = resourceNamespace("v2", {
   })
 });
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Apps/index.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Apps/index.js
 var Apps2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -74315,7 +74602,7 @@ var Apps2 = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Billing/index.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Billing/index.js
 var Billing2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -74329,7 +74616,7 @@ var Billing2 = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/BillingPortal/index.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/BillingPortal/index.js
 var BillingPortal2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -74338,7 +74625,7 @@ var BillingPortal2 = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Checkout/index.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Checkout/index.js
 var Checkout2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -74346,7 +74633,7 @@ var Checkout2 = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Climate/index.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Climate/index.js
 var Climate2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -74356,7 +74643,7 @@ var Climate2 = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Entitlements/index.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Entitlements/index.js
 var Entitlements2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -74365,7 +74652,7 @@ var Entitlements2 = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/FinancialConnections/index.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/FinancialConnections/index.js
 var FinancialConnections2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -74375,7 +74662,7 @@ var FinancialConnections2 = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Forwarding/index.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Forwarding/index.js
 var Forwarding2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -74383,7 +74670,7 @@ var Forwarding2 = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Identity/index.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Identity/index.js
 var Identity2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -74392,7 +74679,7 @@ var Identity2 = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Issuing/index.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Issuing/index.js
 var Issuing2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -74407,7 +74694,7 @@ var Issuing2 = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Radar/index.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Radar/index.js
 var Radar2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -74418,7 +74705,7 @@ var Radar2 = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Reporting/index.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Reporting/index.js
 var Reporting2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -74427,7 +74714,7 @@ var Reporting2 = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Sigma/index.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Sigma/index.js
 var Sigma2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -74435,7 +74722,7 @@ var Sigma2 = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Tax/index.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Tax/index.js
 var Tax2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -74447,7 +74734,7 @@ var Tax2 = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Terminal/index.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Terminal/index.js
 var Terminal2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -74459,7 +74746,7 @@ var Terminal2 = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/Issuing/index.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/TestHelpers/Issuing/index.js
 var Issuing3 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -74470,7 +74757,7 @@ var Issuing3 = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/Terminal/index.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/TestHelpers/Terminal/index.js
 var Terminal3 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -74478,7 +74765,7 @@ var Terminal3 = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/Treasury/index.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/TestHelpers/Treasury/index.js
 var Treasury2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -74490,7 +74777,7 @@ var Treasury2 = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/TestHelpers/index.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/TestHelpers/index.js
 var TestHelpers2 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -74504,7 +74791,7 @@ var TestHelpers2 = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/Treasury/index.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/Treasury/index.js
 var Treasury3 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -74521,7 +74808,7 @@ var Treasury3 = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Billing/index.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/V2/Billing/index.js
 var Billing3 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -74532,7 +74819,7 @@ var Billing3 = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Commerce/ProductCatalog/index.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/V2/Commerce/ProductCatalog/index.js
 var ProductCatalog = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -74540,7 +74827,7 @@ var ProductCatalog = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Commerce/index.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/V2/Commerce/index.js
 var Commerce = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -74548,7 +74835,7 @@ var Commerce = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/Core/index.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/V2/Core/index.js
 var Core = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -74560,7 +74847,7 @@ var Core = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/resources/V2/index.js
+// ../posyplans-repair/node_modules/stripe/esm/resources/V2/index.js
 var V22 = class {
   constructor(stripe) {
     this.stripe = stripe;
@@ -74570,7 +74857,7 @@ var V22 = class {
   }
 };
 
-// ../../../workspace/scratch/eda6acad71b5/posyplans/node_modules/stripe/esm/stripe.esm.node.js
+// ../posyplans-repair/node_modules/stripe/esm/stripe.esm.node.js
 var DEFAULT_HOST = "api.stripe.com";
 var DEFAULT_PORT = "443";
 var DEFAULT_BASE_PATH = "/v1/";
@@ -75063,6 +75350,9 @@ var CHECKOUT_PRICES = {
   plusMonthly: 11.99,
   plusAnnual: 99
 };
+var USD_CHECKOUT_SESSION_DEFAULTS = {
+  adaptive_pricing: { enabled: false }
+};
 function plusPriceValue(interval2) {
   return interval2 === "monthly" ? CHECKOUT_PRICES.plusMonthly : CHECKOUT_PRICES.plusAnnual;
 }
@@ -75346,6 +75636,267 @@ function themeFromSnapshot(snapshot) {
   });
 }
 
+// shared/inviteLayout.ts
+var LAYOUT_FRAMES = {
+  "full-bleed": {
+    art: { top: 0, left: 0, width: 100, height: 100 },
+    type: { top: 0, left: 0, width: 100, height: 100 },
+    artOpacity: 1
+  },
+  backdrop: {
+    art: { top: 0, left: 0, width: 100, height: 100 },
+    type: { top: 0, left: 0, width: 100, height: 100 },
+    artOpacity: 0.3
+  },
+  banner: {
+    art: { top: 0, left: 0, width: 100, height: 44 },
+    type: { top: 46, left: 6, width: 88, height: 50 },
+    artOpacity: 1
+  },
+  split: {
+    art: { top: 0, left: 0, width: 40, height: 100 },
+    type: { top: 4, left: 44, width: 52, height: 92 },
+    artOpacity: 1
+  },
+  centered: {
+    art: { top: 6, left: 12, width: 76, height: 34 },
+    type: { top: 44, left: 8, width: 84, height: 52 },
+    artOpacity: 1
+  }
+};
+function projectPlacement(box, frame) {
+  return {
+    top: frame.top + box.top * frame.height / 100,
+    left: frame.left + box.left * frame.width / 100,
+    width: box.width * frame.width / 100,
+    height: box.height * frame.height / 100
+  };
+}
+var SAFE_INSET = { x: 8, y: 7 };
+function withinSafeArea(frame) {
+  const top = Math.max(frame.top, SAFE_INSET.y);
+  const left = Math.max(frame.left, SAFE_INSET.x);
+  const bottom = Math.min(frame.top + frame.height, 100 - SAFE_INSET.y);
+  const right = Math.min(frame.left + frame.width, 100 - SAFE_INSET.x);
+  return { top, left, width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
+}
+function objectCoverSourceRect(source, destination, objectPosition = { x: 0.5, y: 0.5 }) {
+  if (source.width <= 0 || source.height <= 0 || destination.width <= 0 || destination.height <= 0) {
+    return { x: 0, y: 0, width: 1, height: 1 };
+  }
+  const sourceAspect = source.width / source.height;
+  const destAspect = destination.width / destination.height;
+  if (sourceAspect > destAspect) {
+    const visibleWidth = destAspect / sourceAspect;
+    return { x: (1 - visibleWidth) * objectPosition.x, y: 0, width: visibleWidth, height: 1 };
+  }
+  const visibleHeight = sourceAspect / destAspect;
+  return { x: 0, y: (1 - visibleHeight) * objectPosition.y, width: 1, height: visibleHeight };
+}
+
+// shared/aiFirstLayout.ts
+var FOCAL_COMPOSITION = /\b(focal|single|centred|centered|portrait|subject|hero|silhouette|emblem|crest|motif)\b/i;
+var FIELD_COMPOSITION = /\b(scatter|scattered|field|pattern|repeat|allover|all-over|texture|wash|tile)\b/i;
+var BANNER_INTERNAL_MAT = /\b(?:paper margins?|inset panels?|printed borders?|decorative borders?|ornamental borders?|card frames?|artwork frames?|image frames?|framed cards?|framed artwork|matted artwork|(?:border|frame) around (?:the )?(?:artwork|image|illustration|scene|composition|banner)|(?:artwork|image|illustration|scene|composition|banner) (?:inside|within) (?:an? |the )?(?:printed |painted |decorative |ornamental |thin |double |solid |paper )?(?:mat|border|frame|inset panel)|inside (?:an? |the )?(?:printed |painted |decorative |ornamental |thin |double |solid |paper )?(?:mat|border|frame|inset panel))\b/i;
+var BACKDROP_RESCUE_OPACITY = 0.62;
+var OVERLAY_STRENGTH = { none: 0, gradient: 1, veil: 2, plate: 3 };
+function strongerOverlay(a, b2) {
+  return OVERLAY_STRENGTH[a] >= OVERLAY_STRENGTH[b2] ? a : b2;
+}
+var OVERLAY_COVERAGE = {
+  none: 0,
+  veil: 0.28,
+  gradient: 0.34,
+  plate: 0.4
+};
+var MAX_OVERLAY_COVERAGE = 0.4;
+var REGION_BOX = {
+  "upper-third": { top: 0, left: 0, width: 100, height: 34 },
+  center: { top: 33, left: 0, width: 100, height: 34 },
+  "lower-third": { top: 66, left: 0, width: 100, height: 34 },
+  "left-panel": { top: 0, left: 0, width: 46, height: 100 },
+  "right-panel": { top: 0, left: 54, width: 46, height: 100 }
+};
+var MIN_SAFE_TYPE_PLACEMENT_COVERAGE = 0.6;
+function overlaps(a, b2) {
+  const x = Math.max(0, Math.min(a.left + a.width, b2.left + b2.width) - Math.max(a.left, b2.left));
+  const y = Math.max(0, Math.min(a.top + a.height, b2.top + b2.height) - Math.max(a.top, b2.top));
+  return x * y;
+}
+function typePlacementFrame(concept, layoutStyle = concept.layoutStyle) {
+  const theme = getLaunchTheme(concept.baseThemeId);
+  if (!theme) return withinSafeArea(LAYOUT_FRAMES[layoutStyle].type);
+  const placement = getPlacement(theme, concept.placementId);
+  return withinSafeArea(projectPlacement(placement.box, LAYOUT_FRAMES[layoutStyle].type));
+}
+function safeTypographyPlacementCoverage(concept, layoutStyle = concept.layoutStyle) {
+  const typeBox = typePlacementFrame(concept, layoutStyle);
+  const area = typeBox.width * typeBox.height;
+  if (area <= 0) return 0;
+  return overlaps(REGION_BOX[concept.safeTypographyRegion], typeBox) / area;
+}
+function canonicalSafeTypographyRegion(concept, layoutStyle = concept.layoutStyle) {
+  if (safeTypographyPlacementCoverage(concept, layoutStyle) >= MIN_SAFE_TYPE_PLACEMENT_COVERAGE) {
+    return concept.safeTypographyRegion;
+  }
+  return Object.keys(REGION_BOX).reduce((best, candidate) => {
+    const bestCoverage = safeTypographyPlacementCoverage({ ...concept, safeTypographyRegion: best }, layoutStyle);
+    const candidateCoverage = safeTypographyPlacementCoverage(
+      { ...concept, safeTypographyRegion: candidate },
+      layoutStyle
+    );
+    return candidateCoverage > bestCoverage ? candidate : best;
+  }, concept.safeTypographyRegion);
+}
+function canonicalTypeGeometry(concept, layoutStyle = concept.layoutStyle) {
+  const safeTypographyRegion = canonicalSafeTypographyRegion(concept, layoutStyle);
+  const canonicalRegionConcept = { ...concept, safeTypographyRegion };
+  if (safeTypographyPlacementCoverage(canonicalRegionConcept, layoutStyle) >= MIN_SAFE_TYPE_PLACEMENT_COVERAGE) {
+    return { placementId: concept.placementId, safeTypographyRegion };
+  }
+  const theme = getLaunchTheme(concept.baseThemeId);
+  if (!theme) return { placementId: concept.placementId, safeTypographyRegion };
+  let best = {
+    placementId: concept.placementId,
+    safeTypographyRegion,
+    coverage: safeTypographyPlacementCoverage(canonicalRegionConcept, layoutStyle)
+  };
+  for (const placement of theme.placements) {
+    for (const region of Object.keys(REGION_BOX)) {
+      const coverage = safeTypographyPlacementCoverage(
+        { ...concept, placementId: placement.id, safeTypographyRegion: region },
+        layoutStyle
+      );
+      if (coverage > best.coverage) best = { placementId: placement.id, safeTypographyRegion: region, coverage };
+    }
+  }
+  return { placementId: best.placementId, safeTypographyRegion: best.safeTypographyRegion };
+}
+function validateLayoutBeforeGeneration(concept) {
+  const issues = [];
+  let layoutStyle = concept.layoutStyle;
+  let overlay = concept.minOverlay;
+  let artworkOpacity;
+  const composition = `${concept.art.composition} ${concept.art.prompt}`;
+  const isFocal = FOCAL_COMPOSITION.test(composition) && !FIELD_COMPOSITION.test(composition);
+  const isField = FIELD_COMPOSITION.test(composition);
+  if (layoutStyle === "backdrop" && isFocal) {
+    issues.push({
+      code: "backdrop-erases-focal-subject",
+      message: "backdrop renders artwork at 30% opacity, which would wash out this concept's primary focal subject",
+      repair: "raise-artwork-opacity"
+    });
+    artworkOpacity = BACKDROP_RESCUE_OPACITY;
+  }
+  if (layoutStyle === "split" && /\b(wide|panoramic|landscape|horizon|banner)\b/i.test(composition)) {
+    issues.push({
+      code: "split-art-not-panel-shaped",
+      message: "split renders artwork into a tall 40%-wide panel; this composition is authored wide",
+      repair: "change-layout"
+    });
+    layoutStyle = "banner";
+  }
+  if (layoutStyle === "banner" && BANNER_INTERNAL_MAT.test(composition)) {
+    issues.push({
+      code: "banner-internal-mat",
+      message: "banner artwork must not draw its own mat or frame \u2014 the renderer already frames the card",
+      repair: "regenerate"
+    });
+  }
+  if (isField && overlay === "none") {
+    issues.push({
+      code: "busy-scatter-without-quiet-region",
+      message: "an all-over composition needs at least a restrained local veil behind the type",
+      repair: "strengthen-overlay"
+    });
+    overlay = strongerOverlay(overlay, "veil");
+  }
+  if (layoutStyle === "full-bleed" && concept.focalStrategy === "narrative-scene") {
+    issues.push({
+      code: "art-behind-type-needs-local-surface",
+      message: "a narrative scene must keep artwork and live type in separate frames",
+      repair: "change-layout"
+    });
+    layoutStyle = "banner";
+  }
+  if ((layoutStyle === "full-bleed" || layoutStyle === "backdrop") && (overlay === "none" || overlay === "gradient")) {
+    issues.push({
+      code: "art-behind-type-needs-local-surface",
+      message: `${layoutStyle} artwork behind live type requires a local veil or plate`,
+      repair: "strengthen-overlay"
+    });
+    overlay = "veil";
+  }
+  if (OVERLAY_COVERAGE[overlay] > MAX_OVERLAY_COVERAGE) {
+    issues.push({
+      code: "overlay-obscures-artwork",
+      message: `overlay "${overlay}" covers more than ${Math.round(MAX_OVERLAY_COVERAGE * 100)}% of the card`,
+      repair: "strengthen-overlay"
+    });
+    overlay = "veil";
+  }
+  const safeCoverage = safeTypographyPlacementCoverage(concept, layoutStyle);
+  if (safeCoverage < MIN_SAFE_TYPE_PLACEMENT_COVERAGE) {
+    issues.push({
+      code: "safe-region-outside-type-area",
+      message: `safeTypographyRegion "${concept.safeTypographyRegion}" covers only ${Math.round(safeCoverage * 100)}% of placement "${concept.placementId}" in the ${layoutStyle} layout (minimum ${Math.round(MIN_SAFE_TYPE_PLACEMENT_COVERAGE * 100)}%)`,
+      repair: "regenerate"
+    });
+  }
+  return { layoutStyle, overlay, artworkOpacity, issues, clean: issues.length === 0 };
+}
+var MAX_SALIENT_CROP_FRACTION = 0.25;
+var MIN_DECORATIVE_EDGE_BLEED_SPAN = 0.75;
+var MAX_SHALLOW_CROP_AXIS_LOSS = 0.15;
+function isDecorativeEdgeBleed(region, visible) {
+  const epsilon = 1e-3;
+  const touchesTop = region.y <= epsilon;
+  const touchesBottom = region.y + region.height >= 1 - epsilon;
+  const touchesLeft = region.x <= epsilon;
+  const touchesRight = region.x + region.width >= 1 - epsilon;
+  const topOrBottomIsCropped = visible.y > epsilon || visible.y + visible.height < 1 - epsilon;
+  const leftOrRightIsCropped = visible.x > epsilon || visible.x + visible.width < 1 - epsilon;
+  const shallowVerticalCrop = 1 - visible.height <= MAX_SHALLOW_CROP_AXIS_LOSS;
+  const shallowHorizontalCrop = 1 - visible.width <= MAX_SHALLOW_CROP_AXIS_LOSS;
+  return topOrBottomIsCropped && (touchesTop || touchesBottom) && (shallowVerticalCrop || region.width >= MIN_DECORATIVE_EDGE_BLEED_SPAN) || leftOrRightIsCropped && (touchesLeft || touchesRight) && (shallowHorizontalCrop || region.height >= MIN_DECORATIVE_EDGE_BLEED_SPAN);
+}
+function evaluateCropSafety(layoutStyle, artwork, salientRegions, objectPosition = { x: 0.5, y: 0.5 }) {
+  const frame = LAYOUT_FRAMES[layoutStyle].art;
+  const destination = { width: frame.width, height: frame.height * (4 / 3) };
+  const visible = objectCoverSourceRect(artwork, destination, objectPosition);
+  let worst = 0;
+  for (const region of salientRegions) {
+    if (isDecorativeEdgeBleed(region, visible)) continue;
+    const area = region.width * region.height;
+    if (area <= 0) continue;
+    const overlapW = Math.max(
+      0,
+      Math.min(region.x + region.width, visible.x + visible.width) - Math.max(region.x, visible.x)
+    );
+    const overlapH = Math.max(
+      0,
+      Math.min(region.y + region.height, visible.y + visible.height) - Math.max(region.y, visible.y)
+    );
+    const cropped = 1 - overlapW * overlapH / area;
+    if (cropped > worst) worst = cropped;
+  }
+  const safe = worst <= MAX_SALIENT_CROP_FRACTION;
+  return {
+    worstCroppedFraction: Math.round(worst * 1e3) / 1e3,
+    safe,
+    issues: safe ? [] : [
+      {
+        code: "full-bleed-crop-unsafe",
+        message: `the ${layoutStyle} crop removes ${Math.round(worst * 100)}% of a salient region (limit ${Math.round(
+          MAX_SALIENT_CROP_FRACTION * 100
+        )}%)`,
+        repair: "change-layout"
+      }
+    ]
+  };
+}
+var MIN_FOCAL_VISIBILITY_RATIO = 1.3;
+
 // server/aiFirst/brief.ts
 var MONTH_SEASON = {
   january: "winter",
@@ -75546,8 +76097,15 @@ function briefToPromptBlock(brief) {
     `Event: ${brief.eventName || "(unnamed)"}${brief.eventType ? ` \xB7 ${brief.eventType}` : ""}`
   ];
   if (brief.milestone) lines.push(`Milestone: ${brief.milestone}`);
-  if (brief.vibe) lines.push(`Host's words: ${brief.vibe}`);
-  if (brief.themeName) lines.push(`Theme: ${brief.themeName}`);
+  if (brief.visualIdentityOverride) {
+    lines.push(
+      `Visual identity for this generation: ${brief.visualIdentityOverride}`,
+      "This current visual identity replaces the event's earlier artwork theme. Keep the event title and occasion facts as copy, but do not infer artwork subjects from an older theme embedded in them."
+    );
+  } else {
+    if (brief.vibe) lines.push(`Host's words: ${brief.vibe}`);
+    if (brief.themeName) lines.push(`Theme: ${brief.themeName}`);
+  }
   if (brief.colors.length) lines.push(`Colours: ${brief.colors.join(", ")}`);
   lines.push(`Formality: ${brief.formality}`);
   if (brief.dateLine) lines.push(`Date: ${brief.dateLine}${brief.season ? ` (${brief.season})` : ""}`);
@@ -75565,251 +76123,6 @@ function briefToPromptBlock(brief) {
   brief.requirements.excluded.forEach((r) => lines.push(`- ${r}`));
   return lines.join("\n");
 }
-
-// shared/inviteLayout.ts
-var LAYOUT_FRAMES = {
-  "full-bleed": {
-    art: { top: 0, left: 0, width: 100, height: 100 },
-    type: { top: 0, left: 0, width: 100, height: 100 },
-    artOpacity: 1
-  },
-  backdrop: {
-    art: { top: 0, left: 0, width: 100, height: 100 },
-    type: { top: 0, left: 0, width: 100, height: 100 },
-    artOpacity: 0.3
-  },
-  banner: {
-    art: { top: 0, left: 0, width: 100, height: 44 },
-    type: { top: 46, left: 6, width: 88, height: 50 },
-    artOpacity: 1
-  },
-  split: {
-    art: { top: 0, left: 0, width: 40, height: 100 },
-    type: { top: 4, left: 44, width: 52, height: 92 },
-    artOpacity: 1
-  },
-  centered: {
-    art: { top: 6, left: 12, width: 76, height: 34 },
-    type: { top: 44, left: 8, width: 84, height: 52 },
-    artOpacity: 1
-  }
-};
-function projectPlacement(box, frame) {
-  return {
-    top: frame.top + box.top * frame.height / 100,
-    left: frame.left + box.left * frame.width / 100,
-    width: box.width * frame.width / 100,
-    height: box.height * frame.height / 100
-  };
-}
-var SAFE_INSET = { x: 8, y: 7 };
-function withinSafeArea(frame) {
-  const top = Math.max(frame.top, SAFE_INSET.y);
-  const left = Math.max(frame.left, SAFE_INSET.x);
-  const bottom = Math.min(frame.top + frame.height, 100 - SAFE_INSET.y);
-  const right = Math.min(frame.left + frame.width, 100 - SAFE_INSET.x);
-  return { top, left, width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
-}
-function objectCoverSourceRect(source, destination, objectPosition = { x: 0.5, y: 0.5 }) {
-  if (source.width <= 0 || source.height <= 0 || destination.width <= 0 || destination.height <= 0) {
-    return { x: 0, y: 0, width: 1, height: 1 };
-  }
-  const sourceAspect = source.width / source.height;
-  const destAspect = destination.width / destination.height;
-  if (sourceAspect > destAspect) {
-    const visibleWidth = destAspect / sourceAspect;
-    return { x: (1 - visibleWidth) * objectPosition.x, y: 0, width: visibleWidth, height: 1 };
-  }
-  const visibleHeight = sourceAspect / destAspect;
-  return { x: 0, y: (1 - visibleHeight) * objectPosition.y, width: 1, height: visibleHeight };
-}
-
-// shared/aiFirstLayout.ts
-var FOCAL_COMPOSITION = /\b(focal|single|centred|centered|portrait|subject|hero|silhouette|emblem|crest|motif)\b/i;
-var FIELD_COMPOSITION = /\b(scatter|scattered|field|pattern|repeat|allover|all-over|texture|wash|tile)\b/i;
-var BACKDROP_RESCUE_OPACITY = 0.62;
-var OVERLAY_STRENGTH = { none: 0, gradient: 1, veil: 2, plate: 3 };
-function strongerOverlay(a, b2) {
-  return OVERLAY_STRENGTH[a] >= OVERLAY_STRENGTH[b2] ? a : b2;
-}
-var OVERLAY_COVERAGE = {
-  none: 0,
-  veil: 0.28,
-  gradient: 0.34,
-  plate: 0.4
-};
-var MAX_OVERLAY_COVERAGE = 0.4;
-var REGION_BOX = {
-  "upper-third": { top: 0, left: 0, width: 100, height: 34 },
-  center: { top: 33, left: 0, width: 100, height: 34 },
-  "lower-third": { top: 66, left: 0, width: 100, height: 34 },
-  "left-panel": { top: 0, left: 0, width: 46, height: 100 },
-  "right-panel": { top: 0, left: 54, width: 46, height: 100 }
-};
-var MIN_SAFE_TYPE_PLACEMENT_COVERAGE = 0.6;
-function overlaps(a, b2) {
-  const x = Math.max(0, Math.min(a.left + a.width, b2.left + b2.width) - Math.max(a.left, b2.left));
-  const y = Math.max(0, Math.min(a.top + a.height, b2.top + b2.height) - Math.max(a.top, b2.top));
-  return x * y;
-}
-function typePlacementFrame(concept, layoutStyle = concept.layoutStyle) {
-  const theme = getLaunchTheme(concept.baseThemeId);
-  if (!theme) return withinSafeArea(LAYOUT_FRAMES[layoutStyle].type);
-  const placement = getPlacement(theme, concept.placementId);
-  return withinSafeArea(projectPlacement(placement.box, LAYOUT_FRAMES[layoutStyle].type));
-}
-function safeTypographyPlacementCoverage(concept, layoutStyle = concept.layoutStyle) {
-  const typeBox = typePlacementFrame(concept, layoutStyle);
-  const area = typeBox.width * typeBox.height;
-  if (area <= 0) return 0;
-  return overlaps(REGION_BOX[concept.safeTypographyRegion], typeBox) / area;
-}
-function canonicalSafeTypographyRegion(concept, layoutStyle = concept.layoutStyle) {
-  if (safeTypographyPlacementCoverage(concept, layoutStyle) >= MIN_SAFE_TYPE_PLACEMENT_COVERAGE) {
-    return concept.safeTypographyRegion;
-  }
-  return Object.keys(REGION_BOX).reduce((best, candidate) => {
-    const bestCoverage = safeTypographyPlacementCoverage({ ...concept, safeTypographyRegion: best }, layoutStyle);
-    const candidateCoverage = safeTypographyPlacementCoverage(
-      { ...concept, safeTypographyRegion: candidate },
-      layoutStyle
-    );
-    return candidateCoverage > bestCoverage ? candidate : best;
-  }, concept.safeTypographyRegion);
-}
-function canonicalTypeGeometry(concept, layoutStyle = concept.layoutStyle) {
-  const safeTypographyRegion = canonicalSafeTypographyRegion(concept, layoutStyle);
-  const canonicalRegionConcept = { ...concept, safeTypographyRegion };
-  if (safeTypographyPlacementCoverage(canonicalRegionConcept, layoutStyle) >= MIN_SAFE_TYPE_PLACEMENT_COVERAGE) {
-    return { placementId: concept.placementId, safeTypographyRegion };
-  }
-  const theme = getLaunchTheme(concept.baseThemeId);
-  if (!theme) return { placementId: concept.placementId, safeTypographyRegion };
-  let best = {
-    placementId: concept.placementId,
-    safeTypographyRegion,
-    coverage: safeTypographyPlacementCoverage(canonicalRegionConcept, layoutStyle)
-  };
-  for (const placement of theme.placements) {
-    for (const region of Object.keys(REGION_BOX)) {
-      const coverage = safeTypographyPlacementCoverage(
-        { ...concept, placementId: placement.id, safeTypographyRegion: region },
-        layoutStyle
-      );
-      if (coverage > best.coverage) best = { placementId: placement.id, safeTypographyRegion: region, coverage };
-    }
-  }
-  return { placementId: best.placementId, safeTypographyRegion: best.safeTypographyRegion };
-}
-function validateLayoutBeforeGeneration(concept) {
-  const issues = [];
-  let layoutStyle = concept.layoutStyle;
-  let overlay = concept.minOverlay;
-  let artworkOpacity;
-  const composition = `${concept.art.composition} ${concept.art.prompt}`;
-  const isFocal = FOCAL_COMPOSITION.test(composition) && !FIELD_COMPOSITION.test(composition);
-  const isField = FIELD_COMPOSITION.test(composition);
-  if (layoutStyle === "backdrop" && isFocal) {
-    issues.push({
-      code: "backdrop-erases-focal-subject",
-      message: "backdrop renders artwork at 30% opacity, which would wash out this concept's primary focal subject",
-      repair: "raise-artwork-opacity"
-    });
-    artworkOpacity = BACKDROP_RESCUE_OPACITY;
-  }
-  if (layoutStyle === "split" && /\b(wide|panoramic|landscape|horizon|banner)\b/i.test(composition)) {
-    issues.push({
-      code: "split-art-not-panel-shaped",
-      message: "split renders artwork into a tall 40%-wide panel; this composition is authored wide",
-      repair: "change-layout"
-    });
-    layoutStyle = "banner";
-  }
-  if (layoutStyle === "banner" && /\b(mat|matted|paper margin|border|frame|inset panel)\b/i.test(composition)) {
-    issues.push({
-      code: "banner-internal-mat",
-      message: "banner artwork must not draw its own mat or frame \u2014 the renderer already frames the card",
-      repair: "regenerate"
-    });
-  }
-  if (isField && overlay === "none") {
-    issues.push({
-      code: "busy-scatter-without-quiet-region",
-      message: "an all-over composition needs at least a restrained local veil behind the type",
-      repair: "strengthen-overlay"
-    });
-    overlay = strongerOverlay(overlay, "veil");
-  }
-  if (layoutStyle === "full-bleed" && concept.focalStrategy === "narrative-scene" && overlay !== "plate") {
-    issues.push({
-      code: "art-behind-type-needs-local-surface",
-      message: "a full-bleed narrative scene requires a solid local paper panel behind live type",
-      repair: "strengthen-overlay"
-    });
-    overlay = "plate";
-  }
-  if ((layoutStyle === "full-bleed" || layoutStyle === "backdrop") && (overlay === "none" || overlay === "gradient")) {
-    issues.push({
-      code: "art-behind-type-needs-local-surface",
-      message: `${layoutStyle} artwork behind live type requires a local veil or plate`,
-      repair: "strengthen-overlay"
-    });
-    overlay = "veil";
-  }
-  if (OVERLAY_COVERAGE[overlay] > MAX_OVERLAY_COVERAGE) {
-    issues.push({
-      code: "overlay-obscures-artwork",
-      message: `overlay "${overlay}" covers more than ${Math.round(MAX_OVERLAY_COVERAGE * 100)}% of the card`,
-      repair: "strengthen-overlay"
-    });
-    overlay = "veil";
-  }
-  const safeCoverage = safeTypographyPlacementCoverage(concept, layoutStyle);
-  if (safeCoverage < MIN_SAFE_TYPE_PLACEMENT_COVERAGE) {
-    issues.push({
-      code: "safe-region-outside-type-area",
-      message: `safeTypographyRegion "${concept.safeTypographyRegion}" covers only ${Math.round(safeCoverage * 100)}% of placement "${concept.placementId}" in the ${layoutStyle} layout (minimum ${Math.round(MIN_SAFE_TYPE_PLACEMENT_COVERAGE * 100)}%)`,
-      repair: "regenerate"
-    });
-  }
-  return { layoutStyle, overlay, artworkOpacity, issues, clean: issues.length === 0 };
-}
-var MAX_SALIENT_CROP_FRACTION = 0.25;
-function evaluateCropSafety(layoutStyle, artwork, salientRegions, objectPosition = { x: 0.5, y: 0.5 }) {
-  const frame = LAYOUT_FRAMES[layoutStyle].art;
-  const destination = { width: frame.width, height: frame.height * (4 / 3) };
-  const visible = objectCoverSourceRect(artwork, destination, objectPosition);
-  let worst = 0;
-  for (const region of salientRegions) {
-    const area = region.width * region.height;
-    if (area <= 0) continue;
-    const overlapW = Math.max(
-      0,
-      Math.min(region.x + region.width, visible.x + visible.width) - Math.max(region.x, visible.x)
-    );
-    const overlapH = Math.max(
-      0,
-      Math.min(region.y + region.height, visible.y + visible.height) - Math.max(region.y, visible.y)
-    );
-    const cropped = 1 - overlapW * overlapH / area;
-    if (cropped > worst) worst = cropped;
-  }
-  const safe = worst <= MAX_SALIENT_CROP_FRACTION;
-  return {
-    worstCroppedFraction: Math.round(worst * 1e3) / 1e3,
-    safe,
-    issues: safe ? [] : [
-      {
-        code: "full-bleed-crop-unsafe",
-        message: `the ${layoutStyle} crop removes ${Math.round(worst * 100)}% of a salient region (limit ${Math.round(
-          MAX_SALIENT_CROP_FRACTION * 100
-        )}%)`,
-        repair: "change-layout"
-      }
-    ]
-  };
-}
-var MIN_FOCAL_VISIBILITY_RATIO = 1.3;
 
 // shared/aiFirstInvite.ts
 var SAFE_TYPOGRAPHY_REGIONS = [
@@ -75965,7 +76278,7 @@ function aspectRatioForLayout(layout) {
 }
 var ARTWORK_EDGE_REQUIREMENT = "Artwork extends fully to every canvas edge. No paper margin, mat, card border, printed frame or blank perimeter.";
 var ARTWORK_TEXT_REQUIREMENT = "No text, no letters, no words, no numbers, no logos, no watermarks.";
-var FRAMING_ADVICE_THRESHOLD = 0.8;
+var FRAMING_ADVICE_THRESHOLD = 0.999;
 function visibleFractionForLayout(layout) {
   const frame = LAYOUT_FRAMES[layout].art;
   const destination = frame.width / (frame.height * (4 / 3));
@@ -75987,9 +76300,7 @@ function safeFramingRequirement(layout) {
     clauses.push(`the central ${Math.round(visible.y * 100)}% of the height`);
   }
   if (clauses.length === 0) return "";
-  return `Compose so the subject and every important detail sit within ${clauses.join(
-    " and "
-  )} \u2014 the rest is cropped away. Background texture still reaches every edge.`;
+  return `Compose so the subject, every important detail, AND the scene's background (sky, ground, walls, horizon \u2014 anything that reads as part of the setting, not just the foreground subject) all sit within ${clauses.join(" and ")} \u2014 the rest is cropped away and must be treated as disposable bleed, not essential scene content. Do not paint a horizon, sky-to-ground transition or floor line right at the canvas edge; keep it inside the safe zone with room to spare. The canvas must still be fully painted edge-to-edge with no blank margin \u2014 only the placement of meaningful content within it is constrained.`;
 }
 function typographySafetyRequirement(concept) {
   if (concept.layoutStyle !== "full-bleed" && concept.layoutStyle !== "backdrop") return "";
@@ -76033,6 +76344,23 @@ function hostFacingGenerationError(message2) {
 
 // server/aiFirst/conceptPreflight.ts
 var SUBJECT_FAMILIES = [
+  {
+    id: "kpop-demon-hunters",
+    label: "KPop Demon Hunters",
+    trigger: /\b(k[ -]?pop demon hunters?|huntr\/?x|rumi|mira|zoey|saja boys?)\b/i,
+    artworkCue: /\b(k[ -]?pop demon hunters?|huntr\/?x|rumi|mira|zoey|saja boys?|demon[- ]hunt|supernatural k[ -]?pop)\b/i,
+    identityCue: /\b(k[ -]?pop demon hunters?|huntr\/?x|rumi|mira|zoey|demon[- ]hunt)\b/i,
+    bindingRequirements: [
+      "The KPop Demon Hunters identity must be direct and unmistakable, with the recognizable heroine trio Rumi, Mira and Zoey depicted as the central themed characters",
+      "Preserve the trio's distinct K-pop performance energy, signature character silhouettes and supernatural demon-hunting weapons; generic pop stars, abstract neon or an unnamed girl group do not satisfy the theme",
+      "Do not include a franchise logo, movie title, character names as rendered text, or copy another invitation's composition"
+    ],
+    reviewRequirements: [
+      "The recognizable KPop Demon Hunters heroine trio is visibly present as three distinct central characters",
+      "Both K-pop performance energy and supernatural demon-hunting cues are unmistakably visible"
+    ],
+    compatibleThemeIds: []
+  },
   {
     id: "construction",
     label: "construction / little-builder",
@@ -76161,14 +76489,49 @@ var SUBJECT_FAMILIES = [
     compatibleThemeIds: ["garden-editorial", "meadow-storybook"]
   }
 ];
-function briefIdentity(brief) {
-  return [brief.eventName, brief.eventType, brief.themeName, brief.vibe, ...brief.requirements.required].join(" ");
-}
-function subjectFamiliesForBrief(brief) {
-  const identity = briefIdentity(brief);
+function matchingFamilies(identity) {
   const matches = SUBJECT_FAMILIES.filter((family) => family.trigger.test(identity));
   const suppressed = new Set(matches.flatMap((family) => family.suppresses ?? []));
   return matches.filter((family) => !suppressed.has(family.id));
+}
+function subjectFamiliesForText(identity) {
+  return matchingFamilies(identity);
+}
+function briefIdentity(brief) {
+  if (brief.visualIdentityOverride) {
+    return [brief.visualIdentityOverride, ...brief.requirements.required].join(" ");
+  }
+  return [brief.eventName, brief.eventType, brief.themeName, brief.vibe, ...brief.requirements.required].join(" ");
+}
+function subjectFamiliesForBrief(brief) {
+  return matchingFamilies(briefIdentity(brief));
+}
+function briefForHostDirection(brief, direction) {
+  if (brief.visualIdentityOverride) return brief;
+  const currentDirection = direction?.trim() ?? "";
+  const directionFamilies = subjectFamiliesForText(currentDirection);
+  const explicitFamilies = directionFamilies.length > 0 ? directionFamilies : subjectFamiliesForText(brief.inspirationNotes.trim());
+  if (explicitFamilies.length === 0) return brief;
+  const inheritedIds = new Set(subjectFamiliesForBrief(brief).map((family) => family.id));
+  if (explicitFamilies.every((family) => inheritedIds.has(family.id))) return brief;
+  const visualIdentityOverride = explicitFamilies.map((family) => family.label).join(" + ");
+  return {
+    ...brief,
+    themeName: visualIdentityOverride,
+    // Event palettes are derived from the inherited theme. Once the host
+    // replaces that identity, carrying its old colours forward turns them
+    // into a contradictory pass/fail requirement (for example construction
+    // browns against a newly requested supernatural K-pop direction).
+    colors: [],
+    visualIdentityOverride,
+    requirements: classifyRequirements({
+      themeName: visualIdentityOverride,
+      vibe: visualIdentityOverride,
+      colors: [],
+      milestone: brief.milestone,
+      formality: brief.formality
+    })
+  };
 }
 function concreteSubjectRequirementsForBrief(brief) {
   return subjectFamiliesForBrief(brief).flatMap((family) => family.bindingRequirements ?? []);
@@ -76255,7 +76618,7 @@ Aim for headline 3:1, body and accent 4.5:1 against textSurface. Do not report r
 
 Artwork. Write \`art.prompt\` as a real art brief: subject, treatment, palette behaviour, mood. Be specific \u2014 "chrome lariat loop catching cool rim light against deep navy, fine grain" not "western elements". Do NOT add no-text or full-bleed instructions; the server appends those verbatim to every prompt. Do not describe frames, mats or paper margins \u2014 the renderer draws the card's frame, so artwork that draws its own produces a doubled border.
 
-Subject-driven themes are literal requirements, not optional mood words. If the brief names construction, dinosaurs, space, western, princesses, superheroes, unicorns, mermaids, pirates, vehicles, safari, farm, skating, pool or another concrete subject, EVERY art.prompt must name and visibly depict that subject. Generic geometry, botanicals, colour or texture never substitute for the stated subject. For a compound theme, visibly carry every part of the identity. The host must recognise the theme before reading invitation copy.
+Subject-driven themes are literal. Every art.prompt must name and visibly depict all concrete subjects; generic geometry, botanicals, colour or texture never substitute. Compound briefs must carry every part. For a named film, franchise or character theme, preserve that exact named identity and its recognizable characters\u2014never reduce it to an adjacent aesthetic. Do not reproduce logos, rendered titles or another invitation's composition. The host must recognise the theme before reading invitation copy.
 
 Construction / little-builder themes permit sophisticated variety. A full excavator is NOT mandatory in every direction. Use the declared focal strategy: a narrative jobsite celebration, one machinery detail, blueprint/site-plan graphic language, or a tactile arrangement of builder tools and materials. Each must still read unmistakably as construction and as the actual celebration.
 
@@ -76370,189 +76733,6 @@ var import_node_child_process2 = require("node:child_process");
 var import_node_fs = require("node:fs");
 var import_node_os = require("node:os");
 var import_node_path = require("node:path");
-
-// server/aiFirst/png.ts
-var import_node_zlib = require("node:zlib");
-var SIGNATURE = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
-var PngDecodeError = class extends Error {
-};
-var CHANNELS = { 0: 1, 2: 3, 4: 2, 6: 4 };
-function decodePng(buffer2) {
-  if (buffer2.length < 8 || !buffer2.subarray(0, 8).equals(SIGNATURE)) {
-    throw new PngDecodeError("not a PNG (bad signature)");
-  }
-  let header = null;
-  const idat = [];
-  let offset = 8;
-  let sawEnd = false;
-  while (offset + 8 <= buffer2.length) {
-    const length = buffer2.readUInt32BE(offset);
-    const type = buffer2.toString("ascii", offset + 4, offset + 8);
-    const dataStart = offset + 8;
-    const dataEnd = dataStart + length;
-    if (dataEnd + 4 > buffer2.length) throw new PngDecodeError(`truncated chunk ${type}`);
-    if (type === "IHDR") {
-      header = {
-        width: buffer2.readUInt32BE(dataStart),
-        height: buffer2.readUInt32BE(dataStart + 4),
-        bitDepth: buffer2[dataStart + 8],
-        colorType: buffer2[dataStart + 9],
-        interlace: buffer2[dataStart + 12]
-      };
-    } else if (type === "IDAT") {
-      idat.push(buffer2.subarray(dataStart, dataEnd));
-    } else if (type === "IEND") {
-      sawEnd = true;
-      break;
-    }
-    offset = dataEnd + 4;
-  }
-  if (!header) throw new PngDecodeError("no IHDR chunk");
-  if (!sawEnd) throw new PngDecodeError("no IEND chunk \u2014 file is truncated");
-  if (idat.length === 0) throw new PngDecodeError("no image data");
-  if (header.bitDepth !== 8) throw new PngDecodeError(`unsupported bit depth ${header.bitDepth}`);
-  if (header.interlace !== 0) throw new PngDecodeError("interlaced PNGs are not supported");
-  const channels = CHANNELS[header.colorType];
-  if (!channels) throw new PngDecodeError(`unsupported colour type ${header.colorType}`);
-  let raw;
-  try {
-    raw = (0, import_node_zlib.inflateSync)(Buffer.concat(idat));
-  } catch (err) {
-    throw new PngDecodeError(`IDAT inflate failed: ${err.message}`);
-  }
-  const { width, height } = header;
-  const stride = width * channels;
-  if (raw.length < (stride + 1) * height) {
-    throw new PngDecodeError("inflated data is shorter than the declared image");
-  }
-  const pixels = unfilter(raw, width, height, channels);
-  return { width, height, rgb: toRgb(pixels, width, height, channels, header.colorType) };
-}
-function unfilter(raw, width, height, channels) {
-  const stride = width * channels;
-  const out = Buffer.alloc(stride * height);
-  for (let y = 0; y < height; y += 1) {
-    const filter = raw[y * (stride + 1)];
-    const src = y * (stride + 1) + 1;
-    const dst = y * stride;
-    const prev = dst - stride;
-    for (let x = 0; x < stride; x += 1) {
-      const value = raw[src + x];
-      const a = x >= channels ? out[dst + x - channels] : 0;
-      const b2 = y > 0 ? out[prev + x] : 0;
-      const c = x >= channels && y > 0 ? out[prev + x - channels] : 0;
-      let recon;
-      switch (filter) {
-        case 0:
-          recon = value;
-          break;
-        case 1:
-          recon = value + a;
-          break;
-        case 2:
-          recon = value + b2;
-          break;
-        case 3:
-          recon = value + (a + b2 >> 1);
-          break;
-        case 4:
-          recon = value + paeth(a, b2, c);
-          break;
-        default:
-          throw new PngDecodeError(`unknown scanline filter ${filter} on row ${y}`);
-      }
-      out[dst + x] = recon & 255;
-    }
-  }
-  return out;
-}
-function paeth(a, b2, c) {
-  const p = a + b2 - c;
-  const pa = Math.abs(p - a);
-  const pb = Math.abs(p - b2);
-  const pc = Math.abs(p - c);
-  if (pa <= pb && pa <= pc) return a;
-  return pb <= pc ? b2 : c;
-}
-function toRgb(pixels, width, height, channels, colorType) {
-  const rgb = new Uint8Array(width * height * 3);
-  const count = width * height;
-  for (let i = 0; i < count; i += 1) {
-    const src = i * channels;
-    const dst = i * 3;
-    let r;
-    let g;
-    let b2;
-    let alpha = 255;
-    if (colorType === 0) {
-      r = g = b2 = pixels[src];
-    } else if (colorType === 4) {
-      r = g = b2 = pixels[src];
-      alpha = pixels[src + 1];
-    } else if (colorType === 2) {
-      r = pixels[src];
-      g = pixels[src + 1];
-      b2 = pixels[src + 2];
-    } else {
-      r = pixels[src];
-      g = pixels[src + 1];
-      b2 = pixels[src + 2];
-      alpha = pixels[src + 3];
-    }
-    if (alpha === 255) {
-      rgb[dst] = r;
-      rgb[dst + 1] = g;
-      rgb[dst + 2] = b2;
-    } else {
-      const a = alpha / 255;
-      rgb[dst] = Math.round(r * a + 255 * (1 - a));
-      rgb[dst + 1] = Math.round(g * a + 255 * (1 - a));
-      rgb[dst + 2] = Math.round(b2 * a + 255 * (1 - a));
-    }
-  }
-  return rgb;
-}
-function lumaAt(image, x, y) {
-  const i = (y * image.width + x) * 3;
-  return 0.2126 * image.rgb[i] + 0.7152 * image.rgb[i + 1] + 0.0722 * image.rgb[i + 2];
-}
-function lumaGrid(image, targetLongEdge = 160) {
-  const scale = Math.max(1, Math.round(Math.max(image.width, image.height) / targetLongEdge));
-  const width = Math.max(1, Math.floor(image.width / scale));
-  const height = Math.max(1, Math.floor(image.height / scale));
-  const data = new Float32Array(width * height);
-  for (let gy = 0; gy < height; gy += 1) {
-    for (let gx = 0; gx < width; gx += 1) {
-      let sum = 0;
-      let n = 0;
-      for (let dy = 0; dy < scale; dy += 1) {
-        const y = gy * scale + dy;
-        if (y >= image.height) break;
-        for (let dx = 0; dx < scale; dx += 1) {
-          const x = gx * scale + dx;
-          if (x >= image.width) break;
-          sum += lumaAt(image, x, y);
-          n += 1;
-        }
-      }
-      data[gy * width + gx] = n > 0 ? sum / n : 0;
-    }
-  }
-  return { width, height, data };
-}
-function mean(values2) {
-  let sum = 0;
-  for (let i = 0; i < values2.length; i += 1) sum += values2[i];
-  return values2.length > 0 ? sum / values2.length : 0;
-}
-function stdev(values2) {
-  const m = mean(values2);
-  let sum = 0;
-  for (let i = 0; i < values2.length; i += 1) sum += (values2[i] - m) ** 2;
-  return values2.length > 0 ? Math.sqrt(sum / values2.length) : 0;
-}
-
-// server/aiFirst/tier1.ts
 var MIN_BYTES = 40 * 1024;
 var MAX_BYTES = 12 * 1024 * 1024;
 var ASPECT_TOLERANCE = 0.01;
@@ -76565,6 +76745,9 @@ var SALIENCE_MIN_RATIO = 1.5;
 var MIN_MOTIF_SALIENCE_SHARE = 0.2;
 var MIN_OCR_TOKEN_LENGTH = 3;
 var OCR_MIN_CONFIDENCE = 60;
+var OCR_STRONG_TOKEN_LENGTH = 4;
+var OCR_STRONG_CONFIDENCE = 80;
+var OCR_PHRASE_MIN_ALNUM = 8;
 var MAX_RENDERED_TYPE_REGION_LUMA_SPREAD = 21;
 var MAX_UNPROTECTED_TYPE_REGION_LUMA_SPREAD = 90;
 var EXPECTED_ASPECT = {
@@ -76881,13 +77064,44 @@ function focalVisibilityAfterOpacity(grid, opacity, surfaceHex) {
   const compositedLight = toHex(Math.max(0, Math.min(255, blend(light))));
   return contrastRatio(compositedDark, compositedLight);
 }
+function meaningfulOcrTokensFromTsv(tsvRuns) {
+  const candidates = /* @__PURE__ */ new Map();
+  for (let runIndex = 0; runIndex < tsvRuns.length; runIndex += 1) {
+    const tsv = tsvRuns[runIndex];
+    for (const line2 of tsv.split("\n").slice(1)) {
+      const cols = line2.split("	");
+      if (cols.length < 12) continue;
+      const confidence = parseFloat(cols[10]);
+      const token = (cols[11] || "").trim();
+      if (!Number.isFinite(confidence) || confidence < OCR_MIN_CONFIDENCE) continue;
+      const alnum = token.replace(/[^A-Za-z0-9]/g, "");
+      if (alnum.length < MIN_OCR_TOKEN_LENGTH) continue;
+      const normalized = alnum.toLowerCase();
+      const current = candidates.get(normalized);
+      if (!current) {
+        candidates.set(normalized, { token, normalized, bestConfidence: confidence, runs: /* @__PURE__ */ new Set([runIndex]) });
+        continue;
+      }
+      current.runs.add(runIndex);
+      if (confidence > current.bestConfidence) {
+        current.bestConfidence = confidence;
+        current.token = token;
+      }
+    }
+  }
+  const mediumConfidence = Array.from(candidates.values());
+  const phraseEvidence = mediumConfidence.length >= 2 && mediumConfidence.reduce((sum, candidate) => sum + candidate.normalized.length, 0) >= OCR_PHRASE_MIN_ALNUM;
+  return mediumConfidence.filter(
+    (candidate) => phraseEvidence || candidate.runs.size >= 2 || candidate.normalized.length >= OCR_STRONG_TOKEN_LENGTH && candidate.bestConfidence >= OCR_STRONG_CONFIDENCE
+  ).map((candidate) => candidate.token);
+}
 function detectText(bytes) {
   let dir = null;
   try {
     dir = (0, import_node_fs.mkdtempSync)((0, import_node_path.join)((0, import_node_os.tmpdir)(), "posy-ocr-"));
     const file = (0, import_node_path.join)(dir, "art.png");
     (0, import_node_fs.writeFileSync)(file, bytes);
-    const tokens = /* @__PURE__ */ new Set();
+    const tsvRuns = [];
     for (const psm of ["11", "6"]) {
       let tsv;
       try {
@@ -76899,17 +77113,10 @@ function detectText(bytes) {
       } catch {
         return { found: false, tokens: [], skipped: true };
       }
-      for (const line2 of tsv.split("\n").slice(1)) {
-        const cols = line2.split("	");
-        if (cols.length < 12) continue;
-        const confidence = parseFloat(cols[10]);
-        const text2 = (cols[11] || "").trim();
-        if (!Number.isFinite(confidence) || confidence < OCR_MIN_CONFIDENCE) continue;
-        const alnum = text2.replace(/[^A-Za-z0-9]/g, "");
-        if (alnum.length >= MIN_OCR_TOKEN_LENGTH) tokens.add(text2);
-      }
+      tsvRuns.push(tsv);
     }
-    return { found: tokens.size > 0, tokens: Array.from(tokens), skipped: false };
+    const tokens = meaningfulOcrTokensFromTsv(tsvRuns);
+    return { found: tokens.length > 0, tokens, skipped: false };
   } catch {
     return { found: false, tokens: [], skipped: true };
   } finally {
@@ -76932,7 +77139,7 @@ Score each 1-5. 4 means "a professional stationery studio would ship this". 3 me
 - premiumFinish: 5 = genuinely premium editorial illustration. Score 1-2 for clipart, stock-template or generic AI look.
 - briefFidelity: 5 = the artwork unmistakably delivers the brief's stated identity.
 - compositionQuality: 5 = clear, balanced, intentional composition after applying the FINAL TYPE PROTECTION described by the user. For none, gradient or veil protection, any face, person, hero object or required subject inside the supplied LIVE TYPOGRAPHY BOX forces a score of 3 or lower. A plate is different: it is a nearly opaque paper panel in the final renderer, so judge the composition as though the pixels beneath that box are covered. Do not fail a plate merely because raw artwork lies beneath it. Do fail briefFidelity or compositionQuality if covering that box hides the only visible must-have, removes the theme's only recognizable subject, or leaves the visible composition outside the panel unbalanced.
-- ageAppropriate: 5 = correctly pitched for the celebrant's age. Babyish work for an adult, or content too mature for a child, scores 1.
+- ageAppropriate: 5 = correctly pitched for the celebrant's age. Babyish work for an adult, or content too mature for a child, scores 1. When the host explicitly requests an all-ages action or fantasy identity, do not fail this dimension merely because faithful imagery includes stylized fantasy weapons, non-graphic supernatural creatures, performance costumes or dramatic poses. Judge whether the treatment becomes graphic, sexualized or genuinely frightening beyond that requested identity's normal family-audience presentation.
 
 Judge BRIEF REQUIREMENTS holistically through briefFidelity and ageAppropriate. Do not repeat them in requiredPresent.
 
@@ -76984,7 +77191,7 @@ async function runVisionGate(input) {
   const protectionInstruction = concept.minOverlay === "plate" ? `FINAL TYPE PROTECTION: a ${(protectionAlpha * 100).toFixed(0)}%-opaque solid paper panel in ${concept.semanticPalette.textSurface} covers the LIVE TYPOGRAPHY BOX in the rendered invitation. Treat raw pixels beneath the box as covered. Required subjects must remain clearly recognizable outside the panel, and the remaining visible composition must still feel balanced.` : `FINAL TYPE PROTECTION: ${concept.minOverlay} (${(protectionAlpha * 100).toFixed(0)}% local surface opacity). The LIVE TYPOGRAPHY BOX must contain no face, person, hero object or required subject.`;
   const userText = [
     `Celebration: ${brief.eventName || brief.eventType || "a celebration"}${brief.milestone ? ` \xB7 ${brief.milestone}` : ""}`,
-    brief.vibe ? `Intended feeling: ${brief.vibe}` : "",
+    brief.visualIdentityOverride ? `Current host-selected visual identity: ${brief.visualIdentityOverride}` : brief.vibe ? `Intended feeling: ${brief.vibe}` : "",
     `Direction: ${concept.conceptName} \u2014 ${concept.description}`,
     `LIVE TYPOGRAPHY BOX (percentage of final card): left ${typeBox.left.toFixed(0)}%, top ${typeBox.top.toFixed(0)}%, width ${typeBox.width.toFixed(0)}%, height ${typeBox.height.toFixed(0)}%.`,
     protectionInstruction,
@@ -77553,8 +77760,8 @@ var ConceptStreamParser = class {
    * Appends a chunk and returns every concept that became complete because of
    * it. Usually zero or one.
    */
-  push(chunk) {
-    this.buffer += chunk;
+  push(chunk2) {
+    this.buffer += chunk2;
     return this.drain(false);
   }
   /** Call once the model has finished; drains any unterminated final object. */
@@ -77729,6 +77936,13 @@ function addUniquenessError(errors, label, values2, minimum = values2.length) {
 function preflightConceptQuartet(candidates, brief) {
   const concepts = candidates.slice(0, REQUIRED_CONCEPT_QUARTET_SIZE);
   const errors = [];
+  const perConceptErrors = /* @__PURE__ */ new Map();
+  const addPerConceptError = (index2, message2) => {
+    errors.push(message2);
+    const existing = perConceptErrors.get(index2) ?? [];
+    existing.push(message2);
+    perConceptErrors.set(index2, existing);
+  };
   const identity = briefIdentity2(brief);
   const birthday = /\bbirthday\b/i.test(identity);
   const explicitBackyardCelebration = BACKYARD_CUE.test(identity);
@@ -77744,30 +77958,30 @@ function preflightConceptQuartet(candidates, brief) {
     const artBrief = `${concept.art.medium} ${concept.art.composition} ${concept.art.prompt}`;
     const subject = preflightConceptForBrief(concept, brief);
     const layout = validateLayoutBeforeGeneration(concept);
-    if (!concept.focalStrategy) errors.push(`${label} is missing focalStrategy`);
-    if (!concept.visualMood) errors.push(`${label} is missing visualMood`);
-    if (!subject.passed) errors.push(`${label}: ${subject.message}`);
+    if (!concept.focalStrategy) addPerConceptError(index2, `${label} is missing focalStrategy`);
+    if (!concept.visualMood) addPerConceptError(index2, `${label} is missing visualMood`);
+    if (!subject.passed) addPerConceptError(index2, `${label}: ${subject.message}`);
     for (const issue of layout.issues.filter((finding) => finding.repair === "regenerate")) {
-      errors.push(`${label}: ${issue.message}`);
+      addPerConceptError(index2, `${label}: ${issue.message}`);
     }
     if (birthday) {
-      if (!OCCASION_ART_CUE.test(artBrief)) errors.push(`${label} artwork omits the birthday/celebration identity`);
+      if (!OCCASION_ART_CUE.test(artBrief)) addPerConceptError(index2, `${label} artwork omits the birthday/celebration identity`);
       if (milestone && !milestone.test(concept.description)) {
-        errors.push(`${label} host-facing description omits the ${brief.milestone} milestone`);
+        addPerConceptError(index2, `${label} host-facing description omits the ${brief.milestone} milestone`);
       }
       if (milestone && !milestone.test(artBrief)) {
-        errors.push(`${label} artwork direction omits the ${brief.milestone} milestone`);
+        addPerConceptError(index2, `${label} artwork direction omits the ${brief.milestone} milestone`);
       }
     }
     if (explicitBackyardCelebration && !BACKYARD_CUE.test(artBrief)) {
-      errors.push(`${label} artwork omits the backyard BBQ/outdoor celebration setting`);
+      addPerConceptError(index2, `${label} artwork omits the backyard BBQ/outdoor celebration setting`);
     }
     if (construction && concept.focalStrategy) {
       if (!CONSTRUCTION_STRATEGY_CUES[concept.focalStrategy].test(artBrief)) {
-        errors.push(`${label} does not deliver its ${concept.focalStrategy} construction strategy`);
+        addPerConceptError(index2, `${label} does not deliver its ${concept.focalStrategy} construction strategy`);
       }
       const cueGroups = CONSTRUCTION_CUE_GROUPS.filter((pattern) => pattern.test(artBrief)).length;
-      if (cueGroups < 2) errors.push(`${label} needs at least two coherent construction/jobsite cue groups`);
+      if (cueGroups < 2) addPerConceptError(index2, `${label} needs at least two coherent construction/jobsite cue groups`);
     }
   });
   if (concepts.length === REQUIRED_CONCEPT_QUARTET_SIZE) {
@@ -77803,7 +78017,11 @@ function preflightConceptQuartet(candidates, brief) {
     fontPairingId: concept.fontPairingId,
     exactArtworkPrompt: exactArtworkPrompt(concept, brief)
   }));
-  return { passed: errors.length === 0, errors, concepts, reviewCards };
+  return { passed: errors.length === 0, errors, concepts, reviewCards, perConceptErrors };
+}
+function allErrorsAreSingleConcept(preflight) {
+  const perConceptTotal = Array.from(preflight.perConceptErrors.values()).reduce((sum, list2) => sum + list2.length, 0);
+  return perConceptTotal === preflight.errors.length;
 }
 
 // server/aiFirst/conceptBindings.ts
@@ -77885,7 +78103,8 @@ function bindConceptsToBrief(candidates, brief) {
   const milestonePhrase = `${brief.milestone} birthday`;
   const construction = subjectFamiliesForBrief(brief).some((family) => family.id === "construction");
   return candidates.map((candidate) => {
-    const typeGeometry = canonicalTypeGeometry(candidate);
+    const layoutRepair = validateLayoutBeforeGeneration(candidate);
+    const typeGeometry = canonicalTypeGeometry(candidate, layoutRepair.layoutStyle);
     let description = candidate.description;
     let medium = candidate.art.medium;
     let composition = candidate.art.composition;
@@ -77914,6 +78133,7 @@ function bindConceptsToBrief(candidates, brief) {
       ...candidate,
       description,
       art: { ...candidate.art, medium, composition, prompt },
+      layoutStyle: layoutRepair.layoutStyle,
       // The renderer owns the real type box. Do not spend a second text call
       // asking a model to rediscover geometry Posy can derive exactly.
       placementId: typeGeometry.placementId,
@@ -77925,6 +78145,7 @@ function bindConceptsToBrief(candidates, brief) {
 // server/aiFirst/conceptOnlyProof.ts
 var CONCEPT_MODEL = "claude-sonnet-4-6";
 var MAX_TEXT_ONLY_CONCEPT_CORRECTIONS = 1;
+var MIN_VIABLE_CONCEPTS = 1;
 function abortError(reason) {
   if (reason instanceof Error) return reason;
   const error = new Error(typeof reason === "string" ? reason : "Concept proof was disconnected.");
@@ -77935,6 +78156,7 @@ function throwIfAborted(signal) {
   if (signal?.aborted) throw abortError(signal.reason);
 }
 async function runConceptOnlyProof(input) {
+  const effectiveBrief = briefForHostDirection(input.brief, input.direction);
   const client = input.anthropic ?? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   let firstConceptReported = false;
   const requestQuartet = async (messages2) => {
@@ -77955,21 +78177,21 @@ async function runConceptOnlyProof(input) {
       system: buildSystemPrompt(),
       messages: messages2
     });
-    for await (const chunk of stream) {
+    for await (const chunk2 of stream) {
       throwIfAborted(input.signal);
-      if (chunk.type !== "content_block_delta" || chunk.delta.type !== "text_delta") continue;
-      collect(parser.push(chunk.delta.text));
+      if (chunk2.type !== "content_block_delta" || chunk2.delta.type !== "text_delta") continue;
+      collect(parser.push(chunk2.delta.text));
     }
     throwIfAborted(input.signal);
     collect(parser.flush());
     input.onReviewingConcepts?.();
-    const boundCandidates = bindConceptsToBrief(candidates, input.brief);
-    const quartet = preflightConceptQuartet(boundCandidates, input.brief);
+    const boundCandidates = bindConceptsToBrief(candidates, effectiveBrief);
+    const quartet = preflightConceptQuartet(boundCandidates, effectiveBrief);
     const parserErrors = parser.rejections.flatMap((rejection) => rejection.errors);
     return { candidates: boundCandidates, quartet, parserErrors };
   };
   const userPrompt = buildUserPrompt({
-    brief: input.brief,
+    brief: effectiveBrief,
     direction: input.direction,
     avoidConceptNames: input.avoidConceptNames,
     keepConstraints: input.keepConstraints
@@ -77988,6 +78210,22 @@ async function runConceptOnlyProof(input) {
   }
   if (!attempt.quartet.passed) {
     const finalErrors = [...attempt.parserErrors, ...attempt.quartet.errors];
+    const canDropBadConcepts = attempt.parserErrors.length === 0 && attempt.quartet.concepts.length > 0 && allErrorsAreSingleConcept(attempt.quartet);
+    if (canDropBadConcepts) {
+      const survivors = attempt.quartet.concepts.filter((_, index2) => !attempt.quartet.perConceptErrors.has(index2));
+      if (survivors.length >= MIN_VIABLE_CONCEPTS) {
+        for (const error of finalErrors) {
+          input.onPreflightWarning?.(`dropped instead of failing the whole set: ${error}`);
+        }
+        return {
+          model: CONCEPT_MODEL,
+          concepts: survivors,
+          conceptRejections,
+          imageProviderCalls: 0,
+          billedArtworkAttempts: 0
+        };
+      }
+    }
     for (const error of finalErrors) input.onPreflightWarning?.(error);
     throw new Error(
       `creative quartet failed zero-image preflight after ${MAX_TEXT_ONLY_CONCEPT_CORRECTIONS} text-only correction pass: ${finalErrors.join("; ")}`
@@ -78027,6 +78265,7 @@ var Semaphore = class {
   }
 };
 async function runAiFirstPipeline(input) {
+  input = { ...input, brief: briefForHostDirection(input.brief, input.direction) };
   const started = Date.now();
   const sink = input.sink;
   const emit = (event) => {
@@ -78422,7 +78661,10 @@ function onlyCriticalFailureIs(findings, code) {
   return critical.length === 1 && critical[0].code === code;
 }
 function cropRescueLayouts(layoutStyle) {
-  return layoutStyle === "split" ? ["full-bleed", "backdrop"] : [];
+  if (layoutStyle === "split") return ["full-bleed", "backdrop"];
+  if (layoutStyle === "full-bleed") return ["backdrop", "split"];
+  if (layoutStyle === "backdrop") return ["full-bleed", "split"];
+  return [];
 }
 function abortError2(reason) {
   if (reason instanceof Error) return reason;
@@ -78648,6 +78890,18 @@ async function checkAiFirstModelReadiness(input) {
 // server/aiFirst/routes.ts
 var breaker = new CircuitBreaker();
 var limiter = new RateLimiter();
+function hasGenerationEntitlement(event, entitlement) {
+  if (event.sparkUnlockedAt) return true;
+  if (entitlement?.planTier === "plus_active") return true;
+  if (entitlement?.planTier === "plus_trial" && !!entitlement.trialEndsAt && entitlement.trialEndsAt > Date.now()) {
+    return true;
+  }
+  return false;
+}
+function readInspirationImages(value) {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item) => typeof item === "string" && item.startsWith("data:image/")).slice(0, 3);
+}
 function abortOnUnexpectedResponseClose(res, controller) {
   res.on("close", () => {
     if (!res.writableEnded) controller.abort(new Error("The invitation generation connection closed."));
@@ -78800,6 +79054,40 @@ function registerAiFirstRoutes(app2, deps) {
       });
     })
   );
+  app2.post(
+    "/api/events/owner/:ownerToken/ai-first/inspiration",
+    gated(async (req, res) => {
+      const requestFlags = flags();
+      const event = await deps.storage.getEventByOwnerToken(String(req.params.ownerToken));
+      if (!event) {
+        res.status(404).json({ error: "Event not found" });
+        return;
+      }
+      if (requestFlags.invitationGenerationKillSwitch) {
+        res.status(403).json({
+          error: "Design inspiration analysis is paused right now.",
+          denial: "kill-switch",
+          paused: true
+        });
+        return;
+      }
+      const images = readInspirationImages(req.body?.inspirationImages);
+      if (images.length === 0) {
+        res.status(400).json({ error: "Add at least one design inspiration image." });
+        return;
+      }
+      try {
+        const inspirationNotes = await (deps.analyzeInspiration ?? extractInspirationNotes)(images);
+        if (!inspirationNotes.trim()) {
+          res.status(422).json({ error: "Posy couldn't read a usable design direction from those images." });
+          return;
+        }
+        res.json({ inspirationNotes, imageProviderCalls: 0, billedArtworkAttempts: 0 });
+      } catch {
+        res.status(502).json({ error: "Posy couldn't read that design inspiration right now." });
+      }
+    })
+  );
   app2.get(
     "/api/events/owner/:ownerToken/ai-first/run/:runId",
     gated(async (req, res) => {
@@ -78876,6 +79164,13 @@ function registerAiFirstRoutes(app2, deps) {
       }
       const email = event.capturedEmail ?? void 0;
       const entitlement = email ? await deps.storage.getEmailEntitlement(email) : void 0;
+      if (!hasGenerationEntitlement(event, entitlement)) {
+        res.status(402).json({
+          error: "This event needs Spark or Plus to generate invitation artwork.",
+          denial: "needs-payment"
+        });
+        return;
+      }
       const tier = entitlement?.planTier;
       const usage = await deps.usageStore.snapshot(event.id, email, monthStart());
       const hasActiveRun = await deps.runStore.hasActiveRun(event.id);
@@ -79007,6 +79302,42 @@ function registerAiFirstRoutes(app2, deps) {
       }
     })
   );
+  app2.get(
+    "/api/events/owner/:ownerToken/ai-first/approved-designs",
+    gated(async (req, res) => {
+      const ownerToken = String(req.params.ownerToken);
+      const event = await deps.storage.getEventByOwnerToken(ownerToken);
+      if (!event) {
+        res.status(404).json({ error: "Event not found" });
+        return;
+      }
+      const records = (await deps.previewStore.listForEvent(event.id)).slice().sort((a, b2) => b2.createdAt - a.createdAt);
+      let appliedPreviewId = null;
+      try {
+        const storedConcept = JSON.parse(String(event.inviteDesignConceptJson || "null"));
+        const snapshot = storedConcept?.[AI_FIRST_CONCEPT_KEY];
+        appliedPreviewId = typeof snapshot?.previewId === "string" ? snapshot.previewId : null;
+      } catch {
+        appliedPreviewId = null;
+      }
+      res.json({
+        appliedPreviewId,
+        directions: records.map((record, index2) => ({
+          index: index2,
+          concept: record.concept,
+          source: record.source,
+          previewId: record.previewId,
+          assetHash: record.assetHash,
+          illustrationUrl: previewAssetUrl(ownerToken, record.previewId),
+          overlay: record.concept.minOverlay,
+          artworkOpacity: validateLayoutBeforeGeneration(record.concept).artworkOpacity,
+          attempts: [],
+          reusedPreview: true,
+          msFromStart: 0
+        }))
+      });
+    })
+  );
   app2.post(
     "/api/events/owner/:ownerToken/ai-first/apply",
     gated(async (req, res) => {
@@ -79034,13 +79365,24 @@ function registerAiFirstRoutes(app2, deps) {
         source: record.source
       };
       const { theme } = themeFromSnapshot(snapshot);
-      const appliedConcept = { ...buildThemedConcept(theme), [AI_FIRST_CONCEPT_KEY]: snapshot };
+      const appliedConcept = {
+        ...buildThemedConcept(theme, { copy: themeCopyForEvent(theme, event) }),
+        [AI_FIRST_CONCEPT_KEY]: snapshot
+      };
       const dna = deriveThemeDna(appliedConcept);
+      const currentSubject = String(event.inviteSubject || "").trim();
+      const inviteSubject = !currentSubject || /^you(?:'|’)re invited!?$/i.test(currentSubject) ? String(event.eventName || "").trim() : currentSubject;
       const updated = await deps.storage.updateEventByOwnerToken(String(req.params.ownerToken), {
         inviteDesignConceptJson: JSON.stringify(appliedConcept),
+        // Match the applied card to the event preview while preserving copy a
+        // host deliberately customized in the wording editor.
+        inviteSubject,
         inviteIllustrationUrl: record.assetUrl,
         paletteColors: JSON.stringify(appliedConcept.paletteColors),
-        envelopeColor: dna.primaryColor,
+        // Use the palette's lightest paper tone for the physical envelope.
+        // The first palette slot is often the near-black headline ink; using
+        // it as paper made otherwise elegant directions feel heavy and flat.
+        envelopeColor: dna.backgroundColor,
         envelopeLinerPattern: dna.linerPattern,
         stampStyle: dna.stampStyle
       });
@@ -79152,6 +79494,157 @@ function registerAiFirstRoutes(app2, deps) {
     })
   );
   app2.post(
+    "/api/events/owner/:ownerToken/ai-first/review/attempts/:id/recheck",
+    gated(async (req, res) => {
+      const ownerToken = String(req.params.ownerToken);
+      const event = await deps.storage.getEventByOwnerToken(ownerToken);
+      if (!event) {
+        res.status(404).json({ error: "Event not found" });
+        return;
+      }
+      if (req.body?.confirmRetainedReview !== true) {
+        res.status(400).json({
+          error: "Set confirmRetainedReview to true to review the retained artwork.",
+          denial: "retained-review-confirmation-required",
+          imageProviderCalls: 0,
+          billedArtworkAttempts: 0
+        });
+        return;
+      }
+      const row = await deps.artworkAttemptStore.findById(event.id, ownerToken, String(req.params.id));
+      if (!row) {
+        res.status(404).json({ error: "That review attempt is no longer available." });
+        return;
+      }
+      if (row.status !== "rejected") {
+        res.status(409).json({
+          error: "Only rejected retained artwork can be re-reviewed.",
+          denial: "attempt-not-rejected",
+          imageProviderCalls: 0,
+          billedArtworkAttempts: 0
+        });
+        return;
+      }
+      if (typeof req.body?.expectedAssetHash !== "string" || req.body.expectedAssetHash !== row.assetHash) {
+        res.status(409).json({
+          error: "The retained artwork hash does not match the confirmed asset.",
+          denial: "asset-hash-mismatch",
+          imageProviderCalls: 0,
+          billedArtworkAttempts: 0
+        });
+        return;
+      }
+      const bytes = Buffer.from(row.assetBytesBase64, "base64");
+      if (assetHashOf(bytes) !== row.assetHash) {
+        res.status(409).json({
+          error: "The retained artwork bytes failed integrity verification.",
+          denial: "retained-asset-integrity",
+          imageProviderCalls: 0,
+          billedArtworkAttempts: 0
+        });
+        return;
+      }
+      const fingerprint = conceptFingerprint(row.concept);
+      const expectedPreviewId = previewIdFor(event.id, fingerprint, row.assetHash);
+      const existing = await deps.previewStore.findByPreviewId(event.id, expectedPreviewId);
+      if (existing) {
+        res.json({
+          previewId: existing.previewId,
+          assetHash: existing.assetHash,
+          assetUrl: previewAssetUrl(ownerToken, existing.previewId),
+          concept: existing.concept,
+          reused: true,
+          imageProviderCalls: 0,
+          billedArtworkAttempts: 0
+        });
+        return;
+      }
+      const repair = validateLayoutBeforeGeneration(row.concept);
+      const tier1 = runTier1Checks({
+        bytes,
+        concept: row.concept,
+        overlayCoverage: OVERLAY_COVERAGE[repair.overlay],
+        artworkOpacity: repair.artworkOpacity ?? 1,
+        ocr: env().NODE_ENV === "production"
+      });
+      if (!tier1.passed) {
+        res.status(422).json({
+          error: "The retained artwork still fails Posy's deterministic quality checks.",
+          denial: "tier1-quality-rejected",
+          failureCodes: Array.from(
+            new Set(tier1.findings.filter((finding) => finding.critical).map((finding) => finding.code))
+          ),
+          tier1Findings: tier1.findings,
+          imageProviderCalls: 0,
+          billedArtworkAttempts: 0
+        });
+        return;
+      }
+      const [menuItems2, budgetItems2, guests2] = await Promise.all([
+        deps.storage.listMenuItems(event.id),
+        deps.storage.listBudgetItems(event.id),
+        deps.storage.listGuests(event.id)
+      ]);
+      const baseBrief = buildEventBrief({
+        event,
+        dna: computeEventDna({ eventType: event.eventType, menuItems: menuItems2, budgetItems: budgetItems2 }).scores,
+        guestCount: guests2.length > 0 ? guests2.length : null
+      });
+      const direction = [row.concept.conceptName, row.concept.description, row.concept.art.prompt].join(" ");
+      const effectiveBrief = briefForHostDirection(baseBrief, direction);
+      const vision = await (deps.reviewRetainedArtwork ?? runVisionGate)({
+        bytes,
+        concept: row.concept,
+        brief: effectiveBrief
+      });
+      if (vision.unavailable) {
+        res.status(503).json({
+          error: "The semantic artwork review is temporarily unavailable.",
+          denial: "vision-review-unavailable",
+          notes: vision.notes,
+          imageProviderCalls: 0,
+          billedArtworkAttempts: 0
+        });
+        return;
+      }
+      if (!vision.passed) {
+        res.status(422).json({
+          error: "The retained artwork did not meet Posy's semantic quality standard.",
+          denial: "vision-quality-rejected",
+          failureCodes: vision.failureCodes,
+          scores: vision.scores,
+          requiredPresent: vision.requiredPresent,
+          excludedFound: vision.excludedFound,
+          notes: vision.notes,
+          imageProviderCalls: 0,
+          billedArtworkAttempts: 0
+        });
+        return;
+      }
+      const saved = await savePreview({
+        store: deps.previewStore,
+        eventId: event.id,
+        concept: row.concept,
+        bytes,
+        assetUrl: `data:image/png;base64,${bytes.toString("base64")}`,
+        source: "ai-generated"
+      });
+      res.json({
+        previewId: saved.record.previewId,
+        assetHash: saved.record.assetHash,
+        assetUrl: previewAssetUrl(ownerToken, saved.record.previewId),
+        concept: saved.record.concept,
+        reused: saved.reused,
+        scores: vision.scores,
+        requiredPresent: vision.requiredPresent,
+        excludedFound: vision.excludedFound,
+        notes: vision.notes,
+        imageProviderCalls: 0,
+        billedArtworkAttempts: 0
+      });
+    })
+  );
+  app2.post(
     "/api/ai-first/cleanup-previews",
     gated(async (_req, res) => {
       const result = await cleanupPreviews(deps.previewStore);
@@ -79198,6 +79691,10 @@ var DbPreviewStore = class {
   async findByPreviewId(eventId, previewId) {
     const rows = await db.select().from(aiFirstPreviews).where(and(eq(aiFirstPreviews.eventId, eventId), eq(aiFirstPreviews.previewId, previewId)));
     return rows[0] ? toRecord(rows[0]) : void 0;
+  }
+  async listForEvent(eventId) {
+    const rows = await db.select().from(aiFirstPreviews).where(eq(aiFirstPreviews.eventId, eventId));
+    return rows.map(toRecord).filter((record) => record !== void 0);
   }
   async put(record) {
     await db.insert(aiFirstPreviews).values({
@@ -79485,6 +79982,136 @@ function publicEventView(event) {
   const { ownerToken, capturedEmail, ...rest } = event;
   return rest;
 }
+function publicGuestView(guest) {
+  return {
+    name: guest.name,
+    group: guest.group,
+    partySize: guest.partySize,
+    rsvpStatus: guest.rsvpStatus,
+    attendingCount: guest.attendingCount,
+    attendingAdults: guest.attendingAdults,
+    attendingChildren: guest.attendingChildren,
+    note: guest.note
+  };
+}
+var guestTokenSchema = external_exports.string().min(24).max(128).regex(/^[A-Za-z0-9_-]+$/);
+var guestIdentifySchema = external_exports.object({
+  name: external_exports.string().trim().min(2).max(120),
+  contact: external_exports.string().trim().min(3).max(254)
+});
+function normalizeIdentityName(value) {
+  return value.normalize("NFKC").trim().replace(/\s+/g, " ").toLowerCase();
+}
+function normalizePhone(value) {
+  return value.replace(/\D/g, "");
+}
+var PUBLIC_APP_ORIGIN = "https://posyplans.com";
+function guestRsvpUrl(_req, event, guest) {
+  return `${PUBLIC_APP_ORIGIN}/rsvp/${event.shareSlug}/g/${guest.accessToken}`;
+}
+var eventRecoverySchema = external_exports.object({
+  email: external_exports.string().trim().email().max(254)
+});
+var EVENT_RECOVERY_EMAIL_LIMIT = 3;
+var EVENT_RECOVERY_IP_LIMIT = 12;
+var EVENT_RECOVERY_WINDOW_MS = 60 * 60 * 1e3;
+var eventRecoveryAttempts = /* @__PURE__ */ new Map();
+function hashRecoveryKey(value) {
+  return (0, import_node_crypto5.createHash)("sha256").update(value).digest("hex");
+}
+function consumeEventRecoveryLimit(key, limit2, now) {
+  const current = eventRecoveryAttempts.get(key);
+  if (!current || current.resetsAt <= now) {
+    eventRecoveryAttempts.set(key, { count: 1, resetsAt: now + EVENT_RECOVERY_WINDOW_MS });
+    if (eventRecoveryAttempts.size > 4e3) {
+      eventRecoveryAttempts.forEach((entry, candidate) => {
+        if (entry.resetsAt <= now) eventRecoveryAttempts.delete(candidate);
+      });
+    }
+    return true;
+  }
+  if (current.count >= limit2) return false;
+  current.count += 1;
+  return true;
+}
+function allowEventRecoveryAttempt(req, email, now = Date.now()) {
+  const forwardedIp = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
+  const ip = forwardedIp || req.ip || "unknown";
+  const emailAllowed = consumeEventRecoveryLimit(
+    `email:${hashRecoveryKey(email)}`,
+    EVENT_RECOVERY_EMAIL_LIMIT,
+    now
+  );
+  const ipAllowed = consumeEventRecoveryLimit(
+    `ip:${hashRecoveryKey(ip)}`,
+    EVENT_RECOVERY_IP_LIMIT,
+    now
+  );
+  return emailAllowed && ipAllowed;
+}
+function buildEventRecoveryBody(events2) {
+  const links = events2.slice(0, 20).map((event) => {
+    const detail = [event.eventType, event.eventDate].filter(Boolean).join(" \xB7 ");
+    const dashboardUrl = `${PUBLIC_APP_ORIGIN}/dashboard/${encodeURIComponent(event.ownerToken)}`;
+    return `${event.eventName}${detail ? ` \u2014 ${detail}` : ""}
+${dashboardUrl}`;
+  });
+  return [
+    "Hi,",
+    "Someone requested the private dashboard link for your Posy event. Use the secure link below to continue planning:",
+    links.join("\n\n"),
+    "If you didn't request this email, you can ignore it. Your event has not been changed."
+  ].join("\n\n");
+}
+function buildCapturedEventBody(event) {
+  const detail = [event.eventType, event.eventDate].filter(Boolean).join(" \xB7 ");
+  const dashboardUrl = `${PUBLIC_APP_ORIGIN}/dashboard/${encodeURIComponent(event.ownerToken)}`;
+  return [
+    "Hi,",
+    "Your event details are saved in Posy. Keep the private link below so you can return without starting over:",
+    `${event.eventName}${detail ? ` \u2014 ${detail}` : ""}
+${dashboardUrl}`,
+    "You can use this link anytime to continue planning. Please don't forward it \u2014 it gives access to your event dashboard.",
+    "If you didn't create this event, you can ignore this email."
+  ].join("\n\n");
+}
+async function sendCapturedEventLinkSafe(event, email) {
+  try {
+    const result = await sendEventRecoveryEmail({
+      to: email,
+      subject: "Your private Posy event link",
+      body: buildCapturedEventBody(event)
+    });
+    if (!result.ok) {
+      console.error(`[email-capture] private-link delivery failed for event ${event.id}: ${result.error || "unknown error"}`);
+    }
+  } catch (err) {
+    console.error(`[email-capture] private-link delivery threw for event ${event.id}:`, err);
+  }
+}
+async function persistCapturedEmail(event, email) {
+  if (event.capturedEmail === email) return;
+  await storage.setEventCapturedEmail(event.id, email);
+  await sendCapturedEventLinkSafe(event, email);
+}
+var GUEST_IDENTIFY_LIMIT = 8;
+var GUEST_IDENTIFY_WINDOW_MS = 10 * 60 * 1e3;
+var guestIdentifyAttempts = /* @__PURE__ */ new Map();
+function allowGuestIdentifyAttempt(key, now = Date.now()) {
+  const current = guestIdentifyAttempts.get(key);
+  if (!current || current.resetsAt <= now) {
+    guestIdentifyAttempts.set(key, { count: 1, resetsAt: now + GUEST_IDENTIFY_WINDOW_MS });
+    return true;
+  }
+  if (current.count >= GUEST_IDENTIFY_LIMIT) return false;
+  current.count += 1;
+  if (guestIdentifyAttempts.size > 2e3) {
+    guestIdentifyAttempts.forEach((entry, candidate) => {
+      if (entry.resetsAt <= now) guestIdentifyAttempts.delete(candidate);
+    });
+  }
+  return true;
+}
 async function stampCapturedEmailSafe(eventId, email) {
   try {
     const normalized = (email ?? "").trim().toLowerCase();
@@ -79492,10 +80119,9 @@ async function stampCapturedEmailSafe(eventId, email) {
     const event = await storage.getEventById(eventId);
     if (!event) return;
     if (event.capturedEmail && event.capturedEmail !== normalized) {
-      console.warn(`[email-capture] event ${eventId} already has a different captured email; not overwriting from Stripe`);
-      return;
+      console.info(`[email-capture] replacing event ${eventId}'s earlier email with Stripe's verified address`);
     }
-    await storage.setEventCapturedEmail(eventId, normalized);
+    await persistCapturedEmail(event, normalized);
   } catch (err) {
     console.error(`[email-capture] failed to stamp email on event ${eventId}:`, err);
   }
@@ -79514,41 +80140,32 @@ async function registerRoutes(httpServer2, app2) {
     const event = await storage.createEvent(parsed.data);
     res.json(event);
   });
-  app2.post("/api/events/:eventId/email-capture", async (req, res) => {
-    const eventId = Number(req.params.eventId);
-    if (!Number.isFinite(eventId) || eventId <= 0) {
-      return res.status(400).json({ error: "Invalid event ID" });
-    }
-    const { email, ownerToken } = req.body;
-    if (!email || !email.trim()) {
-      return res.status(400).json({ error: "Email is required" });
-    }
-    if (!ownerToken) {
-      return res.status(400).json({ error: "Owner token is required" });
-    }
-    const event = await storage.getEventById(eventId);
-    if (!event || event.ownerToken !== ownerToken) {
-      return res.status(404).json({ error: "Event not found" });
-    }
-    await storage.setEventCapturedEmail(eventId, email);
-    const updated = await storage.getEventById(eventId);
-    res.json(updated);
-  });
   app2.post("/api/events/lookup", async (req, res) => {
-    const { email } = req.body;
-    if (!email || !email.trim()) {
-      return res.status(400).json({ error: "Email is required" });
+    const parsed = eventRecoverySchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "Enter a valid email address" });
+    const normalized = parsed.data.email.toLowerCase();
+    res.setHeader("Cache-Control", "no-store");
+    const genericResponse = {
+      ok: true,
+      message: "If an event is connected to that email, a private dashboard link is on its way."
+    };
+    if (!allowEventRecoveryAttempt(req, normalized)) {
+      return res.status(202).json(genericResponse);
     }
-    const normalized = email.trim().toLowerCase();
-    const found = await storage.getEventsByEmail(normalized);
-    const safe = found.map((e) => ({
-      ownerToken: e.ownerToken,
-      eventName: e.eventName,
-      eventType: e.eventType,
-      eventDate: e.eventDate,
-      createdAt: e.createdAt
-    }));
-    res.json({ events: safe });
+    try {
+      const found = await storage.getEventsByEmail(normalized);
+      if (found.length > 0) {
+        const result = await sendEventRecoveryEmail({
+          to: normalized,
+          subject: found.length === 1 ? "Your Posy event link" : "Your Posy event links",
+          body: buildEventRecoveryBody(found)
+        });
+        if (!result.ok) console.error("Event recovery email delivery failed.");
+      }
+    } catch {
+      console.error("Event recovery request failed before delivery.");
+    }
+    return res.status(202).json(genericResponse);
   });
   app2.get("/api/events/owner/:ownerToken", async (req, res) => {
     const event = await storage.getEventByOwnerToken(req.params.ownerToken);
@@ -79575,33 +80192,59 @@ async function registerRoutes(httpServer2, app2) {
     if (!event) return res.status(404).json({ error: "Event not found" });
     res.json(publicEventView(event));
   });
-  app2.get("/api/events/public/:shareSlug/search-guests", async (req, res) => {
+  app2.get("/api/events/public/:shareSlug/guest/:guestToken", async (req, res) => {
     const event = await storage.getEventByShareSlug(req.params.shareSlug);
     if (!event) return res.status(404).json({ error: "Event not found" });
-    const query = String(req.query.q || "").trim().toLowerCase();
-    const all = await storage.listGuests(event.id);
-    let matches = [];
-    if (query) {
-      const substringMatches = all.filter((g) => g.name.toLowerCase().includes(query));
-      const substringIds = new Set(substringMatches.map((g) => g.id));
-      const fuzzyMatches = all.filter((g) => !substringIds.has(g.id) && isFuzzyNameMatch(query, g.name));
-      matches = [...substringMatches, ...fuzzyMatches];
-    }
-    res.json(matches.slice(0, 8).map((g) => ({ id: g.id, name: g.name, group: g.group, rsvpStatus: g.rsvpStatus })));
+    const token = guestTokenSchema.safeParse(req.params.guestToken);
+    if (!token.success) return res.status(404).json({ error: "Invitation not found" });
+    const guest = await storage.getGuestByAccessToken(event.id, token.data);
+    if (!guest) return res.status(404).json({ error: "Invitation not found" });
+    res.set("Cache-Control", "private, no-store");
+    res.json(publicGuestView(guest));
   });
-  app2.post("/api/events/public/:shareSlug/guests/:guestId/rsvp", async (req, res) => {
+  app2.post("/api/events/public/:shareSlug/identify", async (req, res) => {
     const event = await storage.getEventByShareSlug(req.params.shareSlug);
-    if (!event) return res.status(404).json({ error: "Event not found" });
-    const guestId = Number(req.params.guestId);
-    const guest = await storage.getGuest(guestId);
-    if (!guest || guest.eventId !== event.id) return res.status(404).json({ error: "Guest not found" });
+    if (!event) return res.status(404).json({ error: "Invitation not found" });
+    const attemptKey = `${req.ip || "unknown"}:${event.shareSlug}`;
+    if (!allowGuestIdentifyAttempt(attemptKey)) {
+      res.set("Retry-After", String(Math.ceil(GUEST_IDENTIFY_WINDOW_MS / 1e3)));
+      return res.status(429).json({ error: "Too many attempts. Please use your personal invitation link or try again later." });
+    }
+    const parsed = guestIdentifySchema.safeParse(req.body);
+    if (!parsed.success) return res.status(404).json({ error: "We couldn't verify that invitation" });
+    const targetName = normalizeIdentityName(parsed.data.name);
+    const targetEmail = parsed.data.contact.trim().toLowerCase();
+    const targetPhone = normalizePhone(parsed.data.contact);
+    const isEmailContact = targetEmail.includes("@");
+    const isUsablePhone = !isEmailContact && targetPhone.length >= 7;
+    const allGuests = await storage.listGuests(event.id);
+    const guest = allGuests.find((candidate) => {
+      if (normalizeIdentityName(candidate.name) !== targetName) return false;
+      const emailMatches = isEmailContact && Boolean(candidate.email) && candidate.email.trim().toLowerCase() === targetEmail;
+      const phoneMatches = isUsablePhone && Boolean(candidate.phone) && normalizePhone(candidate.phone) === targetPhone;
+      return emailMatches || phoneMatches;
+    });
+    if (!guest) return res.status(404).json({ error: "We couldn't verify that invitation" });
+    res.set("Cache-Control", "private, no-store");
+    res.json({ guest: publicGuestView(guest), guestToken: guest.accessToken });
+  });
+  app2.get("/api/events/public/:shareSlug/search-guests", (_req, res) => {
+    res.status(410).json({ error: "Guest search has been replaced by private invitation verification" });
+  });
+  app2.post("/api/events/public/:shareSlug/guest/:guestToken/rsvp", async (req, res) => {
+    const event = await storage.getEventByShareSlug(req.params.shareSlug);
+    if (!event) return res.status(404).json({ error: "Invitation not found" });
+    const token = guestTokenSchema.safeParse(req.params.guestToken);
+    if (!token.success) return res.status(404).json({ error: "Invitation not found" });
+    const guest = await storage.getGuestByAccessToken(event.id, token.data);
+    if (!guest) return res.status(404).json({ error: "Invitation not found" });
     const parsed = rsvpSubmitSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
     let attendingAdults = parsed.data.attendingAdults;
     let attendingChildren = parsed.data.attendingChildren;
     let attendingCount = parsed.data.attendingCount;
-    if ((parsed.data.status === "yes" || parsed.data.status === "maybe") && (attendingAdults != null || attendingChildren != null)) {
-      attendingAdults = Math.max(1, attendingAdults ?? 1);
+    if (parsed.data.status === "yes" || parsed.data.status === "maybe") {
+      attendingAdults = Math.max(1, attendingAdults ?? Math.min(attendingCount ?? guest.partySize, guest.partySize));
       attendingChildren = Math.max(0, attendingChildren ?? 0);
       if (event.rsvpRestriction === "no_children") {
         attendingChildren = 0;
@@ -79616,13 +80259,19 @@ async function registerRoutes(httpServer2, app2) {
         attendingAdults = 1;
         attendingChildren = 0;
       }
+      const invitedPartySize = Math.max(1, guest.partySize);
+      if (attendingAdults + attendingChildren > invitedPartySize) {
+        const remainingChildren = Math.max(0, invitedPartySize - attendingAdults);
+        attendingChildren = Math.min(attendingChildren, remainingChildren);
+        attendingAdults = Math.min(attendingAdults, invitedPartySize - attendingChildren);
+      }
       attendingCount = attendingAdults + attendingChildren;
     } else if (parsed.data.status === "no") {
       attendingAdults = 0;
       attendingChildren = 0;
       attendingCount = 0;
     }
-    const updated = await storage.updateGuest(event.id, guestId, {
+    const updated = await storage.updateGuest(event.id, guest.id, {
       rsvpStatus: parsed.data.status,
       attendingCount: attendingCount ?? (parsed.data.status === "yes" ? guest.partySize : parsed.data.status === "maybe" ? guest.partySize : 0),
       attendingAdults: attendingAdults ?? null,
@@ -79630,7 +80279,8 @@ async function registerRoutes(httpServer2, app2) {
       note: parsed.data.note ?? guest.note,
       respondedAt: Date.now()
     });
-    res.json(updated);
+    res.set("Cache-Control", "private, no-store");
+    res.json(publicGuestView(updated));
   });
   app2.get("/api/events/owner/:ownerToken/guests", async (req, res) => {
     const event = await storage.getEventByOwnerToken(req.params.ownerToken);
@@ -79658,6 +80308,13 @@ async function registerRoutes(httpServer2, app2) {
     const event = await storage.getEventByOwnerToken(req.params.ownerToken);
     if (!event) return res.status(404).json({ error: "Event not found" });
     const updated = await storage.updateGuest(event.id, Number(req.params.guestId), { invitedAt: Date.now() });
+    if (!updated) return res.status(404).json({ error: "Guest not found" });
+    res.json(updated);
+  });
+  app2.post("/api/events/owner/:ownerToken/guests/:guestId/rotate-access-token", async (req, res) => {
+    const event = await storage.getEventByOwnerToken(req.params.ownerToken);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+    const updated = await storage.rotateGuestAccessToken(event.id, Number(req.params.guestId));
     if (!updated) return res.status(404).json({ error: "Guest not found" });
     res.json(updated);
   });
@@ -79878,8 +80535,7 @@ async function registerRoutes(httpServer2, app2) {
     const guest = await storage.getGuest(Number(req.params.guestId));
     if (!guest || guest.eventId !== event.id) return res.status(404).json({ error: "Guest not found" });
     if (!guest.email) return res.status(400).json({ error: "This guest has no email address on file" });
-    const rsvpOrigin = String(req.body?.origin || "");
-    const rsvpUrl = rsvpOrigin ? `${rsvpOrigin}/rsvp/${event.shareSlug}` : `/rsvp/${event.shareSlug}`;
+    const rsvpUrl = guestRsvpUrl(req, event, guest);
     const tokenCtx = { guestName: guest.name.split(" ")[0] || guest.name, eventName: event.eventName, eventDate: event.eventDate, location: event.location, hostNames: event.hostNames };
     const rawMessage = event.inviteMessage || `We'd love for you to join us for ${event.eventName}.`;
     const withGreeting = rawMessage.includes("{{guestName}}") ? rawMessage : `Hi {{guestName}},
@@ -79908,8 +80564,6 @@ Can't wait to celebrate with you!`;
     const event = await storage.getEventByOwnerToken(req.params.ownerToken);
     if (!event) return res.status(404).json({ error: "Event not found" });
     const allGuests = await storage.listGuests(event.id);
-    const rsvpOrigin = String(req.body?.origin || "");
-    const rsvpUrl = rsvpOrigin ? `${rsvpOrigin}/rsvp/${event.shareSlug}` : `/rsvp/${event.shareSlug}`;
     const rawSubject = event.inviteSubject || `You're invited: ${event.eventName}`;
     const targets = allGuests.filter((g) => g.email && !g.emailSentAt);
     const results = [];
@@ -79918,6 +80572,7 @@ Can't wait to celebrate with you!`;
 
 ${rawMessage}`;
     for (const guest of targets) {
+      const rsvpUrl = guestRsvpUrl(req, event, guest);
       const tokenCtx = { guestName: guest.name.split(" ")[0] || guest.name, eventName: event.eventName, eventDate: event.eventDate, location: event.location, hostNames: event.hostNames };
       const base = applyInviteTokens(messageTemplate, tokenCtx);
       const subject = applyInviteTokens(rawSubject, tokenCtx);
@@ -79946,12 +80601,11 @@ Can't wait to celebrate with you!`;
     const event = await storage.getEventByOwnerToken(req.params.ownerToken);
     if (!event) return res.status(404).json({ error: "Event not found" });
     const allGuests = await storage.listGuests(event.id);
-    const rsvpOrigin = String(req.body?.origin || "");
-    const rsvpUrl = rsvpOrigin ? `${rsvpOrigin}/rsvp/${event.shareSlug}` : `/rsvp/${event.shareSlug}`;
     const targets = allGuests.filter((g) => g.email && g.rsvpStatus === "pending");
     const deadlineLine = event.rsvpDeadline ? `We'd love to hear back by ${event.rsvpDeadline}.` : "We'd love to hear back from you soon.";
     const results = [];
     for (const guest of targets) {
+      const rsvpUrl = guestRsvpUrl(req, event, guest);
       const greetingName = guest.name.split(" ")[0] || guest.name;
       const subject = `Reminder: RSVP for ${event.eventName}`;
       const body = `Hi ${greetingName},
@@ -79973,11 +80627,13 @@ Thanks so much!`;
     }
     res.json({ attempted: targets.length, results });
   });
-  app2.post("/api/events/public/:shareSlug/guests/:guestId/sms-opt-in", async (req, res) => {
+  app2.post("/api/events/public/:shareSlug/guest/:guestToken/sms-opt-in", async (req, res) => {
     const event = await storage.getEventByShareSlug(req.params.shareSlug);
-    if (!event) return res.status(404).json({ error: "Event not found" });
-    const guest = await storage.getGuest(Number(req.params.guestId));
-    if (!guest || guest.eventId !== event.id) return res.status(404).json({ error: "Guest not found" });
+    if (!event) return res.status(404).json({ error: "Invitation not found" });
+    const token = guestTokenSchema.safeParse(req.params.guestToken);
+    if (!token.success) return res.status(404).json({ error: "Invitation not found" });
+    const guest = await storage.getGuestByAccessToken(event.id, token.data);
+    if (!guest) return res.status(404).json({ error: "Invitation not found" });
     const optIn = Boolean(req.body?.optIn);
     const phone = typeof req.body?.phone === "string" ? req.body.phone.trim() : void 0;
     if (optIn && !(phone || guest.phone)) {
@@ -79988,7 +80644,8 @@ Thanks so much!`;
       smsOptIn: optIn,
       smsConsentAt: optIn ? Date.now() : null
     });
-    res.json(updated);
+    res.set("Cache-Control", "private, no-store");
+    res.json(publicGuestView(updated));
   });
   app2.post("/api/events/owner/:ownerToken/guests/:guestId/send-sms", async (req, res) => {
     const event = await storage.getEventByOwnerToken(req.params.ownerToken);
@@ -79997,8 +80654,7 @@ Thanks so much!`;
     if (!guest || guest.eventId !== event.id) return res.status(404).json({ error: "Guest not found" });
     if (!guest.smsOptIn) return res.status(400).json({ error: "This guest hasn't opted in to text messages" });
     if (!guest.phone) return res.status(400).json({ error: "This guest has no phone number on file" });
-    const rsvpOrigin = String(req.body?.origin || "");
-    const rsvpUrl = rsvpOrigin ? `${rsvpOrigin}/rsvp/${event.shareSlug}` : `/rsvp/${event.shareSlug}`;
+    const rsvpUrl = guestRsvpUrl(req, event, guest);
     const greetingName = guest.name.split(" ")[0] || guest.name;
     const deadlineLine = event.rsvpDeadline ? ` by ${event.rsvpDeadline}` : "";
     const body = `Hi ${greetingName}, just a reminder to RSVP for ${event.eventName}${deadlineLine}: ${rsvpUrl}
@@ -80016,12 +80672,11 @@ Reply STOP to opt out.`;
     const event = await storage.getEventByOwnerToken(req.params.ownerToken);
     if (!event) return res.status(404).json({ error: "Event not found" });
     const allGuests = await storage.listGuests(event.id);
-    const rsvpOrigin = String(req.body?.origin || "");
-    const rsvpUrl = rsvpOrigin ? `${rsvpOrigin}/rsvp/${event.shareSlug}` : `/rsvp/${event.shareSlug}`;
     const deadlineLine = event.rsvpDeadline ? ` by ${event.rsvpDeadline}` : "";
     const targets = allGuests.filter((g) => g.smsOptIn && g.phone && g.rsvpStatus === "pending");
     const results = [];
     for (const guest of targets) {
+      const rsvpUrl = guestRsvpUrl(req, event, guest);
       const greetingName = guest.name.split(" ")[0] || guest.name;
       const body = `Hi ${greetingName}, just a reminder to RSVP for ${event.eventName}${deadlineLine}: ${rsvpUrl}
 
@@ -80166,7 +80821,7 @@ Reply STOP to opt out.`;
     const feasibility = assessBudgetFeasibility({ budgetItems: budgetItems2, guests: guests2 });
     res.json(feasibility);
   });
-  function readInspirationImages(value) {
+  function readInspirationImages2(value) {
     if (!Array.isArray(value)) return [];
     return value.filter((x) => typeof x === "string" && x.startsWith("data:image/")).slice(0, 3);
   }
@@ -80175,7 +80830,7 @@ Reply STOP to opt out.`;
     if (!event) return res.status(404).json({ error: "Event not found" });
     const themePrompt = String(req.body?.themePrompt || "").trim();
     if (!themePrompt) return res.status(400).json({ error: "themePrompt is required" });
-    const inspirationImages = readInspirationImages(req.body?.inspirationImages);
+    const inspirationImages = readInspirationImages2(req.body?.inspirationImages);
     try {
       const dnaProfile = await getEventDnaProfile(req.params.ownerToken, event);
       const guests2 = await storage.listGuests(event.id);
@@ -80207,7 +80862,7 @@ Reply STOP to opt out.`;
     if (!feedback) return res.status(400).json({ error: "feedback is required" });
     const previousConcepts = Array.isArray(req.body?.previousConcepts) ? req.body.previousConcepts.filter(isValidInviteDesignConcept) : [];
     const themePrompt = String(req.body?.themePrompt || "").trim() || event.themeName || feedback;
-    const inspirationImages = readInspirationImages(req.body?.inspirationImages);
+    const inspirationImages = readInspirationImages2(req.body?.inspirationImages);
     try {
       const dnaProfile = await getEventDnaProfile(req.params.ownerToken, event);
       const guests2 = await storage.listGuests(event.id);
@@ -80236,6 +80891,10 @@ Reply STOP to opt out.`;
   app2.post("/api/events/owner/:ownerToken/invite/preview-concept", async (req, res) => {
     const event = await storage.getEventByOwnerToken(req.params.ownerToken);
     if (!event) return res.status(404).json({ error: "Event not found" });
+    const access2 = await canGenerateDraft(event.id);
+    if (!access2.ok) {
+      return res.status(402).json({ error: "This event needs Spark or Plus to preview AI artwork." });
+    }
     const concept = req.body?.concept;
     if (!isValidInviteDesignConcept(concept)) {
       return res.status(400).json({ error: "Invalid design concept" });
@@ -80263,6 +80922,10 @@ Reply STOP to opt out.`;
   app2.post("/api/events/owner/:ownerToken/invite/apply-concept", async (req, res) => {
     const event = await storage.getEventByOwnerToken(req.params.ownerToken);
     if (!event) return res.status(404).json({ error: "Event not found" });
+    const access2 = await canGenerateDraft(event.id);
+    if (!access2.ok) {
+      return res.status(402).json({ error: "This event needs Spark or Plus to apply AI artwork." });
+    }
     const concept = req.body?.concept;
     if (!isValidInviteDesignConcept(concept)) {
       return res.status(400).json({ error: "Invalid design concept" });
@@ -80284,6 +80947,81 @@ Reply STOP to opt out.`;
     } catch (err) {
       console.error("apply-concept illustration generation failed:", err);
       res.status(502).json({ error: "Couldn't generate the illustration right now \u2014 please try again." });
+    }
+  });
+  app2.post("/api/events/owner/:ownerToken/prepayment-preview", async (req, res) => {
+    const event = await storage.getEventByOwnerToken(req.params.ownerToken);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+    const previewEmail = eventRecoverySchema.safeParse({ email: req.body?.email });
+    if (!previewEmail.success) {
+      return res.status(400).json({ error: "Enter a valid email to create your private preview." });
+    }
+    const access2 = await canGenerateDraft(event.id);
+    if (access2.ok) {
+      return res.status(409).json({ error: "This event is already unlocked \u2014 use the normal invitation flow." });
+    }
+    if (event.prePaymentPreviewUrl) {
+      return res.json({ ready: true });
+    }
+    const allowance = canAttemptPrePaymentPreview(event);
+    if (!allowance.ok) {
+      if (allowance.reason === "already_paid") {
+        return res.status(409).json({ error: "This event is already unlocked \u2014 use the normal invitation flow." });
+      }
+      return res.status(429).json({
+        error: `Posy couldn't put together a preview after ${MAX_PRE_PAYMENT_PREVIEW_ATTEMPTS} tries \u2014 continue to checkout and your full plan will still be built once unlocked.`
+      });
+    }
+    await storage.updateEventById(event.id, { prePaymentPreviewAttempts: event.prePaymentPreviewAttempts + 1 });
+    try {
+      const concepts = await generateInviteDesignConcepts({
+        themePrompt: event.themeName || event.eventName,
+        eventName: event.eventName,
+        eventType: event.eventType,
+        eventDate: event.eventDate,
+        location: event.location,
+        hostNames: event.hostNames,
+        themeName: event.themeName
+      });
+      const concept = concepts[0];
+      if (!concept) throw new Error("No design concept returned");
+      const aspectRatio = concept.layoutStyle === "banner" ? "16:9" : concept.layoutStyle === "full-bleed" ? "9:16" : "1:1";
+      const illustrationUrl = await generateInviteIllustrationWithQualityGate(concept, aspectRatio);
+      await storage.updateEventById(event.id, {
+        prePaymentPreviewUrl: illustrationUrl,
+        prePaymentPreviewUsedAt: Date.now()
+      });
+      res.json({ ready: true });
+    } catch (err) {
+      console.error("prepayment-preview generation failed:", err);
+      res.status(502).json({ error: "Couldn't put together a preview right now \u2014 you can still continue to checkout." });
+    }
+  });
+  app2.get("/api/events/owner/:ownerToken/prepayment-preview/asset", async (req, res) => {
+    const event = await storage.getEventByOwnerToken(req.params.ownerToken);
+    if (!event || !event.prePaymentPreviewUrl) {
+      return res.status(404).json({ error: "No preview available yet" });
+    }
+    const match2 = /^data:image\/png;base64,(.+)$/.exec(event.prePaymentPreviewUrl);
+    if (!match2) {
+      console.error(`prepayment-preview asset: stored preview for event ${event.id} isn't a PNG data URL`);
+      return res.status(500).json({ error: "Couldn't render preview" });
+    }
+    const fullBytes = Buffer.from(match2[1], "base64");
+    res.set("Cache-Control", "private, no-store");
+    res.set("Content-Type", "image/png");
+    const access2 = await canGenerateDraft(event.id);
+    if (access2.ok) {
+      return res.send(fullBytes);
+    }
+    try {
+      const decoded = decodePng(fullBytes);
+      const preview = boxDownsampleRgb(decoded, PRE_PAYMENT_PREVIEW_LONG_EDGE);
+      res.send(encodePng(preview));
+    } catch (err) {
+      const detail = err instanceof PngDecodeError ? err.message : String(err);
+      console.error(`prepayment-preview asset: couldn't blur stored preview for event ${event.id}: ${detail}`);
+      res.status(500).json({ error: "Couldn't render preview" });
     }
   });
   app2.post("/api/events/owner/:ownerToken/invite/apply-theme", async (req, res) => {
@@ -80436,7 +81174,16 @@ Reply STOP to opt out.`;
     }
     const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, updates);
     if (!updated) return res.status(404).json({ error: "Event not found" });
-    res.json(updated);
+    res.json({
+      ok: true,
+      suite: {
+        envelopeColor: updated.envelopeColor,
+        envelopeLinerPattern: updated.envelopeLinerPattern,
+        stampStyle: updated.stampStyle,
+        linerColor: updated.linerColor,
+        stampColor: updated.stampColor
+      }
+    });
   });
   app2.patch("/api/events/owner/:ownerToken/invite-status", async (req, res) => {
     const event = await storage.getEventByOwnerToken(req.params.ownerToken);
@@ -80579,10 +81326,9 @@ Reply STOP to opt out.`;
       return res.status(403).json({ error: "You don't have access to this event." });
     }
     if (event.capturedEmail && event.capturedEmail !== normalized) {
-      console.warn(`[email-capture] event ${eventId} already has a different captured email; ignoring new value`);
-    } else {
-      await storage.setEventCapturedEmail(eventId, normalized);
+      console.info(`[email-capture] owner corrected event ${eventId}'s captured email`);
     }
+    await persistCapturedEmail(event, normalized);
     const summary = await getEntitlementSummary(eventId);
     if (!summary) return res.status(404).json({ error: "Event not found" });
     res.json(summary);
@@ -80682,6 +81428,18 @@ Reply STOP to opt out.`;
       return res.status(503).json({ error: "Checkout isn't set up yet \u2014 please check back soon." });
     }
     const origin = `${req.protocol}://${req.get("host")}`;
+    let returnEvent;
+    if (returnToken) {
+      returnEvent = await storage.getEventByOwnerToken(returnToken);
+      if (!returnEvent) {
+        return res.status(404).json({ error: "This event couldn't be found for checkout. Please return to your event and try again." });
+      }
+      try {
+        await persistCapturedEmail(returnEvent, email.toLowerCase());
+      } catch (err) {
+        console.error(`[email-capture] couldn't save the checkout email for event ${returnEvent.id}:`, err);
+      }
+    }
     if (plan === "spark") {
       const sparkPriceId = getSparkPriceId();
       if (!sparkPriceId) {
@@ -80693,6 +81451,7 @@ Reply STOP to opt out.`;
       try {
         const session = await stripe.checkout.sessions.create({
           mode: "payment",
+          ...USD_CHECKOUT_SESSION_DEFAULTS,
           customer_email: email,
           line_items: [{ price: sparkPriceId, quantity: 1 }],
           success_url: `${origin}/draft-generating/${encodeURIComponent(returnToken)}?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
@@ -80713,6 +81472,7 @@ Reply STOP to opt out.`;
     try {
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
+        ...USD_CHECKOUT_SESSION_DEFAULTS,
         customer_email: email,
         line_items: [{ price: priceId, quantity: 1 }],
         payment_method_collection: "always",
@@ -80939,6 +81699,17 @@ function log(message2, source = "express") {
   });
   console.log(`${formattedTime} [${source}] ${message2}`);
 }
+function redactSensitivePath(path8) {
+  return path8.replace(/(\/owner\/)[^/]+/g, "$1[REDACTED]").replace(/(\/guest\/)[^/]+/g, "$1[REDACTED]");
+}
+function redactSensitiveJson(value) {
+  if (Array.isArray(value)) return value.map(redactSensitiveJson);
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(Object.entries(value).map(([key, entry]) => {
+    if (/token/i.test(key)) return [key, "[REDACTED]"];
+    return [key, redactSensitiveJson(entry)];
+  }));
+}
 function createExpressApp() {
   const app2 = (0, import_express.default)();
   const httpServer2 = (0, import_node_http.createServer)(app2);
@@ -80954,9 +81725,14 @@ function createExpressApp() {
     })
   );
   app2.use(import_express.default.urlencoded({ extended: false, limit: "6mb" }));
+  app2.use((_req, res, next) => {
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    next();
+  });
   app2.use((req, res, next) => {
     const start = Date.now();
-    const path8 = req.path;
+    const path8 = redactSensitivePath(req.path);
     let capturedJsonResponse = void 0;
     const originalResJson = res.json;
     res.json = function(bodyJson, ...args) {
@@ -80968,7 +81744,7 @@ function createExpressApp() {
       if (path8.startsWith("/api")) {
         let logLine = `${req.method} ${path8} ${res.statusCode} in ${duration}ms`;
         if (capturedJsonResponse) {
-          logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+          logLine += ` :: ${JSON.stringify(redactSensitiveJson(capturedJsonResponse))}`;
         }
         log(logLine);
       }

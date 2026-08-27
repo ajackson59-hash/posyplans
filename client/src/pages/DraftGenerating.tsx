@@ -216,34 +216,18 @@ export default function DraftGenerating() {
     },
   });
 
-  // Stamps whatever email the host types into the Spark field as soon as it
-  // looks complete (onBlur below), purely to unlock the pre-payment preview
-  // below — completely separate from the Plus-lookup capture above, though
-  // both land on the same route and the same capturedEmail column. Silent on
-  // failure: a preview is a nice-to-have, never something to block checkout
-  // over or show an error toast for.
-  const capturePreviewEmail = useMutation({
-    mutationFn: (candidateEmail: string) => {
-      const eventId = entitlement.data?.eventId;
-      if (!eventId) throw new Error("Event not loaded yet");
-      return apiRequestJson<EntitlementSummary>("POST", `/api/events/${eventId}/email-capture`, {
-        email: candidateEmail,
-        ownerToken,
-      });
-    },
-    onSuccess: () => {
-      entitlement.refetch();
-    },
-  });
-
-  // Kicks off the real, capped, blurred invitation preview (B2a) once an
-  // email is on the event. Idempotent server-side — safe to fire more than
-  // once (e.g. StrictMode double-render, or a returning visitor who already
-  // has a preview) since the route just returns { ready: true } instantly
-  // instead of spending again.
+  // Kicks off the real, capped, low-resolution invitation preview without
+  // persisting this provisional field value as the event's recovery identity.
+  // Checkout submission and the explicit Plus lookup capture the email later;
+  // Stripe's verified address remains authoritative after payment.
   const startPrePaymentPreview = useMutation({
-    mutationFn: () =>
-      apiRequestJson<{ ready: boolean }>("POST", `/api/events/owner/${ownerToken}/prepayment-preview`, {}),
+    mutationFn: (candidateEmail: string) =>
+      apiRequestJson<{ ready: boolean }>("POST", `/api/events/owner/${ownerToken}/prepayment-preview`, {
+        email: candidateEmail,
+      }),
+    onError: () => {
+      previewTriggeredRef.current = false;
+    },
   });
 
   // Only auto-fire generation once we know this event is allowed to draft
@@ -297,20 +281,6 @@ export default function DraftGenerating() {
 
   const checkoutConfigured = config?.configured ?? false;
 
-  // Fires the pre-payment preview generation the moment an email lands on
-  // this event while the paywall is showing. Runs at most once per mount
-  // (the ref, not just the email-captured condition, guards re-fires from
-  // unrelated re-renders); the server's own idempotency covers the rest
-  // (StrictMode double-invoke, a second tab, etc).
-  useEffect(() => {
-    if (!showPaywall) return;
-    if (!entitlement.data?.emailCaptured) return;
-    if (previewTriggeredRef.current) return;
-    previewTriggeredRef.current = true;
-    startPrePaymentPreview.mutate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showPaywall, entitlement.data?.emailCaptured]);
-
   if (checkoutHandoffPhase === "confirming") {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 py-16">
@@ -360,11 +330,11 @@ export default function DraftGenerating() {
         <div className="w-full max-w-2xl space-y-5" data-testid="draft-generating-paywall">
           <div className="text-center">
             <h1 className="font-serif text-2xl font-semibold text-foreground">
-              Your plan is ready — choose how to unlock it
+              Your event details are saved
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Pay once for just this event, or go Plus for unlimited plans across everything you
-              host. Both unlock this plan right now.
+              Choose how you’d like Posy to build your complete first draft: pay once for this
+              event, or go Plus for every event you host.
             </p>
           </div>
 
@@ -381,37 +351,38 @@ export default function DraftGenerating() {
             </button>
           </div>
 
-          {/* Real, capped, blurred invitation preview (B2a) — shown once an
-              email is captured, replacing the generic demo above with the
-              host's OWN invitation as soon as it exists. Hidden entirely on
-              a generation failure so it never blocks or clutters checkout. */}
+          {/* Real, capped, low-resolution invitation preview (B2a). The server
+              destroys production-quality detail before these bytes reach the
+              browser, so the composition can remain visible and useful here. */}
           {!startPrePaymentPreview.isError && (
             <div
-              className="mx-auto w-full max-w-xs overflow-hidden rounded-xl border border-border bg-card"
+              className="mx-auto w-full max-w-sm overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
               data-testid="prepayment-preview-card"
             >
               {startPrePaymentPreview.isSuccess ? (
                 <div className="relative">
                   <img
                     src={`/api/events/owner/${ownerToken}/prepayment-preview/asset`}
-                    alt="A blurred preview of your invitation, generated by Posy"
-                    className="block aspect-square w-full scale-105 object-cover blur-[3px]"
+                    alt="A low-resolution preview of your personalized invitation direction"
+                    className="block aspect-square w-full object-cover"
                     data-testid="img-prepayment-preview"
                   />
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                    <span className="rounded-full bg-white/95 px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm">
-                      Unlock to see it in full quality
-                    </span>
+                  <span className="absolute right-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground shadow-sm">
+                    Posy preview
+                  </span>
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent px-5 pb-4 pt-16 text-white">
+                    <p className="font-serif text-lg font-semibold">A first look, made from your details</p>
+                    <p className="mt-1 text-xs text-white/85">Unlock your complete plan and full invitation designs.</p>
                   </div>
                 </div>
               ) : startPrePaymentPreview.isPending ? (
                 <div className="flex aspect-square items-center justify-center gap-2 px-6 text-center text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Sketching your invitation…
+                  Creating your personal preview…
                 </div>
               ) : (
                 <div className="flex aspect-square items-center justify-center px-6 text-center text-sm text-muted-foreground">
-                  Enter your email below and Posy will sketch a real preview of your invitation while you decide.
+                  Add your email below and Posy will create a personalized preview while you decide.
                 </div>
               )}
             </div>
@@ -594,17 +565,17 @@ export default function DraftGenerating() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   onBlur={() => {
-                    // Fires the pre-payment preview as early as possible —
-                    // don't wait for checkout submit. capturePreviewEmail's
-                    // onSuccess refetches entitlement, which flips
-                    // emailCaptured and lets the useEffect above start the
-                    // actual generation. Never toasts on failure — this is a
-                    // background nudge, not a required step.
-                    if (EMAIL_LOOKS_VALID.test(email) && !entitlement.data?.emailCaptured) {
-                      capturePreviewEmail.mutate(email);
+                    // Generate early without turning an onBlur value into the
+                    // event's permanent recovery identity.
+                    if (EMAIL_LOOKS_VALID.test(email) && !previewTriggeredRef.current) {
+                      previewTriggeredRef.current = true;
+                      startPrePaymentPreview.mutate(email);
                     }
                   }}
                 />
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  When you continue to checkout, Posy will also email your private return link.
+                </p>
               </div>
               <Button
                 type="submit"

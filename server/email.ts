@@ -34,7 +34,7 @@ function escapeHtml(value: string): string {
 // paragraph spacing, rather than a wall of unstyled plain text. Sending an
 // html part alongside text also matters for deliverability: text-only
 // mail from a shared sending address scores as spammier to most inboxes.
-function buildEmailHtml(body: string, ctaLabel: string): string {
+function buildEmailHtml(body: string, ctaLabel: string, footer: string): string {
   const urlPattern = /(https?:\/\/[^\s]+)/g;
   const paragraphs = body
     .split(/\n{2,}/)
@@ -68,7 +68,7 @@ function buildEmailHtml(body: string, ctaLabel: string): string {
             </tr>
             <tr>
               <td style="padding-top:28px;border-top:1px solid #ece8e1;margin-top:24px;font-size:12px;color:#a3a894;">
-                Sent by Posy on behalf of your host. If this wasn't meant for you, you can ignore it.
+                ${escapeHtml(footer)}
               </td>
             </tr>
           </table>
@@ -83,7 +83,7 @@ async function sendEmail(opts: {
   to: string;
   subject: string;
   body: string;
-}, ctaLabel: string): Promise<SendEmailResult> {
+}, ctaLabel: string, footer: string): Promise<SendEmailResult> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     return {
@@ -106,7 +106,7 @@ async function sendEmail(opts: {
         to: [opts.to],
         subject: opts.subject,
         text: opts.body,
-        html: buildEmailHtml(opts.body, ctaLabel),
+        html: buildEmailHtml(opts.body, ctaLabel, footer),
       }),
     });
 
@@ -136,7 +136,11 @@ export async function sendInviteEmail(opts: {
   subject: string;
   body: string;
 }): Promise<SendEmailResult> {
-  return sendEmail(opts, "View & RSVP");
+  return sendEmail(
+    opts,
+    "View & RSVP",
+    "Sent by Posy on behalf of your host. If this wasn't meant for you, you can ignore it.",
+  );
 }
 
 export async function sendEventRecoveryEmail(opts: {
@@ -144,5 +148,9 @@ export async function sendEventRecoveryEmail(opts: {
   subject: string;
   body: string;
 }): Promise<SendEmailResult> {
-  return sendEmail(opts, "Open event dashboard");
+  return sendEmail(
+    opts,
+    "Open event dashboard",
+    "This email contains a private Posy event link. If you weren't expecting it, you can ignore it.",
+  );
 }

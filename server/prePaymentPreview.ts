@@ -2,10 +2,11 @@
 //
 // Before this feature, the only ways to see real AI artwork were (a) already
 // paid (Spark/Plus), or a generic simulated demo modal. This lets an unpaid
-// host see ONE real, capped, blurred preview of their OWN invitation once
-// they've given an email — enough to build desire without giving away real
-// spend to anonymous, un-emailed traffic, and without ever letting a client
-// loop the provider call for free.
+// host see ONE real, capped, low-resolution preview of their OWN invitation
+// once they've supplied a plausible email in the current request — enough to
+// build desire without making that provisional input the event's permanent
+// recovery identity, and without ever letting a client loop the provider call
+// for free.
 //
 // Pure functions only — no I/O — so this is trivially unit-testable and easy
 // to reason about independent of the route/storage layer.
@@ -16,8 +17,9 @@ import type { Event } from "../shared/schema";
 // product. Three tries is enough to survive one quality-gate rejection
 // without opening the door to unlimited free generations.
 export const MAX_PRE_PAYMENT_PREVIEW_ATTEMPTS = 3;
+export const PRE_PAYMENT_PREVIEW_LONG_EDGE = 160;
 
-export type PrePaymentPreviewDenialReason = "already_paid" | "needs_email" | "attempts_exhausted";
+export type PrePaymentPreviewDenialReason = "already_paid" | "attempts_exhausted";
 
 export type PrePaymentPreviewAllowance =
   | { ok: true }
@@ -30,13 +32,10 @@ export type PrePaymentPreviewAllowance =
 // case specifically; it does not know about Plus, so it must never be the
 // only paid check on the route.
 export function canAttemptPrePaymentPreview(
-  event: Pick<Event, "sparkUnlockedAt" | "capturedEmail" | "prePaymentPreviewAttempts">,
+  event: Pick<Event, "sparkUnlockedAt" | "prePaymentPreviewAttempts">,
 ): PrePaymentPreviewAllowance {
   if (event.sparkUnlockedAt) {
     return { ok: false, reason: "already_paid" };
-  }
-  if (!event.capturedEmail) {
-    return { ok: false, reason: "needs_email" };
   }
   if (event.prePaymentPreviewAttempts >= MAX_PRE_PAYMENT_PREVIEW_ATTEMPTS) {
     return { ok: false, reason: "attempts_exhausted" };

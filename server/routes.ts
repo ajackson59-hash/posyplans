@@ -22,7 +22,11 @@ import { generateInviteToneAi, type InviteTone } from "./inviteAi";
 import { generateBudgetSuggestionAi } from "./budgetAi";
 import { generateInviteDesignConcepts, extractInspirationNotes } from "./inviteDesignAi";
 import { generateInviteIllustration, generateInviteIllustrationWithQualityGate } from "./illustrationGen";
-import { canAttemptPrePaymentPreview, MAX_PRE_PAYMENT_PREVIEW_ATTEMPTS } from "./prePaymentPreview";
+import {
+  canAttemptPrePaymentPreview,
+  MAX_PRE_PAYMENT_PREVIEW_ATTEMPTS,
+  PRE_PAYMENT_PREVIEW_LONG_EDGE,
+} from "./prePaymentPreview";
 import { boxDownsampleRgb, decodePng, encodePng, PngDecodeError } from "./aiFirst/png";
 import { isValidInviteDesignConcept, type InviteDesignConcept, parseInviteDesignConcept, getFontPairing, FONT_PAIRINGS, LAYOUT_STYLES, BORDER_STYLES } from "@shared/inviteDesign";
 import { deriveThemeDna, isLinerPattern, isStampStyle } from "@shared/themeDna";
@@ -159,6 +163,40 @@ function buildEventRecoveryBody(events: Event[]): string {
   ].join("\n\n");
 }
 
+function buildCapturedEventBody(event: Event): string {
+  const detail = [event.eventType, event.eventDate].filter(Boolean).join(" · ");
+  const dashboardUrl = `${PUBLIC_APP_ORIGIN}/dashboard/${encodeURIComponent(event.ownerToken)}`;
+
+  return [
+    "Hi,",
+    "Your event details are saved in Posy. Keep the private link below so you can return without starting over:",
+    `${event.eventName}${detail ? ` — ${detail}` : ""}\n${dashboardUrl}`,
+    "You can use this link anytime to continue planning. Please don't forward it — it gives access to your event dashboard.",
+    "If you didn't create this event, you can ignore this email.",
+  ].join("\n\n");
+}
+
+async function sendCapturedEventLinkSafe(event: Event, email: string): Promise<void> {
+  try {
+    const result = await sendEventRecoveryEmail({
+      to: email,
+      subject: "Your private Posy event link",
+      body: buildCapturedEventBody(event),
+    });
+    if (!result.ok) {
+      console.error(`[email-capture] private-link delivery failed for event ${event.id}: ${result.error || "unknown error"}`);
+    }
+  } catch (err) {
+    console.error(`[email-capture] private-link delivery threw for event ${event.id}:`, err);
+  }
+}
+
+async function persistCapturedEmail(event: Event, email: string): Promise<void> {
+  if (event.capturedEmail === email) return;
+  await storage.setEventCapturedEmail(event.id, email);
+  await sendCapturedEventLinkSafe(event, email);
+}
+
 // This is defense in depth for the generic recovery form. The direct guest
 // link is the primary path; recovery requires two exact identity factors and
 // is also bounded per process/IP so it cannot be used as a guest-list oracle.
@@ -184,10 +222,10 @@ function allowGuestIdentifyAttempt(key: string, now = Date.now()): boolean {
 
 // Defense-in-depth email capture from trusted Stripe moments (checkout confirm
 // / webhook), where we have both a Stripe-verified email and the event. More
-// trustworthy than the typed-in /email-capture route, so it's stamped here too
-// to guarantee the entitlement gate can resolve Plus membership. Honors the
-// same "don't overwrite a different existing email" rule and, critically, never
-// throws — checkout and webhook processing must complete regardless.
+// trustworthy than the typed-in /email-capture route, so it is authoritative:
+// Stripe's verified address replaces provisional or mistyped input and receives
+// the private return link. This helper never throws because checkout and webhook
+// processing must complete regardless of email persistence or delivery trouble.
 async function stampCapturedEmailSafe(eventId: number, email: string | null | undefined): Promise<void> {
   try {
     const normalized = (email ?? "").trim().toLowerCase();
@@ -195,10 +233,9 @@ async function stampCapturedEmailSafe(eventId: number, email: string | null | un
     const event = await storage.getEventById(eventId);
     if (!event) return;
     if (event.capturedEmail && event.capturedEmail !== normalized) {
-      console.warn(`[email-capture] event ${eventId} already has a different captured email; not overwriting from Stripe`);
-      return;
+      console.info(`[email-capture] replacing event ${eventId}'s earlier email with Stripe's verified address`);
     }
-    await storage.setEventCapturedEmail(eventId, normalized);
+    await persistCapturedEmail(event, normalized);
   } catch (err) {
     console.error(`[email-capture] failed to stamp email on event ${eventId}:`, err);
   }
@@ -1243,11 +1280,11 @@ export async function registerRoutes(
   });
 
   // ── Pre-payment invitation preview (QA report B2a) ─────────────────
-  // Lets an unpaid-but-emailed host see ONE real, capped, blurred preview of
-  // their own invitation before checkout — real AI generation (not a
-  // simulated demo), but bounded so an anonymous or looping client can never
-  // turn this into free unlimited spend. See server/prePaymentPreview.ts for
-  // the gating rules and server/aiFirst/png.ts for the blur implementation.
+  // Lets an unpaid host see ONE real, capped, low-resolution preview of their
+  // own invitation before checkout — real AI generation (not a simulated
+  // demo), but bounded by owner token + per-event attempt count. The email in
+  // this request is only a plausibility gate; it is deliberately NOT persisted
+  // as the event's recovery identity merely because an input lost focus.
   //
   // Deliberately reuses the same generator functions as preview-concept /
   // apply-concept above (medium-quality single-concept illustration) rather
@@ -1257,6 +1294,11 @@ export async function registerRoutes(
   app.post("/api/events/owner/:ownerToken/prepayment-preview", async (req, res) => {
     const event = await storage.getEventByOwnerToken(req.params.ownerToken);
     if (!event) return res.status(404).json({ error: "Event not found" });
+
+    const previewEmail = eventRecoverySchema.safeParse({ email: req.body?.email });
+    if (!previewEmail.success) {
+      return res.status(400).json({ error: "Enter a valid email to create your private preview." });
+    }
 
     // Already paid (Spark or Plus) — this route exists only to nudge an
     // unpaid visitor toward checkout, so a paid event should use the normal
@@ -1276,9 +1318,6 @@ export async function registerRoutes(
 
     const allowance = canAttemptPrePaymentPreview(event);
     if (!allowance.ok) {
-      if (allowance.reason === "needs_email") {
-        return res.status(400).json({ error: "Enter your email first so Posy can save your preview." });
-      }
       if (allowance.reason === "already_paid") {
         return res.status(409).json({ error: "This event is already unlocked — use the normal invitation flow." });
       }
@@ -1351,8 +1390,8 @@ export async function registerRoutes(
 
     try {
       const decoded = decodePng(fullBytes);
-      const blurred = boxDownsampleRgb(decoded, 28);
-      res.send(encodePng(blurred));
+      const preview = boxDownsampleRgb(decoded, PRE_PAYMENT_PREVIEW_LONG_EDGE);
+      res.send(encodePng(preview));
     } catch (err) {
       const detail = err instanceof PngDecodeError ? err.message : String(err);
       console.error(`prepayment-preview asset: couldn't blur stored preview for event ${event.id}: ${detail}`);
@@ -1803,14 +1842,14 @@ export async function registerRoutes(
       return res.status(403).json({ error: "You don't have access to this event." });
     }
 
-    // Don't silently clobber a different email already on the event — treat the
-    // first captured email as authoritative and no-op on a mismatch. Blank or
-    // an identical email falls through to the (idempotent) set.
+    // A valid owner token authorizes correcting the event email. The earlier
+    // first-write-wins behavior could permanently bind a typo and prevent an
+    // existing Plus address or Stripe's verified checkout address from taking
+    // ownership. Send the private return link only when the address changes.
     if (event.capturedEmail && event.capturedEmail !== normalized) {
-      console.warn(`[email-capture] event ${eventId} already has a different captured email; ignoring new value`);
-    } else {
-      await storage.setEventCapturedEmail(eventId, normalized);
+      console.info(`[email-capture] owner corrected event ${eventId}'s captured email`);
     }
+    await persistCapturedEmail(event, normalized);
 
     const summary = await getEntitlementSummary(eventId);
     if (!summary) return res.status(404).json({ error: "Event not found" });
@@ -1966,6 +2005,24 @@ export async function registerRoutes(
 
     const origin = `${req.protocol}://${req.get("host")}`;
 
+    // A checkout launched from an event is an explicit owner-authorized email
+    // moment. Capture it before handing off to Stripe so an abandoned checkout
+    // is recoverable; Stripe's verified address still wins on confirmation.
+    let returnEvent: Event | undefined;
+    if (returnToken) {
+      returnEvent = await storage.getEventByOwnerToken(returnToken);
+      if (!returnEvent) {
+        return res.status(404).json({ error: "This event couldn't be found for checkout. Please return to your event and try again." });
+      }
+      try {
+        await persistCapturedEmail(returnEvent, email.toLowerCase());
+      } catch (err) {
+        // Stripe confirmation stamps the verified address again, so an email
+        // persistence outage must not prevent a host from checking out.
+        console.error(`[email-capture] couldn't save the checkout email for event ${returnEvent.id}:`, err);
+      }
+    }
+
     if (plan === "spark") {
       const sparkPriceId = getSparkPriceId();
       if (!sparkPriceId) {
@@ -2055,8 +2112,8 @@ export async function registerRoutes(
         }
         const unlocked = await storage.markEventSparkUnlocked(ownerToken, session.id);
         // Defense-in-depth: stamp the Stripe-verified email onto the event so
-        // the entitlement gate resolves Plus membership even if the client
-        // /email-capture call never fired. Blank-or-same rule; never throws.
+        // the entitlement gate resolves membership even if checkout began
+        // with a typo or a different address. Verified Stripe identity wins.
         if (unlocked) await stampCapturedEmailSafe(unlocked.id, email);
         // Server-side Purchase conversion (Meta CAPI). event_id = session.id so
         // it dedupes against the client Pixel fired on the success page.
@@ -2103,7 +2160,8 @@ export async function registerRoutes(
       // Defense-in-depth: if this Plus checkout was started from inside a
       // specific event (returnToken carried through the session metadata),
       // stamp the verified email onto that event so its entitlement gate
-      // immediately resolves the new Plus membership. Blank-or-same; no throw.
+      // immediately resolves the new Plus membership. Verified Stripe
+      // identity replaces earlier provisional input; failures never throw.
       const plusReturnToken = session.metadata?.returnToken;
       if (plusReturnToken) {
         const returnEvent = await storage.getEventByOwnerToken(plusReturnToken);
