@@ -81754,10 +81754,19 @@ function createExpressApp() {
   return { app: app2, httpServer: httpServer2 };
 }
 var readyPromise = null;
+function registerApiNotFoundHandler(app2) {
+  app2.use("/api", (_req, res) => {
+    res.status(404).json({
+      error: "We couldn't find that Posy API route.",
+      code: "api_not_found"
+    });
+  });
+}
 function ensureRoutesRegistered(app2, httpServer2) {
   if (!readyPromise) {
     readyPromise = (async () => {
       await registerRoutes(httpServer2, app2);
+      registerApiNotFoundHandler(app2);
       app2.use((err, _req, res, next) => {
         const status = err.status || err.statusCode || 500;
         const message2 = err.message || "Internal Server Error";
