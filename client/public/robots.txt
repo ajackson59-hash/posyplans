@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+
+# Host and guest links contain private, unlisted event identifiers.
+Disallow: /api/
+Disallow: /checkout/
+Disallow: /dashboard/
+Disallow: /draft-generating/
+Disallow: /draft-overview/
+Disallow: /intake
+Disallow: /recover
+Disallow: /rsvp/
+
+Sitemap: https://posyplans.com/sitemap.xml
