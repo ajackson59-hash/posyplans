@@ -92,6 +92,7 @@ export default function DraftGenerating() {
   const startedGenerationRef = useRef(false);
   const confirmedRef = useRef(false);
   const previewTriggeredRef = useRef(false);
+  const previewCardRef = useRef<HTMLDivElement>(null);
   const [email, setEmail] = useState("");
   const [plusEmail, setPlusEmail] = useState("");
   // The paywall shows Spark and Plus side by side rather than burying Plus in a
@@ -100,6 +101,8 @@ export default function DraftGenerating() {
   const [plusInterval, setPlusInterval] = useState<"annual" | "monthly">("annual");
   const [showPlusEmail, setShowPlusEmail] = useState(false);
   const [demoOpen, setDemoOpen] = useState(false);
+  const [previewImageLoaded, setPreviewImageLoaded] = useState(false);
+  const [previewImageFailed, setPreviewImageFailed] = useState(false);
 
   // Returning from a Spark checkout lands back here with these params (see
   // server/routes.ts create-session success_url). We confirm the session to
@@ -225,10 +228,40 @@ export default function DraftGenerating() {
       apiRequestJson<{ ready: boolean }>("POST", `/api/events/owner/${ownerToken}/prepayment-preview`, {
         email: candidateEmail,
       }),
-    onError: () => {
-      previewTriggeredRef.current = false;
-    },
   });
+
+  // The preview is the value proof before payment, not background decoration.
+  // Bring the completed image into view on smaller screens where the email
+  // form may sit below it, then let the host choose whether to unlock.
+  useEffect(() => {
+    if (!previewImageLoaded) return;
+    previewCardRef.current?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+  }, [previewImageLoaded]);
+
+  const previewIsVisible = startPrePaymentPreview.isSuccess && previewImageLoaded;
+  const previewCouldNotBeShown = startPrePaymentPreview.isError || previewImageFailed;
+  const previewAssetLoading =
+    startPrePaymentPreview.isSuccess && !previewImageLoaded && !previewImageFailed;
+  const checkoutPending = startSparkCheckout.isPending || startPlusCheckout.isPending;
+
+  let paywallCtaLabel = "Show me my personalized preview";
+  if (checkoutPending) {
+    paywallCtaLabel = "Starting checkout…";
+  } else if (startPrePaymentPreview.isPending) {
+    paywallCtaLabel = "Creating your personal preview…";
+  } else if (previewAssetLoading) {
+    paywallCtaLabel = "Revealing your personal preview…";
+  } else if (previewCouldNotBeShown) {
+    paywallCtaLabel =
+      selectedPlan === "spark"
+        ? "Continue to checkout — $9.99"
+        : `Continue to Plus — ${plusInterval === "annual" ? "$99/yr" : "$11.99/mo"}`;
+  } else if (previewIsVisible) {
+    paywallCtaLabel =
+      selectedPlan === "spark"
+        ? "Unlock this event — $9.99"
+        : `Subscribe to Plus — ${plusInterval === "annual" ? "$99/yr" : "$11.99/mo"}`;
+  }
 
   // Only auto-fire generation once we know this event is allowed to draft
   // (Spark unlocked or Plus). Never before entitlement resolves, and never
@@ -354,39 +387,51 @@ export default function DraftGenerating() {
           {/* Real, capped, low-resolution invitation preview (B2a). The server
               destroys production-quality detail before these bytes reach the
               browser, so the composition can remain visible and useful here. */}
-          {!startPrePaymentPreview.isError && (
-            <div
-              className="mx-auto w-full max-w-sm overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
-              data-testid="prepayment-preview-card"
-            >
-              {startPrePaymentPreview.isSuccess ? (
-                <div className="relative">
-                  <img
-                    src={`/api/events/owner/${ownerToken}/prepayment-preview/asset`}
-                    alt="A low-resolution preview of your personalized invitation direction"
-                    className="block aspect-square w-full object-cover"
-                    data-testid="img-prepayment-preview"
-                  />
-                  <span className="absolute right-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground shadow-sm">
-                    Posy preview
-                  </span>
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent px-5 pb-4 pt-16 text-white">
-                    <p className="font-serif text-lg font-semibold">A first look, made from your details</p>
-                    <p className="mt-1 text-xs text-white/85">Unlock your complete plan and full invitation designs.</p>
+          <div
+            ref={previewCardRef}
+            className="mx-auto w-full max-w-sm overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
+            data-testid="prepayment-preview-card"
+            aria-live="polite"
+          >
+            {startPrePaymentPreview.isSuccess && !previewImageFailed ? (
+              <div className="relative">
+                <img
+                  src={`/api/events/owner/${ownerToken}/prepayment-preview/asset`}
+                  alt="A low-resolution preview of your personalized invitation direction"
+                  className="block aspect-square w-full object-cover"
+                  data-testid="img-prepayment-preview"
+                  onLoad={() => setPreviewImageLoaded(true)}
+                  onError={() => setPreviewImageFailed(true)}
+                />
+                {!previewImageLoaded && (
+                  <div className="absolute inset-0 flex items-center justify-center gap-2 bg-card px-6 text-center text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Revealing your personal preview…
                   </div>
+                )}
+                <span className="absolute right-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground shadow-sm">
+                  Posy preview
+                </span>
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent px-5 pb-4 pt-16 text-white">
+                  <p className="font-serif text-lg font-semibold">A first look, made from your details</p>
+                  <p className="mt-1 text-xs text-white/85">Unlock your complete plan and full invitation designs.</p>
                 </div>
-              ) : startPrePaymentPreview.isPending ? (
-                <div className="flex aspect-square items-center justify-center gap-2 px-6 text-center text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Creating your personal preview…
-                </div>
-              ) : (
-                <div className="flex aspect-square items-center justify-center px-6 text-center text-sm text-muted-foreground">
-                  Add your email below and Posy will create a personalized preview while you decide.
-                </div>
-              )}
-            </div>
-          )}
+              </div>
+            ) : startPrePaymentPreview.isPending ? (
+              <div className="flex aspect-square items-center justify-center gap-2 px-6 text-center text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Creating your personal preview…
+              </div>
+            ) : previewCouldNotBeShown ? (
+              <div className="flex aspect-square items-center justify-center px-6 text-center text-sm text-muted-foreground">
+                Your preview took too long this time. You can still continue—your complete invitation is included once unlocked.
+              </div>
+            ) : (
+              <div className="flex aspect-square items-center justify-center px-6 text-center text-sm text-muted-foreground">
+                Add your email below and Posy will create a personalized preview before checkout.
+              </div>
+            )}
+          </div>
 
           {/* Side-by-side plan choice */}
           <div className="grid gap-3 sm:grid-cols-2">
@@ -550,6 +595,18 @@ export default function DraftGenerating() {
               className="mx-auto max-w-sm space-y-3"
               onSubmit={(e) => {
                 e.preventDefault();
+                // The first submit is intentionally the preview reveal. The
+                // checkout action only becomes available after real personal
+                // value is visible. If the optional preview provider fails,
+                // never block a host who is ready to buy.
+                if (!previewIsVisible && !previewCouldNotBeShown) {
+                  const candidateEmail = email.trim();
+                  if (EMAIL_LOOKS_VALID.test(candidateEmail) && !previewTriggeredRef.current) {
+                    previewTriggeredRef.current = true;
+                    startPrePaymentPreview.mutate(candidateEmail);
+                  }
+                  return;
+                }
                 if (selectedPlan === "spark") startSparkCheckout.mutate();
                 else startPlusCheckout.mutate();
               }}
@@ -565,11 +622,12 @@ export default function DraftGenerating() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   onBlur={() => {
-                    // Generate early without turning an onBlur value into the
-                    // event's permanent recovery identity.
-                    if (EMAIL_LOOKS_VALID.test(email) && !previewTriggeredRef.current) {
+                    // Generate early without turning a provisional field
+                    // value into the event's permanent recovery identity.
+                    const candidateEmail = email.trim();
+                    if (EMAIL_LOOKS_VALID.test(candidateEmail) && !previewTriggeredRef.current) {
                       previewTriggeredRef.current = true;
-                      startPrePaymentPreview.mutate(email);
+                      startPrePaymentPreview.mutate(candidateEmail);
                     }
                   }}
                 />
@@ -581,13 +639,13 @@ export default function DraftGenerating() {
                 type="submit"
                 className="w-full"
                 data-testid="button-unlock-spark"
-                disabled={startSparkCheckout.isPending || startPlusCheckout.isPending}
+                disabled={
+                  startPrePaymentPreview.isPending ||
+                  previewAssetLoading ||
+                  checkoutPending
+                }
               >
-                {startSparkCheckout.isPending || startPlusCheckout.isPending
-                  ? "Starting checkout…"
-                  : selectedPlan === "spark"
-                    ? "Unlock this event — $9.99"
-                    : `Subscribe to Plus — ${plusInterval === "annual" ? "$99/yr" : "$11.99/mo"}`}
+                {paywallCtaLabel}
               </Button>
               <p className="text-center text-xs text-muted-foreground">
                 {selectedPlan === "spark"
