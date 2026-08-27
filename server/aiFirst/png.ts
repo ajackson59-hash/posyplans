@@ -246,8 +246,8 @@ export function lumaGrid(image: DecodedImage, targetLongEdge = 160): {
 /**
  * Box-averages an RGB image down to a small target long edge, keeping full
  * colour (unlike lumaGrid above, which is greyscale-only for the quality
- * gate). At the sizes this is used for (~24-28px long edge) the result
- * carries no recoverable composition detail even at full opacity.
+ * gate). The caller chooses a deliberately low target resolution so the
+ * composition can be previewed without exposing production-quality artwork.
  */
 export function boxDownsampleRgb(image: DecodedImage, targetLongEdge: number): DecodedImage {
   const scale = Math.max(1, Math.round(Math.max(image.width, image.height) / targetLongEdge));

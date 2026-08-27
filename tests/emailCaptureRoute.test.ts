@@ -18,9 +18,18 @@ process.env.DATABASE_URL = "postgres://test/test";
 const OWNER = "owner-token-test";
 const EVENT_ID = 91;
 
+const sendEventRecoveryEmail = vi.fn(async () => ({ ok: true }));
+vi.mock("../server/email", () => ({
+  sendEventRecoveryEmail,
+  sendInviteEmail: vi.fn(async () => ({ ok: true })),
+}));
+
 const baseEvent = {
   id: EVENT_ID,
   ownerToken: OWNER,
+  eventName: "Nina's Fortieth",
+  eventType: "Birthday Party",
+  eventDate: "Saturday, June 14",
   draftStatus: "not_started",
   capturedEmail: null as string | null,
   sparkUnlockedAt: null as number | null,
@@ -53,6 +62,8 @@ async function makeApp() {
 beforeEach(() => {
   stored = { ...baseEvent };
   entitlement = undefined;
+  sendEventRecoveryEmail.mockClear();
+  sendEventRecoveryEmail.mockResolvedValue({ ok: true });
 });
 
 describe("POST /api/events/:eventId/email-capture", () => {
@@ -69,6 +80,11 @@ describe("POST /api/events/:eventId/email-capture", () => {
       canGenerate: false,
     });
     expect(stored.capturedEmail).toBe("host@example.com");
+    expect(sendEventRecoveryEmail).toHaveBeenCalledWith(expect.objectContaining({
+      to: "host@example.com",
+      subject: "Your private Posy event link",
+      body: expect.stringContaining(`https://posyplans.com/dashboard/${OWNER}`),
+    }));
   });
 
   it("returns canGenerate: true when the captured email holds an active Plus plan", async () => {
@@ -101,7 +117,7 @@ describe("POST /api/events/:eventId/email-capture", () => {
     expect(stored.capturedEmail).toBeNull();
   });
 
-  it("does not overwrite an already-captured email with a different one", async () => {
+  it("lets the owner correct an already-captured email and sends the new private link", async () => {
     stored.capturedEmail = "first@example.com";
     const app = await makeApp();
     const res = await request(app)
@@ -109,6 +125,21 @@ describe("POST /api/events/:eventId/email-capture", () => {
       .send({ email: "second@example.com", ownerToken: OWNER });
 
     expect(res.status).toBe(200);
-    expect(stored.capturedEmail).toBe("first@example.com");
+    expect(stored.capturedEmail).toBe("second@example.com");
+    expect(sendEventRecoveryEmail).toHaveBeenCalledWith(expect.objectContaining({
+      to: "second@example.com",
+    }));
+  });
+
+  it("does not resend the private link when the same email is captured again", async () => {
+    stored.capturedEmail = "host@example.com";
+    const app = await makeApp();
+    const res = await request(app)
+      .post(`/api/events/${EVENT_ID}/email-capture`)
+      .send({ email: "HOST@example.com", ownerToken: OWNER });
+
+    expect(res.status).toBe(200);
+    expect(stored.capturedEmail).toBe("host@example.com");
+    expect(sendEventRecoveryEmail).not.toHaveBeenCalled();
   });
 });
