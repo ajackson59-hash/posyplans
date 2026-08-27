@@ -10,7 +10,10 @@ import express from "express";
 import request from "supertest";
 import { createServer } from "node:http";
 import { decodePng, encodePng } from "../server/aiFirst/png";
-import { PRE_PAYMENT_PREVIEW_LONG_EDGE } from "../server/prePaymentPreview";
+import {
+  PRE_PAYMENT_PREVIEW_FIDELITY_CUTOFF_MS,
+  PRE_PAYMENT_PREVIEW_LONG_EDGE,
+} from "../server/prePaymentPreview";
 
 process.env.DATABASE_URL = "postgres://test/test";
 
@@ -48,6 +51,7 @@ const baseEvent = {
   location: "The Rosewood Terrace",
   hostNames: "Nina & Sam",
   themeName: "",
+  vibeDescription: "Candlelit rooftop dinner in terracotta and gold at sunset",
   capturedEmail: null as string | null,
   sparkUnlockedAt: null as number | null,
   prePaymentPreviewUrl: "",
@@ -129,6 +133,11 @@ describe("POST /prepayment-preview", () => {
     expect(stored.prePaymentPreviewUrl).toBe(SYNTHETIC_INVITE);
     expect(stored.prePaymentPreviewAttempts).toBe(1);
     expect(stored.capturedEmail).toBeNull();
+    expect(generateInviteDesignConcepts).toHaveBeenCalledWith(
+      expect.objectContaining({
+        themePrompt: "Candlelit rooftop dinner in terracotta and gold at sunset",
+      }),
+    );
     // Never leaks the raw data URL in the response body.
     expect(JSON.stringify(res.body)).not.toContain("base64");
   });
@@ -145,6 +154,44 @@ describe("POST /prepayment-preview", () => {
       .send({ email: "host@example.com" });
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ ready: true });
+    expect(generateInviteIllustrationWithQualityGate).not.toHaveBeenCalled();
+  });
+
+  it("replaces a legacy off-brief preview once using the saved intake vibe", async () => {
+    stored.prePaymentPreviewUrl = SYNTHETIC_INVITE;
+    stored.prePaymentPreviewUsedAt = PRE_PAYMENT_PREVIEW_FIDELITY_CUTOFF_MS - 1;
+    stored.prePaymentPreviewAttempts = 3;
+    const app = await makeApp();
+
+    const res = await request(app)
+      .post(`/api/events/owner/${OWNER}/prepayment-preview`)
+      .send({ email: "host@example.com" });
+
+    expect(res.status).toBe(200);
+    expect(generateInviteDesignConcepts).toHaveBeenCalledWith(
+      expect.objectContaining({
+        themePrompt: "Candlelit rooftop dinner in terracotta and gold at sunset",
+      }),
+    );
+    expect(generateInviteIllustrationWithQualityGate).toHaveBeenCalledTimes(1);
+    expect(stored.prePaymentPreviewUrl).toBe(SYNTHETIC_INVITE);
+    expect(stored.prePaymentPreviewAttempts).toBe(1);
+    expect(stored.prePaymentPreviewUsedAt).toBeGreaterThanOrEqual(
+      PRE_PAYMENT_PREVIEW_FIDELITY_CUTOFF_MS,
+    );
+  });
+
+  it("keeps a current preview idempotent", async () => {
+    stored.prePaymentPreviewUrl = SYNTHETIC_INVITE;
+    stored.prePaymentPreviewUsedAt = PRE_PAYMENT_PREVIEW_FIDELITY_CUTOFF_MS;
+    const app = await makeApp();
+
+    const res = await request(app)
+      .post(`/api/events/owner/${OWNER}/prepayment-preview`)
+      .send({ email: "host@example.com" });
+
+    expect(res.status).toBe(200);
+    expect(generateInviteDesignConcepts).not.toHaveBeenCalled();
     expect(generateInviteIllustrationWithQualityGate).not.toHaveBeenCalled();
   });
 

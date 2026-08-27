@@ -19,6 +19,12 @@ import type { Event } from "../shared/schema";
 export const MAX_PRE_PAYMENT_PREVIEW_ATTEMPTS = 3;
 export const PRE_PAYMENT_PREVIEW_LONG_EDGE = 160;
 
+// Preview v1 accidentally omitted the host's intake vibe and usually sent
+// only the event name to the concept generator. Treat any asset created before
+// the corrected route shipped as stale so a returning unpaid host receives
+// one fresh preview from the brief they actually entered.
+export const PRE_PAYMENT_PREVIEW_FIDELITY_CUTOFF_MS = Date.UTC(2026, 7, 27, 23, 15, 0);
+
 export type PrePaymentPreviewDenialReason = "already_paid" | "attempts_exhausted";
 
 export type PrePaymentPreviewAllowance =
