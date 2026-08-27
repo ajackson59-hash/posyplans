@@ -25,6 +25,7 @@ import { generateInviteIllustration, generateInviteIllustrationWithQualityGate }
 import {
   canAttemptPrePaymentPreview,
   MAX_PRE_PAYMENT_PREVIEW_ATTEMPTS,
+  PRE_PAYMENT_PREVIEW_FIDELITY_CUTOFF_MS,
   PRE_PAYMENT_PREVIEW_LONG_EDGE,
 } from "./prePaymentPreview";
 import { boxDownsampleRgb, decodePng, encodePng, PngDecodeError } from "./aiFirst/png";
@@ -52,6 +53,7 @@ import { computeReadinessScore } from "@shared/readinessScore";
 import { detectTimelineConflicts } from "@shared/timelineConflicts";
 import { detectMissingItems } from "@shared/missingItems";
 import { assessBudgetFeasibility } from "@shared/budgetFeasibility";
+import { eventStyleSummary } from "@shared/eventStyle";
 import { reserveOrResumeFreeDraft, getEntitlementSummary, safeParseStages, canGenerateDraft } from "./masterPlannerEntitlement";
 import { runMasterPlannerOrchestration } from "./masterPlannerOrchestrator";
 import type Stripe from "stripe";
@@ -1308,15 +1310,35 @@ export async function registerRoutes(
       return res.status(409).json({ error: "This event is already unlocked — use the normal invitation flow." });
     }
 
-    // Idempotent replay: a client that already has a preview (e.g. a second
-    // tab, or a re-render before the first response arrived) gets an instant
-    // "ready" without spending again — the actual bytes are served from the
-    // asset route below, keyed off the same stored data URI.
-    if (event.prePaymentPreviewUrl) {
+    // Idempotent replay: a client that already has a current preview (e.g. a
+    // second tab or re-render) gets an instant "ready" without spending again.
+    // Preview v1 ignored vibeDescription, so clear that one legacy asset once
+    // and reset its bounded allowance before generating from the real brief.
+    const needsFidelityRefresh =
+      Boolean(event.prePaymentPreviewUrl) &&
+      (event.prePaymentPreviewUsedAt ?? 0) < PRE_PAYMENT_PREVIEW_FIDELITY_CUTOFF_MS;
+    if (event.prePaymentPreviewUrl && !needsFidelityRefresh) {
       return res.json({ ready: true });
     }
 
-    const allowance = canAttemptPrePaymentPreview(event);
+    const previewEvent = needsFidelityRefresh
+      ? {
+          ...event,
+          prePaymentPreviewUrl: "",
+          prePaymentPreviewUsedAt: null,
+          prePaymentPreviewAttempts: 0,
+        }
+      : event;
+
+    if (needsFidelityRefresh) {
+      await storage.updateEventById(event.id, {
+        prePaymentPreviewUrl: "",
+        prePaymentPreviewUsedAt: null,
+        prePaymentPreviewAttempts: 0,
+      });
+    }
+
+    const allowance = canAttemptPrePaymentPreview(previewEvent);
     if (!allowance.ok) {
       if (allowance.reason === "already_paid") {
         return res.status(409).json({ error: "This event is already unlocked — use the normal invitation flow." });
@@ -1329,11 +1351,16 @@ export async function registerRoutes(
     // Reserve the attempt BEFORE calling the image model, so a crash or
     // timeout mid-call still counts against the cap instead of letting a
     // retrying client spend unboundedly.
-    await storage.updateEventById(event.id, { prePaymentPreviewAttempts: event.prePaymentPreviewAttempts + 1 });
+    await storage.updateEventById(event.id, {
+      prePaymentPreviewAttempts: previewEvent.prePaymentPreviewAttempts + 1,
+    });
 
     try {
       const concepts = await generateInviteDesignConcepts({
-        themePrompt: event.themeName || event.eventName,
+        // New intake events have no generated themeName before payment. The
+        // host's own vibeDescription is therefore the source of truth for the
+        // conversion preview, with event type/name only as a true fallback.
+        themePrompt: eventStyleSummary(event),
         eventName: event.eventName,
         eventType: event.eventType,
         eventDate: event.eventDate,
