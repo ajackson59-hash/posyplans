@@ -143,12 +143,16 @@ async function readDurableRun(ownerToken: string, runId: string): Promise<Durabl
 /**
  * Keep checking a run that survived a dropped mobile/SSE connection. This is a
  * read-only recovery loop: it never starts another generation or spends again.
+ * Poll only when the server explicitly confirms the run is still processing.
+ * A missing/unreachable durable-status response is not evidence of an active
+ * run, so return immediately and surface the safe reconnect message instead of
+ * holding the browser in a minute-long false loading state.
  */
 async function recoverDurableRun(ownerToken: string, runId: string): Promise<DurableRecovery> {
   let last: DurableRecovery = { kind: "unknown" };
   for (let attempt = 0; attempt < RECOVERY_POLL_ATTEMPTS; attempt += 1) {
     last = await readDurableRun(ownerToken, runId);
-    if (last.kind === "complete" || last.kind === "failed") return last;
+    if (last.kind === "complete" || last.kind === "failed" || last.kind === "unknown") return last;
     if (attempt < RECOVERY_POLL_ATTEMPTS - 1) await wait(RECOVERY_POLL_DELAY_MS);
   }
   return last;
