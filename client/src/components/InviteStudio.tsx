@@ -72,7 +72,7 @@ function mergePendingPatch(
   current: Record<string, unknown>,
   patch: Record<string, unknown>,
 ): Record<string, unknown> {
-  const merged = {
+  const merged: Record<string, unknown> = {
     ...current,
     ...patch,
     copy: { ...(current.copy as object | undefined), ...(patch.copy as object | undefined) },
