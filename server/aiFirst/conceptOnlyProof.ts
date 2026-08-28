@@ -17,10 +17,12 @@ import { briefForHostDirection } from "./conceptPreflight";
 import { buildConceptCorrectionPrompt, buildSystemPrompt, buildUserPrompt } from "./prompt";
 
 export const CONCEPT_MODEL = "claude-sonnet-4-6";
-// Text-only concept correction is cheap and occurs before the image-spend
-// boundary. Two bounded repair passes materially improve recovery from a
-// malformed/empty provider response without creating a second artwork charge.
-export const MAX_TEXT_ONLY_CONCEPT_CORRECTIONS = 2;
+// Preserve one ordinary text-only correction for a concept set that parsed but
+// missed a quality rule. A completely empty/unparseable provider response gets
+// one additional, narrowly-scoped format recovery below. That fixes the real
+// zero-concept failure without turning every creative miss into a retry loop.
+export const MAX_TEXT_ONLY_CONCEPT_CORRECTIONS = 1;
+export const MAX_EMPTY_RESPONSE_RECOVERIES = 1;
 export const MIN_VIABLE_CONCEPTS = 1;
 
 export interface ConceptOnlyProofInput {
@@ -102,20 +104,42 @@ export async function runConceptOnlyProof(input: ConceptOnlyProofInput): Promise
   let attempt = await requestQuartet([{ role: "user", content: userPrompt }]);
   let conceptRejections = attempt.parserErrors.length + attempt.quartet.errors.length;
 
-  for (let correction = 0; correction < MAX_TEXT_ONLY_CONCEPT_CORRECTIONS && !attempt.quartet.passed; correction += 1) {
+  // One normal correction: the provider can repair a parsed set that missed a
+  // milestone, layout or diversity constraint, but cannot loop indefinitely.
+  if (!attempt.quartet.passed) {
     const currentErrors = [...attempt.parserErrors, ...attempt.quartet.errors];
     const assistantContent = attempt.candidates.length
       ? attempt.candidates.map((concept) => JSON.stringify(concept)).join("\n")
-      : "No valid concept objects were parsed from the previous response.";
-    const emptyRecovery = attempt.candidates.length === 0
-      ? "CRITICAL FORMAT RECOVERY: Return exactly four complete concept JSON objects, one object per line. No prose, no markdown fences, no headings, and no refusal text. Keep the user's named theme as a high-level creative reference while using an original composition and avoiding copied logos or exact protected character likenesses.\n\n"
-      : "";
+      : "No valid concept objects were parsed from the first response.";
 
     attempt = await requestQuartet([
       { role: "user", content: userPrompt },
       { role: "assistant", content: assistantContent },
-      { role: "user", content: `${emptyRecovery}${buildConceptCorrectionPrompt(currentErrors)}` },
+      { role: "user", content: buildConceptCorrectionPrompt(currentErrors) },
     ]);
+    conceptRejections += attempt.parserErrors.length + attempt.quartet.errors.length;
+  }
+
+  // The observed Unicorn Academy failure was categorically different: after
+  // the normal correction, the provider still returned zero parseable concept
+  // objects. Spend remains zero here, so allow one strict JSON-format rescue.
+  // A non-empty but weak set never reaches this extra pass.
+  let emptyRecoveries = 0;
+  if (!attempt.quartet.passed && attempt.candidates.length === 0) {
+    const currentErrors = [...attempt.parserErrors, ...attempt.quartet.errors];
+    const strictRecovery = [
+      "CRITICAL FORMAT RECOVERY: Return exactly four complete concept JSON objects, one object per line.",
+      "No prose, no markdown fences, no headings, and no refusal text.",
+      "Keep the user's named theme as a high-level creative reference while using an original composition and avoiding copied logos or exact protected character likenesses.",
+      buildConceptCorrectionPrompt(currentErrors),
+    ].join("\n\n");
+
+    attempt = await requestQuartet([
+      { role: "user", content: userPrompt },
+      { role: "assistant", content: "No valid concept objects were parsed from the previous response." },
+      { role: "user", content: strictRecovery },
+    ]);
+    emptyRecoveries = MAX_EMPTY_RESPONSE_RECOVERIES;
     conceptRejections += attempt.parserErrors.length + attempt.quartet.errors.length;
   }
 
@@ -142,8 +166,11 @@ export async function runConceptOnlyProof(input: ConceptOnlyProofInput): Promise
     }
 
     for (const error of finalErrors) input.onPreflightWarning?.(error);
+    const emptyRecoverySuffix = emptyRecoveries
+      ? ` and ${emptyRecoveries} empty-response recovery`
+      : "";
     throw new Error(
-      `creative quartet failed zero-image preflight after ${MAX_TEXT_ONLY_CONCEPT_CORRECTIONS} text-only correction passes: ${finalErrors.join("; ")}`,
+      `creative quartet failed zero-image preflight after ${MAX_TEXT_ONLY_CONCEPT_CORRECTIONS} text-only correction pass${emptyRecoverySuffix}: ${finalErrors.join("; ")}`,
     );
   }
 
