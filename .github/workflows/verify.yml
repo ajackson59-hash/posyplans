@@ -1,0 +1,37 @@
+name: Verify Posy
+
+on:
+  pull_request:
+  push:
+    branches:
+      - fix/launch-qa-find-my-event-label
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DATABASE_URL: postgres://test:test@127.0.0.1:5432/test
+      ANTHROPIC_API_KEY: test
+      OPENAI_API_KEY: test
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.19.0
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check application
+        run: npm run check
+
+      - name: Run regression suite
+        run: npm test
