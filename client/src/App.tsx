@@ -25,6 +25,7 @@ import DirectCheckoutShortcut from "@/components/DirectCheckoutShortcut";
 import InitialPreviewReuse from "@/components/InitialPreviewReuse";
 import RsvpNoteSuggestions from "@/components/RsvpNoteSuggestions";
 import DashboardSmsInvitations from "@/components/DashboardSmsInvitations";
+import GenerationResultGuide from "@/components/GenerationResultGuide";
 import "@/styles/launchQa.css";
 
 function AppRouter() {
@@ -66,6 +67,7 @@ function App() {
         <InitialPreviewReuse />
         <RsvpNoteSuggestions />
         <DashboardSmsInvitations />
+        <GenerationResultGuide />
         <AppRouter />
         <CookieConsentBanner />
       </TooltipProvider>
