@@ -8,13 +8,9 @@
 // one level up makes a conditional unmount lossless.
 //
 // Reliability repair: a run is only ever "successful" because the server
-// said `done`, or "failed" because the server said `error`. Before this
-// fix, an SSE/NDJSON body that simply ended — a dropped connection, a proxy
-// timeout, a crashed process — fell through the reader loop with `running`
-// set back to false and no error, no summary and nothing on screen but
-// whatever partial directions had already arrived. A host could not tell
-// that from success. Any stream end that is not one of those two explicit
-// terminal events is now itself surfaced as a clear failure.
+// said `done`, or "failed" because the server said `error`. If the streaming
+// display connection disappears, Posy now reconciles against the durable run
+// instead of making the host know to refresh the page.
 
 import { useCallback, useRef, useState } from "react";
 import {
@@ -26,7 +22,7 @@ import {
   type RunSummary,
 } from "@shared/aiFirstStream";
 import type { AiFirstConcept } from "@shared/aiFirstInvite";
-import { API_BASE } from "./queryClient";
+import { API_BASE, queryClient } from "./queryClient";
 
 export interface AiFirstFilters {
   style: string;
@@ -97,13 +93,13 @@ export interface AiFirstSession {
   cancel: () => void;
 }
 
-/** Host-visible copy for the case an SSE body ends with no terminal event. */
+/** Host-visible copy only after durable reconciliation also cannot recover. */
 export const UNEXPECTED_STREAM_END_MESSAGE =
-  "Posy lost the display connection before confirming the result. Do not click again yet—refresh the page before starting another direction.";
+  "Posy lost the display connection before confirming the result. Your work is saved; reconnect and Posy will check for the finished design before you start another direction.";
 export const EMPTY_COMPLETION_MESSAGE =
   "Posy couldn't finish a usable invitation direction. You were not shown a completed design.";
 export const RUN_STILL_PROCESSING_MESSAGE =
-  "Posy lost the display connection, but this invitation may still be processing. Do not click again—refresh the page first.";
+  "Your invitation is still being created. Posy is checking for the finished design automatically.";
 
 interface DurableRunStatus {
   status?: string;
@@ -112,21 +108,64 @@ interface DurableRunStatus {
   terminal?: boolean;
 }
 
-/** Recover the server's durable truth when the streaming response disappears. */
-async function recoverRunMessage(ownerToken: string, runId: string): Promise<string | null> {
+type DurableRecovery =
+  | { kind: "complete" }
+  | { kind: "failed"; message: string }
+  | { kind: "processing" }
+  | { kind: "unknown" };
+
+const RECOVERY_POLL_ATTEMPTS = 30;
+const RECOVERY_POLL_DELAY_MS = 2000;
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Read the server's durable truth when the streaming response disappears. */
+async function readDurableRun(ownerToken: string, runId: string): Promise<DurableRecovery> {
   try {
     const response = await fetch(`${API_BASE}/api/events/owner/${ownerToken}/ai-first/run/${runId}`);
-    if (!response.ok || typeof response.json !== "function") return null;
+    if (!response.ok || typeof response.json !== "function") return { kind: "unknown" };
     const run = (await response.json()) as DurableRunStatus;
     if (run.terminal && run.status === "failed") {
-      return hostFacingGenerationError(run.errorMessage || QUALITY_REJECTION_MESSAGE);
+      return { kind: "failed", message: hostFacingGenerationError(run.errorMessage || QUALITY_REJECTION_MESSAGE) };
     }
-    if (run.terminal && run.completedCount === 0) return QUALITY_REJECTION_MESSAGE;
-    if (!run.terminal) return RUN_STILL_PROCESSING_MESSAGE;
-    return null;
+    if (run.terminal && (run.completedCount ?? 0) === 0) {
+      return { kind: "failed", message: QUALITY_REJECTION_MESSAGE };
+    }
+    if (run.terminal) return { kind: "complete" };
+    return { kind: "processing" };
   } catch {
-    return null;
+    return { kind: "unknown" };
   }
+}
+
+/**
+ * Keep checking a run that survived a dropped mobile/SSE connection. This is a
+ * read-only recovery loop: it never starts another generation or spends again.
+ */
+async function recoverDurableRun(ownerToken: string, runId: string): Promise<DurableRecovery> {
+  let last: DurableRecovery = { kind: "unknown" };
+  for (let attempt = 0; attempt < RECOVERY_POLL_ATTEMPTS; attempt += 1) {
+    last = await readDurableRun(ownerToken, runId);
+    if (last.kind === "complete" || last.kind === "failed") return last;
+    if (attempt < RECOVERY_POLL_ATTEMPTS - 1) await wait(RECOVERY_POLL_DELAY_MS);
+  }
+  return last;
+}
+
+function revealFinishedDirections() {
+  if (typeof document === "undefined") return;
+  const prefersReduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+  // The query invalidation / direction state update needs a render before the
+  // result grid exists. Two frames is enough without introducing a timer that
+  // can yank a host around later.
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const target = document.getElementById("grid-ai-directions") ?? document.getElementById("ai-first-invitations");
+      target?.scrollIntoView({ behavior: prefersReduced ? "auto" : "smooth", block: "start" });
+    });
+  });
 }
 
 export function useAiFirstSession(ownerToken: string): AiFirstSession {
@@ -154,6 +193,8 @@ export function useAiFirstSession(ownerToken: string): AiFirstSession {
   const runInFlight = useRef(false);
   /** Set the instant a `done` or `error` event is applied, for this run only. */
   const reachedTerminal = useRef(false);
+  /** Auto-reveal the first finished card once per run, never on every direction. */
+  const revealedFirstDirection = useRef(false);
 
   const apply = useCallback((event: PipelineEvent) => {
     if (event.type === "progress") {
@@ -171,6 +212,10 @@ export function useAiFirstSession(ownerToken: string): AiFirstSession {
         directionsRef.current = next;
         return next;
       });
+      if (!revealedFirstDirection.current) {
+        revealedFirstDirection.current = true;
+        revealFinishedDirections();
+      }
     } else if (event.type === "warning") {
       setWarnings((prev) => [...prev, event.message]);
     } else if (event.type === "done") {
@@ -197,6 +242,7 @@ export function useAiFirstSession(ownerToken: string): AiFirstSession {
       const controller = new AbortController();
       abort.current = controller;
       reachedTerminal.current = false;
+      revealedFirstDirection.current = false;
 
       const runId = newRunId();
       setCurrentRunId(runId);
@@ -218,6 +264,30 @@ export function useAiFirstSession(ownerToken: string): AiFirstSession {
       directionsRef.current = [];
       setDirections([]);
       setConcepts([]);
+
+      const reconcileLostStream = async () => {
+        setProgress((prev) =>
+          prev[prev.length - 1] === RUN_STILL_PROCESSING_MESSAGE
+            ? prev
+            : [...prev, RUN_STILL_PROCESSING_MESSAGE],
+        );
+        const recovery = await recoverDurableRun(ownerToken, runId);
+        if (recovery.kind === "failed") {
+          setError(recovery.message);
+          return;
+        }
+        if (recovery.kind === "complete") {
+          setError(null);
+          // Approved designs are durable even if their stream events never made
+          // it to this tab. Refetch those exact saved assets; never regenerate.
+          await queryClient.invalidateQueries({
+            queryKey: [`/api/events/owner/${ownerToken}/ai-first/approved-designs`],
+          });
+          revealFinishedDirections();
+          return;
+        }
+        setError(UNEXPECTED_STREAM_END_MESSAGE);
+      };
 
       try {
         const response = await fetch(`${API_BASE}/api/events/owner/${ownerToken}/ai-first/generate`, {
@@ -253,19 +323,13 @@ export function useAiFirstSession(ownerToken: string): AiFirstSession {
           for (const event of parser.push(decoder.decode(value, { stream: true }))) apply(event);
         }
 
-        // The defect this closes: reaching here only means the body ended,
-        // not that the run succeeded. `done` and `error` are the only two
-        // events that mean anything about the run's outcome; anything else
-        // — including a clean-looking EOF with partial directions already
-        // on screen — is reported as a failure rather than silently
-        // treated as success by omission.
-        if (!reachedTerminal.current) {
-          setError((await recoverRunMessage(ownerToken, runId)) ?? UNEXPECTED_STREAM_END_MESSAGE);
-        }
+        // Reaching EOF only means the display stream ended. If no terminal
+        // event arrived, reconcile against the server's durable run instead of
+        // telling the host to refresh or letting them accidentally start again.
+        if (!reachedTerminal.current) await reconcileLostStream();
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
-          reachedTerminal.current = true;
-          setError((await recoverRunMessage(ownerToken, runId)) ?? UNEXPECTED_STREAM_END_MESSAGE);
+          await reconcileLostStream();
         }
       } finally {
         runInFlight.current = false;
