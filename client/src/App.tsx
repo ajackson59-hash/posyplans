@@ -22,6 +22,7 @@ import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import DashboardEntitlementGuard from "@/components/DashboardEntitlementGuard";
 import PaywallPreviewGuide from "@/components/PaywallPreviewGuide";
 import DirectCheckoutShortcut from "@/components/DirectCheckoutShortcut";
+import InitialPreviewReuse from "@/components/InitialPreviewReuse";
 import "@/styles/launchQa.css";
 
 function AppRouter() {
@@ -60,6 +61,7 @@ function App() {
         <DashboardEntitlementGuard />
         <PaywallPreviewGuide />
         <DirectCheckoutShortcut />
+        <InitialPreviewReuse />
         <AppRouter />
         <CookieConsentBanner />
       </TooltipProvider>
