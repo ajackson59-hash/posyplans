@@ -24,6 +24,7 @@ import PaywallPreviewGuide from "@/components/PaywallPreviewGuide";
 import DirectCheckoutShortcut from "@/components/DirectCheckoutShortcut";
 import InitialPreviewReuse from "@/components/InitialPreviewReuse";
 import RsvpNoteSuggestions from "@/components/RsvpNoteSuggestions";
+import DashboardSmsInvitations from "@/components/DashboardSmsInvitations";
 import "@/styles/launchQa.css";
 
 function AppRouter() {
@@ -64,6 +65,7 @@ function App() {
         <DirectCheckoutShortcut />
         <InitialPreviewReuse />
         <RsvpNoteSuggestions />
+        <DashboardSmsInvitations />
         <AppRouter />
         <CookieConsentBanner />
       </TooltipProvider>
