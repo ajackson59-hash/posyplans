@@ -14,6 +14,7 @@ import { registerRoutes } from "./routes";
 import { registerInitialPreviewRoute } from "./initialPreviewRoute";
 import { registerSmsInvitationRoutes } from "./smsInvitationRoutes";
 import { registerEventStartupRoutes } from "./eventStartupRoutes";
+import { registerEmailDiagnosticRoutes } from "./emailDiagnosticRoutes";
 
 declare module "http" {
   interface IncomingMessage {
@@ -136,6 +137,7 @@ export function ensureRoutesRegistered(app: express.Express, httpServer: Server)
       await registerRoutes(httpServer, app);
       registerInitialPreviewRoute(app);
       registerSmsInvitationRoutes(app);
+      registerEmailDiagnosticRoutes(app);
       registerApiNotFoundHandler(app);
 
       app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
