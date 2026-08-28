@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { apiRequestJson, queryClient } from "@/lib/queryClient";
 import type { EventRecord, GuestRecord } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -13,19 +14,21 @@ interface SmsConfig {
   messagingServiceConfigured: boolean;
 }
 
-function ownerTokenFromPath(): string | null {
-  const match = window.location.pathname.match(/^\/dashboard\/([^/?#]+)/);
+function ownerTokenFromPath(pathname: string): string | null {
+  const match = pathname.match(/^\/dashboard\/([^/?#]+)/);
   return match ? decodeURIComponent(match[1]) : null;
 }
 
 export default function DashboardSmsInvitations() {
   const { toast } = useToast();
-  const ownerToken = ownerTokenFromPath();
+  const [location] = useLocation();
+  const ownerToken = ownerTokenFromPath(location);
   const [mount, setMount] = useState<HTMLElement | null>(null);
   const [permission, setPermission] = useState<Record<number, boolean>>({});
   const [phoneDrafts, setPhoneDrafts] = useState<Record<number, string>>({});
 
   useEffect(() => {
+    setMount(null);
     if (!ownerToken) return;
     const find = () => setMount(document.querySelector<HTMLElement>('[data-testid="card-send-invitations"]'));
     find();
@@ -87,9 +90,9 @@ export default function DashboardSmsInvitations() {
         </div>
       </div>
 
-      {!config.data?.configured ? (
+      {!config.data?.messagingServiceConfigured ? (
         <div className="mt-3 rounded-md border border-dashed border-border bg-muted/20 p-3 text-xs text-muted-foreground" data-testid="sms-setup-pending">
-          Twilio is connected in the product, but sending stays off until the Posy Twilio credentials and approved sender are added to the deployment.
+          Invitation texting is ready in Posy, but stays off until the approved Posy number is attached to the Twilio Messaging Service and its credentials are added to the deployment.
         </div>
       ) : (
         <div className="mt-4 space-y-3">
