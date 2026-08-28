@@ -23,6 +23,7 @@ import DashboardEntitlementGuard from "@/components/DashboardEntitlementGuard";
 import PaywallPreviewGuide from "@/components/PaywallPreviewGuide";
 import DirectCheckoutShortcut from "@/components/DirectCheckoutShortcut";
 import InitialPreviewReuse from "@/components/InitialPreviewReuse";
+import RsvpNoteSuggestions from "@/components/RsvpNoteSuggestions";
 import "@/styles/launchQa.css";
 
 function AppRouter() {
@@ -62,6 +63,7 @@ function App() {
         <PaywallPreviewGuide />
         <DirectCheckoutShortcut />
         <InitialPreviewReuse />
+        <RsvpNoteSuggestions />
         <AppRouter />
         <CookieConsentBanner />
       </TooltipProvider>
