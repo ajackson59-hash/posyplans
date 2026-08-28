@@ -244,41 +244,65 @@ export function lumaGrid(image: DecodedImage, targetLongEdge = 160): {
  */
 
 /**
- * Box-averages an RGB image down to a small target long edge, keeping full
- * colour (unlike lumaGrid above, which is greyscale-only for the quality
- * gate). The caller chooses a deliberately low target resolution so the
- * composition can be previewed without exposing production-quality artwork.
+ * Area-averages an RGB image to an exact target long edge, keeping full colour
+ * (unlike lumaGrid above, which is greyscale-only for the quality gate). The
+ * earlier integer-scale implementation rounded 320/300 down to 1 and quietly
+ * returned the original 320px asset unchanged. Fractional source rectangles
+ * guarantee that any source larger than the cap is genuinely resampled and
+ * that the caller receives the requested safe dimensions.
  */
 export function boxDownsampleRgb(image: DecodedImage, targetLongEdge: number): DecodedImage {
-  const scale = Math.max(1, Math.round(Math.max(image.width, image.height) / targetLongEdge));
-  const width = Math.max(1, Math.floor(image.width / scale));
-  const height = Math.max(1, Math.floor(image.height / scale));
+  const sourceLongEdge = Math.max(image.width, image.height);
+  if (!Number.isFinite(targetLongEdge) || targetLongEdge < 1 || sourceLongEdge <= targetLongEdge) {
+    return image;
+  }
+
+  const ratio = targetLongEdge / sourceLongEdge;
+  const width = Math.max(1, Math.round(image.width * ratio));
+  const height = Math.max(1, Math.round(image.height * ratio));
   const rgb = new Uint8Array(width * height * 3);
 
   for (let gy = 0; gy < height; gy += 1) {
+    const sourceY0 = (gy * image.height) / height;
+    const sourceY1 = ((gy + 1) * image.height) / height;
+    const firstY = Math.floor(sourceY0);
+    const lastY = Math.ceil(sourceY1);
+
     for (let gx = 0; gx < width; gx += 1) {
+      const sourceX0 = (gx * image.width) / width;
+      const sourceX1 = ((gx + 1) * image.width) / width;
+      const firstX = Math.floor(sourceX0);
+      const lastX = Math.ceil(sourceX1);
       let r = 0;
       let g = 0;
       let b = 0;
-      let n = 0;
-      for (let dy = 0; dy < scale; dy += 1) {
-        const y = gy * scale + dy;
-        if (y >= image.height) break;
-        for (let dx = 0; dx < scale; dx += 1) {
-          const x = gx * scale + dx;
-          if (x >= image.width) break;
+      let weight = 0;
+
+      // Weight boundary pixels by the fraction of their area that overlaps the
+      // destination rectangle. This avoids nearest-neighbour aliasing and
+      // genuinely removes fine detail even for a small 320 -> 300 reduction.
+      for (let y = firstY; y < lastY; y += 1) {
+        if (y < 0 || y >= image.height) continue;
+        const overlapY = Math.max(0, Math.min(sourceY1, y + 1) - Math.max(sourceY0, y));
+        if (overlapY <= 0) continue;
+        for (let x = firstX; x < lastX; x += 1) {
+          if (x < 0 || x >= image.width) continue;
+          const overlapX = Math.max(0, Math.min(sourceX1, x + 1) - Math.max(sourceX0, x));
+          const pixelWeight = overlapX * overlapY;
+          if (pixelWeight <= 0) continue;
           const src = (y * image.width + x) * 3;
-          r += image.rgb[src];
-          g += image.rgb[src + 1];
-          b += image.rgb[src + 2];
-          n += 1;
+          r += image.rgb[src] * pixelWeight;
+          g += image.rgb[src + 1] * pixelWeight;
+          b += image.rgb[src + 2] * pixelWeight;
+          weight += pixelWeight;
         }
       }
+
       const dst = (gy * width + gx) * 3;
-      if (n > 0) {
-        rgb[dst] = Math.round(r / n);
-        rgb[dst + 1] = Math.round(g / n);
-        rgb[dst + 2] = Math.round(b / n);
+      if (weight > 0) {
+        rgb[dst] = Math.round(r / weight);
+        rgb[dst + 1] = Math.round(g / weight);
+        rgb[dst + 2] = Math.round(b / weight);
       }
     }
   }
