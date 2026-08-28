@@ -20,6 +20,7 @@ import EventLanding from "@/pages/EventLanding";
 import Recover from "@/pages/Recover";
 import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import DashboardEntitlementGuard from "@/components/DashboardEntitlementGuard";
+import "@/styles/launchQa.css";
 
 function AppRouter() {
   return (
