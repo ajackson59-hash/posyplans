@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { events, insertEventSchema } from "@shared/schema";
 import type { Event, InsertEvent } from "@shared/schema";
-import { db } from "./storage";
+import { criticalDb } from "./criticalDb";
 
 const startKeySchema = z
   .string()
@@ -45,7 +45,7 @@ export interface EventStartPersistence {
 
 const databasePersistence: EventStartPersistence = {
   async tryInsert(input) {
-    const rows = await db
+    const rows = await criticalDb
       .insert(events)
       .values({
         ...input.data,
@@ -62,7 +62,7 @@ const databasePersistence: EventStartPersistence = {
   },
 
   async findByOwnerToken(ownerToken) {
-    const rows = await db.select().from(events).where(eq(events.ownerToken, ownerToken));
+    const rows = await criticalDb.select().from(events).where(eq(events.ownerToken, ownerToken));
     return rows[0];
   },
 };
