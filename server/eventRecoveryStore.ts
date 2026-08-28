@@ -1,7 +1,7 @@
 import { desc, eq } from "drizzle-orm";
 import { events } from "@shared/schema";
 import type { Event } from "@shared/schema";
-import { db } from "./storage";
+import { criticalDb } from "./criticalDb";
 
 /**
  * The recovery email needs only enough information to name an event and build
@@ -19,7 +19,7 @@ export type RecoveryEventRecord = Pick<
 export async function getRecoveryEventsByEmail(email: string): Promise<RecoveryEventRecord[]> {
   const normalized = email.trim().toLowerCase();
 
-  return db
+  return criticalDb
     .select({
       ownerToken: events.ownerToken,
       eventName: events.eventName,
