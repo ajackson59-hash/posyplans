@@ -1,23 +1,57 @@
-// Sends guest invite and reminder emails through Resend's HTTP API.
-// Requires RESEND_API_KEY (and ideally RESEND_FROM_EMAIL, once a sending
-// domain is verified in Resend) to be set in the environment (Vercel
-// production env vars). This intentionally uses a plain fetch() rather than
-// the Resend SDK — same lightweight pattern as illustrationGen.ts — since
-// this is a single, simple request with no need for the extra dependency.
-//
-// Until a custom domain is verified in Resend, RESEND_FROM_EMAIL falls back
-// to Resend's shared test address (onboarding@resend.dev), which can only
-// deliver to the Resend account's own verified email — real guest addresses
-// will fail until a domain is verified. See RESEND_FROM_EMAIL below.
+// Sends guest invite and event-recovery emails through Resend's HTTP API.
+// Requires RESEND_API_KEY and a verified custom sender in RESEND_FROM_EMAIL.
+// Customer-facing sends deliberately refuse to fall back to resend.dev outside
+// tests: Resend's shared domain can only deliver to the address on the Resend
+// account, which otherwise turns a provider 403 into a misleading success UI.
 
 export interface SendEmailResult {
   ok: boolean;
   error?: string;
   authUrl?: string;
+  providerId?: string;
+  statusCode?: number;
+  code?: string;
+}
+
+export interface EmailConfiguration {
+  apiKeyConfigured: boolean;
+  fromAddressConfigured: boolean;
+  productionSenderConfigured: boolean;
+  usesTestSender: boolean;
+  senderDomain: string | null;
+  environment: string;
 }
 
 const RESEND_API_URL = "https://api.resend.com/emails";
 const DEFAULT_FROM = "Posy <onboarding@resend.dev>";
+const DEFAULT_REPLY_TO = "hello@posyplans.com";
+
+function senderAddress(value: string): string {
+  const angleMatch = value.match(/<\s*([^>]+)\s*>/);
+  return (angleMatch?.[1] || value).trim().toLowerCase();
+}
+
+function senderDomain(value: string): string | null {
+  const address = senderAddress(value);
+  const at = address.lastIndexOf("@");
+  return at >= 0 ? address.slice(at + 1) : null;
+}
+
+export function getEmailConfiguration(): EmailConfiguration {
+  const apiKeyConfigured = Boolean(process.env.RESEND_API_KEY?.trim());
+  const configuredFrom = process.env.RESEND_FROM_EMAIL?.trim() || "";
+  const usesTestSender = Boolean(configuredFrom) && senderDomain(configuredFrom) === "resend.dev";
+  const fromAddressConfigured = Boolean(configuredFrom);
+
+  return {
+    apiKeyConfigured,
+    fromAddressConfigured,
+    productionSenderConfigured: apiKeyConfigured && fromAddressConfigured && !usesTestSender,
+    usesTestSender,
+    senderDomain: configuredFrom ? senderDomain(configuredFrom) : null,
+    environment: process.env.VERCEL_ENV || process.env.NODE_ENV || "unknown",
+  };
+}
 
 function escapeHtml(value: string): string {
   return value
@@ -28,12 +62,8 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
-// Turns the plain-text body (which already contains a bare RSVP URL, per
-// server/routes.ts's message templates) into a calm, branded HTML email —
-// a real logo mark, a proper button for the RSVP link, and readable
-// paragraph spacing, rather than a wall of unstyled plain text. Sending an
-// html part alongside text also matters for deliverability: text-only
-// mail from a shared sending address scores as spammier to most inboxes.
+// Turns the plain-text body (which already contains a bare RSVP/dashboard URL)
+// into a calm, branded HTML email with a clear button and readable spacing.
 function buildEmailHtml(body: string, ctaLabel: string, footer: string): string {
   const urlPattern = /(https?:\/\/[^\s]+)/g;
   const paragraphs = body
@@ -41,8 +71,6 @@ function buildEmailHtml(body: string, ctaLabel: string, footer: string): string 
     .map((block) => escapeHtml(block).replace(/\n/g, "<br>"))
     .map((block) =>
       block.replace(urlPattern, (escapedUrl) => {
-        // escapeHtml already ran, so recover the real URL for the href
-        // by unescaping just the characters we escaped above.
         const realUrl = escapedUrl
           .replace(/&amp;/g, "&")
           .replace(/&lt;/g, "<")
@@ -79,20 +107,44 @@ function buildEmailHtml(body: string, ctaLabel: string, footer: string): string 
 </html>`;
 }
 
-async function sendEmail(opts: {
-  to: string;
-  subject: string;
-  body: string;
-}, ctaLabel: string, footer: string): Promise<SendEmailResult> {
-  const apiKey = process.env.RESEND_API_KEY;
+async function sendEmail(
+  opts: {
+    to: string;
+    subject: string;
+    body: string;
+    idempotencyKey?: string;
+  },
+  ctaLabel: string,
+  footer: string,
+): Promise<SendEmailResult> {
+  const apiKey = process.env.RESEND_API_KEY?.trim();
   if (!apiKey) {
     return {
       ok: false,
-      error: "Email sending isn't set up for this event yet. Please contact support.",
+      code: "missing_resend_api_key",
+      error: "RESEND_API_KEY is not configured for this deployment.",
     };
   }
 
-  const from = process.env.RESEND_FROM_EMAIL || DEFAULT_FROM;
+  const configuredFrom = process.env.RESEND_FROM_EMAIL?.trim();
+  const from = configuredFrom || (process.env.NODE_ENV === "test" ? DEFAULT_FROM : "");
+  if (!from) {
+    return {
+      ok: false,
+      code: "missing_resend_from_email",
+      error: "RESEND_FROM_EMAIL is not configured for this deployment.",
+    };
+  }
+
+  if (senderDomain(from) === "resend.dev" && process.env.NODE_ENV !== "test") {
+    return {
+      ok: false,
+      code: "resend_test_sender_not_allowed",
+      error: "The Resend test sender cannot deliver Posy customer emails. Configure a verified Posy sender domain.",
+    };
+  }
+
+  const replyTo = process.env.RESEND_REPLY_TO_EMAIL?.trim() || DEFAULT_REPLY_TO;
 
   try {
     const response = await fetch(RESEND_API_URL, {
@@ -100,33 +152,41 @@ async function sendEmail(opts: {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
+        ...(opts.idempotencyKey ? { "Idempotency-Key": opts.idempotencyKey.slice(0, 256) } : {}),
       },
       body: JSON.stringify({
         from,
         to: [opts.to],
+        reply_to: replyTo,
         subject: opts.subject,
         text: opts.body,
         html: buildEmailHtml(opts.body, ctaLabel, footer),
       }),
     });
 
-    if (!response.ok) {
-      const errorBody = await response.text().catch(() => "");
-      let message = `Couldn't send this email (status ${response.status}).`;
-      try {
-        const parsed = JSON.parse(errorBody) as { message?: string };
-        if (parsed.message) message = parsed.message;
-      } catch {
-        // Keep the generic message above if the error body isn't JSON.
-      }
-      return { ok: false, error: message };
+    const responseBody = await response.text().catch(() => "");
+    let parsed: { id?: string; message?: string; name?: string } = {};
+    try {
+      parsed = responseBody ? JSON.parse(responseBody) : {};
+    } catch {
+      // Keep the status-based fallback below when Resend does not return JSON.
     }
 
-    return { ok: true };
+    if (!response.ok) {
+      return {
+        ok: false,
+        statusCode: response.status,
+        code: parsed.name || `resend_http_${response.status}`,
+        error: parsed.message || `Resend rejected this email (status ${response.status}).`,
+      };
+    }
+
+    return { ok: true, providerId: parsed.id };
   } catch (err) {
     return {
       ok: false,
-      error: err instanceof Error ? err.message : "Couldn't send this email — please try again.",
+      code: "resend_network_error",
+      error: err instanceof Error ? err.message : "Couldn't reach the email provider.",
     };
   }
 }
@@ -135,6 +195,7 @@ export async function sendInviteEmail(opts: {
   to: string;
   subject: string;
   body: string;
+  idempotencyKey?: string;
 }): Promise<SendEmailResult> {
   return sendEmail(
     opts,
@@ -147,6 +208,7 @@ export async function sendEventRecoveryEmail(opts: {
   to: string;
   subject: string;
   body: string;
+  idempotencyKey?: string;
 }): Promise<SendEmailResult> {
   return sendEmail(
     opts,
