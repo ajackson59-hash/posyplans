@@ -11,6 +11,7 @@ import type { Request } from 'express';
 import { createServer } from "node:http";
 import type { Server } from "node:http";
 import { registerRoutes } from "./routes";
+import { registerInitialPreviewRoute } from "./initialPreviewRoute";
 
 declare module "http" {
   interface IncomingMessage {
@@ -128,6 +129,7 @@ export function ensureRoutesRegistered(app: express.Express, httpServer: Server)
   if (!readyPromise) {
     readyPromise = (async () => {
       await registerRoutes(httpServer, app);
+      registerInitialPreviewRoute(app);
       registerApiNotFoundHandler(app);
 
       app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
