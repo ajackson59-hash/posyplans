@@ -125,9 +125,10 @@ export default function Intake() {
   // started. Seed only untouched fields so a slow response cannot replace
   // something the host has already typed.
   useEffect(() => {
-    if (!params.ownerToken) return;
-    ownerTokenRef.current = params.ownerToken;
-    setOwnerToken(params.ownerToken);
+    const resumeToken = params.ownerToken;
+    if (!resumeToken) return;
+    ownerTokenRef.current = resumeToken;
+    setOwnerToken(resumeToken);
     if (createdHereRef.current) {
       setResuming(false);
       return;
@@ -136,7 +137,7 @@ export default function Intake() {
       try {
         const data = await apiRequestJson<{ event: EventRecord }>(
           "GET",
-          `/api/events/owner/${params.ownerToken}`,
+          `/api/events/owner/${resumeToken}`,
         );
         const event = data.event;
         const edited = editedRef.current;
@@ -150,7 +151,7 @@ export default function Intake() {
         if (event.budgetCeiling != null && !edited.has("budgetCeiling")) {
           setBudgetCeiling(String(event.budgetCeiling));
         }
-        touchRecentEvent(params.ownerToken);
+        touchRecentEvent(resumeToken);
       } catch {
         toast({
           title: "Couldn't load your saved progress",
