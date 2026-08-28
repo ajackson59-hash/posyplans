@@ -8,8 +8,8 @@ const where = vi.fn(() => ({ orderBy }));
 const from = vi.fn(() => ({ where }));
 const select = vi.fn(() => ({ from }));
 
-vi.mock("../server/storage", () => ({
-  db: { select },
+vi.mock("../server/criticalDb", () => ({
+  criticalDb: { select },
 }));
 
 const { getRecoveryEventsByEmail } = await import("../server/eventRecoveryStore");
