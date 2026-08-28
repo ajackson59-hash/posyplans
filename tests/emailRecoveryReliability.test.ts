@@ -4,14 +4,12 @@ import request from "supertest";
 
 process.env.DATABASE_URL = "postgres://test/test";
 
-const getEventsByEmail = vi.fn();
+const getRecoveryEventsByEmail = vi.fn();
 const sendEventRecoveryEmail = vi.fn();
 const getEmailConfiguration = vi.fn();
 
-vi.mock("../server/storage", () => ({
-  storage: {
-    getEventsByEmail: (...args: unknown[]) => getEventsByEmail(...args),
-  },
+vi.mock("../server/eventRecoveryStore", () => ({
+  getRecoveryEventsByEmail: (...args: unknown[]) => getRecoveryEventsByEmail(...args),
 }));
 
 vi.mock("../server/email", () => ({
@@ -29,7 +27,6 @@ function app() {
 }
 
 const linkedEvent = {
-  id: 88,
   ownerToken: "owner-token-private",
   eventName: "Hayden's Birthday",
   eventType: "Birthday Party",
@@ -37,7 +34,7 @@ const linkedEvent = {
 };
 
 beforeEach(() => {
-  getEventsByEmail.mockReset();
+  getRecoveryEventsByEmail.mockReset();
   sendEventRecoveryEmail.mockReset();
   getEmailConfiguration.mockReset();
   getEmailConfiguration.mockReturnValue({
@@ -48,7 +45,7 @@ beforeEach(() => {
     senderDomain: "updates.posyplans.com",
     environment: "preview",
   });
-  getEventsByEmail.mockResolvedValue([linkedEvent]);
+  getRecoveryEventsByEmail.mockResolvedValue([linkedEvent]);
   sendEventRecoveryEmail.mockResolvedValue({ ok: true, providerId: "provider-email-id" });
 });
 
@@ -74,7 +71,7 @@ describe("Find My Event email recovery", () => {
     expect(response.status).toBe(503);
     expect(response.body.code).toBe("email_configuration_incomplete");
     expect(response.body.requestId).toMatch(/^[a-f0-9]{12}$/);
-    expect(getEventsByEmail).not.toHaveBeenCalled();
+    expect(getRecoveryEventsByEmail).not.toHaveBeenCalled();
     expect(sendEventRecoveryEmail).not.toHaveBeenCalled();
   });
 
@@ -91,7 +88,7 @@ describe("Find My Event email recovery", () => {
         requestId: expect.stringMatching(/^[a-f0-9]{12}$/),
       }),
     );
-    expect(getEventsByEmail).toHaveBeenCalledWith("host@example.com");
+    expect(getRecoveryEventsByEmail).toHaveBeenCalledWith("host@example.com");
     expect(sendEventRecoveryEmail).toHaveBeenCalledWith(
       expect.objectContaining({
         to: "host@example.com",
@@ -103,7 +100,7 @@ describe("Find My Event email recovery", () => {
   });
 
   it("returns the identical accepted response for an address with no linked event", async () => {
-    getEventsByEmail.mockResolvedValue([]);
+    getRecoveryEventsByEmail.mockResolvedValue([]);
 
     const response = await request(app())
       .post("/api/events/lookup")
