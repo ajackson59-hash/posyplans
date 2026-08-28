@@ -20,6 +20,7 @@ import EventLanding from "@/pages/EventLanding";
 import Recover from "@/pages/Recover";
 import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import DashboardEntitlementGuard from "@/components/DashboardEntitlementGuard";
+import PaywallPreviewGuide from "@/components/PaywallPreviewGuide";
 import "@/styles/launchQa.css";
 
 function AppRouter() {
@@ -56,6 +57,7 @@ function App() {
       <TooltipProvider>
         <Toaster />
         <DashboardEntitlementGuard />
+        <PaywallPreviewGuide />
         <AppRouter />
         <CookieConsentBanner />
       </TooltipProvider>
