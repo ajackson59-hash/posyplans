@@ -30,6 +30,18 @@ export function registerSmsInvitationRoutes(app: Express): void {
   });
 
   app.post("/api/events/owner/:ownerToken/guests/:guestId/send-invite-sms", async (req, res) => {
+    const config = smsConfiguration();
+    // Initial outbound invitations must use the Messaging Service production
+    // path so Twilio's Advanced Opt-Out can honor STOP/HELP/START. The bare
+    // From-number fallback remains available only to the existing reminder
+    // transport during controlled testing.
+    if (!config.messagingServiceConfigured) {
+      return res.status(503).json({
+        error: "Invitation texting will turn on after the approved Posy number is attached to the Twilio Messaging Service.",
+        code: "messaging_service_not_ready",
+      });
+    }
+
     const parsed = invitationSmsSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({
