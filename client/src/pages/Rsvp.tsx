@@ -163,31 +163,70 @@ export default function Rsvp() {
 
   const totalAttending = adults + children;
 
-  const submitRsvp = useMutation({
+  // SMS consent is deliberately a second transaction. A failed SMS opt-in must
+  // never make a successfully recorded RSVP look like it failed.
+  const saveSmsOptIn = useMutation({
+    mutationFn: async () => {
+      if (!activeGuestToken || !smsPhone.trim()) return;
+      await apiRequest("POST", `/api/events/public/${shareSlug}/guest/${activeGuestToken}/sms-opt-in`, {
+        optIn: true,
+        phone: smsPhone.trim(),
+      });
+    },
+    retry: 1,
+    retryDelay: 500,
+    onError: () => {
+      toast({
+        title: "Your RSVP is saved",
+        description: "Text updates couldn't be turned on. You can still contact the host if you'd like reminders by text.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // The RSVP endpoint writes a desired state rather than appending an action, so
+  // repeating the same request is safe. That lets us retry a transient mobile
+  // failure. If a response is lost after the server already saved the RSVP, we
+  // also read the private guest record back and treat a matching state as
+  // success instead of showing a false "try again" message.
+  const submitRsvp = useMutation<GuestMatch | undefined>({
     mutationFn: async () => {
       if (!recipient || !activeGuestToken || !status) return;
-      const res = await apiRequest("POST", `/api/events/public/${shareSlug}/guest/${activeGuestToken}/rsvp`, {
+      const payload = {
         status,
         attendingAdults: adults,
         attendingChildren: children,
         attendingCount: totalAttending,
         note,
-      });
-      const rsvpResult = await res.json();
-
-      // The SMS checkbox is a separate consent action from the RSVP itself.
-      // Only fire it if the guest actively checked the box and gave a number.
-      if (smsOptIn && smsPhone.trim()) {
-        await apiRequest("POST", `/api/events/public/${shareSlug}/guest/${activeGuestToken}/sms-opt-in`, {
-          optIn: true,
-          phone: smsPhone.trim(),
-        });
+      };
+      try {
+        const res = await apiRequest("POST", `/api/events/public/${shareSlug}/guest/${activeGuestToken}/rsvp`, payload);
+        return (await res.json()) as GuestMatch;
+      } catch (error) {
+        try {
+          const check = await apiRequest("GET", `/api/events/public/${shareSlug}/guest/${activeGuestToken}`);
+          const saved = (await check.json()) as GuestMatch;
+          const expectedCount = status === "no" ? 0 : totalAttending;
+          if (
+            saved.rsvpStatus === status &&
+            (saved.attendingCount ?? 0) === expectedCount &&
+            (saved.note || "") === (note || "")
+          ) {
+            return saved;
+          }
+        } catch {
+          // Reconciliation is best-effort. A normal safe retry below still gets
+          // a chance to complete if the first request never reached the server.
+        }
+        throw error;
       }
-      return rsvpResult;
     },
+    retry: 1,
+    retryDelay: 500,
     onSuccess: () => {
       setSubmitted(true);
       toast({ title: "RSVP received", description: "Thanks for letting us know!" });
+      if (smsOptIn && smsPhone.trim()) saveSmsOptIn.mutate();
     },
     onError: () => {
       toast({ title: "Couldn't submit RSVP", description: "Please try again.", variant: "destructive" });
