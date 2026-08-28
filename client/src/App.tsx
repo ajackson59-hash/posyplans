@@ -19,6 +19,7 @@ import SmsTerms from "@/pages/SmsTerms";
 import EventLanding from "@/pages/EventLanding";
 import Recover from "@/pages/Recover";
 import { CookieConsentBanner } from "@/components/CookieConsentBanner";
+import DashboardEntitlementGuard from "@/components/DashboardEntitlementGuard";
 
 function AppRouter() {
   return (
@@ -53,6 +54,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
+        <DashboardEntitlementGuard />
         <AppRouter />
         <CookieConsentBanner />
       </TooltipProvider>
