@@ -17,9 +17,10 @@ import { briefForHostDirection } from "./conceptPreflight";
 import { buildConceptCorrectionPrompt, buildSystemPrompt, buildUserPrompt } from "./prompt";
 
 export const CONCEPT_MODEL = "claude-sonnet-4-6";
-export const MAX_TEXT_ONLY_CONCEPT_CORRECTIONS = 1;
-// A run can still deliver a customer-safe set with fewer than four concepts.
-// Below this, a partial set is not worth showing over a text-only retry.
+// Text-only concept correction is cheap and occurs before the image-spend
+// boundary. Two bounded repair passes materially improve recovery from a
+// malformed/empty provider response without creating a second artwork charge.
+export const MAX_TEXT_ONLY_CONCEPT_CORRECTIONS = 2;
 export const MIN_VIABLE_CONCEPTS = 1;
 
 export interface ConceptOnlyProofInput {
@@ -97,36 +98,29 @@ export async function runConceptOnlyProof(input: ConceptOnlyProofInput): Promise
     avoidConceptNames: input.avoidConceptNames,
     keepConstraints: input.keepConstraints,
   });
+
   let attempt = await requestQuartet([{ role: "user", content: userPrompt }]);
   let conceptRejections = attempt.parserErrors.length + attempt.quartet.errors.length;
 
-  if (!attempt.quartet.passed) {
-    const firstErrors = [...attempt.parserErrors, ...attempt.quartet.errors];
+  for (let correction = 0; correction < MAX_TEXT_ONLY_CONCEPT_CORRECTIONS && !attempt.quartet.passed; correction += 1) {
+    const currentErrors = [...attempt.parserErrors, ...attempt.quartet.errors];
     const assistantContent = attempt.candidates.length
       ? attempt.candidates.map((concept) => JSON.stringify(concept)).join("\n")
-      : "No valid concept objects were parsed from the first response.";
+      : "No valid concept objects were parsed from the previous response.";
+    const emptyRecovery = attempt.candidates.length === 0
+      ? "CRITICAL FORMAT RECOVERY: Return exactly four complete concept JSON objects, one object per line. No prose, no markdown fences, no headings, and no refusal text. Keep the user's named theme as a high-level creative reference while using an original composition and avoiding copied logos or exact protected character likenesses.\n\n"
+      : "";
 
-    // One correction is permitted because it remains entirely before the
-    // image provider boundary. Artwork automatic retry remains disabled and
-    // no run, usage reservation, preview, attempt, or ledger can exist here.
     attempt = await requestQuartet([
       { role: "user", content: userPrompt },
       { role: "assistant", content: assistantContent },
-      { role: "user", content: buildConceptCorrectionPrompt(firstErrors) },
+      { role: "user", content: `${emptyRecovery}${buildConceptCorrectionPrompt(currentErrors)}` },
     ]);
     conceptRejections += attempt.parserErrors.length + attempt.quartet.errors.length;
   }
 
   if (!attempt.quartet.passed) {
     const finalErrors = [...attempt.parserErrors, ...attempt.quartet.errors];
-
-    // Every logged production failure had at least two sound concepts out of
-    // four — the violation was isolated to one or two, never the whole set.
-    // When every remaining error is attributable to a specific concept (as
-    // opposed to a whole-quartet uniqueness/count violation that cannot be
-    // fixed by dropping one), and the parser itself produced no unattributed
-    // errors, drop only the flagged concept(s) and deliver the rest instead
-    // of discarding a set that is mostly fine.
     const canDropBadConcepts =
       attempt.parserErrors.length === 0 &&
       attempt.quartet.concepts.length > 0 &&
@@ -149,7 +143,7 @@ export async function runConceptOnlyProof(input: ConceptOnlyProofInput): Promise
 
     for (const error of finalErrors) input.onPreflightWarning?.(error);
     throw new Error(
-      `creative quartet failed zero-image preflight after ${MAX_TEXT_ONLY_CONCEPT_CORRECTIONS} text-only correction pass: ${finalErrors.join("; ")}`,
+      `creative quartet failed zero-image preflight after ${MAX_TEXT_ONLY_CONCEPT_CORRECTIONS} text-only correction passes: ${finalErrors.join("; ")}`,
     );
   }
 
