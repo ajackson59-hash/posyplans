@@ -33,9 +33,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Check } from "lucide-react";
+import { ArrowLeft, Check, AlertCircle } from "lucide-react";
 
 const SAVE_DEBOUNCE_MS = 900;
+const SAFE_PATCH_RETRIES = 2;
 
 interface InviteStudioProps {
   ownerToken: string;
@@ -66,6 +67,19 @@ const COPY_FIELDS: { key: keyof ThemeCopy; label: string }[] = [
   { key: "locationLine", label: "Location" },
   { key: "rsvpLine", label: "RSVP cue" },
 ];
+
+function mergePendingPatch(
+  current: Record<string, unknown>,
+  patch: Record<string, unknown>,
+): Record<string, unknown> {
+  const merged = {
+    ...current,
+    ...patch,
+    copy: { ...(current.copy as object | undefined), ...(patch.copy as object | undefined) },
+  };
+  if (!Object.keys(merged.copy as object).length) delete merged.copy;
+  return merged;
+}
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -118,6 +132,7 @@ export default function InviteStudio({
   const { toast } = useToast();
   const [tab, setTab] = useState<Tab>("words");
   const [envelopeOpen, setEnvelopeOpen] = useState(false);
+  const [saveProblem, setSaveProblem] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
 
@@ -162,38 +177,58 @@ export default function InviteStudio({
     });
   }, [event.inviteDesignConceptJson, view]);
 
+  // Keep edits serialized. The prior implementation cleared the pending body
+  // before each request and allowed a second debounced PATCH to start while the
+  // first was still in flight. On a slow mobile connection that could produce
+  // an error toast or let an older response race a newer selection. Pending
+  // edits now wait their turn and a failed body is put back at the front of the
+  // queue so a transient failure never silently drops the host's changes.
+  const pending = useRef<Record<string, unknown>>({});
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveRef = useRef<ReturnType<typeof useMutation> | null>(null);
+  const flushPendingRef = useRef<() => void>(() => {});
+
   const save = useMutation({
     mutationFn: (body: Record<string, unknown>) =>
       apiRequestJson<EventRecord>("PATCH", `/api/events/owner/${ownerToken}/invite/theme`, body),
+    retry: SAFE_PATCH_RETRIES,
+    retryDelay: (attempt) => Math.min(400 * 2 ** attempt, 1600),
+    onMutate: () => setSaveProblem(false),
     onSuccess: (updated) => {
       // The design we just sent is the design we already show, so record it as
       // synced rather than letting the effect above reset the form.
       syncedFrom.current = updated.inviteDesignConceptJson;
       queryClient.invalidateQueries({ queryKey: [`/api/events/owner/${ownerToken}`] });
+      // If the host kept editing while this request was in flight, save that
+      // newer body now. This serializes writes without making the UI feel slow.
+      queueMicrotask(() => flushPendingRef.current());
     },
-    onError: () => {
-      toast({ title: "Couldn't save that change", description: "Please try again.", variant: "destructive" });
+    onError: (_error, body) => {
+      pending.current = mergePendingPatch(body, pending.current);
+      setSaveProblem(true);
+      toast({
+        title: "That change hasn't saved yet",
+        description: "Your edit is still on screen. Posy retried it; make one more change or try the same control again to save it.",
+        variant: "destructive",
+      });
     },
   });
+  saveRef.current = save as ReturnType<typeof useMutation>;
 
-  const pending = useRef<Record<string, unknown>>({});
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const saveRef = useRef(save);
-  saveRef.current = save;
+  const flushPending = useCallback(() => {
+    const activeSave = saveRef.current;
+    if (!activeSave || activeSave.isPending || !Object.keys(pending.current).length) return;
+    const body = pending.current;
+    pending.current = {};
+    activeSave.mutate(body);
+  }, []);
+  flushPendingRef.current = flushPending;
 
   const scheduleSave = useCallback((patch: Record<string, unknown>) => {
-    pending.current = {
-      ...pending.current,
-      ...patch,
-      copy: { ...(pending.current.copy as object | undefined), ...(patch.copy as object | undefined) },
-    };
-    if (!Object.keys(pending.current.copy as object).length) delete pending.current.copy;
+    pending.current = mergePendingPatch(pending.current, patch);
+    setSaveProblem(false);
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => {
-      const body = pending.current;
-      pending.current = {};
-      saveRef.current.mutate(body);
-    }, SAVE_DEBOUNCE_MS);
+    timer.current = setTimeout(() => flushPendingRef.current(), SAVE_DEBOUNCE_MS);
   }, []);
 
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
@@ -201,9 +236,15 @@ export default function InviteStudio({
   const suite = useMutation({
     mutationFn: (body: Record<string, unknown>) =>
       apiRequestJson<{ ok: true }>("PATCH", `/api/events/owner/${ownerToken}/invite/suite`, body),
+    retry: SAFE_PATCH_RETRIES,
+    retryDelay: (attempt) => Math.min(400 * 2 ** attempt, 1600),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [`/api/events/owner/${ownerToken}`] }),
     onError: () => {
-      toast({ title: "Couldn't save the envelope", description: "Please try again.", variant: "destructive" });
+      toast({
+        title: "The envelope change didn't save",
+        description: "Posy retried it automatically. Please choose that option once more.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -297,8 +338,14 @@ export default function InviteStudio({
               />
             </div>
 
-            <p className="mt-3 text-center text-xs text-muted-foreground" aria-live="polite">
-              {save.isPending || suite.isPending ? "Saving…" : "All changes saved"}
+            <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground" aria-live="polite">
+              {save.isPending || suite.isPending ? (
+                "Saving…"
+              ) : saveProblem || save.isError || suite.isError ? (
+                <><AlertCircle className="h-3 w-3 text-destructive" /> Save needs another try</>
+              ) : (
+                "All changes saved"
+              )}
             </p>
           </div>
         </div>
