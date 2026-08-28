@@ -137,7 +137,7 @@ Evaluate on 4 criteria, each 1-5:
 1. text_free: No garbled text, letters, numbers, or fake writing in the image. Score 1 if any text-like artifacts appear, 5 if completely text-free.
 2. composition: Is the composition clear, balanced, and intentional? Score 1 for muddy or cluttered composition, 5 for clear, well-balanced layout.
 3. premium_feel: Does this look like premium, professional illustration — not cheap clipart? Score 1 for generic/clipart-like, 5 for premium quality.
-4. theme_fit: Does the illustration match the described concept? Score 1 for irrelevant, 5 for perfect match.
+4. theme_fit: Does the illustration match the described concept? Score 1 for irrelevant, 5 for perfect match. If the concept names a recognizable fictional world, show, film, game, character universe, or other specific cultural reference, a generic category resemblance is NOT enough. A generic unicorn image for a specifically named unicorn world, or generic pop-star imagery for a specifically named pop-culture theme, must score 3 or lower unless the image carries distinctive visual cues from the requested reference.
 
 Respond as STRICT JSON only: {"text_free": N, "composition": N, "premium_feel": N, "theme_fit": N, "overall": N, "issues": "brief description of any problems, or 'none'"}
 The overall score should be the average of the 4 criteria.`;
@@ -194,6 +194,10 @@ async function evaluateIllustrationQuality(
 const QUALITY_THRESHOLD = 3.0;
 // Critical: if text artifacts are detected (score <= 2), always regenerate.
 const TEXT_FAILURE_THRESHOLD = 2;
+// Theme fidelity is independently launch-critical. A polished image can score
+// well overall while still collapsing a named reference into a generic category
+// (for example, a specific unicorn world becoming simply "a unicorn").
+const THEME_FIDELITY_FAILURE_THRESHOLD = 3;
 
 /**
  * Builds a tightened illustration prompt by appending the art critic's
@@ -213,8 +217,8 @@ function tightenIllustrationPrompt(originalPrompt: string, score: ArtQualityScor
   if (score.premium_feel <= 3) {
     fixes.push("premium professional stationery illustration quality, polished and refined, not generic clipart or stock icon look, sophisticated color palette");
   }
-  if (score.theme_fit <= 3) {
-    fixes.push(`closely matching the concept theme, subject matter must be clearly and accurately depicted`);
+  if (score.theme_fit <= THEME_FIDELITY_FAILURE_THRESHOLD) {
+    fixes.push("closely match the specifically requested concept rather than a generic category; carry the distinctive visual cues, world-building, palette, atmosphere, motifs, and character/world signals described by the concept so a fan would immediately understand the intended reference");
   }
 
   // If the critic didn't flag anything specific (edge case), add general polish
@@ -237,9 +241,10 @@ export async function generateInviteIllustrationWithQualityGate(
     const score = await evaluateIllustrationQuality(illustrationUrl, concept);
     const hasTextArtifacts = score.text_free <= TEXT_FAILURE_THRESHOLD;
     const belowThreshold = score.overall < QUALITY_THRESHOLD;
+    const missesTheme = score.theme_fit <= THEME_FIDELITY_FAILURE_THRESHOLD;
 
-    if (hasTextArtifacts || belowThreshold) {
-      console.log(`[quality-gate] Illustration scored ${score.overall.toFixed(1)} (${score.issues}). Regenerating with tightened prompt...`);
+    if (hasTextArtifacts || belowThreshold || missesTheme) {
+      console.log(`[quality-gate] Illustration scored ${score.overall.toFixed(1)} / theme ${score.theme_fit} (${score.issues}). Regenerating with tightened prompt...`);
       // Regenerate once with a tightened prompt that addresses the critic's
       // specific issues — not just the same prompt relying on random variance.
       const tightenedConcept: InviteDesignConcept = {
