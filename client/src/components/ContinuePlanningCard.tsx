@@ -40,7 +40,10 @@ export default function ContinuePlanning() {
       <Card className="border-card-border shadow-sm">
         <CardContent className="p-5 sm:p-6">
           <p className="text-sm font-semibold uppercase tracking-wide text-primary">
-            Pick up where you left off
+            Find my event
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Pick up where you left off.
           </p>
           <div className="mt-4 space-y-2">
             {tokens.map((token) => (
@@ -53,13 +56,13 @@ export default function ContinuePlanning() {
             ))}
           </div>
           <p className="mt-4 text-sm text-muted-foreground">
-            or{" "}
+            Don't see your event?{" "}
             <Link
               href="/intake"
               className="font-medium text-primary underline-offset-2 hover:underline"
               data-testid="link-continue-start-new"
             >
-              start a new event
+              Start a new one
             </Link>
           </p>
         </CardContent>
