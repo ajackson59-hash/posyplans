@@ -15,6 +15,7 @@ import { registerInitialPreviewRoute } from "./initialPreviewRoute";
 import { registerSmsInvitationRoutes } from "./smsInvitationRoutes";
 import { registerEventStartupRoutes } from "./eventStartupRoutes";
 import { registerEmailDiagnosticRoutes } from "./emailDiagnosticRoutes";
+import { registerEventRecoveryRoutes } from "./eventRecoveryRoutes";
 
 declare module "http" {
   interface IncomingMessage {
@@ -131,9 +132,11 @@ export function registerApiNotFoundHandler(app: express.Express): void {
 export function ensureRoutesRegistered(app: express.Express, httpServer: Server): Promise<void> {
   if (!readyPromise) {
     readyPromise = (async () => {
-      // Register the small, idempotent start endpoint first so the intake form
-      // has a dedicated recovery path independent of the larger route surface.
+      // Register small reliability-sensitive endpoints first. The recovery
+      // route intentionally precedes its legacy equivalent in routes.ts so it
+      // can provide accurate service health and a traceable support reference.
       registerEventStartupRoutes(app);
+      registerEventRecoveryRoutes(app);
       await registerRoutes(httpServer, app);
       registerInitialPreviewRoute(app);
       registerSmsInvitationRoutes(app);
