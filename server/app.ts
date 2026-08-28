@@ -13,6 +13,7 @@ import type { Server } from "node:http";
 import { registerRoutes } from "./routes";
 import { registerInitialPreviewRoute } from "./initialPreviewRoute";
 import { registerSmsInvitationRoutes } from "./smsInvitationRoutes";
+import { registerEventStartupRoutes } from "./eventStartupRoutes";
 
 declare module "http" {
   interface IncomingMessage {
@@ -129,6 +130,9 @@ export function registerApiNotFoundHandler(app: express.Express): void {
 export function ensureRoutesRegistered(app: express.Express, httpServer: Server): Promise<void> {
   if (!readyPromise) {
     readyPromise = (async () => {
+      // Register the small, idempotent start endpoint first so the intake form
+      // has a dedicated recovery path independent of the larger route surface.
+      registerEventStartupRoutes(app);
       await registerRoutes(httpServer, app);
       registerInitialPreviewRoute(app);
       registerSmsInvitationRoutes(app);
