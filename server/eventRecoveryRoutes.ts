@@ -1,8 +1,10 @@
 import type { Express, Request } from "express";
 import { createHash, randomBytes } from "node:crypto";
 import { z } from "zod";
-import type { Event } from "@shared/schema";
-import { storage } from "./storage";
+import {
+  getRecoveryEventsByEmail,
+  type RecoveryEventRecord,
+} from "./eventRecoveryStore";
 import { getEmailConfiguration, sendEventRecoveryEmail } from "./email";
 
 const PUBLIC_APP_ORIGIN = "https://posyplans.com";
@@ -38,8 +40,8 @@ function allowed(req: Request, email: string, now = Date.now()): boolean {
   return consume(`email:${hash(email)}`, EMAIL_LIMIT, now) && consume(`ip:${hash(ip)}`, IP_LIMIT, now);
 }
 
-function recoveryBody(events: Event[]): string {
-  const links = events.slice(0, 20).map((event) => {
+function recoveryBody(events: RecoveryEventRecord[]): string {
+  const links = events.map((event) => {
     const detail = [event.eventType, event.eventDate].filter(Boolean).join(" · ");
     const dashboardUrl = `${PUBLIC_APP_ORIGIN}/dashboard/${encodeURIComponent(event.ownerToken)}`;
     return `${event.eventName}${detail ? ` — ${detail}` : ""}\n${dashboardUrl}`;
@@ -102,7 +104,10 @@ export function registerEventRecoveryRoutes(app: Express): void {
     }
 
     try {
-      const found = await storage.getEventsByEmail(normalized);
+      // This intentionally reads only four small metadata columns. Existing
+      // event rows can contain several megabytes of image data, none of which
+      // belongs in an email-recovery lookup.
+      const found = await getRecoveryEventsByEmail(normalized);
       let accepted = false;
       let providerId: string | null = null;
       let providerCode: string | null = null;
