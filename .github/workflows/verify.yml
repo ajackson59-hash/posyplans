@@ -40,27 +40,48 @@ jobs:
       # On branch pushes, wait for the stable Vercel Preview alias to update and
       # then verify the real deployment has both the Resend key and a verified
       # non-test sender. The endpoint exposes booleans/domain only—never secrets.
+      # Protected previews require Vercel's automation-bypass secret in GitHub.
       - name: Verify deployed Preview email sender
         if: github.event_name == 'push'
         env:
           EMAIL_CONFIG_URL: https://posy-git-fix-launch-qa-find-my-event-label-poseplans.vercel.app/api/email/config
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
           set -euo pipefail
-          rm -f /tmp/posy-email-config.json
+          rm -f /tmp/posy-email-config.json /tmp/posy-email-headers.txt
+
+          curl_args=(
+            --silent
+            --show-error
+            --location
+            --output /tmp/posy-email-config.json
+            --dump-header /tmp/posy-email-headers.txt
+            --write-out '%{http_code}'
+            --header 'Accept: application/json'
+          )
+
+          if [ -n "${VERCEL_AUTOMATION_BYPASS_SECRET:-}" ]; then
+            curl_args+=(--header "x-vercel-protection-bypass: ${VERCEL_AUTOMATION_BYPASS_SECRET}")
+          fi
 
           for attempt in $(seq 1 40); do
-            status="$(curl --silent --show-error --location \
-              --output /tmp/posy-email-config.json \
-              --write-out '%{http_code}' \
-              "$EMAIL_CONFIG_URL" || true)"
+            status="$(curl "${curl_args[@]}" "$EMAIL_CONFIG_URL" || true)"
+            content_type="$(grep -i '^content-type:' /tmp/posy-email-headers.txt | tail -1 | tr -d '\r' || true)"
 
-            if [ "$status" = "200" ]; then
+            if [ "$status" = "200" ] && grep -qi 'application/json' <<<"$content_type"; then
               break
             fi
 
+            # A 200 HTML response is Vercel's protected-preview challenge, not
+            # Posy's health endpoint. Fail clearly without printing that page.
+            if [ "$status" = "200" ] && grep -qi 'text/html' <<<"$content_type"; then
+              echo "Preview protection blocked the deployed email-health check."
+              echo "Add VERCEL_AUTOMATION_BYPASS_SECRET to this repository's Actions secrets, or verify /api/email/config manually while signed into Vercel."
+              exit 1
+            fi
+
             if [ "$attempt" = "40" ]; then
-              echo "Preview email-health endpoint did not become ready (last HTTP status: $status)."
-              [ -f /tmp/posy-email-config.json ] && cat /tmp/posy-email-config.json
+              echo "Preview email-health endpoint did not become ready (last HTTP status: $status; $content_type)."
               exit 1
             fi
 
