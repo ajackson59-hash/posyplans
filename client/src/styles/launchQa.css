@@ -1,0 +1,22 @@
+/* Launch QA refinements kept narrow to the shared envelope renderer so the
+   host preview and guest RSVP presentation stay identical. */
+
+/* The previous 62%-deep triangular flap dominated the invitation and read more
+   like a giant decorative triangle than a physical envelope. A shallower flap
+   is closer to real stationery proportions and keeps the liner as an accent. */
+[data-testid="envelope-flap"] {
+  height: 50% !important;
+}
+
+/* The fixed liner printed behind the moving flap used the same oversized
+   triangle. Keep that reveal aligned with the shallower flap so opening the
+   envelope doesn't expose a second giant wedge underneath it. */
+[data-testid="envelope-back"] > div:first-child > div:nth-child(2) {
+  height: 50% !important;
+}
+
+/* Bring the seal up to the new fold line instead of leaving it floating at the
+   old, deeper-flap midpoint. */
+[data-testid="envelope-back"] > span[aria-hidden="true"] {
+  top: 43% !important;
+}
