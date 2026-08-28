@@ -17,7 +17,11 @@ import type { Event } from "../shared/schema";
 // product. Three tries is enough to survive one quality-gate rejection
 // without opening the door to unlimited free generations.
 export const MAX_PRE_PAYMENT_PREVIEW_ATTEMPTS = 3;
-export const PRE_PAYMENT_PREVIEW_LONG_EDGE = 160;
+// 160px made the teaser so soft that a host could not judge whether the
+// direction matched their event. 320px is still a deliberately degraded
+// preview, but it preserves enough subject/theme detail to create confidence
+// before checkout while withholding the production-quality asset.
+export const PRE_PAYMENT_PREVIEW_LONG_EDGE = 320;
 
 // Preview v1 accidentally omitted the host's intake vibe and usually sent
 // only the event name to the concept generator. Treat any asset created before
