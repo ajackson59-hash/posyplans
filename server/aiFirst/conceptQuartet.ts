@@ -208,12 +208,14 @@ export function preflightConceptQuartet(
   if (concepts.length === REQUIRED_CONCEPT_QUARTET_SIZE) {
     addUniquenessError(errors, "focal strategies", concepts.map((concept) => concept.focalStrategy ?? ""));
     addUniquenessError(errors, "visual moods", concepts.map((concept) => concept.visualMood ?? ""));
-    // Medium is a creative-variety signal, not a rendering safety boundary.
-    // Requiring all four to be different was brittle enough to reject an
-    // otherwise strong set before any artwork spend. Three distinct media
-    // still prevents a repetitive quartet while tolerating one intentional
-    // repeat when the subject/theme benefits from it.
-    addUniquenessError(errors, "illustration media", concepts.map((concept) => mediumFamily(concept.art.medium)), 3);
+    // Four distinct illustration media remain the ideal designed set, but
+    // medium is a creative-variety signal rather than a rendering safety
+    // boundary. At least three are required; one intentional repeat is allowed
+    // when it gives the named theme a stronger, more coherent result.
+    const media = concepts.map((concept) => mediumFamily(concept.art.medium));
+    if (uniqueCount(media) < 3) {
+      errors.push("quartet should aim for 4 distinct illustration media; at least 3 are required");
+    }
     addUniquenessError(errors, "style lanes", concepts.map((concept) => concept.styleLaneId));
     addUniquenessError(errors, "font pairings", concepts.map((concept) => concept.fontPairingId));
     addUniquenessError(errors, "focal compositions", concepts.map((concept) => concept.art.composition));
