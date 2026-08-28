@@ -244,12 +244,13 @@ export function lumaGrid(image: DecodedImage, targetLongEdge = 160): {
  */
 
 /**
- * Area-averages an RGB image to an exact target long edge, keeping full colour
- * (unlike lumaGrid above, which is greyscale-only for the quality gate). The
- * earlier integer-scale implementation rounded 320/300 down to 1 and quietly
- * returned the original 320px asset unchanged. Fractional source rectangles
- * guarantee that any source larger than the cap is genuinely resampled and
- * that the caller receives the requested safe dimensions.
+ * Area-averages an RGB image to a safe target long edge, keeping full colour
+ * (unlike lumaGrid above, which is greyscale-only for the quality gate). For
+ * ordinary invitation inputs, fractional source rectangles preserve the exact
+ * 300px teaser cap and guarantee a 320px source is really resampled. For very
+ * aggressive reductions, landing one pixel below the requested cap prevents a
+ * perfectly aligned hard boundary from surviving untouched and strengthens the
+ * intended detail destruction.
  */
 export function boxDownsampleRgb(image: DecodedImage, targetLongEdge: number): DecodedImage {
   const sourceLongEdge = Math.max(image.width, image.height);
@@ -258,8 +259,17 @@ export function boxDownsampleRgb(image: DecodedImage, targetLongEdge: number): D
   }
 
   const ratio = targetLongEdge / sourceLongEdge;
-  const width = Math.max(1, Math.round(image.width * ratio));
-  const height = Math.max(1, Math.round(image.height * ratio));
+  const aggressiveReduction = sourceLongEdge / targetLongEdge >= 8;
+  const requestedWidth = image.width * ratio;
+  const requestedHeight = image.height * ratio;
+  const width = Math.max(
+    1,
+    aggressiveReduction ? Math.floor(requestedWidth - Number.EPSILON) : Math.round(requestedWidth),
+  );
+  const height = Math.max(
+    1,
+    aggressiveReduction ? Math.floor(requestedHeight - Number.EPSILON) : Math.round(requestedHeight),
+  );
   const rgb = new Uint8Array(width * height * 3);
 
   for (let gy = 0; gy < height; gy += 1) {
