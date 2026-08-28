@@ -35,3 +35,52 @@ jobs:
 
       - name: Run regression suite
         run: npm test
+
+      # A successful build is not proof that Find My Event can deliver mail.
+      # On branch pushes, wait for the stable Vercel Preview alias to update and
+      # then verify the real deployment has both the Resend key and a verified
+      # non-test sender. The endpoint exposes booleans/domain only—never secrets.
+      - name: Verify deployed Preview email sender
+        if: github.event_name == 'push'
+        env:
+          EMAIL_CONFIG_URL: https://posy-git-fix-launch-qa-find-my-event-label-poseplans.vercel.app/api/email/config
+        run: |
+          set -euo pipefail
+          rm -f /tmp/posy-email-config.json
+
+          for attempt in $(seq 1 40); do
+            status="$(curl --silent --show-error --location \
+              --output /tmp/posy-email-config.json \
+              --write-out '%{http_code}' \
+              "$EMAIL_CONFIG_URL" || true)"
+
+            if [ "$status" = "200" ]; then
+              break
+            fi
+
+            if [ "$attempt" = "40" ]; then
+              echo "Preview email-health endpoint did not become ready (last HTTP status: $status)."
+              [ -f /tmp/posy-email-config.json ] && cat /tmp/posy-email-config.json
+              exit 1
+            fi
+
+            sleep 5
+          done
+
+          node <<'NODE'
+          const fs = require('node:fs');
+          const result = JSON.parse(fs.readFileSync('/tmp/posy-email-config.json', 'utf8'));
+          console.log(JSON.stringify({
+            environment: result.environment,
+            apiKeyConfigured: result.apiKeyConfigured,
+            fromAddressConfigured: result.fromAddressConfigured,
+            productionSenderConfigured: result.productionSenderConfigured,
+            usesTestSender: result.usesTestSender,
+            senderDomain: result.senderDomain,
+          }));
+
+          if (!result.productionSenderConfigured) {
+            console.error('Find My Event email is not launch-ready in Preview. Configure RESEND_API_KEY and a verified RESEND_FROM_EMAIL for the Preview environment.');
+            process.exit(1);
+          }
+          NODE
