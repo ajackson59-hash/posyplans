@@ -34,6 +34,11 @@ const linkedEvent = {
 };
 
 beforeEach(() => {
+  vi.stubEnv("PUBLIC_APP_ORIGIN", "");
+  vi.stubEnv("VERCEL_ENV", "test");
+  vi.stubEnv("VERCEL_BRANCH_URL", "");
+  vi.stubEnv("VERCEL_URL", "");
+
   getRecoveryEventsByEmail.mockReset();
   sendEventRecoveryEmail.mockReset();
   getEmailConfiguration.mockReset();
@@ -50,6 +55,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.unstubAllEnvs();
   vi.restoreAllMocks();
 });
 
@@ -93,10 +99,52 @@ describe("Find My Event email recovery", () => {
       expect.objectContaining({
         to: "host@example.com",
         subject: "Your Posy event link",
+        body: expect.stringContaining("https://posyplans.com/dashboard/owner-token-private"),
         idempotencyKey: expect.stringContaining("event-recovery/"),
       }),
     );
     expect(JSON.stringify(response.body)).not.toContain("owner-token-private");
+  });
+
+  it("keeps a trusted Vercel Preview recovery link inside Preview", async () => {
+    const previewHost = "posy-git-fix-launch-qa-find-my-event-label-poseplans.vercel.app";
+    vi.stubEnv("VERCEL_ENV", "preview");
+    vi.stubEnv("VERCEL_BRANCH_URL", previewHost);
+
+    const response = await request(app())
+      .post("/api/events/lookup")
+      .set("Host", previewHost)
+      .send({ email: "preview-host@example.com" });
+
+    expect(response.status).toBe(202);
+    expect(sendEventRecoveryEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: "preview-host@example.com",
+        body: expect.stringContaining(`https://${previewHost}/dashboard/owner-token-private`),
+      }),
+    );
+    expect(sendEventRecoveryEmail.mock.calls[0][0].body).not.toContain(
+      "https://posyplans.com/dashboard/owner-token-private",
+    );
+  });
+
+  it("ignores an untrusted Host header when composing a Preview recovery link", async () => {
+    const previewHost = "posy-git-fix-launch-qa-find-my-event-label-poseplans.vercel.app";
+    vi.stubEnv("VERCEL_ENV", "preview");
+    vi.stubEnv("VERCEL_BRANCH_URL", previewHost);
+
+    const response = await request(app())
+      .post("/api/events/lookup")
+      .set("Host", "malicious.example")
+      .send({ email: "preview-forged-host@example.com" });
+
+    expect(response.status).toBe(202);
+    expect(sendEventRecoveryEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: expect.stringContaining(`https://${previewHost}/dashboard/owner-token-private`),
+      }),
+    );
+    expect(sendEventRecoveryEmail.mock.calls[0][0].body).not.toContain("malicious.example");
   });
 
   it("returns the identical accepted response for an address with no linked event", async () => {
