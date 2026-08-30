@@ -41,6 +41,11 @@ function databaseIdentity(): {
   }
 }
 
+function compact(value: unknown): string | null {
+  if (typeof value !== "string" || !value) return null;
+  return value.length > 400 ? `${value.slice(0, 400)}…` : value;
+}
+
 function databaseFailureDetails(error: unknown): Record<string, unknown> {
   const outer = error && typeof error === "object"
     ? error as Record<string, unknown>
@@ -50,18 +55,21 @@ function databaseFailureDetails(error: unknown): Record<string, unknown> {
     ? rawCause as Record<string, unknown>
     : {};
 
+  // Keep the database identity and Postgres cause first: Vercel truncates long
+  // console lines, while Drizzle's outer message can contain the full SQL.
   return {
-    message: error instanceof Error ? error.message.split("\n", 1)[0] : String(error),
-    causeMessage: rawCause instanceof Error
-      ? rawCause.message
-      : typeof cause.message === "string"
-        ? cause.message
-        : null,
-    causeCode: typeof cause.code === "string" ? cause.code : null,
-    causeDetail: typeof cause.detail === "string" ? cause.detail : null,
-    causeHint: typeof cause.hint === "string" ? cause.hint : null,
-    causeColumn: typeof cause.column === "string" ? cause.column : null,
     database: databaseIdentity(),
+    causeCode: typeof cause.code === "string" ? cause.code : null,
+    causeMessage: compact(
+      rawCause instanceof Error
+        ? rawCause.message
+        : cause.message,
+    ),
+    causeDetail: compact(cause.detail),
+    causeHint: compact(cause.hint),
+    causeColumn: typeof cause.column === "string" ? cause.column : null,
+    outerName: error instanceof Error ? error.name : null,
+    outerMessage: compact(error instanceof Error ? error.message : String(error)),
   };
 }
 
