@@ -7,7 +7,7 @@ import {
 } from "./eventRecoveryStore";
 import { getEmailConfiguration, sendEventRecoveryEmail } from "./email";
 
-const PUBLIC_APP_ORIGIN = "https://posyplans.com";
+const PRODUCTION_APP_ORIGIN = "https://posyplans.com";
 const recoverySchema = z.object({ email: z.string().trim().email().max(254) });
 const EMAIL_LIMIT = 3;
 const IP_LIMIT = 12;
@@ -40,10 +40,55 @@ function allowed(req: Request, email: string, now = Date.now()): boolean {
   return consume(`email:${hash(email)}`, EMAIL_LIMIT, now) && consume(`ip:${hash(ip)}`, IP_LIMIT, now);
 }
 
-function recoveryBody(events: RecoveryEventRecord[]): string {
+function normalizedOrigin(value: string | undefined): string | null {
+  const candidate = value?.trim();
+  if (!candidate) return null;
+
+  try {
+    const url = new URL(candidate.includes("://") ? candidate : `https://${candidate}`);
+    const localHttp = url.protocol === "http:"
+      && (url.hostname === "localhost" || url.hostname === "127.0.0.1");
+    if (url.protocol !== "https:" && !localHttp) return null;
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
+function hostname(value: string | undefined): string | null {
+  const origin = normalizedOrigin(value);
+  return origin ? new URL(origin).hostname.toLowerCase() : null;
+}
+
+/**
+ * Production recovery links always stay on posyplans.com. Preview links may
+ * stay inside Preview, but only when the request host exactly matches one of
+ * Vercel's trusted deployment hosts. This keeps end-to-end QA usable without
+ * allowing a forged Host header to be embedded in a private recovery email.
+ */
+function recoveryAppOrigin(req: Request): string {
+  const configured = normalizedOrigin(process.env.PUBLIC_APP_ORIGIN);
+  if (configured) return configured;
+  if (process.env.VERCEL_ENV !== "preview") return PRODUCTION_APP_ORIGIN;
+
+  const branchHost = hostname(process.env.VERCEL_BRANCH_URL);
+  const deploymentHost = hostname(process.env.VERCEL_URL);
+  const trustedHosts = new Set([branchHost, deploymentHost].filter((value): value is string => Boolean(value)));
+  const requestHost = String(req.get("host") || "")
+    .trim()
+    .toLowerCase()
+    .replace(/:\d+$/, "");
+
+  if (requestHost && trustedHosts.has(requestHost)) return `https://${requestHost}`;
+  if (branchHost) return `https://${branchHost}`;
+  if (deploymentHost) return `https://${deploymentHost}`;
+  return PRODUCTION_APP_ORIGIN;
+}
+
+function recoveryBody(events: RecoveryEventRecord[], appOrigin: string): string {
   const links = events.map((event) => {
     const detail = [event.eventType, event.eventDate].filter(Boolean).join(" · ");
-    const dashboardUrl = `${PUBLIC_APP_ORIGIN}/dashboard/${encodeURIComponent(event.ownerToken)}`;
+    const dashboardUrl = `${appOrigin}/dashboard/${encodeURIComponent(event.ownerToken)}`;
     return `${event.eventName}${detail ? ` — ${detail}` : ""}\n${dashboardUrl}`;
   });
 
@@ -118,7 +163,7 @@ export function registerEventRecoveryRoutes(app: Express): void {
         const result = await sendEventRecoveryEmail({
           to: normalized,
           subject: found.length === 1 ? "Your Posy event link" : "Your Posy event links",
-          body: recoveryBody(found),
+          body: recoveryBody(found, recoveryAppOrigin(req)),
           idempotencyKey: `event-recovery/${emailHash}/${fiveMinuteBucket}`,
         });
         accepted = result.ok;
