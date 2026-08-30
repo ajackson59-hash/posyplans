@@ -18,6 +18,53 @@ function randomToken(length: number): string {
   return randomBytes(length).toString("base64url").slice(0, length);
 }
 
+function databaseIdentity(): {
+  host: string;
+  port: string;
+  projectRef: string | null;
+  database: string;
+} {
+  try {
+    const url = new URL(process.env.DATABASE_URL || "");
+    const username = decodeURIComponent(url.username);
+    const projectRef = username.startsWith("postgres.")
+      ? username.slice("postgres.".length)
+      : null;
+    return {
+      host: url.hostname,
+      port: url.port || "default",
+      projectRef,
+      database: url.pathname.replace(/^\//, "") || "default",
+    };
+  } catch {
+    return { host: "unparseable", port: "unknown", projectRef: null, database: "unknown" };
+  }
+}
+
+function databaseFailureDetails(error: unknown): Record<string, unknown> {
+  const outer = error && typeof error === "object"
+    ? error as Record<string, unknown>
+    : {};
+  const rawCause = outer.cause;
+  const cause = rawCause && typeof rawCause === "object"
+    ? rawCause as Record<string, unknown>
+    : {};
+
+  return {
+    message: error instanceof Error ? error.message.split("\n", 1)[0] : String(error),
+    causeMessage: rawCause instanceof Error
+      ? rawCause.message
+      : typeof cause.message === "string"
+        ? cause.message
+        : null,
+    causeCode: typeof cause.code === "string" ? cause.code : null,
+    causeDetail: typeof cause.detail === "string" ? cause.detail : null,
+    causeHint: typeof cause.hint === "string" ? cause.hint : null,
+    causeColumn: typeof cause.column === "string" ? cause.column : null,
+    database: databaseIdentity(),
+  };
+}
+
 /**
  * The browser keeps one start key until it has received and stored the owner
  * token. A deterministic owner token makes a retried/lost response resolve to
@@ -129,7 +176,11 @@ export function registerEventStartupRoutes(
       res.setHeader("Cache-Control", "no-store");
       return res.json(event);
     } catch (error) {
-      console.error("[event-start] unable to secure event:", error);
+      // Keep the customer response calm and secret-free, but emit only the
+      // concise database cause in private runtime logs. Logging the full
+      // Drizzle error prints an enormous SQL statement and can hide the one
+      // actionable Postgres code/message behind log truncation.
+      console.error(`[event-start] ${JSON.stringify(databaseFailureDetails(error))}`);
       res.setHeader("Cache-Control", "no-store");
       res.setHeader("Retry-After", "1");
       return res.status(503).json({
