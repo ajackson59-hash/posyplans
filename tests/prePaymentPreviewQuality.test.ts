@@ -84,6 +84,10 @@ describe("prepayment preview quality lock", () => {
     expect(svg).toContain("Brian and Blippi&apos;s Extravaganza");
     expect(svg).toContain("Blippi + Meekah");
     expect(svg).toContain("Indoor soft play");
+    expect(svg).toContain("Weak or generic artwork is never shown.");
+    expect(svg).toContain(".cue { font: 600 26px");
+    expect(svg).toContain(".copy { font: 400 27px");
+    expect(svg).toContain(".foot { font: 700 18px");
   });
 
   it("keeps a rejected first candidate private and returns only the approved correction", async () => {
