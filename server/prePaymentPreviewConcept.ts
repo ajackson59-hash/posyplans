@@ -35,6 +35,9 @@ function isBlippiBrief(brief: string): boolean {
  * A pre-payment preview is conversion proof, not a style exploration.
  * Build its one concept directly from the host's wording so an abstract
  * lane cannot erase the literal theme before the image model sees it.
+ *
+ * Keep this path deliberately separate from the paid four-concept experience:
+ * a sales teaser has one job—prove, at a glance, that Posy understood the host.
  */
 export function buildPrePaymentPreviewConcept(event: PreviewEvent): {
   sourceBrief: string;
