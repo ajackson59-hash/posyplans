@@ -57,23 +57,33 @@ beforeEach(() => {
 });
 
 describe("PaywallReferenceUpload", () => {
-  it("sends a named-theme screenshot into the private reviewed-image path", async () => {
+  it("builds a reference-backed first look even while generated previews are disabled", async () => {
     const { image } = setupPaywallDom();
+    let readiness = {
+      mode: "direction-card",
+      kind: "direction-card",
+      imageGenerationEnabled: false,
+      namedReference: { id: "blippi-meekah", label: "Blippi + Meekah" },
+      referenceRecommended: true,
+      referenceCaptured: false,
+    };
+
     apiRequestJson.mockImplementation((method: string, url: string) => {
       if (method === "GET" && url.endsWith("/prepayment-preview/readiness")) {
-        return Promise.resolve({
-          mode: "quality-image",
-          kind: "direction-card",
-          imageGenerationEnabled: true,
-          namedReference: { id: "blippi-meekah", label: "Blippi + Meekah" },
-          referenceRecommended: true,
-        });
+        return Promise.resolve(readiness);
       }
       if (method === "POST" && url.endsWith("/prepayment-preview")) {
+        readiness = {
+          ...readiness,
+          kind: "reference-board",
+          referenceRecommended: false,
+          referenceCaptured: true,
+        };
         return Promise.resolve({
           ready: true,
-          kind: "approved-image",
+          kind: "reference-board",
           referenceRecommended: false,
+          referenceCaptured: true,
         });
       }
       throw new Error(`Unexpected request: ${method} ${url}`);
@@ -83,6 +93,8 @@ describe("PaywallReferenceUpload", () => {
     renderEnhancer();
 
     const upload = await screen.findByTestId("input-prepayment-preview-reference");
+    expect(screen.getByText(/Pin the exact Blippi \+ Meekah look/)).toBeTruthy();
+
     const file = new File(["reference"], "blippi-reference.jpg", { type: "image/jpeg" });
     fireEvent.change(upload, { target: { files: [file] } });
 
@@ -93,25 +105,43 @@ describe("PaywallReferenceUpload", () => {
       const request = apiRequestJson.mock.calls.find(
         ([method, url]) => method === "POST" && String(url).endsWith("/prepayment-preview"),
       );
-      expect(request).toBeDefined();
       expect(request?.[2]).toEqual({
         email: "host@example.com",
         inspirationImages: ["data:image/jpeg;base64,REFERENCE"],
       });
     });
 
-    await screen.findByText(/passed Posy’s private review/);
+    await screen.findByText(/exact visual reference is now pinned/i);
+    expect(screen.getByText(/Blippi \+ Meekah reference pinned/)).toBeTruthy();
     expect(image.src).toContain(`/api/events/owner/${OWNER}/prepayment-preview/asset?v=`);
   });
 
-  it("stays hidden while generated preview images are disabled", async () => {
+  it("lets a host replace an already-pinned reference board", async () => {
+    setupPaywallDom();
+    apiRequestJson.mockResolvedValue({
+      mode: "direction-card",
+      kind: "reference-board",
+      imageGenerationEnabled: false,
+      namedReference: { id: "unicorn-academy", label: "Unicorn Academy" },
+      referenceRecommended: false,
+      referenceCaptured: true,
+    });
+
+    renderEnhancer();
+
+    await screen.findByText(/Unicorn Academy reference pinned/);
+    expect(screen.getByText(/Replace design inspo/)).toBeTruthy();
+  });
+
+  it("stays hidden for an original theme that does not need exact reference identity", async () => {
     setupPaywallDom();
     apiRequestJson.mockResolvedValue({
       mode: "direction-card",
       kind: "direction-card",
       imageGenerationEnabled: false,
-      namedReference: { id: "blippi-meekah", label: "Blippi + Meekah" },
-      referenceRecommended: true,
+      namedReference: null,
+      referenceRecommended: false,
+      referenceCaptured: false,
     });
 
     renderEnhancer();
