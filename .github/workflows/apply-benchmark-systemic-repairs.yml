@@ -1,0 +1,72 @@
+name: Apply Preview Benchmark Systemic Repairs
+
+on:
+  push:
+    branches:
+      - fix/prepayment-preview-quality-lock
+    paths:
+      - .github/workflows/apply-benchmark-systemic-repairs.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/prepayment-preview-quality-lock
+          fetch-depth: 0
+
+      - name: Harden preview fidelity, composition and finish
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          source = Path('server/prePaymentPreviewQuality.ts')
+          text = source.read_text()
+
+          replacements = [
+              (
+                  '  const referenceImageRule = dependencies.referenceImages?.length\n    ? "ATTACHED REFERENCE IMAGES ARE IDENTITY ANCHORS ONLY. Preserve their defining character and visual-world details at high fidelity while creating a new event-specific composition. Do not copy any wording, logo, watermark or invitation layout from them."\n    : "";',
+                  '  const referenceImageRule = dependencies.referenceImages?.length\n    ? "ATTACHED REFERENCE IMAGES ARE AUTHORITATIVE IDENTITY ANCHORS. Match the defining face, hair, outfit, creature markings, proportions, silhouette and visual-world details that make the requested subjects recognizable at a glance. Create a new event-specific scene; never copy wording, logos, watermarks or an invitation layout from the references."\n    : "";'
+              ),
+              (
+                  '    "Use a polished, dimensional, premium stationery finish with coherent anatomy, expressive figures, intentional lighting and a clear focal hierarchy.",',
+                  '    "FINISH CONTRACT: create bespoke editorial stationery artwork with layered depth, tactile material detail, controlled lighting and refined art direction. It must not resemble generic clipart, stock illustration, a television promo still, a merchandising graphic or a flat commercial poster. Keep faces, hands, limbs and object interactions anatomically coherent.",\n    "LAYOUT CONTRACT: the live opaque typography box occupies approximately left 21%, top 32%, width 58%, height 40%. Keep every required person, face, creature, signature object and defining interaction fully visible outside that box. Treat the box as protected negative space, not as an area that can cover a hero subject.",'
+              ),
+              (
+                  '      composition: "scene-led full-bleed composition with required subjects central and a calm center type zone",',
+                  '      composition: "portrait scene-led full-bleed composition arranged around a protected central typography box; all required subjects, faces and defining objects remain fully visible in the side and lower framing, with calm negative space reserved only for type",'
+              ),
+          ]
+
+          for old, new in replacements:
+              if old not in text:
+                  raise SystemExit(f'Expected source fragment not found: {old[:90]}')
+              text = text.replace(old, new, 1)
+
+          source.write_text(text)
+
+          test = Path('tests/prePaymentPreviewQuality.test.ts')
+          test_text = test.read_text()
+          needle = '    expect(generateImage.mock.calls[1][0].prompt).toContain("Meekah is missing");\n'
+          addition = needle + '    expect(generateImage.mock.calls[0][0].prompt).toContain("FINISH CONTRACT");\n    expect(generateImage.mock.calls[0][0].prompt).toContain("LIVE TYPOGRAPHY BOX");\n'
+          if needle not in test_text:
+              raise SystemExit('Expected prompt assertion anchor not found')
+          test.write_text(test_text.replace(needle, addition, 1))
+          PY
+
+      - name: Commit repairs and remove temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/apply-benchmark-systemic-repairs.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add server/prePaymentPreviewQuality.ts tests/prePaymentPreviewQuality.test.ts .github/workflows/apply-benchmark-systemic-repairs.yml
+          git commit -m "Harden preview fidelity, composition and editorial finish"
+          git push origin HEAD:fix/prepayment-preview-quality-lock
