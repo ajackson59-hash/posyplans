@@ -42,7 +42,7 @@ const vision: VisionVerdict = {
 };
 
 describe("reference-led preview quality", () => {
-  it("uses high output quality and forwards the same original pixels to the private candidate", async () => {
+  it("uses the supported high-fidelity reference model and forwards the original pixels", async () => {
     const referenceImages = [{
       bytes: Buffer.from("official-reference-pixels"),
       mimeType: "image/png" as const,
@@ -65,14 +65,15 @@ describe("reference-led preview quality", () => {
     expect(result.kind).toBe("approved-image");
     expect(generateImage).toHaveBeenCalledTimes(1);
     expect(generateImage.mock.calls[0][0]).toEqual(expect.objectContaining({
-      model: "gpt-image-2",
+      model: "gpt-image-1.5",
       quality: "high",
+      inputFidelity: "high",
       aspectRatio: "9:16",
       referenceImages,
     }));
   });
 
-  it("keeps generic no-reference preview generation at medium quality", async () => {
+  it("keeps generic no-reference preview generation on GPT Image 2 at medium quality", async () => {
     const generateImage = vi.fn(async () => ({
       bytes: Buffer.alloc(50_000, 2),
       dataUrl: "data:image/png;base64,APPROVED",
@@ -90,6 +91,10 @@ describe("reference-led preview quality", () => {
       maxCandidates: 1,
     });
 
-    expect(generateImage.mock.calls[0][0].quality).toBe("medium");
+    expect(generateImage.mock.calls[0][0]).toEqual(expect.objectContaining({
+      model: "gpt-image-2",
+      quality: "medium",
+      inputFidelity: undefined,
+    }));
   });
 });
