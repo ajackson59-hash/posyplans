@@ -9,18 +9,22 @@ import { useToast } from "@/hooks/use-toast";
 const EMAIL_LOOKS_VALID = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_REFERENCES = 2;
 
+type PreviewKind = "direction-card" | "reference-board" | "approved-image" | "none";
+
 interface PreviewReadiness {
   mode: "off" | "direction-card" | "quality-image";
-  kind: "direction-card" | "approved-image" | "none";
+  kind: PreviewKind;
   imageGenerationEnabled: boolean;
   namedReference: { id: string; label: string } | null;
   referenceRecommended: boolean;
+  referenceCaptured?: boolean;
 }
 
 interface PreviewResponse {
   ready: boolean;
-  kind: "direction-card" | "approved-image";
+  kind: Exclude<PreviewKind, "none">;
   referenceRecommended: boolean;
+  referenceCaptured?: boolean;
 }
 
 interface ReferenceFile {
@@ -34,11 +38,11 @@ function ownerTokenFromLocation(location: string): string | null {
 }
 
 /**
- * Exact entertainment references need visual evidence, not more confident
- * guessing. This enhancer appears after Posy's deterministic direction card
- * and lets a host provide up to two screenshots before checkout. It is hidden
- * while generated-preview mode is disabled, so the safe launch default stays
- * simple and no reference is collected without an active use for it.
+ * Named entertainment references are handled differently from original event
+ * themes. Instead of asking AI to invent a lookalike, Posy places the host's
+ * own screenshot beside the exact event details it captured. The board is
+ * deterministic, private and available even while generated previews remain
+ * disabled for launch.
  */
 export default function PaywallReferenceUpload() {
   const [location] = useLocation();
@@ -97,9 +101,6 @@ export default function PaywallReferenceUpload() {
       }
       setMount(anchor);
 
-      // The direction-card request changes the page from no image to an image.
-      // Refresh readiness once for that structural change, but do not refetch on
-      // every portal mutation inside this component.
       const image = document.querySelector<HTMLImageElement>("[data-testid='img-prepayment-preview']");
       const imageSignal = image ? `${image.getAttribute("src") || ""}:${image.complete}` : "none";
       if (imageSignal !== lastImageSignal) {
@@ -145,7 +146,7 @@ export default function PaywallReferenceUpload() {
     }
   };
 
-  const createReviewedImage = async () => {
+  const saveReferenceBackedFirstLook = async () => {
     if (!ownerToken || references.length === 0) return;
     const emailInput = document.querySelector<HTMLInputElement>("[data-testid='input-spark-email']");
     const email = (emailInput?.value || "").trim();
@@ -171,39 +172,57 @@ export default function PaywallReferenceUpload() {
         },
       );
 
-      await loadReadiness();
       const card = document.querySelector<HTMLElement>("[data-testid='prepayment-preview-card']");
-      if (result.kind === "approved-image") {
-        // The existing paywall already owns image load/error state. Updating its
-        // source lets those handlers run normally without a page refresh.
-        const image = document.querySelector<HTMLImageElement>("[data-testid='img-prepayment-preview']");
-        if (image) {
-          image.src = `/api/events/owner/${encodeURIComponent(ownerToken)}/prepayment-preview/asset?v=${Date.now()}`;
-        }
-        setReadiness((current) => current ? { ...current, kind: "approved-image", referenceRecommended: false } : current);
-        setResultMessage("Your reference-based preview passed Posy’s private review and is ready above.");
+      const image = document.querySelector<HTMLImageElement>("[data-testid='img-prepayment-preview']");
+      if (image) {
+        image.src = `/api/events/owner/${encodeURIComponent(ownerToken)}/prepayment-preview/asset?v=${Date.now()}`;
+      }
+
+      if (result.kind === "reference-board") {
+        setReadiness((current) => current ? {
+          ...current,
+          kind: "reference-board",
+          referenceRecommended: false,
+          referenceCaptured: true,
+          imageGenerationEnabled: false,
+        } : current);
+        setResultMessage(
+          "Your exact visual reference is now pinned to this event. Posy will not substitute a generic lookalike.",
+        );
+        setReferences([]);
+        card?.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else if (result.kind === "approved-image") {
+        setReadiness((current) => current ? {
+          ...current,
+          kind: "approved-image",
+          referenceRecommended: false,
+        } : current);
+        setResultMessage("Your privately reviewed preview is ready above.");
         card?.scrollIntoView({ behavior: "smooth", block: "center" });
       } else {
         setResultMessage(
-          "The generated option did not clear Posy’s standard, so your reliable creative-direction card stayed in place. You can continue without showing weak artwork.",
+          "Your reliable creative direction stayed in place. Nothing generic or off-brief was shown.",
         );
       }
+
+      await loadReadiness();
     } catch (error) {
       setResultMessage(
-        "Posy kept your reliable creative-direction card in place. No unapproved artwork was shown, and you can still continue to checkout.",
+        "Posy kept your reliable creative direction in place. Nothing was lost, and you can still continue to checkout.",
       );
-      console.error("Reference-based prepayment preview failed closed:", error);
+      console.error("Reference-backed prepayment preview failed safely:", error);
     } finally {
       setSubmitting(false);
     }
   };
 
-  const shouldShow =
-    readiness?.imageGenerationEnabled === true
-    && readiness.referenceRecommended
-    && readiness.kind === "direction-card";
+  const namedThemeReady = Boolean(readiness?.namedReference)
+    && (readiness?.kind === "direction-card" || readiness?.kind === "reference-board");
 
-  if (!mount || !shouldShow) return null;
+  if (!mount || !namedThemeReady) return null;
+
+  const referenceCaptured = readiness?.kind === "reference-board" || readiness?.referenceCaptured === true;
+  const namedLabel = readiness?.namedReference?.label || "named theme";
 
   return createPortal(
     <section
@@ -212,13 +231,19 @@ export default function PaywallReferenceUpload() {
       aria-label="Add design inspiration"
     >
       <div className="flex items-start gap-3">
-        <ImagePlus className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+        {referenceCaptured ? (
+          <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+        ) : (
+          <ImagePlus className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+        )}
         <div>
           <h2 className="text-sm font-semibold text-foreground">
-            Want closer {readiness.namedReference?.label || "character"} detail?
+            {referenceCaptured ? `${namedLabel} reference pinned` : `Pin the exact ${namedLabel} look`}
           </h2>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-            Add one clear screenshot. Posy uses its character and visual-world cues—not the screenshot’s exact invitation layout.
+            {referenceCaptured
+              ? "Your first look uses the visual reference you chose—not an AI approximation. Add a new screenshot below to replace it."
+              : "Add one or two clear screenshots. Posy will pair the exact visual references you chose with your event details instead of inventing a lookalike."}
           </p>
         </div>
       </div>
@@ -244,7 +269,13 @@ export default function PaywallReferenceUpload() {
         {references.length < MAX_REFERENCES && (
           <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-primary/35 bg-card px-3 py-2.5 text-xs font-medium text-primary hover:border-primary/60">
             {readingFiles ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
-            {readingFiles ? "Reading screenshot…" : references.length ? "Add another screenshot" : "Add design inspo"}
+            {readingFiles
+              ? "Reading screenshot…"
+              : references.length
+                ? "Add another screenshot"
+                : referenceCaptured
+                  ? "Replace design inspo"
+                  : "Add design inspo"}
             <input
               type="file"
               accept="image/png,image/jpeg,image/webp"
@@ -261,25 +292,27 @@ export default function PaywallReferenceUpload() {
           </label>
         )}
 
-        <button
-          type="button"
-          onClick={createReviewedImage}
-          disabled={references.length === 0 || readingFiles || submitting}
-          className="flex w-full items-center justify-center gap-2 rounded-md bg-primary px-3 py-2.5 text-xs font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
-          data-testid="button-create-reference-preview"
-        >
-          {submitting ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Creating and reviewing privately…
-            </>
-          ) : (
-            <>
-              <CheckCircle2 className="h-4 w-4" />
-              Create a reviewed image from this reference
-            </>
-          )}
-        </button>
+        {references.length > 0 && (
+          <button
+            type="button"
+            onClick={saveReferenceBackedFirstLook}
+            disabled={readingFiles || submitting}
+            className="flex w-full items-center justify-center gap-2 rounded-md bg-primary px-3 py-2.5 text-xs font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            data-testid="button-create-reference-preview"
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Building your reference-backed first look…
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="h-4 w-4" />
+                {referenceCaptured ? "Replace my pinned reference" : "Use this inspiration in my first look"}
+              </>
+            )}
+          </button>
+        )}
       </div>
 
       {resultMessage && (
@@ -288,7 +321,7 @@ export default function PaywallReferenceUpload() {
         </p>
       )}
       <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-        This is optional. You can keep the direction above and continue to checkout at any time.
+        Optional. Keep the direction above or continue straight to checkout at any time.
       </p>
     </section>,
     mount,
