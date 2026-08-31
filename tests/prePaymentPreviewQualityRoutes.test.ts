@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import express from "express";
 import request from "supertest";
 import type { Event } from "@shared/schema";
+import { isReferenceBoardDataUrl } from "../server/prePaymentReferenceBoard";
 
 process.env.DATABASE_URL = "postgres://test/test";
 
@@ -46,6 +47,7 @@ const updateEventById = vi.fn(async (id: number, data: Partial<Event>) => {
   return stored;
 });
 const generate = vi.fn();
+const analyzeInspiration = vi.fn(async () => "reference image shows exact character styling");
 
 function makeApp(mode: "off" | "direction-card" | "quality-image" = "direction-card") {
   const app = express();
@@ -55,10 +57,26 @@ function makeApp(mode: "off" | "direction-card" | "quality-image" = "direction-c
     isUnlocked: async () => false,
     mode: () => mode,
     generate,
-    analyzeInspiration: async () => "reference image shows exact character styling",
+    analyzeInspiration,
     now: () => 1_800_000_000_000,
   });
   return app;
+}
+
+function genericEvent(): Event {
+  return {
+    ...stored,
+    eventName: "Candlelit Fortieth",
+    vibeDescription: "Elegant candlelit rooftop dinner with terracotta flowers",
+  };
+}
+
+function decodedStoredSvg(): string {
+  const marker = ";base64,";
+  const encoded = stored.prePaymentPreviewUrl.slice(
+    stored.prePaymentPreviewUrl.indexOf(marker) + marker.length,
+  );
+  return Buffer.from(encoded, "base64").toString("utf8");
 }
 
 beforeEach(() => {
@@ -66,6 +84,7 @@ beforeEach(() => {
   getEventByOwnerToken.mockClear();
   updateEventById.mockClear();
   generate.mockReset();
+  analyzeInspiration.mockClear();
 });
 
 describe("quality-locked prepayment preview routes", () => {
@@ -89,34 +108,31 @@ describe("quality-locked prepayment preview routes", () => {
       ready: true,
       kind: "direction-card",
       referenceRecommended: true,
+      referenceCaptured: false,
     }));
     expect(generate).not.toHaveBeenCalled();
     expect(stored.prePaymentPreviewUrl).toMatch(/^data:image\/svg\+xml;base64,/);
     expect(stored.prePaymentPreviewAttempts).toBe(0);
   });
 
-  it("does not guess a named reference from text alone even when quality images are enabled", async () => {
+  it("never guesses a named entertainment reference from text alone", async () => {
     const response = await request(makeApp("quality-image"))
       .post(`/api/events/owner/${OWNER}/prepayment-preview`)
       .send({ email: "host@example.com" });
 
     expect(response.status).toBe(200);
-    expect(response.body.kind).toBe("direction-card");
-    expect(response.body.namedReference).toEqual({ id: "blippi-meekah", label: "Blippi + Meekah" });
+    expect(response.body).toEqual(expect.objectContaining({
+      kind: "direction-card",
+      namedReference: { id: "blippi-meekah", label: "Blippi + Meekah" },
+      referenceRecommended: true,
+    }));
     expect(generate).not.toHaveBeenCalled();
-    expect(stored.prePaymentPreviewUrl).toMatch(/^data:image\/svg\+xml;base64,/);
+    expect(analyzeInspiration).not.toHaveBeenCalled();
+    expect(stored.prePaymentPreviewAttempts).toBe(0);
   });
 
-  it("passes the original uploaded screenshot pixels into the private quality generator", async () => {
+  it("turns a named-theme screenshot into exact visible proof without provider spend", async () => {
     const referenceBytes = Buffer.from("exact host reference pixels");
-    generate.mockResolvedValue({
-      kind: "approved-image",
-      dataUrl: APPROVED_PNG,
-      attempts: 1,
-      model: "gpt-image-2",
-      reviews: [],
-    });
-
     const response = await request(makeApp("quality-image"))
       .post(`/api/events/owner/${OWNER}/prepayment-preview`)
       .send({
@@ -125,23 +141,48 @@ describe("quality-locked prepayment preview routes", () => {
       });
 
     expect(response.status).toBe(200);
-    expect(response.body.kind).toBe("approved-image");
-    expect(generate).toHaveBeenCalledTimes(1);
-    const dependencies = generate.mock.calls[0][1];
-    expect(dependencies).toEqual(expect.objectContaining({
-      inspirationNotes: "reference image shows exact character styling",
-      maxCandidates: 2,
+    expect(response.body).toEqual(expect.objectContaining({
+      kind: "reference-board",
+      referenceRecommended: false,
+      referenceCaptured: true,
     }));
-    expect(dependencies.referenceImages).toHaveLength(1);
-    expect(dependencies.referenceImages[0]).toEqual(expect.objectContaining({
-      mimeType: "image/png",
-      filename: "host-reference-1.png",
-    }));
-    expect(dependencies.referenceImages[0].bytes.equals(referenceBytes)).toBe(true);
-    expect(stored.prePaymentPreviewUrl).toBe(APPROVED_PNG);
+    expect(generate).not.toHaveBeenCalled();
+    expect(analyzeInspiration).not.toHaveBeenCalled();
+    expect(stored.prePaymentPreviewAttempts).toBe(0);
+    expect(isReferenceBoardDataUrl(stored.prePaymentPreviewUrl)).toBe(true);
+
+    const svg = decodedStoredSvg();
+    expect(svg).toContain('data-posy-preview-kind="reference-board"');
+    expect(svg).toContain("Blippi + Meekah");
+    expect(svg).toContain(`data:image/png;base64,${referenceBytes.toString("base64")}`);
   });
 
-  it("rejects unsupported reference-image formats before provider spend", async () => {
+  it("lets the host replace a pinned named-theme reference", async () => {
+    const first = Buffer.from("first reference");
+    const second = Buffer.from("second reference");
+
+    await request(makeApp("direction-card"))
+      .post(`/api/events/owner/${OWNER}/prepayment-preview`)
+      .send({
+        email: "host@example.com",
+        inspirationImages: [`data:image/png;base64,${first.toString("base64")}`],
+      });
+
+    const response = await request(makeApp("direction-card"))
+      .post(`/api/events/owner/${OWNER}/prepayment-preview`)
+      .send({
+        email: "host@example.com",
+        inspirationImages: [`data:image/png;base64,${second.toString("base64")}`],
+      });
+
+    expect(response.body.kind).toBe("reference-board");
+    const svg = decodedStoredSvg();
+    expect(svg).toContain(second.toString("base64"));
+    expect(svg).not.toContain(first.toString("base64"));
+    expect(generate).not.toHaveBeenCalled();
+  });
+
+  it("rejects unsupported reference-image formats before any write", async () => {
     const response = await request(makeApp("quality-image"))
       .post(`/api/events/owner/${OWNER}/prepayment-preview`)
       .send({
@@ -155,12 +196,8 @@ describe("quality-locked prepayment preview routes", () => {
     expect(updateEventById).not.toHaveBeenCalled();
   });
 
-  it("may replace a direction card only with an image that the private quality function approved", async () => {
-    stored = {
-      ...stored,
-      eventName: "Candlelit Fortieth",
-      vibeDescription: "Elegant candlelit rooftop dinner with terracotta flowers",
-    };
+  it("allows an original theme to use only privately approved generated artwork", async () => {
+    stored = genericEvent();
     generate.mockResolvedValue({
       kind: "approved-image",
       dataUrl: APPROVED_PNG,
@@ -180,12 +217,8 @@ describe("quality-locked prepayment preview routes", () => {
     expect(stored.prePaymentPreviewAttempts).toBe(1);
   });
 
-  it("converts provider failure or rejected artwork into the safe card instead of a red error", async () => {
-    stored = {
-      ...stored,
-      eventName: "Candlelit Fortieth",
-      vibeDescription: "Elegant candlelit rooftop dinner with terracotta flowers",
-    };
+  it("converts an original-theme provider failure into the safe card", async () => {
+    stored = genericEvent();
     generate.mockResolvedValue({
       kind: "unavailable",
       attempts: 0,
@@ -203,11 +236,11 @@ describe("quality-locked prepayment preview routes", () => {
     expect(stored.prePaymentPreviewUrl).toMatch(/^data:image\/svg\+xml;base64,/);
   });
 
-  it("never serves an old PNG accepted before the quality lock", async () => {
+  it("never serves a generated PNG for a named entertainment theme", async () => {
     stored = {
       ...stored,
       prePaymentPreviewUrl: OLD_PNG,
-      prePaymentPreviewUsedAt: 1,
+      prePaymentPreviewUsedAt: 1_900_000_000_000,
     };
 
     const response = await request(makeApp("quality-image"))
@@ -217,32 +250,52 @@ describe("quality-locked prepayment preview routes", () => {
     expect(JSON.stringify(response.body)).not.toContain("old unreviewed pixels");
   });
 
-  it("serves the deterministic card as a crisp private SVG", async () => {
+  it("serves both structured preview types as crisp private SVGs", async () => {
     await request(makeApp("direction-card"))
       .post(`/api/events/owner/${OWNER}/prepayment-preview`)
       .send({ email: "host@example.com" });
 
-    const response = await request(makeApp("direction-card"))
+    const direction = await request(makeApp("direction-card"))
       .get(`/api/events/owner/${OWNER}/prepayment-preview/asset`);
+    expect(direction.status).toBe(200);
+    expect(direction.headers["content-type"]).toContain("image/svg+xml");
+    expect((direction.body as Buffer).toString("utf8")).toContain("Blippi + Meekah");
 
-    expect(response.status).toBe(200);
-    expect(response.headers["content-type"]).toContain("image/svg+xml");
-    expect(response.headers["cache-control"]).toBe("private, no-store");
-    expect(Buffer.isBuffer(response.body)).toBe(true);
-    const svg = (response.body as Buffer).toString("utf8");
-    expect(svg).toContain("Blippi + Meekah");
-    expect(svg).toContain("Indoor soft play");
+    const referenceBytes = Buffer.from("exact reference");
+    await request(makeApp("direction-card"))
+      .post(`/api/events/owner/${OWNER}/prepayment-preview`)
+      .send({
+        email: "host@example.com",
+        inspirationImages: [`data:image/jpeg;base64,${referenceBytes.toString("base64")}`],
+      });
+
+    const board = await request(makeApp("direction-card"))
+      .get(`/api/events/owner/${OWNER}/prepayment-preview/asset`);
+    expect(board.status).toBe(200);
+    expect(board.headers["content-type"]).toContain("image/svg+xml");
+    expect(board.headers["cache-control"]).toBe("private, no-store");
+    expect((board.body as Buffer).toString("utf8")).toContain("VISUAL REFERENCE CAPTURED");
   });
 
-  it("reports named-reference routing before any customer action", async () => {
-    const response = await request(makeApp("direction-card"))
+  it("reports captured-reference state without offering image generation", async () => {
+    const referenceBytes = Buffer.from("exact reference");
+    await request(makeApp("quality-image"))
+      .post(`/api/events/owner/${OWNER}/prepayment-preview`)
+      .send({
+        email: "host@example.com",
+        inspirationImages: [`data:image/png;base64,${referenceBytes.toString("base64")}`],
+      });
+
+    const response = await request(makeApp("quality-image"))
       .get(`/api/events/owner/${OWNER}/prepayment-preview/readiness`);
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual(expect.objectContaining({
-      mode: "direction-card",
+      mode: "quality-image",
+      kind: "reference-board",
       imageGenerationEnabled: false,
-      referenceRecommended: true,
+      referenceRecommended: false,
+      referenceCaptured: true,
       namedReference: { id: "blippi-meekah", label: "Blippi + Meekah" },
     }));
   });
