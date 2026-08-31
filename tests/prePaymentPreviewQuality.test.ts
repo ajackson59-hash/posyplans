@@ -128,7 +128,7 @@ describe("prepayment preview quality lock", () => {
     }));
     expect(generateImage.mock.calls[1][0].prompt).toContain("Meekah is missing");
     expect(generateImage.mock.calls[0][0].prompt).toContain("FINISH CONTRACT");
-    expect(generateImage.mock.calls[0][0].prompt).toContain("LIVE TYPOGRAPHY BOX");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("visually quiet typography zone");
     expect(JSON.stringify(result)).not.toContain("FIRST");
   });
 

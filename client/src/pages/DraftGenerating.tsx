@@ -318,13 +318,13 @@ export default function DraftGenerating() {
   const previewAssetLoading = previewReady && !previewImageLoaded && !previewImageFailed;
   const checkoutPending = startSparkCheckout.isPending || startPlusCheckout.isPending;
 
-  let paywallCtaLabel = "Show me my personalized preview";
+  let paywallCtaLabel = "Show me my personalized first look";
   if (checkoutPending) {
     paywallCtaLabel = "Starting checkout…";
   } else if (startPrePaymentPreview.isPending) {
-    paywallCtaLabel = "Creating your personal preview…";
+    paywallCtaLabel = "Creating your personalized first look…";
   } else if (previewAssetLoading) {
-    paywallCtaLabel = "Revealing your personal preview…";
+    paywallCtaLabel = "Revealing your personalized first look…";
   } else if (previewCouldNotBeShown) {
     paywallCtaLabel =
       selectedPlan === "spark"
@@ -480,7 +480,7 @@ export default function DraftGenerating() {
                 {!previewImageLoaded && (
                   <div className="absolute inset-0 flex items-center justify-center gap-2 bg-card px-6 text-center text-sm text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Revealing your personal preview…
+                    Revealing your personalized first look…
                   </div>
                 )}
                 <span className="absolute right-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground shadow-sm">
@@ -495,7 +495,7 @@ export default function DraftGenerating() {
               <div className="flex aspect-square items-center justify-center gap-3 px-6 text-center text-sm text-muted-foreground">
                 <Loader2 className="h-5 w-5 shrink-0 animate-spin" />
                 <div>
-                  <p className="font-medium text-foreground">Creating your personal preview…</p>
+                  <p className="font-medium text-foreground">Creating your personalized first look…</p>
                   <p className="mt-1 text-xs leading-relaxed">
                     This can take a minute or two. You can leave this tab and come back—your finished preview will be waiting.
                   </p>
@@ -507,7 +507,7 @@ export default function DraftGenerating() {
               </div>
             ) : (
               <div className="flex aspect-square flex-col items-center justify-center gap-2 px-6 text-center text-sm text-muted-foreground">
-                <p>Posy will create a personalized preview before checkout.</p>
+                <p>Posy will create a personalized first look before checkout.</p>
                 <button
                   type="button"
                   onClick={focusPreviewEmail}
@@ -722,7 +722,7 @@ export default function DraftGenerating() {
                   data-testid="button-view-personalized-preview"
                 >
                   <CheckCircle2 className="h-3.5 w-3.5" />
-                  Your preview is ready — view it above
+                  Your first look is ready — view it above
                 </button>
               )}
               <Button
