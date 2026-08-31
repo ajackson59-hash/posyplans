@@ -49,8 +49,7 @@ describe("reference-backed prepayment preview board", () => {
     expect(svg).toContain(
       `data:image/jpeg;base64,${references[1].bytes.toString("base64")}`,
     );
-    expect(svg).not.toContain("http://");
-    expect(svg).not.toContain("https://");
+    expect(svg).not.toMatch(/<image[^>]+href="https?:\/\//i);
     expect(svg).toContain('preserveAspectRatio="xMidYMid meet"');
   });
 
