@@ -4,6 +4,10 @@ import { z } from "zod";
 import { storage } from "./storage";
 import { canGenerateDraft } from "./masterPlannerEntitlement";
 import { extractInspirationNotes } from "./inviteDesignAi";
+import {
+  type ArtworkReferenceImage,
+  type ArtworkReferenceMimeType,
+} from "./aiFirst/artwork";
 import { boxDownsampleRgb, decodePng, encodePng, PngDecodeError } from "./aiFirst/png";
 import {
   PRE_PAYMENT_PREVIEW_LONG_EDGE,
@@ -24,7 +28,7 @@ import {
 const requestSchema = z.object({
   email: z.string().trim().email().max(254),
   inspirationImages: z
-    .array(z.string().startsWith("data:image/"))
+    .array(z.string().max(3_500_000).startsWith("data:image/"))
     .max(2)
     .optional()
     .default([]),
@@ -53,6 +57,23 @@ function isSvgDataUrl(value: string | null | undefined): boolean {
 
 function isPngDataUrl(value: string | null | undefined): boolean {
   return Boolean(value?.startsWith("data:image/png;base64,"));
+}
+
+const MAX_REFERENCE_IMAGE_BYTES = 2_500_000;
+const REFERENCE_DATA_URL = /^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=\r\n]+)$/;
+
+function referenceImagesFromDataUrls(values: string[]): ArtworkReferenceImage[] {
+  return values.map((value, index) => {
+    const match = REFERENCE_DATA_URL.exec(value);
+    if (!match) throw new Error("unsupported reference image");
+    const mimeType = match[1] as ArtworkReferenceMimeType;
+    const bytes = Buffer.from(match[2].replace(/\s/g, ""), "base64");
+    if (bytes.length === 0 || bytes.length > MAX_REFERENCE_IMAGE_BYTES) {
+      throw new Error("reference image size is invalid");
+    }
+    const extension = mimeType === "image/jpeg" ? "jpg" : mimeType.split("/")[1];
+    return { bytes, mimeType, filename: `host-reference-${index + 1}.${extension}` };
+  });
 }
 
 function imageIsCurrent(event: Event): boolean {
@@ -135,13 +156,22 @@ export function registerPrePaymentPreviewQualityRoutes(
     if (!parsed.success) {
       return res.status(400).json({ error: "Enter a valid email to create your private preview." });
     }
+    let referenceImages: ArtworkReferenceImage[];
+    try {
+      referenceImages = referenceImagesFromDataUrls(parsed.data.inspirationImages);
+    } catch {
+      return res.status(400).json({
+        error: "Use a PNG, JPEG or WebP screenshot under 2.5 MB for design inspiration.",
+      });
+    }
+
     if (await isUnlocked(event)) {
       return res.status(409).json({ error: "This event is already unlocked — use the normal invitation flow." });
     }
 
     const mode = readMode();
     const currentKind = assetKind(event);
-    const hasReference = parsed.data.inspirationImages.length > 0;
+    const hasReference = referenceImages.length > 0;
     const namedReference = detectNamedCreativeReference(
       [event.eventName, event.eventType, event.themeName, event.vibeDescription].filter(Boolean).join(" "),
     );
@@ -218,7 +248,7 @@ export function registerPrePaymentPreviewQualityRoutes(
 
     let result: Awaited<ReturnType<typeof generateQualityLockedPreview>>;
     try {
-      result = await generate(event, { inspirationNotes, maxCandidates: 2 });
+      result = await generate(event, { inspirationNotes, referenceImages, maxCandidates: 2 });
     } catch (error) {
       await persistDirectionCard(store, event, now());
       console.error("[prepayment-preview] private quality pipeline failed closed:", error);

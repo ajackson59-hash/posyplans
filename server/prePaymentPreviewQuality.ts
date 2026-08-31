@@ -9,6 +9,7 @@ import {
   DEFAULT_ARTWORK_MODEL,
   generateArtwork,
   type ArtworkGenerator,
+  type ArtworkReferenceImage,
 } from "./aiFirst/artwork";
 import { buildEventBrief, type EventBrief } from "./aiFirst/brief";
 import { buildArtworkConstraints, buildRetryPrompt } from "./aiFirst/prompt";
@@ -416,6 +417,8 @@ export interface PreviewQualityDependencies {
   runTier1?: typeof runTier1Checks;
   runVision?: typeof runVisionGate;
   inspirationNotes?: string;
+  /** Original uploaded pixels used as high-fidelity identity anchors. */
+  referenceImages?: ArtworkReferenceImage[];
   /** Two internal candidates maximum; neither is customer-visible before approval. */
   maxCandidates?: 1 | 2;
 }
@@ -437,7 +440,14 @@ export async function generateQualityLockedPreview(
     event,
     dependencies.inspirationNotes ?? "",
   );
-  const basePrompt = `${buildArtworkPrompt(concept)}\n\n${buildArtworkConstraints(brief)}`;
+  const referenceImageRule = dependencies.referenceImages?.length
+    ? "ATTACHED REFERENCE IMAGES ARE IDENTITY ANCHORS ONLY. Preserve their defining character and visual-world details at high fidelity while creating a new event-specific composition. Do not copy any wording, logo, watermark or invitation layout from them."
+    : "";
+  const basePrompt = [
+    buildArtworkPrompt(concept),
+    buildArtworkConstraints(brief),
+    referenceImageRule,
+  ].filter(Boolean).join("\n\n");
   const reviews: PreviewQualityReview[] = [];
   let failureCodes: string[] = [];
   let concreteNotes = "";
@@ -454,6 +464,7 @@ export async function generateQualityLockedPreview(
         aspectRatio: aspectRatioForLayout(concept.layoutStyle),
         model: DEFAULT_ARTWORK_MODEL,
         quality: "medium",
+        referenceImages: dependencies.referenceImages,
       });
     } catch (error) {
       return {
