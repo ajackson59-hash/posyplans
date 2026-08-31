@@ -1,0 +1,118 @@
+name: Run Unicorn Academy Reference Canary
+
+on:
+  push:
+    branches:
+      - fix/prepayment-preview-quality-lock
+    paths:
+      - .github/workflows/run-unicorn-reference-canary.yml
+
+permissions:
+  contents: read
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PREVIEW_ORIGIN: https://posy-git-fix-prepayment-preview-quality-lock-poseplans.vercel.app
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+    steps:
+      - name: Wait for this exact protected Preview deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${VERCEL_AUTOMATION_BYPASS_SECRET:-}" ]; then
+            echo "VERCEL_AUTOMATION_BYPASS_SECRET is required."
+            exit 1
+          fi
+          for attempt in $(seq 1 60); do
+            status="$(curl --silent --show-error --location \
+              --output report.json --write-out '%{http_code}' \
+              --header "x-vercel-protection-bypass: ${VERCEL_AUTOMATION_BYPASS_SECRET}" \
+              --header 'x-vercel-set-bypass-cookie: true' \
+              --header 'Accept: application/json' \
+              "${PREVIEW_ORIGIN}/api/qa/prepayment-preview-benchmark/report" || true)"
+            deployed_sha="$(jq -r '.gitSha // empty' report.json 2>/dev/null || true)"
+            if [ "$status" = "200" ] && [ "$deployed_sha" = "$GITHUB_SHA" ]; then
+              echo "Preview is running $GITHUB_SHA"
+              exit 0
+            fi
+            echo "Waiting for Preview ($attempt/60): status=${status}, sha=${deployed_sha:-none}"
+            sleep 6
+          done
+          cat report.json || true
+          exit 1
+
+      - name: Download official identity references
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location \
+            'https://cdn.prod.website-files.com/64b69cbacda0592c92130359/64b827c0b3cb21467d257047_character_single_01_sophia-unicorn.png' \
+            --output sophia-wildstar.png
+          curl --fail --silent --show-error --location \
+            'https://cdn.prod.website-files.com/64b69cbacda0592c92130359/64b7f7f9c553df802bd8435f_character_single_02_layla-unicorn.png' \
+            --output layla-glacier.png
+          file sophia-wildstar.png layla-glacier.png
+          test "$(stat -c%s sophia-wildstar.png)" -le 2500000
+          test "$(stat -c%s layla-glacier.png)" -le 2500000
+
+      - name: Run the private reference-image quality path
+        shell: bash
+        run: |
+          set -euo pipefail
+          first="data:image/png;base64,$(base64 -w0 sophia-wildstar.png)"
+          second="data:image/png;base64,$(base64 -w0 layla-glacier.png)"
+          jq -n --arg first "$first" --arg second "$second" \
+            '{inspirationImages: [$first, $second]}' > payload.json
+
+          endpoint="${PREVIEW_ORIGIN}/api/qa/prepayment-preview-benchmark/unicorn-academy-igloo/1"
+          headers=(
+            --header "x-vercel-protection-bypass: ${VERCEL_AUTOMATION_BYPASS_SECRET}"
+            --header 'x-vercel-set-bypass-cookie: true'
+            --header 'Accept: application/json'
+            --header 'Content-Type: application/json'
+          )
+          status="$(curl --silent --show-error --location --max-time 295 \
+            --output canary.json --write-out '%{http_code}' \
+            "${headers[@]}" --request POST --data-binary @payload.json "$endpoint" || true)"
+          echo "Initial response: HTTP ${status}"
+          jq . canary.json || cat canary.json
+
+          complete="$(jq -r '.state == "complete"' canary.json 2>/dev/null || echo false)"
+          if [ "$complete" != "true" ]; then
+            for attempt in $(seq 1 40); do
+              sleep 8
+              status="$(curl --silent --show-error --location \
+                --output canary.json --write-out '%{http_code}' \
+                "${headers[@]}" "$endpoint" || true)"
+              complete="$(jq -r '.state == "complete"' canary.json 2>/dev/null || echo false)"
+              echo "Poll ${attempt}/40: HTTP ${status}, complete=${complete}"
+              [ "$complete" = "true" ] && break
+            done
+          fi
+
+          attempts="$(jq -r '.attempts // 0' canary.json)"
+          if [[ "$attempts" =~ ^[0-9]+$ ]] && [ "$attempts" -gt 0 ]; then
+            for candidate in $(seq 1 "$attempts"); do
+              curl --silent --show-error --location --fail \
+                "${headers[@]}" \
+                "${endpoint}/asset/${candidate}" \
+                --output "unicorn-academy-run-1-candidate-${candidate}.png" || true
+            done
+          fi
+
+          jq -e '.state == "complete" and .referencePixelsUsed == true' canary.json >/dev/null
+          jq -e '.approved == true' canary.json >/dev/null
+
+      - name: Preserve private evidence for review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unicorn-academy-reference-canary
+          path: |
+            canary.json
+            unicorn-academy-run-1-candidate-*.png
+          if-no-files-found: warn
+          retention-days: 2
