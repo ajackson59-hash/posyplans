@@ -7,6 +7,8 @@ import {
   renderReferenceBoardSvg,
 } from "../server/prePaymentReferenceBoard";
 
+// Named entertainment themes are a deterministic lane: exact host-provided
+// reference pixels plus captured event details, never a generated lookalike.
 const event = {
   id: 12,
   eventName: "Hayden's Unicorn Academy 7th Birthday",
