@@ -17,12 +17,25 @@ export const DEFAULT_ARTWORK_MODEL: ArtworkModel = "gpt-image-2";
 export type ArtworkQuality = "high" | "medium" | "low";
 export type ArtworkAspectRatio = "16:9" | "1:1" | "9:16";
 export type ArtworkSize = "1536x1024" | "1024x1024" | "1024x1536";
+export type ArtworkReferenceMimeType = "image/png" | "image/jpeg" | "image/webp";
+
+export interface ArtworkReferenceImage {
+  bytes: Buffer;
+  mimeType: ArtworkReferenceMimeType;
+  filename?: string;
+}
 
 export interface ArtworkRequest {
   prompt: string;
   aspectRatio: ArtworkAspectRatio;
   model?: ArtworkModel;
   quality?: ArtworkQuality;
+  /**
+   * High-fidelity visual references for named characters or entertainment
+   * worlds. When present, the provider's image-edits endpoint generates a new
+   * composition from these pixels rather than reducing them to text alone.
+   */
+  referenceImages?: ArtworkReferenceImage[];
   signal?: AbortSignal;
 }
 
@@ -66,6 +79,32 @@ export function estimateImageCostUsdMicros(
 
 export type ArtworkGenerator = (request: ArtworkRequest) => Promise<ArtworkResult>;
 
+function imageEditBody(
+  request: ArtworkRequest,
+  model: ArtworkModel,
+  size: ArtworkSize,
+  quality: ArtworkQuality,
+): FormData {
+  const form = new FormData();
+  form.append("model", model);
+  form.append("prompt", request.prompt);
+  form.append("size", size);
+  form.append("quality", quality);
+  form.append("n", "1");
+  form.append("background", "opaque");
+
+  for (let index = 0; index < (request.referenceImages ?? []).length; index += 1) {
+    const reference = request.referenceImages![index];
+    const extension = reference.mimeType === "image/jpeg"
+      ? "jpg"
+      : reference.mimeType.split("/")[1];
+    const blob = new Blob([new Uint8Array(reference.bytes)], { type: reference.mimeType });
+    form.append("image[]", blob, reference.filename || `reference-${index + 1}.${extension}`);
+  }
+
+  return form;
+}
+
 export async function generateArtwork(request: ArtworkRequest): Promise<ArtworkResult> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
@@ -73,26 +112,41 @@ export async function generateArtwork(request: ArtworkRequest): Promise<ArtworkR
   }
   const started = Date.now();
   const model = request.model ?? DEFAULT_ARTWORK_MODEL;
+  const quality = request.quality ?? "high";
+  const size = sizeForAspect(request.aspectRatio);
+  const references = request.referenceImages ?? [];
+  const usesReferenceImages = references.length > 0;
+  const endpoint = usesReferenceImages
+    ? "https://api.openai.com/v1/images/edits"
+    : "https://api.openai.com/v1/images/generations";
 
-  const response = await fetch("https://api.openai.com/v1/images/generations", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model,
-      prompt: request.prompt,
-      size: sizeForAspect(request.aspectRatio),
-      quality: request.quality ?? "high",
-      n: 1,
-      // Without this an image model can return a fully transparent alpha
-      // channel, which composites to an invisible card.
-      background: "opaque",
-    }),
-    signal: request.signal,
-  });
+  const response = await fetch(endpoint, usesReferenceImages
+    ? {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}` },
+        body: imageEditBody(request, model, size, quality),
+        signal: request.signal,
+      }
+    : {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model,
+          prompt: request.prompt,
+          size,
+          quality,
+          n: 1,
+          // Without this an image model can return a fully transparent alpha
+          // channel, which composites to an invisible card.
+          background: "opaque",
+        }),
+        signal: request.signal,
+      });
 
   if (!response.ok) {
     const body = await response.text().catch(() => "");
-    throw new Error(`${model} request failed (${response.status}): ${body.slice(0, 300)}`);
+    const operation = usesReferenceImages ? "edit" : "request";
+    throw new Error(`${model} ${operation} failed (${response.status}): ${body.slice(0, 300)}`);
   }
 
   const data = (await response.json()) as { data?: { b64_json?: string }[] };
