@@ -17,6 +17,7 @@ import { registerEventStartupRoutes } from "./eventStartupRoutes";
 import { registerEmailDiagnosticRoutes } from "./emailDiagnosticRoutes";
 import { registerEventRecoveryRoutes } from "./eventRecoveryRoutes";
 import { registerPrePaymentPreviewQualityRoutes } from "./prePaymentPreviewQualityRoutes";
+import { registerPrePaymentPreviewBenchmarkRoutes } from "./prePaymentPreviewBenchmarkRoutes";
 
 declare module "http" {
   interface IncomingMessage {
@@ -143,6 +144,10 @@ export function ensureRoutesRegistered(app: express.Express, httpServer: Server)
       // visible: Preview defaults to a deterministic direction card until the
       // strict GPT Image 2 + vision benchmark is explicitly enabled.
       registerPrePaymentPreviewQualityRoutes(app);
+      // Fixed-corpus provider QA is exposed only by the quality-lock Preview
+      // branch. The route itself returns 404 everywhere else and accepts no
+      // arbitrary prompts, so it cannot become a public image-generation API.
+      registerPrePaymentPreviewBenchmarkRoutes(app);
       await registerRoutes(httpServer, app);
       registerInitialPreviewRoute(app);
       registerSmsInvitationRoutes(app);
