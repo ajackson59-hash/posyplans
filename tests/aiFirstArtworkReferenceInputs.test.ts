@@ -5,15 +5,19 @@ const GENERATED_BYTES = Buffer.from("generated-image-bytes");
 const GENERATED_B64 = GENERATED_BYTES.toString("base64");
 const fetchMock = vi.fn();
 
-beforeEach(() => {
-  vi.stubEnv("OPENAI_API_KEY", "test-openai-key");
-  fetchMock.mockReset();
-  fetchMock.mockResolvedValue(new Response(JSON.stringify({
+function successResponse(): Response {
+  return new Response(JSON.stringify({
     data: [{ b64_json: GENERATED_B64 }],
   }), {
     status: 200,
     headers: { "Content-Type": "application/json" },
-  }));
+  });
+}
+
+beforeEach(() => {
+  vi.stubEnv("OPENAI_API_KEY", "test-openai-key");
+  fetchMock.mockReset();
+  fetchMock.mockResolvedValue(successResponse());
   vi.stubGlobal("fetch", fetchMock);
 });
 
@@ -98,5 +102,46 @@ describe("AI-first artwork reference inputs", () => {
 
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect((init.body as FormData).get("input_fidelity")).toBeNull();
+  });
+
+  it("honors Retry-After and retries one transient 429 without spending a second host action", async () => {
+    fetchMock
+      .mockReset()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        error: { message: "Rate limit reached. Please try again in 0s." },
+      }), {
+        status: 429,
+        headers: { "Content-Type": "application/json", "Retry-After": "0" },
+      }))
+      .mockResolvedValueOnce(successResponse());
+
+    const result = await generateArtwork({
+      prompt: "A candlelit garden dinner",
+      aspectRatio: "9:16",
+      model: "gpt-image-2",
+      quality: "medium",
+    });
+
+    expect(result.bytes.equals(GENERATED_BYTES)).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[0][0]).toBe("https://api.openai.com/v1/images/generations");
+    expect(fetchMock.mock.calls[1][0]).toBe("https://api.openai.com/v1/images/generations");
+  });
+
+  it("does not retry a non-transient provider rejection", async () => {
+    fetchMock.mockReset().mockResolvedValue(new Response(JSON.stringify({
+      error: { message: "unsupported parameter" },
+    }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    }));
+
+    await expect(generateArtwork({
+      prompt: "Invalid provider request",
+      aspectRatio: "1:1",
+      model: "gpt-image-2",
+      quality: "medium",
+    })).rejects.toThrow(/failed \(400\)/);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
