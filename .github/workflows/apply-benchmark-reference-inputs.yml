@@ -1,0 +1,84 @@
+name: Apply Benchmark Reference Inputs
+
+on:
+  push:
+    branches:
+      - fix/prepayment-preview-quality-lock
+    paths:
+      - .github/workflows/apply-benchmark-reference-inputs.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/prepayment-preview-quality-lock
+          fetch-depth: 0
+
+      - name: Add original-pixel inputs to Preview benchmark
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          path = Path('server/prePaymentPreviewBenchmarkRoutes.ts')
+          text = path.read_text()
+
+          replacements = [
+            (
+              '  type ArtworkResult,\n  type ArtworkSize,\n} from "./aiFirst/artwork";',
+              '  type ArtworkResult,\n  type ArtworkSize,\n  type ArtworkReferenceImage,\n  type ArtworkReferenceMimeType,\n} from "./aiFirst/artwork";'
+            ),
+            (
+              'const BENCHMARK_VERSION = "prepayment-quality-lock-2026-08-31-v1";',
+              'const BENCHMARK_VERSION = "prepayment-quality-lock-2026-08-31-v2";'
+            ),
+            (
+              'const paramsSchema = z.object({\n  caseId: z.string().min(1).max(80),\n  run: z.coerce.number().int().min(1).max(3),\n});',
+              '''const paramsSchema = z.object({\n  caseId: z.string().min(1).max(80),\n  run: z.coerce.number().int().min(1).max(3),\n});\nconst benchmarkRequestSchema = z.object({\n  inspirationImages: z\n    .array(z.string().max(3_500_000).startsWith("data:image/"))\n    .max(2)\n    .optional()\n    .default([]),\n});\nconst MAX_REFERENCE_IMAGE_BYTES = 2_500_000;\nconst REFERENCE_DATA_URL = /^data:(image\\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=\\r\\n]+)$/;\n\nfunction referenceImagesFromDataUrls(values: string[]): ArtworkReferenceImage[] {\n  return values.map((value, index) => {\n    const match = REFERENCE_DATA_URL.exec(value);\n    if (!match) throw new Error("unsupported reference image");\n    const mimeType = match[1] as ArtworkReferenceMimeType;\n    const bytes = Buffer.from(match[2].replace(/\\s/g, ""), "base64");\n    if (bytes.length === 0 || bytes.length > MAX_REFERENCE_IMAGE_BYTES) {\n      throw new Error("reference image size is invalid");\n    }\n    const extension = mimeType === "image/jpeg" ? "jpg" : mimeType.split("/")[1];\n    return { bytes, mimeType, filename: `benchmark-reference-${index + 1}.${extension}` };\n  });\n}'''
+            ),
+            (
+              '  referenceNotesUsed: boolean;\n  kind: QualityLockedPreviewResult["kind"];',
+              '  referenceNotesUsed: boolean;\n  referencePixelsUsed: boolean;\n  kind: QualityLockedPreviewResult["kind"];'
+            ),
+            (
+              '    const runId = benchmarkRunId(testCase.id, parsed.data.run);',
+              '''    const parsedBody = benchmarkRequestSchema.safeParse(req.body ?? {});\n    if (!parsedBody.success) {\n      return res.status(400).json({ error: "Use up to two PNG, JPEG or WebP benchmark references." });\n    }\n    let referenceImages: ArtworkReferenceImage[];\n    try {\n      referenceImages = referenceImagesFromDataUrls(parsedBody.data.inspirationImages);\n    } catch {\n      return res.status(400).json({ error: "Use benchmark references under 2.5 MB each." });\n    }\n\n    const runId = benchmarkRunId(testCase.id, parsed.data.run);'''
+            ),
+            (
+              '        inspirationNotes: testCase.benchmarkReferenceNotes ?? "",\n        maxCandidates: 2,',
+              '        inspirationNotes: testCase.benchmarkReferenceNotes ?? "",\n        referenceImages,\n        maxCandidates: 2,'
+            ),
+            (
+              '      referenceNotesUsed: Boolean(testCase.benchmarkReferenceNotes),\n      kind: result.kind,',
+              '      referenceNotesUsed: Boolean(testCase.benchmarkReferenceNotes),\n      referencePixelsUsed: referenceImages.length > 0,\n      kind: result.kind,'
+            ),
+            (
+              '      durationMs: summary.totalDurationMs,\n      costUsdMicros: summary.estimatedImageCostUsdMicros,',
+              '      durationMs: summary.totalDurationMs,\n      referencePixelsUsed: summary.referencePixelsUsed,\n      costUsdMicros: summary.estimatedImageCostUsdMicros,'
+            ),
+          ]
+
+          for old, new in replacements:
+            count = text.count(old)
+            if count != 1:
+              raise SystemExit(f'replacement count {count} for {old[:70]!r}')
+            text = text.replace(old, new)
+
+          path.write_text(text)
+          PY
+
+      - name: Commit benchmark support and remove temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "ajackson59-hash"
+          git config user.email "ajackson59@gmail.com"
+          git rm .github/workflows/apply-benchmark-reference-inputs.yml
+          git add server/prePaymentPreviewBenchmarkRoutes.ts
+          git commit -m "Benchmark named preview themes with original reference pixels"
+          git push origin HEAD:fix/prepayment-preview-quality-lock
