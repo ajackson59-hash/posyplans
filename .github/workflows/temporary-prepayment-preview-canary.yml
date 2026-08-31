@@ -1,0 +1,112 @@
+name: Temporary Prepayment Preview Provider Canary
+
+on:
+  push:
+    branches:
+      - fix/prepayment-preview-quality-lock
+    paths:
+      - .github/workflows/temporary-prepayment-preview-canary.yml
+
+permissions:
+  contents: read
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BASE_URL: https://posy-git-fix-prepayment-preview-quality-lock-poseplans.vercel.app
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+    steps:
+      - name: Wait for this exact Preview deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p canary-artifacts
+          for attempt in $(seq 1 60); do
+            status="$(curl \
+              --silent \
+              --show-error \
+              --location \
+              --output canary-artifacts/deployment-report.json \
+              --write-out '%{http_code}' \
+              --header 'Accept: application/json' \
+              --header "x-vercel-protection-bypass: ${VERCEL_AUTOMATION_BYPASS_SECRET}" \
+              --header 'x-vercel-set-bypass-cookie: true' \
+              "${BASE_URL}/api/qa/prepayment-preview-benchmark/report" || true)"
+
+            if [ "$status" = "200" ] && jq -e --arg sha "$GITHUB_SHA" '.gitSha == $sha' canary-artifacts/deployment-report.json >/dev/null 2>&1; then
+              echo "Quality-lock Preview is serving commit $GITHUB_SHA"
+              exit 0
+            fi
+            sleep 10
+          done
+
+          echo "The protected Preview did not reach this commit in time."
+          cat canary-artifacts/deployment-report.json 2>/dev/null || true
+          exit 1
+
+      - name: Run one private provider canary
+        id: generate
+        shell: bash
+        run: |
+          set -euo pipefail
+          status="$(curl \
+            --silent \
+            --show-error \
+            --location \
+            --max-time 295 \
+            --request POST \
+            --output canary-artifacts/canary.json \
+            --write-out '%{http_code}' \
+            --header 'Accept: application/json' \
+            --header 'Content-Type: application/json' \
+            --header "x-vercel-protection-bypass: ${VERCEL_AUTOMATION_BYPASS_SECRET}" \
+            --header 'x-vercel-set-bypass-cookie: true' \
+            --data '{}' \
+            "${BASE_URL}/api/qa/prepayment-preview-benchmark/rooftop-fortieth/1")"
+
+          echo "HTTP $status"
+          jq . canary-artifacts/canary.json
+          test "$status" = "200"
+
+      - name: Download every private canary candidate
+        if: always() && steps.generate.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          attempts="$(jq -r '.attempts // 0' canary-artifacts/canary.json)"
+          for candidate in $(seq 1 "$attempts"); do
+            curl \
+              --fail \
+              --silent \
+              --show-error \
+              --location \
+              --header "x-vercel-protection-bypass: ${VERCEL_AUTOMATION_BYPASS_SECRET}" \
+              --header 'x-vercel-set-bypass-cookie: true' \
+              "${BASE_URL}/api/qa/prepayment-preview-benchmark/rooftop-fortieth/1/asset/${candidate}" \
+              --output "canary-artifacts/candidate-${candidate}.png"
+          done
+
+      - name: Upload private canary evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prepayment-preview-canary
+          path: canary-artifacts
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Enforce the canary gate
+        if: always() && steps.generate.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          jq -e '
+            .approved == true
+            and .kind == "approved-image"
+            and .model == "gpt-image-2"
+            and (.approvedCandidate | type == "number")
+            and (.reviews[(.approvedCandidate - 1)].tier1Passed == true)
+            and (.reviews[(.approvedCandidate - 1)].visionPassed == true)
+          ' canary-artifacts/canary.json >/dev/null
