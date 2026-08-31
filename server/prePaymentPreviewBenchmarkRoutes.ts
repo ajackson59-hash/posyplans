@@ -17,6 +17,8 @@ import {
   type ArtworkRequest,
   type ArtworkResult,
   type ArtworkSize,
+  type ArtworkReferenceImage,
+  type ArtworkReferenceMimeType,
 } from "./aiFirst/artwork";
 import {
   detectNamedCreativeReference,
@@ -24,13 +26,36 @@ import {
   type QualityLockedPreviewResult,
 } from "./prePaymentPreviewQuality";
 
-const BENCHMARK_VERSION = "prepayment-quality-lock-2026-08-31-v1";
+const BENCHMARK_VERSION = "prepayment-quality-lock-2026-08-31-v2";
 const BENCHMARK_BRANCH = "fix/prepayment-preview-quality-lock";
 const RUN_TIMEOUT_MS = 8 * 60 * 1000;
 const paramsSchema = z.object({
   caseId: z.string().min(1).max(80),
   run: z.coerce.number().int().min(1).max(3),
 });
+const benchmarkRequestSchema = z.object({
+  inspirationImages: z
+    .array(z.string().max(3_500_000).startsWith("data:image/"))
+    .max(2)
+    .optional()
+    .default([]),
+});
+const MAX_REFERENCE_IMAGE_BYTES = 2_500_000;
+const REFERENCE_DATA_URL = /^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=\r\n]+)$/;
+
+function referenceImagesFromDataUrls(values: string[]): ArtworkReferenceImage[] {
+  return values.map((value, index) => {
+    const match = REFERENCE_DATA_URL.exec(value);
+    if (!match) throw new Error("unsupported reference image");
+    const mimeType = match[1] as ArtworkReferenceMimeType;
+    const bytes = Buffer.from(match[2].replace(/\s/g, ""), "base64");
+    if (bytes.length === 0 || bytes.length > MAX_REFERENCE_IMAGE_BYTES) {
+      throw new Error("reference image size is invalid");
+    }
+    const extension = mimeType === "image/jpeg" ? "jpg" : mimeType.split("/")[1];
+    return { bytes, mimeType, filename: `benchmark-reference-${index + 1}.${extension}` };
+  });
+}
 
 interface StoredBenchmarkRow {
   id: number;
@@ -65,6 +90,7 @@ export interface PreviewBenchmarkSummary {
   eventName: string;
   namedReference: string | null;
   referenceNotesUsed: boolean;
+  referencePixelsUsed: boolean;
   kind: QualityLockedPreviewResult["kind"];
   approved: boolean;
   attempts: number;
@@ -442,6 +468,17 @@ export function registerPrePaymentPreviewBenchmarkRoutes(
       return res.status(404).json({ error: "Benchmark case not found" });
     }
 
+    const parsedBody = benchmarkRequestSchema.safeParse(req.body ?? {});
+    if (!parsedBody.success) {
+      return res.status(400).json({ error: "Use up to two PNG, JPEG or WebP benchmark references." });
+    }
+    let referenceImages: ArtworkReferenceImage[];
+    try {
+      referenceImages = referenceImagesFromDataUrls(parsedBody.data.inspirationImages);
+    } catch {
+      return res.status(400).json({ error: "Use benchmark references under 2.5 MB each." });
+    }
+
     const runId = benchmarkRunId(testCase.id, parsed.data.run);
     const startedAt = now();
     const reservation = await store.reserve(
@@ -471,6 +508,7 @@ export function registerPrePaymentPreviewBenchmarkRoutes(
     try {
       result = await generate(event, {
         inspirationNotes: testCase.benchmarkReferenceNotes ?? "",
+        referenceImages,
         maxCandidates: 2,
         generateImage: async (request) => {
           const generated = await generateImage(request);
@@ -501,6 +539,7 @@ export function registerPrePaymentPreviewBenchmarkRoutes(
         `${testCase.eventName} ${testCase.eventType} ${testCase.vibeDescription}`,
       )?.id ?? null,
       referenceNotesUsed: Boolean(testCase.benchmarkReferenceNotes),
+      referencePixelsUsed: referenceImages.length > 0,
       kind: result.kind,
       approved: result.kind === "approved-image",
       attempts: result.attempts,
@@ -521,6 +560,7 @@ export function registerPrePaymentPreviewBenchmarkRoutes(
       kind: summary.kind,
       attempts: summary.attempts,
       durationMs: summary.totalDurationMs,
+      referencePixelsUsed: summary.referencePixelsUsed,
       costUsdMicros: summary.estimatedImageCostUsdMicros,
     })}`);
     res.setHeader("Cache-Control", "private, no-store");
