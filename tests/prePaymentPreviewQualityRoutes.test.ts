@@ -107,6 +107,54 @@ describe("quality-locked prepayment preview routes", () => {
     expect(stored.prePaymentPreviewUrl).toMatch(/^data:image\/svg\+xml;base64,/);
   });
 
+  it("passes the original uploaded screenshot pixels into the private quality generator", async () => {
+    const referenceBytes = Buffer.from("exact host reference pixels");
+    generate.mockResolvedValue({
+      kind: "approved-image",
+      dataUrl: APPROVED_PNG,
+      attempts: 1,
+      model: "gpt-image-2",
+      reviews: [],
+    });
+
+    const response = await request(makeApp("quality-image"))
+      .post(`/api/events/owner/${OWNER}/prepayment-preview`)
+      .send({
+        email: "host@example.com",
+        inspirationImages: [`data:image/png;base64,${referenceBytes.toString("base64")}`],
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.kind).toBe("approved-image");
+    expect(generate).toHaveBeenCalledTimes(1);
+    const dependencies = generate.mock.calls[0][1];
+    expect(dependencies).toEqual(expect.objectContaining({
+      inspirationNotes: "reference image shows exact character styling",
+      maxCandidates: 2,
+    }));
+    expect(dependencies.referenceImages).toHaveLength(1);
+    expect(dependencies.referenceImages[0]).toEqual(expect.objectContaining({
+      mimeType: "image/png",
+      filename: "host-reference-1.png",
+    }));
+    expect(dependencies.referenceImages[0].bytes.equals(referenceBytes)).toBe(true);
+    expect(stored.prePaymentPreviewUrl).toBe(APPROVED_PNG);
+  });
+
+  it("rejects unsupported reference-image formats before provider spend", async () => {
+    const response = await request(makeApp("quality-image"))
+      .post(`/api/events/owner/${OWNER}/prepayment-preview`)
+      .send({
+        email: "host@example.com",
+        inspirationImages: ["data:image/gif;base64,R0lGODlhAQABAIAAAAUEBA=="],
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain("PNG, JPEG or WebP");
+    expect(generate).not.toHaveBeenCalled();
+    expect(updateEventById).not.toHaveBeenCalled();
+  });
+
   it("may replace a direction card only with an image that the private quality function approved", async () => {
     stored = {
       ...stored,
