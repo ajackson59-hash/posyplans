@@ -2,16 +2,58 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useLocation } from "wouter";
 
+interface PreviewReadiness {
+  mode: "off" | "direction-card" | "quality-image";
+  kind: "direction-card" | "approved-image" | "none";
+  imageGenerationEnabled: boolean;
+  namedReference: { id: string; label: string } | null;
+  referenceRecommended: boolean;
+}
+
+function ownerTokenFromLocation(location: string): string | null {
+  const match = /^\/draft-generating\/([^/?#]+)/.exec(location);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 /**
  * Small launch-QA affordances around the existing DraftGenerating paywall.
- * Keeps the underlying checkout / preview state machine untouched while making
- * its long mobile layout easier to follow.
+ * The quality-lock API owns whether pixels are safe to show; this component
+ * explains the result and keeps the long mobile layout easy to follow.
  */
 export default function PaywallPreviewGuide() {
   const [location] = useLocation();
   const [card, setCard] = useState<HTMLElement | null>(null);
   const [previewReady, setPreviewReady] = useState(false);
   const [previewBusy, setPreviewBusy] = useState(false);
+  const [readiness, setReadiness] = useState<PreviewReadiness | null>(null);
+
+  const ownerToken = ownerTokenFromLocation(location);
+
+  useEffect(() => {
+    if (!ownerToken) {
+      setReadiness(null);
+      return;
+    }
+    let active = true;
+    fetch(`/api/events/owner/${encodeURIComponent(ownerToken)}/prepayment-preview/readiness`, {
+      credentials: "same-origin",
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("preview readiness unavailable");
+        return response.json() as Promise<PreviewReadiness>;
+      })
+      .then((result) => {
+        if (active) setReadiness(result);
+      })
+      .catch(() => {
+        if (active) setReadiness(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [ownerToken, previewReady]);
 
   useEffect(() => {
     if (!location.startsWith("/draft-generating/")) {
@@ -30,12 +72,14 @@ export default function PaywallPreviewGuide() {
       setPreviewReady(Boolean(image?.complete && image.naturalWidth > 0));
       setPreviewBusy(busy);
 
-      // Before an image exists, the old square placeholder dominates a phone
+      // Before an asset exists, the old square placeholder dominates a phone
       // screen. Keep the value-proof card present without making it the whole
-      // viewport. Once generation begins or an image arrives, normal sizing wins.
+      // viewport. Once generation begins or an asset arrives, normal sizing wins.
       const placeholder = nextCard?.firstElementChild as HTMLElement | null;
       if (placeholder) {
-        const isEmptyPrompt = /Add your email below/i.test(placeholder.textContent ?? "");
+        const isEmptyPrompt = /Add your email below|Posy will create a personalized preview/i.test(
+          placeholder.textContent ?? "",
+        );
         if (isEmptyPrompt) {
           placeholder.style.aspectRatio = "auto";
           placeholder.style.minHeight = "10rem";
@@ -79,13 +123,17 @@ export default function PaywallPreviewGuide() {
         >
           Enter your email below to see yours
         </button>
+      ) : previewReady && readiness?.kind === "direction-card" ? (
+        <p className="text-xs leading-relaxed text-muted-foreground" data-testid="text-preview-quality-lock">
+          Posy captured your creative direction. Generated artwork will replace this card only after it clears Posy’s private theme and quality review.
+        </p>
       ) : previewReady ? (
         <p className="text-xs leading-relaxed text-muted-foreground" data-testid="text-preview-expectation">
-          This is your first Posy direction, not the final word. Once unlocked, you can refine the invitation until it feels right.
+          This image passed Posy’s private theme and quality review. Once unlocked, you can still refine the invitation until it feels right.
         </p>
       ) : (
         <p className="text-xs text-muted-foreground" aria-live="polite">
-          Posy is building this from the details you already shared.
+          Posy is building this from the details you already shared. Unapproved artwork is never shown.
         </p>
       )}
     </div>,

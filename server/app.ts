@@ -16,6 +16,7 @@ import { registerSmsInvitationRoutes } from "./smsInvitationRoutes";
 import { registerEventStartupRoutes } from "./eventStartupRoutes";
 import { registerEmailDiagnosticRoutes } from "./emailDiagnosticRoutes";
 import { registerEventRecoveryRoutes } from "./eventRecoveryRoutes";
+import { registerPrePaymentPreviewQualityRoutes } from "./prePaymentPreviewQualityRoutes";
 
 declare module "http" {
   interface IncomingMessage {
@@ -137,6 +138,11 @@ export function ensureRoutesRegistered(app: express.Express, httpServer: Server)
       // can provide accurate service health and a traceable support reference.
       registerEventStartupRoutes(app);
       registerEventRecoveryRoutes(app);
+      // The quality-locked prepayment preview intentionally precedes the
+      // legacy teaser in routes.ts. Raw provider output is never customer-
+      // visible: Preview defaults to a deterministic direction card until the
+      // strict GPT Image 2 + vision benchmark is explicitly enabled.
+      registerPrePaymentPreviewQualityRoutes(app);
       await registerRoutes(httpServer, app);
       registerInitialPreviewRoute(app);
       registerSmsInvitationRoutes(app);
