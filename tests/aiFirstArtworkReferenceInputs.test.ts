@@ -45,9 +45,10 @@ describe("AI-first artwork reference inputs", () => {
       size: "1024x1536",
       quality: "medium",
     }));
+    expect(body).not.toHaveProperty("input_fidelity");
   });
 
-  it("sends the original uploaded pixels to the image-edits endpoint", async () => {
+  it("sends original pixels to image edits with high input fidelity by default", async () => {
     const referenceBytes = Buffer.from("host-uploaded-reference-pixels");
     const result = await generateArtwork({
       prompt: "Create a new event-specific scene while preserving the referenced visual identity",
@@ -73,10 +74,29 @@ describe("AI-first artwork reference inputs", () => {
     expect(form.get("size")).toBe("1024x1536");
     expect(form.get("quality")).toBe("medium");
     expect(form.get("background")).toBe("opaque");
+    expect(form.get("output_format")).toBe("png");
+    expect(form.get("input_fidelity")).toBe("high");
     const images = form.getAll("image[]");
     expect(images).toHaveLength(1);
     expect(images[0]).toBeInstanceOf(Blob);
     expect((images[0] as Blob).type).toBe("image/png");
     expect(Buffer.from(await (images[0] as Blob).arrayBuffer()).equals(referenceBytes)).toBe(true);
+  });
+
+  it("allows explicit low-fidelity edits only when the caller asks for them", async () => {
+    await generateArtwork({
+      prompt: "Loose inspiration only",
+      aspectRatio: "1:1",
+      model: "gpt-image-2",
+      quality: "low",
+      inputFidelity: "low",
+      referenceImages: [{
+        bytes: Buffer.from("loose-reference"),
+        mimeType: "image/jpeg",
+      }],
+    });
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect((init.body as FormData).get("input_fidelity")).toBe("low");
   });
 });
