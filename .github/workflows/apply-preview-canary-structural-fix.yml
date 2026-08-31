@@ -14,6 +14,10 @@ jobs:
   repair:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      DATABASE_URL: postgres://test:test@127.0.0.1:5432/test
+      ANTHROPIC_API_KEY: test
+      OPENAI_API_KEY: test
     steps:
       - uses: actions/checkout@v4
         with:
