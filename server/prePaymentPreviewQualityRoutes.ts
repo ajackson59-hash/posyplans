@@ -224,7 +224,7 @@ export function registerPrePaymentPreviewQualityRoutes(
     // a reliable direction card, then may pin the exact world with one or two
     // of their own screenshots. Those exact pixels become the visible proof.
     if (namedReference) {
-      if (currentKind === "reference-board") {
+      if (currentKind === "reference-board" && !hasReference) {
         return res.json({
           ready: true,
           kind: "reference-board",
