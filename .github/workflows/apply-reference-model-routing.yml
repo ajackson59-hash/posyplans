@@ -1,0 +1,99 @@
+name: Apply Supported Reference Model Routing
+
+on:
+  push:
+    branches:
+      - fix/prepayment-preview-quality-lock
+    paths:
+      - .github/workflows/apply-reference-model-routing.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/prepayment-preview-quality-lock
+
+      - name: Route reference edits through the model supporting high input fidelity
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('server/prePaymentPreviewQuality.ts')
+          text = path.read_text()
+
+          old_import = '''  DEFAULT_ARTWORK_MODEL,
+            generateArtwork,'''
+          new_import = '''  DEFAULT_ARTWORK_MODEL,
+            REFERENCE_ARTWORK_MODEL,
+            generateArtwork,'''
+          if old_import not in text:
+              raise SystemExit('expected artwork import block not found')
+          text = text.replace(old_import, new_import, 1)
+
+          old_quality = '  const quality = dependencies.quality ?? (dependencies.referenceImages?.length ? "high" : "medium");\n'
+          new_quality = old_quality + '  const model = dependencies.referenceImages?.length ? REFERENCE_ARTWORK_MODEL : DEFAULT_ARTWORK_MODEL;\n'
+          if old_quality not in text:
+              raise SystemExit('expected quality selection not found')
+          text = text.replace(old_quality, new_quality, 1)
+
+          old_request = '''        model: DEFAULT_ARTWORK_MODEL,
+                  quality,
+                  referenceImages: dependencies.referenceImages,'''
+          new_request = '''        model,
+                  quality,
+                  inputFidelity: dependencies.referenceImages?.length ? "high" : undefined,
+                  referenceImages: dependencies.referenceImages,'''
+          if old_request not in text:
+              raise SystemExit('expected artwork request not found')
+          text = text.replace(old_request, new_request, 1)
+
+          marker = 'export async function generateQualityLockedPreview'
+          before, after = text.split(marker, 1)
+          after = after.replace('model: DEFAULT_ARTWORK_MODEL,', 'model,')
+          text = before + marker + after
+          path.write_text(text)
+
+          test_path = Path('tests/prePaymentPreviewReferenceQuality.test.ts')
+          test = test_path.read_text()
+          old_expectation = '''      model: "gpt-image-2",
+                  quality: "high",
+                  aspectRatio: "9:16",
+                  referenceImages,'''
+          new_expectation = '''      model: "gpt-image-1.5",
+                  quality: "high",
+                  inputFidelity: "high",
+                  aspectRatio: "9:16",
+                  referenceImages,'''
+          if old_expectation not in test:
+              raise SystemExit('expected reference quality assertion not found')
+          test_path.write_text(test.replace(old_expectation, new_expectation, 1))
+          PY
+
+      - name: Verify patch
+        shell: bash
+        env:
+          DATABASE_URL: postgres://test:test@127.0.0.1:5432/test
+          ANTHROPIC_API_KEY: test
+          OPENAI_API_KEY: test
+        run: |
+          npm ci
+          npm run check
+          npx vitest run tests/aiFirstArtworkReferenceInputs.test.ts tests/prePaymentPreviewReferenceQuality.test.ts tests/prePaymentPreviewQuality.test.ts tests/prePaymentPreviewQualityRoutes.test.ts
+
+      - name: Commit patch and retire this workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/apply-reference-model-routing.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add server/aiFirst/artwork.ts server/prePaymentPreviewQuality.ts tests/aiFirstArtworkReferenceInputs.test.ts tests/prePaymentPreviewReferenceQuality.test.ts
+          git commit -m 'Use supported high-fidelity model for reference previews'
+          git push origin HEAD:fix/prepayment-preview-quality-lock
