@@ -82,6 +82,11 @@ const IMAGE_COST_USD_MICROS: Record<ArtworkModel, Record<ArtworkQuality, Record<
   },
 };
 
+const TRANSIENT_STATUS_CODES = new Set([429, 500, 502, 503, 504]);
+const MAX_TRANSIENT_RETRIES = 1;
+const MAX_RETRY_DELAY_MS = 30_000;
+const DEFAULT_RETRY_DELAY_MS = 1_500;
+
 export function sizeForAspect(aspectRatio: ArtworkAspectRatio): ArtworkSize {
   return SIZE_FOR_ASPECT[aspectRatio];
 }
@@ -126,25 +131,20 @@ function imageEditBody(
   return form;
 }
 
-export async function generateArtwork(request: ArtworkRequest): Promise<ArtworkResult> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    throw new Error("OPENAI_API_KEY is not configured — illustration generation is unavailable.");
-  }
-  const started = Date.now();
-  const model = request.model ?? DEFAULT_ARTWORK_MODEL;
-  const quality = request.quality ?? "high";
-  const size = sizeForAspect(request.aspectRatio);
-  const references = request.referenceImages ?? [];
-  const usesReferenceImages = references.length > 0;
-  const endpoint = usesReferenceImages
-    ? "https://api.openai.com/v1/images/edits"
-    : "https://api.openai.com/v1/images/generations";
-
-  const response = await fetch(endpoint, usesReferenceImages
+function requestInit(
+  request: ArtworkRequest,
+  apiKey: string,
+  model: ArtworkModel,
+  quality: ArtworkQuality,
+  size: ArtworkSize,
+  usesReferenceImages: boolean,
+): RequestInit {
+  return usesReferenceImages
     ? {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}` },
+        // FormData must be rebuilt for a retry because a request body is
+        // single-use once fetch begins consuming it.
         body: imageEditBody(request, model, size, quality),
         signal: request.signal,
       }
@@ -162,21 +162,93 @@ export async function generateArtwork(request: ArtworkRequest): Promise<ArtworkR
           background: "opaque",
         }),
         signal: request.signal,
-      });
+      };
+}
 
-  if (!response.ok) {
+function retryDelayMs(response: Response, body: string): number {
+  const retryAfter = response.headers.get("retry-after")?.trim();
+  if (retryAfter) {
+    const seconds = Number(retryAfter);
+    if (Number.isFinite(seconds) && seconds >= 0) {
+      return Math.min(MAX_RETRY_DELAY_MS, Math.ceil(seconds * 1000));
+    }
+    const timestamp = Date.parse(retryAfter);
+    if (Number.isFinite(timestamp)) {
+      return Math.min(MAX_RETRY_DELAY_MS, Math.max(0, timestamp - Date.now()));
+    }
+  }
+
+  const bodyDelay = /try again in\s+([0-9]+(?:\.[0-9]+)?)s/i.exec(body);
+  if (bodyDelay) {
+    return Math.min(MAX_RETRY_DELAY_MS, Math.ceil(Number(bodyDelay[1]) * 1000));
+  }
+  return DEFAULT_RETRY_DELAY_MS;
+}
+
+function abortError(signal: AbortSignal): Error {
+  return signal.reason instanceof Error
+    ? signal.reason
+    : new Error("Artwork generation was cancelled.");
+}
+
+async function waitForRetry(delayMs: number, signal?: AbortSignal): Promise<void> {
+  if (signal?.aborted) throw abortError(signal);
+  await new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      signal?.removeEventListener("abort", onAbort);
+      resolve();
+    }, delayMs);
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(signal ? abortError(signal) : new Error("Artwork generation was cancelled."));
+    };
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });
+}
+
+export async function generateArtwork(request: ArtworkRequest): Promise<ArtworkResult> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error("OPENAI_API_KEY is not configured — illustration generation is unavailable.");
+  }
+  const started = Date.now();
+  const model = request.model ?? DEFAULT_ARTWORK_MODEL;
+  const quality = request.quality ?? "high";
+  const size = sizeForAspect(request.aspectRatio);
+  const usesReferenceImages = (request.referenceImages?.length ?? 0) > 0;
+  const endpoint = usesReferenceImages
+    ? "https://api.openai.com/v1/images/edits"
+    : "https://api.openai.com/v1/images/generations";
+  const operation = usesReferenceImages ? "edit" : "request";
+
+  for (let attempt = 0; attempt <= MAX_TRANSIENT_RETRIES; attempt += 1) {
+    const response = await fetch(
+      endpoint,
+      requestInit(request, apiKey, model, quality, size, usesReferenceImages),
+    );
+
+    if (response.ok) {
+      const data = (await response.json()) as { data?: { b64_json?: string }[] };
+      const b64 = data.data?.[0]?.b64_json;
+      if (!b64) throw new Error(`${model} returned no image data`);
+
+      return {
+        bytes: Buffer.from(b64, "base64"),
+        dataUrl: `data:image/png;base64,${b64}`,
+        durationMs: Date.now() - started,
+      };
+    }
+
     const body = await response.text().catch(() => "");
-    const operation = usesReferenceImages ? "edit" : "request";
+    if (attempt < MAX_TRANSIENT_RETRIES && TRANSIENT_STATUS_CODES.has(response.status)) {
+      const delayMs = retryDelayMs(response, body);
+      console.warn(`[ai-first-artwork] ${model} ${operation} returned ${response.status}; retrying once in ${delayMs}ms`);
+      await waitForRetry(delayMs, request.signal);
+      continue;
+    }
+
     throw new Error(`${model} ${operation} failed (${response.status}): ${body.slice(0, 300)}`);
   }
 
-  const data = (await response.json()) as { data?: { b64_json?: string }[] };
-  const b64 = data.data?.[0]?.b64_json;
-  if (!b64) throw new Error(`${model} returned no image data`);
-
-  return {
-    bytes: Buffer.from(b64, "base64"),
-    dataUrl: `data:image/png;base64,${b64}`,
-    durationMs: Date.now() - started,
-  };
+  throw new Error(`${model} ${operation} failed without a response`);
 }
