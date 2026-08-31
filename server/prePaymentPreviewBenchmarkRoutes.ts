@@ -16,6 +16,7 @@ import {
   sizeForAspect,
   type ArtworkRequest,
   type ArtworkResult,
+  type ArtworkQuality,
   type ArtworkSize,
   type ArtworkReferenceImage,
   type ArtworkReferenceMimeType,
@@ -26,7 +27,7 @@ import {
   type QualityLockedPreviewResult,
 } from "./prePaymentPreviewQuality";
 
-const BENCHMARK_VERSION = "prepayment-quality-lock-2026-08-31-v2";
+const BENCHMARK_VERSION = "prepayment-quality-lock-2026-08-31-v3";
 const BENCHMARK_BRANCH = "fix/prepayment-preview-quality-lock";
 const RUN_TIMEOUT_MS = 8 * 60 * 1000;
 const paramsSchema = z.object({
@@ -77,7 +78,7 @@ export interface BenchmarkReviewSummary {
   failureCodes: string[];
   notes: string;
   providerDurationMs: number;
-  quality: "medium";
+  quality: ArtworkQuality;
   size: ArtworkSize;
   costUsdMicros: number;
 }
@@ -383,7 +384,7 @@ function reviewSummaries(
       failureCodes: [...(review?.failureCodes ?? [])],
       notes: review?.notes ?? resultError ?? "No completed quality review was available.",
       providerDurationMs: capture.result.durationMs,
-      quality: "medium",
+      quality: capture.request.quality ?? "medium",
       size: sizeForAspect(capture.request.aspectRatio),
       costUsdMicros: estimateImageCostUsdMicros(
         capture.request.model ?? DEFAULT_ARTWORK_MODEL,

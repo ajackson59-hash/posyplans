@@ -9,6 +9,7 @@ import {
   DEFAULT_ARTWORK_MODEL,
   generateArtwork,
   type ArtworkGenerator,
+  type ArtworkQuality,
   type ArtworkReferenceImage,
 } from "./aiFirst/artwork";
 import { buildEventBrief, type EventBrief } from "./aiFirst/brief";
@@ -419,6 +420,8 @@ export interface PreviewQualityDependencies {
   inspirationNotes?: string;
   /** Original uploaded pixels used as high-fidelity identity anchors. */
   referenceImages?: ArtworkReferenceImage[];
+  /** Reference-led named themes use high output quality; generic previews stay medium. */
+  quality?: ArtworkQuality;
   /** Two internal candidates maximum; neither is customer-visible before approval. */
   maxCandidates?: 1 | 2;
 }
@@ -436,6 +439,7 @@ export async function generateQualityLockedPreview(
   const runTier1 = dependencies.runTier1 ?? runTier1Checks;
   const runVision = dependencies.runVision ?? runVisionGate;
   const maxCandidates = dependencies.maxCandidates ?? 2;
+  const quality = dependencies.quality ?? (dependencies.referenceImages?.length ? "high" : "medium");
   const { brief, concept } = buildQualityLockedPreviewBrief(
     event,
     dependencies.inspirationNotes ?? "",
@@ -463,7 +467,7 @@ export async function generateQualityLockedPreview(
         prompt,
         aspectRatio: aspectRatioForLayout(concept.layoutStyle),
         model: DEFAULT_ARTWORK_MODEL,
-        quality: "medium",
+        quality,
         referenceImages: dependencies.referenceImages,
       });
     } catch (error) {
