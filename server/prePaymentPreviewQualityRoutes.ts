@@ -14,6 +14,10 @@ import {
   canAttemptPrePaymentPreview,
 } from "./prePaymentPreview";
 import {
+  isReferenceBoardDataUrl,
+  referenceBoardDataUrl,
+} from "./prePaymentReferenceBoard";
+import {
   PREPAYMENT_PREVIEW_QUALITY_LOCK_CUTOFF_MS,
   buildDirectionCard,
   detectNamedCreativeReference,
@@ -51,8 +55,20 @@ export interface PrePaymentPreviewQualityRouteDependencies {
   now?: () => number;
 }
 
+type PreviewAssetKind = "direction-card" | "reference-board" | "approved-image" | "none";
+
 function isSvgDataUrl(value: string | null | undefined): boolean {
-  return Boolean(value?.startsWith("data:image/svg+xml;base64,"));
+  return Boolean(
+    value?.startsWith("data:image/svg+xml;base64,")
+      || isReferenceBoardDataUrl(value),
+  );
+}
+
+function svgPayload(value: string): string | null {
+  const marker = ";base64,";
+  const index = value.indexOf(marker);
+  if (!isSvgDataUrl(value) || index < 0) return null;
+  return value.slice(index + marker.length);
 }
 
 function isPngDataUrl(value: string | null | undefined): boolean {
@@ -76,14 +92,25 @@ function referenceImagesFromDataUrls(values: string[]): ArtworkReferenceImage[] 
   });
 }
 
+function namedReferenceForEvent(event: Event) {
+  return detectNamedCreativeReference(
+    [event.eventName, event.eventType, event.themeName, event.vibeDescription]
+      .filter(Boolean)
+      .join(" "),
+  );
+}
+
 function imageIsCurrent(event: Event): boolean {
   return isPngDataUrl(event.prePaymentPreviewUrl)
     && (event.prePaymentPreviewUsedAt ?? 0) >= PREPAYMENT_PREVIEW_QUALITY_LOCK_CUTOFF_MS;
 }
 
-function assetKind(event: Event): "direction-card" | "approved-image" | "none" {
+function assetKind(event: Event): PreviewAssetKind {
+  if (isReferenceBoardDataUrl(event.prePaymentPreviewUrl)) return "reference-board";
   if (isSvgDataUrl(event.prePaymentPreviewUrl)) return "direction-card";
-  if (imageIsCurrent(event)) return "approved-image";
+  // Named entertainment previews are never represented by generated pixels.
+  // Any PNG left by an older experiment becomes stale immediately.
+  if (imageIsCurrent(event) && !namedReferenceForEvent(event)) return "approved-image";
   return "none";
 }
 
@@ -103,32 +130,49 @@ async function persistDirectionCard(
   });
 }
 
+async function persistReferenceBoard(
+  store: PrePaymentPreviewQualityStorage,
+  event: Event,
+  references: ArtworkReferenceImage[],
+  now: number,
+): Promise<void> {
+  await store.updateEventById(event.id, {
+    prePaymentPreviewUrl: referenceBoardDataUrl(event, references),
+    prePaymentPreviewUsedAt: now,
+  });
+}
+
 interface ReadinessResponse {
   mode: PrePaymentPreviewMode;
-  kind: "direction-card" | "approved-image" | "none";
+  kind: PreviewAssetKind;
   imageGenerationEnabled: boolean;
   namedReference: DirectionCard["namedReference"];
   referenceRecommended: boolean;
+  referenceCaptured: boolean;
   directionCard: DirectionCard;
 }
 
 function readiness(event: Event, mode: PrePaymentPreviewMode): ReadinessResponse {
   const card = buildDirectionCard(event);
+  const kind = assetKind(event);
+  const referenceCaptured = kind === "reference-board";
   return {
     mode,
-    kind: assetKind(event),
-    imageGenerationEnabled: mode === "quality-image",
+    kind,
+    // Exact named worlds use the deterministic reference-board lane. Generic
+    // and original themes may use private quality-gated generation.
+    imageGenerationEnabled: mode === "quality-image" && !card.namedReference,
     namedReference: card.namedReference,
-    referenceRecommended: card.referenceRecommended,
+    referenceRecommended: Boolean(card.namedReference) && !referenceCaptured,
+    referenceCaptured,
     directionCard: card,
   };
 }
 
 /**
- * Registers before the legacy preview handlers. The old endpoints remain in
- * routes.ts for rollback safety, but Express resolves these first so an
- * unreviewed legacy image can never reach a customer while the quality lock is
- * active.
+ * Registers before the legacy preview handlers. Raw provider output is never
+ * customer-visible. Named entertainment themes use a deterministic board made
+ * from the host's own screenshots; original themes may use the quality gate.
  */
 export function registerPrePaymentPreviewQualityRoutes(
   app: Express,
@@ -156,6 +200,7 @@ export function registerPrePaymentPreviewQualityRoutes(
     if (!parsed.success) {
       return res.status(400).json({ error: "Enter a valid email to create your private preview." });
     }
+
     let referenceImages: ArtworkReferenceImage[];
     try {
       referenceImages = referenceImagesFromDataUrls(parsed.data.inspirationImages);
@@ -172,49 +217,71 @@ export function registerPrePaymentPreviewQualityRoutes(
     const mode = readMode();
     const currentKind = assetKind(event);
     const hasReference = referenceImages.length > 0;
-    const namedReference = detectNamedCreativeReference(
-      [event.eventName, event.eventType, event.themeName, event.vibeDescription].filter(Boolean).join(" "),
-    );
+    const namedReference = namedReferenceForEvent(event);
 
-    // Idempotency is type-aware. A safe direction card can be upgraded to an
-    // approved generated image only after quality-image is explicitly enabled
-    // and, for a named reference, a visual reference is supplied.
-    if (currentKind === "approved-image" && mode === "quality-image") {
-      return res.json({ ready: true, kind: "approved-image", referenceRecommended: false });
-    }
-    if (
-      currentKind === "direction-card"
-      && (mode !== "quality-image" || (namedReference && !hasReference))
-    ) {
+    // Named entertainment and character themes never spend on or expose an AI
+    // approximation at this pre-purchase trust moment. The host first receives
+    // a reliable direction card, then may pin the exact world with one or two
+    // of their own screenshots. Those exact pixels become the visible proof.
+    if (namedReference) {
+      if (currentKind === "reference-board") {
+        return res.json({
+          ready: true,
+          kind: "reference-board",
+          referenceRecommended: false,
+          referenceCaptured: true,
+        });
+      }
+
+      if (hasReference) {
+        await persistReferenceBoard(store, event, referenceImages, now());
+        return res.json({
+          ready: true,
+          kind: "reference-board",
+          referenceRecommended: false,
+          referenceCaptured: true,
+          namedReference: { id: namedReference.id, label: namedReference.label },
+        });
+      }
+
+      if (currentKind !== "direction-card") {
+        await persistDirectionCard(store, event, now());
+      }
       return res.json({
         ready: true,
         kind: "direction-card",
-        referenceRecommended: Boolean(namedReference),
+        referenceRecommended: true,
+        referenceCaptured: false,
+        namedReference: { id: namedReference.id, label: namedReference.label },
       });
     }
 
-    // The safe launch default. "off" and invalid configuration do not create
-    // a blank square: they return deterministic proof that Posy understood the
-    // host, without spending on or exposing generated artwork.
+    if (currentKind === "approved-image" && mode === "quality-image") {
+      return res.json({
+        ready: true,
+        kind: "approved-image",
+        referenceRecommended: false,
+        referenceCaptured: false,
+      });
+    }
+    if (currentKind === "direction-card" && mode !== "quality-image") {
+      return res.json({
+        ready: true,
+        kind: "direction-card",
+        referenceRecommended: false,
+        referenceCaptured: false,
+      });
+    }
+
+    // Safe launch default for original themes. A deterministic direction card
+    // replaces a blank square without any image-provider spend.
     if (mode !== "quality-image") {
       await persistDirectionCard(store, event, now());
       return res.json({
         ready: true,
         kind: "direction-card",
-        referenceRecommended: Boolean(namedReference),
-      });
-    }
-
-    // Exact entertainment/character references are not guessed from text
-    // alone. The customer still gets the direction card immediately; a visual
-    // reference can later upgrade it to a privately reviewed image.
-    if (namedReference && !hasReference) {
-      await persistDirectionCard(store, event, now());
-      return res.json({
-        ready: true,
-        kind: "direction-card",
-        referenceRecommended: true,
-        namedReference: { id: namedReference.id, label: namedReference.label },
+        referenceRecommended: false,
+        referenceCaptured: false,
       });
     }
 
@@ -224,13 +291,14 @@ export function registerPrePaymentPreviewQualityRoutes(
       return res.json({
         ready: true,
         kind: "direction-card",
-        referenceRecommended: Boolean(namedReference),
+        referenceRecommended: false,
+        referenceCaptured: false,
       });
     }
 
-    // Reserve the customer request before any provider call. The quality
-    // function may inspect two private candidates, but it returns pixels only
-    // when one clears every gate.
+    // Reserve a generic/original-theme request before any provider call. Up to
+    // two candidates may be inspected privately; only a passing candidate can
+    // be persisted or served.
     await store.updateEventById(event.id, {
       prePaymentPreviewAttempts: event.prePaymentPreviewAttempts + 1,
       prePaymentPreviewUrl: "",
@@ -255,9 +323,11 @@ export function registerPrePaymentPreviewQualityRoutes(
       return res.json({
         ready: true,
         kind: "direction-card",
-        referenceRecommended: Boolean(namedReference),
+        referenceRecommended: false,
+        referenceCaptured: false,
       });
     }
+
     if (result.kind === "approved-image") {
       await store.updateEventById(event.id, {
         prePaymentPreviewUrl: result.dataUrl,
@@ -269,12 +339,14 @@ export function registerPrePaymentPreviewQualityRoutes(
         model: result.model,
         privateCandidates: result.attempts,
       })}`);
-      return res.json({ ready: true, kind: "approved-image", referenceRecommended: false });
+      return res.json({
+        ready: true,
+        kind: "approved-image",
+        referenceRecommended: false,
+        referenceCaptured: false,
+      });
     }
 
-    // Fail closed and calm. Provider outage, quota exhaustion, critic outage,
-    // or two rejected candidates all become the same safe direction card. No
-    // bad pixels and no red customer-facing generation error.
     await persistDirectionCard(store, event, now());
     console.warn(`[prepayment-preview] ${JSON.stringify({
       eventId: event.id,
@@ -286,7 +358,8 @@ export function registerPrePaymentPreviewQualityRoutes(
     return res.json({
       ready: true,
       kind: "direction-card",
-      referenceRecommended: Boolean(namedReference),
+      referenceRecommended: false,
+      referenceCaptured: false,
     });
   });
 
@@ -299,14 +372,18 @@ export function registerPrePaymentPreviewQualityRoutes(
     res.setHeader("Cache-Control", "private, no-store");
 
     if (isSvgDataUrl(stored)) {
-      const encoded = stored.slice("data:image/svg+xml;base64,".length);
+      const encoded = svgPayload(stored);
+      if (!encoded) return res.status(500).json({ error: "Couldn't render preview" });
       res.setHeader("Content-Type", "image/svg+xml; charset=utf-8");
       return res.send(Buffer.from(encoded, "base64"));
     }
 
-    // A PNG accepted before this quality-lock contract is stale evidence. It
-    // is never served by the new route. The browser will keep the safe empty
-    // state until the host submits an email and receives a direction card.
+    // Named-theme generated PNGs from any older experiment are stale by
+    // definition; exact-reference boards are the only visual proof served.
+    if (namedReferenceForEvent(event)) {
+      return res.status(404).json({ error: "No reference-backed preview available yet" });
+    }
+
     if (!imageIsCurrent(event) || mode !== "quality-image") {
       return res.status(404).json({ error: "No approved preview available yet" });
     }
