@@ -340,6 +340,7 @@ function reviewSummaries(
   result: QualityLockedPreviewResult,
   captures: CapturedCandidate[],
 ): BenchmarkReviewSummary[] {
+  const resultError = result.kind === "unavailable" ? result.error : undefined;
   return captures.map((capture, index) => {
     const review = result.reviews[index];
     const vision = review?.vision;
@@ -353,7 +354,7 @@ function reviewSummaries(
         .map((item) => item.requirement),
       excludedFound: [...(vision?.excludedFound ?? [])],
       failureCodes: [...(review?.failureCodes ?? [])],
-      notes: review?.notes ?? result.error ?? "No completed quality review was available.",
+      notes: review?.notes ?? resultError ?? "No completed quality review was available.",
       providerDurationMs: capture.result.durationMs,
       quality: "medium",
       size: "1024x1024",
