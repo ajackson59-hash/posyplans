@@ -93,6 +93,14 @@ jobs:
                   raise SystemExit(f"Expected test assertion not found: {old}")
               test_text = test_text.replace(old, new)
           test.write_text(test_text)
+
+          quality_test = Path("tests/prePaymentPreviewQuality.test.ts")
+          quality_text = quality_test.read_text()
+          stale = 'expect(generateImage.mock.calls[0][0].prompt).toContain("LIVE TYPOGRAPHY BOX");'
+          current = 'expect(generateImage.mock.calls[0][0].prompt).toContain("visually quiet typography zone");'
+          if stale not in quality_text:
+              raise SystemExit("Expected stale typography-zone assertion not found")
+          quality_test.write_text(quality_text.replace(stale, current, 1))
           PY
 
       - name: Verify copy correction
@@ -109,6 +117,6 @@ jobs:
           git rm .github/workflows/fix-prepayment-first-look-copy.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add client/src/pages/DraftGenerating.tsx client/src/components/PaywallPreviewGuide.tsx tests/draftGeneratingPaywall.test.tsx
+          git add client/src/pages/DraftGenerating.tsx client/src/components/PaywallPreviewGuide.tsx tests/draftGeneratingPaywall.test.tsx tests/prePaymentPreviewQuality.test.ts
           git commit -m 'Clarify prepayment first-look language'
           git push origin HEAD:fix/launch-qa-find-my-event-label
