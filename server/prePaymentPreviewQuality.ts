@@ -211,8 +211,8 @@ export function buildDirectionCard(event: Event): DirectionCard {
     eyebrow: named ? "THEME RECOGNIZED" : "POSY CREATIVE DIRECTION",
     headline: named?.label || cues[0],
     supportingCopy: named
-      ? "Posy captured the named visual world and will not replace it with a generic look. Generated artwork appears only after it clears the private quality review."
-      : "A reliable first direction assembled from the details you shared. Generated artwork appears only after it clears the private quality review.",
+      ? "Posy captured the named visual world and every defining detail. Weak or generic artwork is never shown."
+      : "A reliable first direction assembled from the details you shared. Weak or off-brief artwork is never shown.",
     cues,
     palette,
     namedReference: named ? { id: named.id, label: named.label } : null,
@@ -257,7 +257,7 @@ export function renderDirectionCardSvg(card: DirectionCard): string {
   const [ink, accent, paper, soft] = card.palette;
   const eventLines = wrapWords(card.eventName, 31, 2);
   const headlineLines = wrapWords(card.headline, 26, 2);
-  const copyLines = wrapWords(card.supportingCopy, 58, 3);
+  const copyLines = wrapWords(card.supportingCopy, 44, 3);
   const cueRows = card.cues.slice(0, 4).map((cue, index) => {
     const row = Math.floor(index / 2);
     const column = index % 2;
@@ -266,7 +266,7 @@ export function renderDirectionCardSvg(card: DirectionCard): string {
     return `<g transform="translate(${x} ${y})">
       <rect width="390" height="68" rx="34" fill="#ffffff" fill-opacity="0.72" stroke="${escapeXml(soft)}" stroke-width="2"/>
       <circle cx="34" cy="34" r="8" fill="${escapeXml(accent)}"/>
-      <text x="58" y="42" class="cue">${escapeXml(cue)}</text>
+      <text x="58" y="43" class="cue">${escapeXml(cue)}</text>
     </g>`;
   }).join("\n");
 
@@ -292,16 +292,16 @@ export function renderDirectionCardSvg(card: DirectionCard): string {
   <line x1="92" y1="350" x2="224" y2="350" stroke="${escapeXml(accent)}" stroke-width="5" stroke-linecap="round"/>
   ${textBlock(headlineLines, 92, 432, 72, "headline")}
   ${cueRows}
-  ${textBlock(copyLines, 92, 838, 30, "copy")}
-  <text x="92" y="930" class="foot">FIRST LOOK · BUILT FROM YOUR DETAILS</text>
+  ${textBlock(copyLines, 92, 826, 38, "copy")}
+  <text x="92" y="946" class="foot">FIRST LOOK · BUILT FROM YOUR DETAILS</text>
   <style>
     .eyebrow { font: 700 18px system-ui, -apple-system, sans-serif; letter-spacing: 4px; fill: ${escapeXml(ink)}; opacity: .72; }
     .posy { font: 400 38px Georgia, serif; letter-spacing: 6px; fill: ${escapeXml(ink)}; }
     .event { font: 500 50px Georgia, serif; fill: ${escapeXml(ink)}; }
     .headline { font: 700 62px Georgia, serif; fill: ${escapeXml(ink)}; }
-    .cue { font: 600 20px system-ui, -apple-system, sans-serif; fill: ${escapeXml(ink)}; }
-    .copy { font: 400 21px system-ui, -apple-system, sans-serif; fill: ${escapeXml(ink)}; opacity: .76; }
-    .foot { font: 700 15px system-ui, -apple-system, sans-serif; letter-spacing: 3px; fill: ${escapeXml(ink)}; opacity: .58; }
+    .cue { font: 600 26px system-ui, -apple-system, sans-serif; fill: ${escapeXml(ink)}; }
+    .copy { font: 400 27px system-ui, -apple-system, sans-serif; fill: ${escapeXml(ink)}; opacity: .76; }
+    .foot { font: 700 18px system-ui, -apple-system, sans-serif; letter-spacing: 3px; fill: ${escapeXml(ink)}; opacity: .58; }
   </style>
 </svg>`;
 }
