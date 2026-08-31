@@ -180,8 +180,10 @@ describe("quality-locked prepayment preview routes", () => {
     expect(response.status).toBe(200);
     expect(response.headers["content-type"]).toContain("image/svg+xml");
     expect(response.headers["cache-control"]).toBe("private, no-store");
-    expect(response.text).toContain("Blippi + Meekah");
-    expect(response.text).toContain("Indoor soft play");
+    expect(Buffer.isBuffer(response.body)).toBe(true);
+    const svg = (response.body as Buffer).toString("utf8");
+    expect(svg).toContain("Blippi + Meekah");
+    expect(svg).toContain("Indoor soft play");
   });
 
   it("reports named-reference routing before any customer action", async () => {
