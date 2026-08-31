@@ -1,0 +1,110 @@
+name: Run Prepayment Preview Quality Canary
+
+on:
+  push:
+    branches:
+      - fix/prepayment-preview-quality-lock
+    paths:
+      - .github/workflows/run-prepayment-preview-canary.yml
+
+permissions:
+  contents: read
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PREVIEW_ORIGIN: https://posy-git-fix-prepayment-preview-quality-lock-poseplans.vercel.app
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+    steps:
+      - name: Wait for this exact Preview deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${VERCEL_AUTOMATION_BYPASS_SECRET:-}" ]; then
+            echo "VERCEL_AUTOMATION_BYPASS_SECRET is required for protected Preview QA."
+            exit 1
+          fi
+
+          for attempt in $(seq 1 60); do
+            status="$(curl --silent --show-error --location \
+              --output report.json \
+              --write-out '%{http_code}' \
+              --header "x-vercel-protection-bypass: ${VERCEL_AUTOMATION_BYPASS_SECRET}" \
+              --header 'x-vercel-set-bypass-cookie: true' \
+              --header 'Accept: application/json' \
+              "${PREVIEW_ORIGIN}/api/qa/prepayment-preview-benchmark/report" || true)"
+
+            deployed_sha="$(jq -r '.gitSha // empty' report.json 2>/dev/null || true)"
+            if [ "$status" = "200" ] && [ "$deployed_sha" = "$GITHUB_SHA" ]; then
+              echo "Preview is running $GITHUB_SHA"
+              exit 0
+            fi
+            echo "Waiting for Preview ($attempt/60): status=${status}, sha=${deployed_sha:-none}"
+            sleep 6
+          done
+
+          echo "Preview did not reach this commit in time."
+          cat report.json || true
+          exit 1
+
+      - name: Run one private quality-locked canary
+        id: run
+        shell: bash
+        run: |
+          set -uo pipefail
+          endpoint="${PREVIEW_ORIGIN}/api/qa/prepayment-preview-benchmark/rooftop-fortieth/1"
+          headers=(
+            --header "x-vercel-protection-bypass: ${VERCEL_AUTOMATION_BYPASS_SECRET}"
+            --header 'x-vercel-set-bypass-cookie: true'
+            --header 'Accept: application/json'
+            --header 'Content-Type: application/json'
+          )
+
+          status="$(curl --silent --show-error --location --max-time 295 \
+            --output canary.json --write-out '%{http_code}' \
+            "${headers[@]}" --request POST --data '{}' "$endpoint" || true)"
+          echo "Initial canary response: HTTP ${status}"
+          cat canary.json || true
+
+          complete="$(jq -r '.state == "complete"' canary.json 2>/dev/null || echo false)"
+          if [ "$complete" != "true" ]; then
+            for attempt in $(seq 1 40); do
+              sleep 8
+              status="$(curl --silent --show-error --location \
+                --output canary.json --write-out '%{http_code}' \
+                "${headers[@]}" "$endpoint" || true)"
+              complete="$(jq -r '.state == "complete"' canary.json 2>/dev/null || echo false)"
+              echo "Canary poll ${attempt}/40: HTTP ${status}, complete=${complete}"
+              [ "$complete" = "true" ] && break
+            done
+          fi
+
+          attempts="$(jq -r '.attempts // 0' canary.json 2>/dev/null || echo 0)"
+          if [[ "$attempts" =~ ^[0-9]+$ ]] && [ "$attempts" -gt 0 ]; then
+            for candidate in $(seq 1 "$attempts"); do
+              curl --silent --show-error --location --fail \
+                "${headers[@]}" \
+                "${endpoint}/asset/${candidate}" \
+                --output "rooftop-fortieth-run-1-candidate-${candidate}.png" || true
+            done
+          fi
+
+          jq . canary.json || true
+          approved="$(jq -r '.approved == true' canary.json 2>/dev/null || echo false)"
+          if [ "$complete" != "true" ] || [ "$approved" != "true" ]; then
+            echo "The private canary did not produce an approved customer-safe image."
+            exit 1
+          fi
+
+      - name: Preserve private canary evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prepayment-preview-quality-canary
+          path: |
+            canary.json
+            rooftop-fortieth-run-1-candidate-*.png
+          if-no-files-found: warn
+          retention-days: 2
