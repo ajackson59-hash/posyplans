@@ -4,6 +4,8 @@ import type { Tier1Result } from "../server/aiFirst/tier1";
 import type { VisionVerdict } from "../server/aiFirst/visionGate";
 import { generateQualityLockedPreview } from "../server/prePaymentPreviewQuality";
 
+// The live image-edits API currently accepts explicit input fidelity on the
+// reference model, while generic text-only generation remains on GPT Image 2.
 const event = {
   id: 710,
   eventName: "Hayden's Unicorn Academy Birthday",
