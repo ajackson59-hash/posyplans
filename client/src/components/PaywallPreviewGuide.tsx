@@ -2,16 +2,61 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useLocation } from "wouter";
 
+type PreviewKind = "direction-card" | "reference-board" | "approved-image" | "none";
+
+interface PreviewReadiness {
+  mode: "off" | "direction-card" | "quality-image";
+  kind: PreviewKind;
+  imageGenerationEnabled: boolean;
+  namedReference: { id: string; label: string } | null;
+  referenceRecommended: boolean;
+  referenceCaptured?: boolean;
+}
+
+function ownerTokenFromLocation(location: string): string | null {
+  const match = /^\/draft-generating\/([^/?#]+)/.exec(location);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 /**
- * Small launch-QA affordances around the existing DraftGenerating paywall.
- * Keeps the underlying checkout / preview state machine untouched while making
- * its long mobile layout easier to follow.
+ * Explains exactly which kind of first look Posy is showing. A structured
+ * direction or reference board must never be mistaken for AI-generated art;
+ * only a privately approved PNG receives the generated-preview language.
  */
 export default function PaywallPreviewGuide() {
   const [location] = useLocation();
   const [card, setCard] = useState<HTMLElement | null>(null);
   const [previewReady, setPreviewReady] = useState(false);
   const [previewBusy, setPreviewBusy] = useState(false);
+  const [readiness, setReadiness] = useState<PreviewReadiness | null>(null);
+
+  const ownerToken = ownerTokenFromLocation(location);
+
+  useEffect(() => {
+    if (!ownerToken) {
+      setReadiness(null);
+      return;
+    }
+    let active = true;
+    fetch(`/api/events/owner/${encodeURIComponent(ownerToken)}/prepayment-preview/readiness`, {
+      credentials: "same-origin",
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("preview readiness unavailable");
+        return response.json() as Promise<PreviewReadiness>;
+      })
+      .then((result) => {
+        if (active) setReadiness(result);
+      })
+      .catch(() => {
+        if (active) setReadiness(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [ownerToken, previewReady]);
 
   useEffect(() => {
     if (!location.startsWith("/draft-generating/")) {
@@ -30,12 +75,11 @@ export default function PaywallPreviewGuide() {
       setPreviewReady(Boolean(image?.complete && image.naturalWidth > 0));
       setPreviewBusy(busy);
 
-      // Before an image exists, the old square placeholder dominates a phone
-      // screen. Keep the value-proof card present without making it the whole
-      // viewport. Once generation begins or an image arrives, normal sizing wins.
       const placeholder = nextCard?.firstElementChild as HTMLElement | null;
       if (placeholder) {
-        const isEmptyPrompt = /Add your email below/i.test(placeholder.textContent ?? "");
+        const isEmptyPrompt = /Add your email below|Posy will create a personalized preview/i.test(
+          placeholder.textContent ?? "",
+        );
         if (isEmptyPrompt) {
           placeholder.style.aspectRatio = "auto";
           placeholder.style.minHeight = "10rem";
@@ -45,8 +89,6 @@ export default function PaywallPreviewGuide() {
         }
       }
 
-      // After email submission, immediately return the host to the activity
-      // they just started instead of leaving them beside a disabled CTA below.
       if (busy && nextCard) {
         nextCard.scrollIntoView({ behavior: "smooth", block: "center" });
       }
@@ -61,6 +103,31 @@ export default function PaywallPreviewGuide() {
       window.removeEventListener("load", sync);
     };
   }, [location]);
+
+  useEffect(() => {
+    if (!card) return;
+    const promotionalOverlay = card.querySelector<HTMLElement>(".bg-gradient-to-t");
+    const image = card.querySelector<HTMLImageElement>("[data-testid='img-prepayment-preview']");
+    const structuredPreview = readiness?.kind === "direction-card"
+      || readiness?.kind === "reference-board";
+
+    card.dataset.previewKind = readiness?.kind ?? "unknown";
+    if (promotionalOverlay) promotionalOverlay.style.display = structuredPreview ? "none" : "";
+    if (image) {
+      if (readiness?.kind === "reference-board") {
+        image.alt = "The exact visual references you selected, paired with your event direction";
+      } else if (readiness?.kind === "direction-card") {
+        image.alt = "A creative direction assembled from the event details you entered";
+      } else {
+        image.alt = "A personalized invitation image that passed Posy's private quality review";
+      }
+    }
+
+    return () => {
+      if (promotionalOverlay) promotionalOverlay.style.removeProperty("display");
+      delete card.dataset.previewKind;
+    };
+  }, [card, readiness?.kind]);
 
   if (!card) return null;
 
@@ -79,13 +146,25 @@ export default function PaywallPreviewGuide() {
         >
           Enter your email below to see yours
         </button>
+      ) : previewReady && readiness?.kind === "reference-board" ? (
+        <p className="text-xs leading-relaxed text-muted-foreground" data-testid="text-preview-reference-board">
+          Your exact visual reference and event direction are captured together. Posy will not replace them with a generic character lookalike.
+        </p>
+      ) : previewReady && readiness?.kind === "direction-card" ? (
+        <p className="text-xs leading-relaxed text-muted-foreground" data-testid="text-preview-quality-lock">
+          {readiness.namedReference
+            ? `Posy recognized ${readiness.namedReference.label}. Add a screenshot below to pin the exact visual world, or continue with this reliable direction.`
+            : readiness.imageGenerationEnabled
+              ? "Posy captured your creative direction. Generated artwork can replace this card only after it clears Posy’s private theme and quality review."
+              : "Posy captured your creative direction. This reliable first look is shown instead of risking an off-brief generated image."}
+        </p>
       ) : previewReady ? (
         <p className="text-xs leading-relaxed text-muted-foreground" data-testid="text-preview-expectation">
-          This is your first Posy direction, not the final word. Once unlocked, you can refine the invitation until it feels right.
+          This image passed Posy’s private theme and quality review. Once unlocked, you can still refine the invitation until it feels right.
         </p>
       ) : (
         <p className="text-xs text-muted-foreground" aria-live="polite">
-          Posy is building this from the details you already shared.
+          Posy is building this from the details you already shared. Unapproved artwork is never shown.
         </p>
       )}
     </div>,

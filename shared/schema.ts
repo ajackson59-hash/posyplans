@@ -754,7 +754,12 @@ export const aiFirstArtworkAttempts = pgTable(
     costUsdMicros: integer("cost_usd_micros").notNull().default(0),
     createdAt: bigint("created_at", { mode: "number" }).notNull(),
   },
-  (table) => [index("ai_first_artwork_attempts_event_id_idx").on(table.eventId)],
+  (table) => [
+    uniqueIndex("ai_first_artwork_attempts_idempotency_key_uq")
+      .on(table.idempotencyKey)
+      .where(sql`${table.idempotencyKey} is not null`),
+    index("ai_first_artwork_attempts_event_id_idx").on(table.eventId),
+  ],
 );
 
 export type AiFirstArtworkAttemptRow = typeof aiFirstArtworkAttempts.$inferSelect;
