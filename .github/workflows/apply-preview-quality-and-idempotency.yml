@@ -27,8 +27,8 @@ jobs:
 
           schema = Path('shared/schema.ts')
           text = schema.read_text()
-          old = '  size: text("size"),\n});\n\nexport type AiFirstArtworkAttemptRow = typeof aiFirstArtworkAttempts.$inferSelect;'
-          new = '''  size: text("size"),\n}, (table) => [\n  uniqueIndex("ai_first_artwork_attempts_idempotency_key_uq")\n    .on(table.idempotencyKey)\n    .where(sql`${table.idempotencyKey} is not null`),\n]);\n\nexport type AiFirstArtworkAttemptRow = typeof aiFirstArtworkAttempts.$inferSelect;'''
+          old = '  (table) => [index("ai_first_artwork_attempts_event_id_idx").on(table.eventId)],\n);\n\nexport type AiFirstArtworkAttemptRow = typeof aiFirstArtworkAttempts.$inferSelect;'
+          new = '''  (table) => [\n    uniqueIndex("ai_first_artwork_attempts_idempotency_key_uq")\n      .on(table.idempotencyKey)\n      .where(sql`${table.idempotencyKey} is not null`),\n    index("ai_first_artwork_attempts_event_id_idx").on(table.eventId),\n  ],\n);\n\nexport type AiFirstArtworkAttemptRow = typeof aiFirstArtworkAttempts.$inferSelect;'''
           if text.count(old) != 1:
             raise SystemExit(f'schema replacement count: {text.count(old)}')
           schema.write_text(text.replace(old, new))
