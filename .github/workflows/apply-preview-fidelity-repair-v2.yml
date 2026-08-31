@@ -1,0 +1,391 @@
+name: Apply Preview Fidelity Repair V2
+
+on:
+  push:
+    branches:
+      - fix/launch-qa-find-my-event-label
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.event.head_commit.message == 'Trigger preview fidelity repair v2'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/launch-qa-find-my-event-label
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Apply the preview fidelity repair
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+          import textwrap
+
+          root = Path('.')
+
+          preview_concept = textwrap.dedent(r'''
+          import type { Event } from "@shared/schema";
+          import type { InviteDesignConcept } from "@shared/inviteDesign";
+          import { eventStyleSummary } from "@shared/eventStyle";
+
+          type PreviewEvent = Pick<
+            Event,
+            "eventName" | "eventType" | "themeName" | "vibeDescription"
+          >;
+
+          /**
+           * Correct a highly likely character-name typo for creative generation
+           * without altering the host's saved wording.
+           */
+          export function normalizePrePaymentPreviewBrief(value: string): string {
+            if (/\bblippi\b/i.test(value) && /\bmika\b/i.test(value) && !/\bmeekah\b/i.test(value)) {
+              return value.replace(/\bmika\b/gi, "Meekah");
+            }
+            return value;
+          }
+
+          export function prePaymentPreviewSourceBrief(event: PreviewEvent): string {
+            const style = eventStyleSummary(event);
+            const eventName = event.eventName?.trim() ?? "";
+            const combined = style && eventName && !style.toLowerCase().includes(eventName.toLowerCase())
+              ? `${style}\nEvent title: ${eventName}`
+              : style || eventName || event.eventType || "Celebration";
+            return normalizePrePaymentPreviewBrief(combined);
+          }
+
+          function isBlippiBrief(brief: string): boolean {
+            return /\bblippi\b/i.test(brief) && /\bmeekah\b/i.test(brief);
+          }
+
+          /**
+           * A pre-payment preview is conversion proof, not a style exploration.
+           * Build its one concept directly from the host's wording so an abstract
+           * lane cannot erase the literal theme before the image model sees it.
+           */
+          export function buildPrePaymentPreviewConcept(event: PreviewEvent): {
+            sourceBrief: string;
+            concept: InviteDesignConcept;
+          } {
+            const sourceBrief = prePaymentPreviewSourceBrief(event);
+            const blippi = isBlippiBrief(sourceBrief);
+            const subjectFocus = blippi
+              ? "recognizable Blippi and Meekah together at a bright indoor soft-play birthday, interacting with children among foam climbing blocks, tunnels and slides, with floating bubbles, bubble wands, dancing and ice-cream treats"
+              : `the literal people, characters, setting, activities and defining objects requested in this host brief: ${sourceBrief}`;
+            const identityDirection = blippi
+              ? "Show Blippi and Meekah as full, recognizable lead characters—not merely an orange bow tie, glasses, colors or dots. Blippi should read through his blue-and-orange play-and-learn outfit, orange glasses and bow tie; Meekah should read as his bright, energetic co-host."
+              : "When the host names a specific show, film, game, character universe, performer or cultural property, preserve that exact named identity and recognizable visual world. A generic category substitute is a failed result.";
+            const medium = blippi ? "polished children's character illustration" : "premium narrative editorial illustration";
+            const palette = blippi
+              ? ["#1769C2", "#FF7A00", "#F8F3E8", "#8B55C7"]
+              : ["#243447", "#C88B67", "#F6F0E7", "#6E8065"];
+
+            const illustrationPrompt = [
+              `${medium} for a premium digital invitation.`,
+              `ORIGINAL HOST BRIEF — authoritative: ${sourceBrief}`,
+              `MAIN SCENE — show visibly: ${subjectFocus}.`,
+              identityDirection,
+              "The requested subject must dominate the composition and be understandable at a glance. Use a clear, joyful focal scene with expressive figures and environmental storytelling.",
+              "Do not substitute an abstract symbol, isolated accessory, bow tie, glasses, circles, dots, color blocks, confetti-only pattern, palette-only shorthand or generic adjacent aesthetic for the actual requested scene.",
+              "No franchise logo, title treatment, watermark, invitation wording, letters, words or numbers anywhere in the artwork.",
+            ].join(" ");
+
+            return {
+              sourceBrief,
+              concept: {
+                conceptName: `${event.eventName?.trim() || "Personalized event"} — literal preview`,
+                description: sourceBrief,
+                paletteColors: palette,
+                fontPairingId: blippi ? "playful-rounded" : "editorial-serif",
+                borderStyle: "none",
+                layoutStyle: "centered",
+                styleLaneId: blippi ? "playful-illustrated" : "editorial-premium",
+                artDirection: {
+                  illustrationMedium: medium,
+                  subjectFocus,
+                  compositionType: "square, scene-led composition with the literal requested subject as the dominant focal point",
+                  negativeSpace: "modest breathing room around the focal scene without shrinking the subject",
+                  colorTreatment: blippi
+                    ? "bright blue, orange and purple accents balanced with warm cream"
+                    : "event-appropriate, refined color with clear focal contrast",
+                  texture: "polished editorial storybook finish with clean edges and dimensional detail",
+                  avoidList: "abstract shorthand, isolated accessories, bow-tie-only imagery, dots-only imagery, generic clipart, fake text, letters, numbers, logos, watermarks",
+                },
+                illustrationPrompt,
+              },
+            };
+          }
+          ''').lstrip()
+          (root / 'server/prePaymentPreviewConcept.ts').write_text(preview_concept)
+
+          prepayment_path = root / 'server/prePaymentPreview.ts'
+          prepayment = prepayment_path.read_text()
+          prepayment, count = re.subn(
+            r'// 160px made the teaser too soft to judge\. 300px preserves enough theme and\n'
+            r'// subject detail to create confidence while still forcing a meaningful\n'
+            r'// downsample from the smallest current generated/source fixture and keeping\n'
+            r'// the production-quality asset behind checkout\.\n'
+            r'export const PRE_PAYMENT_PREVIEW_LONG_EDGE = 300;',
+            '// 300px still looked visibly degraded inside the sales card. 560px is crisp on\n'
+            '// high-density mobile screens while remaining materially below the 1024px+\n'
+            '// paid source asset. The private owner-token route and branded overlay—not\n'
+            '// deliberate ugliness—protect the complete invitation value.\n'
+            'export const PRE_PAYMENT_PREVIEW_LONG_EDGE = 560;',
+            prepayment,
+            count=1,
+          )
+          assert count == 1, 'preview resolution block not found'
+          prepayment_path.write_text(prepayment)
+
+          illustration_path = root / 'server/illustrationGen.ts'
+          illustration = illustration_path.read_text()
+          illustration, count = re.subn(
+            r'4\. theme_fit: Does the illustration match the described concept\?.*?\n\nRespond as STRICT JSON only:',
+            '4. theme_fit: Does the illustration match the ORIGINAL HOST BRIEF as well as the described concept? Score 1 for irrelevant, 5 for perfect match. When an original host brief is supplied, it is authoritative: if the generated concept drifted, grade against the host brief, not the weaker concept. A generic category resemblance is not enough for a named show, film, game, character universe or cultural reference. Missing a defining requested character, setting or activity—or replacing the requested scene with abstract symbols—must score 2 or lower.\n\nRespond as STRICT JSON only:',
+            illustration,
+            count=1,
+            flags=re.S,
+          )
+          assert count == 1, 'art critic theme criterion not found'
+
+          eval_start = illustration.index('async function evaluateIllustrationQuality(')
+          eval_body = illustration.index('\n\n  const message =', eval_start)
+          illustration = (
+            illustration[:eval_start]
+            + '''async function evaluateIllustrationQuality(\n  imageDataUrl: string,\n  concept: InviteDesignConcept,\n  sourceBrief?: string,\n): Promise<ArtQualityScore> {\n  const client = new Anthropic();\n  const laneLabel = concept.styleLaneId ?? "unknown";\n  const authoritativeBrief = sourceBrief\n    ? ` Original host brief (authoritative): ${sourceBrief}`\n    : "";\n  const prompt = `Evaluate this invitation illustration for a "${concept.conceptName}" concept in the "${laneLabel}" style lane. The illustration should depict: ${concept.illustrationPrompt}.${authoritativeBrief}`;'''
+            + illustration[eval_body:]
+          )
+
+          generate_start = illustration.index('export async function generateInviteIllustrationWithQualityGate(')
+          new_generate = textwrap.dedent(r'''
+          export interface IllustrationQualityOptions {
+            /** Original intake wording; authoritative when a concept or image drifts. */
+            sourceBrief?: string;
+            /** Conversion previews use medium for speed; paid artwork remains high by default. */
+            generationQuality?: "high" | "medium" | "low";
+            /** Reject the final image rather than exposing unchecked or off-brief artwork. */
+            requireFinalApproval?: boolean;
+          }
+
+          function qualityFailed(score: ArtQualityScore, strict: boolean): boolean {
+            const baselineFailure =
+              score.text_free <= TEXT_FAILURE_THRESHOLD
+              || score.overall < QUALITY_THRESHOLD
+              || score.theme_fit <= THEME_FIDELITY_FAILURE_THRESHOLD;
+            if (!strict) return baselineFailure;
+            return baselineFailure
+              || score.overall < 3.6
+              || score.theme_fit < 4
+              || score.composition < 3
+              || score.premium_feel < 3;
+          }
+
+          export async function generateInviteIllustrationWithQualityGate(
+            concept: InviteDesignConcept,
+            aspectRatio: "16:9" | "1:1" | "9:16",
+            options: IllustrationQualityOptions = {},
+          ): Promise<string> {
+            const generationQuality = options.generationQuality ?? "high";
+            const strict = options.requireFinalApproval === true;
+            let illustrationUrl = await generateInviteIllustration(
+              concept,
+              aspectRatio,
+              generationQuality,
+            );
+
+            try {
+              let score = await evaluateIllustrationQuality(
+                illustrationUrl,
+                concept,
+                options.sourceBrief,
+              );
+
+              if (qualityFailed(score, strict)) {
+                console.log(`[quality-gate] Illustration scored ${score.overall.toFixed(1)} / theme ${score.theme_fit} (${score.issues}). Regenerating with tightened prompt...`);
+                const tightenedConcept: InviteDesignConcept = {
+                  ...concept,
+                  illustrationPrompt: `${tightenIllustrationPrompt(concept.illustrationPrompt, score)}. ORIGINAL HOST BRIEF REMAINS AUTHORITATIVE: ${options.sourceBrief || concept.description}. Show the literal requested people, characters, setting and activities as the main scene; never substitute an abstract accessory, bow tie, dots, color blocking or palette-only shorthand.`,
+                };
+                illustrationUrl = await generateInviteIllustration(
+                  tightenedConcept,
+                  aspectRatio,
+                  generationQuality,
+                );
+
+                if (strict) {
+                  score = await evaluateIllustrationQuality(
+                    illustrationUrl,
+                    tightenedConcept,
+                    options.sourceBrief,
+                  );
+                  if (qualityFailed(score, true)) {
+                    console.error(`[quality-gate] Final preview artwork rejected: overall ${score.overall.toFixed(1)}, theme ${score.theme_fit} (${score.issues})`);
+                    throw new Error("Generated preview artwork did not faithfully match the host brief");
+                  }
+                }
+              }
+            } catch (err) {
+              if (strict) throw err;
+              // Existing paid/legacy callers preserve their graceful-degradation
+              // behavior if the optional critic is unavailable.
+              console.error("[quality-gate] Evaluation failed, using first generation:", err);
+            }
+
+            return illustrationUrl;
+          }
+          ''').lstrip()
+          illustration = illustration[:generate_start] + new_generate
+          illustration_path.write_text(illustration)
+
+          routes_path = root / 'server/routes.ts'
+          routes = routes_path.read_text()
+          import_anchor = '''import {
+            canAttemptPrePaymentPreview,
+            MAX_PRE_PAYMENT_PREVIEW_ATTEMPTS,
+            PRE_PAYMENT_PREVIEW_FIDELITY_CUTOFF_MS,
+            PRE_PAYMENT_PREVIEW_LONG_EDGE,
+          } from "./prePaymentPreview";'''
+          preview_import = '''import { buildPrePaymentPreviewConcept } from "./prePaymentPreviewConcept";'''
+          assert import_anchor in routes, 'prepayment import block not found'
+          if preview_import not in routes:
+            routes = routes.replace(import_anchor, import_anchor + '\n' + preview_import, 1)
+
+          route_start = routes.index('  app.post("/api/events/owner/:ownerToken/prepayment-preview"')
+          route_end = routes.index('  app.get("/api/events/owner/:ownerToken/prepayment-preview/asset"', route_start)
+          route_block = routes[route_start:route_end]
+          generation_start = route_block.index('      const concepts = await generateInviteDesignConcepts({')
+          generation_end = route_block.index('\n\n      await storage.updateEventById(event.id, {', generation_start)
+          replacement = textwrap.dedent(r'''
+                const { sourceBrief, concept } = buildPrePaymentPreviewConcept(event);
+                const aspectRatio = concept.layoutStyle === "banner"
+                  ? "16:9"
+                  : concept.layoutStyle === "full-bleed"
+                    ? "9:16"
+                    : "1:1";
+                const illustrationUrl = await generateInviteIllustrationWithQualityGate(
+                  concept,
+                  aspectRatio,
+                  {
+                    sourceBrief,
+                    generationQuality: "medium",
+                    requireFinalApproval: true,
+                  },
+                );
+          ''').strip('\n')
+          route_block = (
+            route_block[:generation_start]
+            + replacement
+            + route_block[generation_end:]
+          )
+          routes = routes[:route_start] + route_block + routes[route_end:]
+          routes_path.write_text(routes)
+
+          route_test_path = root / 'tests/prePaymentPreviewRoute.test.ts'
+          route_test = route_test_path.read_text()
+          route_test = route_test.replace('  const size = 320;', '  const size = 640;', 1)
+          route_test, replaced = re.subn(
+            r'\n    expect\(generateInviteDesignConcepts\)\.toHaveBeenCalledWith\([\s\S]*?\n    \);',
+            '\n    expect(generateInviteDesignConcepts).not.toHaveBeenCalled();',
+            route_test,
+          )
+          assert replaced >= 2, f'expected at least two old concept-call assertions, found {replaced}'
+          assertion_anchor = '''    expect(generateInviteIllustrationWithQualityGate).toHaveBeenCalledTimes(1);
+            expect(stored.prePaymentPreviewUrl).toBe(SYNTHETIC_INVITE);'''
+          assertion_replacement = '''    expect(generateInviteIllustrationWithQualityGate).toHaveBeenCalledTimes(1);
+            expect(generateInviteIllustrationWithQualityGate).toHaveBeenCalledWith(
+              expect.objectContaining({
+                illustrationPrompt: expect.stringContaining("Candlelit rooftop dinner"),
+              }),
+              "1:1",
+              expect.objectContaining({
+                sourceBrief: expect.stringContaining("Candlelit rooftop dinner"),
+                generationQuality: "medium",
+                requireFinalApproval: true,
+              }),
+            );
+            expect(stored.prePaymentPreviewUrl).toBe(SYNTHETIC_INVITE);'''
+          assert assertion_anchor in route_test, 'quality-gate route assertion anchor not found'
+          route_test = route_test.replace(assertion_anchor, assertion_replacement, 1)
+          route_test_path.write_text(route_test)
+
+          concept_test = textwrap.dedent(r'''
+          import { describe, expect, it } from "vitest";
+          import {
+            buildPrePaymentPreviewConcept,
+            normalizePrePaymentPreviewBrief,
+          } from "../server/prePaymentPreviewConcept";
+
+          describe("pre-payment preview literal fidelity", () => {
+            it("normalizes the likely Mika spelling inside a Blippi brief", () => {
+              expect(
+                normalizePrePaymentPreviewBrief("A Blippi and Mika indoor soft-play birthday"),
+              ).toBe("A Blippi and Meekah indoor soft-play birthday");
+            });
+
+            it("builds the Blippi preview from the full literal event rather than an accessory", () => {
+              const { sourceBrief, concept } = buildPrePaymentPreviewConcept({
+                eventName: "Brian and Blippi's Extravaganza",
+                eventType: "Birthday Party",
+                themeName: "",
+                vibeDescription:
+                  "Brian's 4th birthday featuring Blippi and Mika at an indoor soft-play space with foam blocks, tunnels, slides, bubbles, bubble wands, dancing and ice cream treats.",
+              } as never);
+
+              expect(sourceBrief).toContain("Blippi and Meekah");
+              expect(concept.artDirection?.subjectFocus).toContain("Blippi and Meekah");
+              expect(concept.illustrationPrompt).toContain("indoor soft-play");
+              expect(concept.illustrationPrompt).toContain("ice-cream treats");
+              expect(concept.illustrationPrompt).toContain("Do not substitute an abstract symbol");
+              expect(concept.illustrationPrompt).toContain("bow tie");
+              expect(concept.illustrationPrompt).toContain("dots");
+              expect(concept.layoutStyle).toBe("centered");
+            });
+
+            it("keeps the complete original brief authoritative for a non-character event", () => {
+              const { sourceBrief, concept } = buildPrePaymentPreviewConcept({
+                eventName: "Nina's Fortieth",
+                eventType: "Birthday Party",
+                themeName: "",
+                vibeDescription: "Candlelit rooftop dinner in terracotta and gold at sunset",
+              } as never);
+
+              expect(sourceBrief).toContain("Candlelit rooftop dinner");
+              expect(concept.illustrationPrompt).toContain(sourceBrief);
+              expect(concept.illustrationPrompt).toContain("literal people, characters, setting, activities and defining objects");
+            });
+          });
+          ''').lstrip()
+          (root / 'tests/prePaymentPreviewConcept.test.ts').write_text(concept_test)
+
+          # One-shot patch workflows must not ship. Keep the inspection workflow
+          # only until the replacement Preview artwork has been visually reviewed.
+          for workflow in [
+            root / '.github/workflows/apply-preview-fidelity-repair.yml',
+            root / '.github/workflows/apply-preview-fidelity-repair-v2.yml',
+          ]:
+            if workflow.exists():
+              workflow.unlink()
+          PY
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run focused preview tests
+        run: npx vitest run tests/prePaymentPreviewConcept.test.ts tests/prePaymentPreviewRoute.test.ts tests/draftGeneratingPaywall.test.tsx
+
+      - name: Commit the repair
+        run: |
+          git config user.name "ajackson59-hash"
+          git config user.email "ajackson59@gmail.com"
+          git add -A
+          git commit -m "Reject generic personalized preview artwork"
+          git push origin HEAD:fix/launch-qa-find-my-event-label
