@@ -16,6 +16,7 @@ import {
   sizeForAspect,
   type ArtworkRequest,
   type ArtworkResult,
+  type ArtworkSize,
 } from "./aiFirst/artwork";
 import {
   detectNamedCreativeReference,
@@ -52,7 +53,7 @@ export interface BenchmarkReviewSummary {
   notes: string;
   providerDurationMs: number;
   quality: "medium";
-  size: "1024x1024";
+  size: ArtworkSize;
   costUsdMicros: number;
 }
 
@@ -357,7 +358,7 @@ function reviewSummaries(
       notes: review?.notes ?? resultError ?? "No completed quality review was available.",
       providerDurationMs: capture.result.durationMs,
       quality: "medium",
-      size: "1024x1024",
+      size: sizeForAspect(capture.request.aspectRatio),
       costUsdMicros: estimateImageCostUsdMicros(
         capture.request.model ?? DEFAULT_ARTWORK_MODEL,
         capture.request.quality ?? "medium",

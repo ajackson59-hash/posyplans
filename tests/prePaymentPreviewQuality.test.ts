@@ -121,7 +121,11 @@ describe("prepayment preview quality lock", () => {
     expect(result.dataUrl).toBe("data:image/png;base64,SECOND");
     expect(result.attempts).toBe(2);
     expect(generateImage).toHaveBeenCalledTimes(2);
-    expect(generateImage.mock.calls[0][0]).toEqual(expect.objectContaining({ model: "gpt-image-2", quality: "medium" }));
+    expect(generateImage.mock.calls[0][0]).toEqual(expect.objectContaining({
+      model: "gpt-image-2",
+      quality: "medium",
+      aspectRatio: "9:16",
+    }));
     expect(generateImage.mock.calls[1][0].prompt).toContain("Meekah is missing");
     expect(JSON.stringify(result)).not.toContain("FIRST");
   });

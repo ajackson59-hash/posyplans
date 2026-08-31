@@ -1,5 +1,6 @@
 import type { Event } from "@shared/schema";
 import {
+  aspectRatioForLayout,
   buildArtworkPrompt,
   type AiFirstConcept,
 } from "@shared/aiFirstInvite";
@@ -373,7 +374,7 @@ export function buildQualityLockedPreviewBrief(
       textSurface: card.palette[2],
       headlineColor: card.palette[0],
       bodyColor: card.palette[0],
-      accentColor: card.palette[1],
+      accentColor: card.palette[0],
     },
     art: {
       medium: namedReference ? "premium character-led editorial illustration" : "premium narrative editorial illustration",
@@ -450,7 +451,7 @@ export async function generateQualityLockedPreview(
     try {
       generated = await generateImage({
         prompt,
-        aspectRatio: "1:1",
+        aspectRatio: aspectRatioForLayout(concept.layoutStyle),
         model: DEFAULT_ARTWORK_MODEL,
         quality: "medium",
       });
