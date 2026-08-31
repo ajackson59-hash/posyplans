@@ -7,6 +7,7 @@ import {
 import { OVERLAY_COVERAGE } from "@shared/aiFirstLayout";
 import {
   DEFAULT_ARTWORK_MODEL,
+  REFERENCE_ARTWORK_MODEL,
   generateArtwork,
   type ArtworkGenerator,
   type ArtworkQuality,
@@ -440,6 +441,7 @@ export async function generateQualityLockedPreview(
   const runVision = dependencies.runVision ?? runVisionGate;
   const maxCandidates = dependencies.maxCandidates ?? 2;
   const quality = dependencies.quality ?? (dependencies.referenceImages?.length ? "high" : "medium");
+  const model = dependencies.referenceImages?.length ? REFERENCE_ARTWORK_MODEL : DEFAULT_ARTWORK_MODEL;
   const { brief, concept } = buildQualityLockedPreviewBrief(
     event,
     dependencies.inspirationNotes ?? "",
@@ -466,15 +468,16 @@ export async function generateQualityLockedPreview(
       generated = await generateImage({
         prompt,
         aspectRatio: aspectRatioForLayout(concept.layoutStyle),
-        model: DEFAULT_ARTWORK_MODEL,
+        model,
         quality,
+        inputFidelity: dependencies.referenceImages?.length ? "high" : undefined,
         referenceImages: dependencies.referenceImages,
       });
     } catch (error) {
       return {
         kind: "unavailable",
         attempts: candidate - 1,
-        model: DEFAULT_ARTWORK_MODEL,
+        model,
         reviews,
         error: error instanceof Error ? error.message : String(error),
       };
@@ -497,7 +500,7 @@ export async function generateQualityLockedPreview(
       return {
         kind: "unavailable",
         attempts: candidate,
-        model: DEFAULT_ARTWORK_MODEL,
+        model,
         reviews,
         error: error instanceof Error ? error.message : String(error),
       };
@@ -522,7 +525,7 @@ export async function generateQualityLockedPreview(
         kind: "approved-image",
         dataUrl: generated.dataUrl,
         attempts: candidate,
-        model: DEFAULT_ARTWORK_MODEL,
+        model,
         reviews,
       };
     }
@@ -531,7 +534,7 @@ export async function generateQualityLockedPreview(
   return {
     kind: "rejected",
     attempts: maxCandidates,
-    model: DEFAULT_ARTWORK_MODEL,
+    model,
     reviews,
   };
 }
