@@ -356,7 +356,8 @@ export function buildQualityLockedPreviewBrief(
     ...explicitRequirements.map((requirement) => `REQUIRED VISUAL FACT: ${requirement}.`),
     inspirationNotes ? `HOST-PROVIDED VISUAL REFERENCE NOTES — authoritative: ${inspirationNotes}` : "",
     "Depict the actual people, characters, setting, activities and defining objects requested. The event scene—not an accessory, logo-like symbol, pattern, palette or abstract shorthand—must dominate the composition.",
-    "Use a polished, dimensional, premium stationery finish with coherent anatomy, expressive figures, intentional lighting and a clear focal hierarchy.",
+    "FINISH CONTRACT: create bespoke editorial stationery artwork with layered depth, tactile material detail, controlled lighting and refined art direction. It must not resemble generic clipart, stock illustration, a television promo still, a merchandising graphic or a flat commercial poster. Keep faces, hands, limbs and object interactions anatomically coherent.",
+    "LAYOUT CONTRACT: the live opaque typography box occupies approximately left 21%, top 32%, width 58%, height 40%. Keep every required person, face, creature, signature object and defining interaction fully visible outside that box. Treat the box as protected negative space, not as an area that can cover a hero subject.",
   ].filter(Boolean).join(" ");
 
   const concept: AiFirstConcept = {
@@ -381,7 +382,7 @@ export function buildQualityLockedPreviewBrief(
     },
     art: {
       medium: namedReference ? "premium character-led editorial illustration" : "premium narrative editorial illustration",
-      composition: "scene-led full-bleed composition with required subjects central and a calm center type zone",
+      composition: "portrait scene-led full-bleed composition arranged around a protected central typography box; all required subjects, faces and defining objects remain fully visible in the side and lower framing, with calm negative space reserved only for type",
       prompt: prompt.slice(0, 1200),
     },
     safeTypographyRegion: "center",
@@ -447,7 +448,7 @@ export async function generateQualityLockedPreview(
     dependencies.inspirationNotes ?? "",
   );
   const referenceImageRule = dependencies.referenceImages?.length
-    ? "ATTACHED REFERENCE IMAGES ARE IDENTITY ANCHORS ONLY. Preserve their defining character and visual-world details at high fidelity while creating a new event-specific composition. Do not copy any wording, logo, watermark or invitation layout from them."
+    ? "ATTACHED REFERENCE IMAGES ARE AUTHORITATIVE IDENTITY ANCHORS. Match the defining face, hair, outfit, creature markings, proportions, silhouette and visual-world details that make the requested subjects recognizable at a glance. Create a new event-specific scene; never copy wording, logos, watermarks or an invitation layout from the references."
     : "";
   const basePrompt = [
     buildArtworkPrompt(concept),
