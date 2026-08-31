@@ -222,6 +222,15 @@ export const PREPAYMENT_PREVIEW_BENCHMARK: readonly PrePaymentPreviewBenchmarkCa
   },
 ] as const;
 
+export const PREPAYMENT_PREVIEW_GENERATED_BENCHMARK: readonly PrePaymentPreviewBenchmarkCase[] =
+  PREPAYMENT_PREVIEW_BENCHMARK.filter((testCase) => !testCase.expectedNamedReference);
+
+export function getPrePaymentPreviewGeneratedBenchmarkCase(
+  id: string,
+): PrePaymentPreviewBenchmarkCase | undefined {
+  return PREPAYMENT_PREVIEW_GENERATED_BENCHMARK.find((testCase) => testCase.id === id);
+}
+
 export function getPrePaymentPreviewBenchmarkCase(id: string): PrePaymentPreviewBenchmarkCase | undefined {
   return PREPAYMENT_PREVIEW_BENCHMARK.find((testCase) => testCase.id === id);
 }

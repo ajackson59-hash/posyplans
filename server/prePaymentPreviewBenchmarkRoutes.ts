@@ -5,7 +5,8 @@ import { sql } from "drizzle-orm";
 import { z } from "zod";
 import {
   PREPAYMENT_PREVIEW_BENCHMARK,
-  getPrePaymentPreviewBenchmarkCase,
+  PREPAYMENT_PREVIEW_GENERATED_BENCHMARK,
+  getPrePaymentPreviewGeneratedBenchmarkCase,
   type PrePaymentPreviewBenchmarkCase,
 } from "@shared/prePaymentPreviewBenchmark";
 import { db } from "./storage";
@@ -27,7 +28,7 @@ import {
   type QualityLockedPreviewResult,
 } from "./prePaymentPreviewQuality";
 
-const BENCHMARK_VERSION = "prepayment-quality-lock-2026-08-31-v3";
+const BENCHMARK_VERSION = "prepayment-quality-lock-2026-08-31-v4-generic";
 const BENCHMARK_BRANCH = "fix/prepayment-preview-quality-lock";
 const RUN_TIMEOUT_MS = 8 * 60 * 1000;
 const paramsSchema = z.object({
@@ -124,7 +125,7 @@ function benchmarkRunId(caseId: string, run: number): string {
 }
 
 function syntheticEventId(caseId: string, run: number): number {
-  const index = PREPAYMENT_PREVIEW_BENCHMARK.findIndex((testCase) => testCase.id === caseId);
+  const index = PREPAYMENT_PREVIEW_GENERATED_BENCHMARK.findIndex((testCase) => testCase.id === caseId);
   return 900_000 + Math.max(0, index) * 10 + run;
 }
 
@@ -421,7 +422,9 @@ export function registerPrePaymentPreviewBenchmarkRoutes(
     res.setHeader("Cache-Control", "private, no-store");
     return res.json({
       benchmarkVersion: BENCHMARK_VERSION,
-      expectedRuns: PREPAYMENT_PREVIEW_BENCHMARK.length * 3,
+      scope: "generic-and-original-themes-only",
+      excludedNamedThemeCases: PREPAYMENT_PREVIEW_BENCHMARK.length - PREPAYMENT_PREVIEW_GENERATED_BENCHMARK.length,
+      expectedRuns: PREPAYMENT_PREVIEW_GENERATED_BENCHMARK.length * 3,
       completedRuns: completed.length,
       approvedRuns: approved,
       nonApprovedRuns: completed.length - approved,
@@ -434,7 +437,7 @@ export function registerPrePaymentPreviewBenchmarkRoutes(
   app.get("/api/qa/prepayment-preview-benchmark/:caseId/:run", async (req, res) => {
     if (!allow()) return res.status(404).json({ error: "Not found" });
     const parsed = paramsSchema.safeParse(req.params);
-    if (!parsed.success || !getPrePaymentPreviewBenchmarkCase(parsed.data?.caseId || "")) {
+    if (!parsed.success || !getPrePaymentPreviewGeneratedBenchmarkCase(parsed.data?.caseId || "")) {
       return res.status(404).json({ error: "Benchmark case not found" });
     }
     const summary = await store.summary(benchmarkRunId(parsed.data.caseId, parsed.data.run));
@@ -447,7 +450,7 @@ export function registerPrePaymentPreviewBenchmarkRoutes(
   app.get("/api/qa/prepayment-preview-benchmark/:caseId/:run/asset/:attempt", async (req, res) => {
     if (!allow()) return res.status(404).json({ error: "Not found" });
     const parsed = paramsSchema.extend({ attempt: z.coerce.number().int().min(1).max(2) }).safeParse(req.params);
-    if (!parsed.success || !getPrePaymentPreviewBenchmarkCase(parsed.data?.caseId || "")) {
+    if (!parsed.success || !getPrePaymentPreviewGeneratedBenchmarkCase(parsed.data?.caseId || "")) {
       return res.status(404).json({ error: "Benchmark asset not found" });
     }
     const asset = await store.asset(
@@ -464,7 +467,7 @@ export function registerPrePaymentPreviewBenchmarkRoutes(
   app.post("/api/qa/prepayment-preview-benchmark/:caseId/:run", async (req, res) => {
     if (!allow()) return res.status(404).json({ error: "Not found" });
     const parsed = paramsSchema.safeParse(req.params);
-    const testCase = parsed.success ? getPrePaymentPreviewBenchmarkCase(parsed.data.caseId) : undefined;
+    const testCase = parsed.success ? getPrePaymentPreviewGeneratedBenchmarkCase(parsed.data.caseId) : undefined;
     if (!parsed.success || !testCase) {
       return res.status(404).json({ error: "Benchmark case not found" });
     }

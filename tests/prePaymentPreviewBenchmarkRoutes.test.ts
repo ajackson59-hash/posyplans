@@ -77,6 +77,31 @@ describe("Preview-only funded prepayment benchmark", () => {
     expect(generate).not.toHaveBeenCalled();
   });
 
+  it("hard-blocks named entertainment themes from provider spend", async () => {
+  const generate = vi.fn();
+  const response = await request(makeApp({ generate }))
+    .post("/api/qa/prepayment-preview-benchmark/unicorn-academy-igloo/1")
+    .send({});
+
+  expect(response.status).toBe(404);
+  expect(generate).not.toHaveBeenCalled();
+});
+
+it("reports a clean 48-run generic-only release scope", async () => {
+  const memory = inMemoryStore();
+  const response = await request(makeApp({ store: memory.store }))
+    .get("/api/qa/prepayment-preview-benchmark/report");
+
+  expect(response.status).toBe(200);
+  expect(response.body).toEqual(expect.objectContaining({
+    benchmarkVersion: "prepayment-quality-lock-2026-08-31-v4-generic",
+    scope: "generic-and-original-themes-only",
+    excludedNamedThemeCases: 8,
+    expectedRuns: 48,
+    completedRuns: 0,
+  }));
+});
+
   it("runs one approved candidate, stores its private bytes and is idempotent", async () => {
     const memory = inMemoryStore();
     const generatedBytes = Buffer.from("private benchmark png bytes");
