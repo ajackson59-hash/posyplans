@@ -1,0 +1,76 @@
+name: Apply Direction Card Mobile Legibility Repair
+
+on:
+  push:
+    branches:
+      - fix/prepayment-preview-quality-lock
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.event.head_commit.message == 'Trigger direction card mobile legibility repair'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/prepayment-preview-quality-lock
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Increase customer-facing SVG legibility
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          path = Path('server/prePaymentPreviewQuality.ts')
+          source = path.read_text()
+          replacements = {
+            '"Posy captured the named visual world and will not replace it with a generic look. Generated artwork appears only after it clears the private quality review."':
+              '"Posy captured the named visual world and every defining detail. Weak or generic artwork is never shown."',
+            '"A reliable first direction assembled from the details you shared. Generated artwork appears only after it clears the private quality review."':
+              '"A reliable first direction assembled from the details you shared. Weak or off-brief artwork is never shown."',
+            'const copyLines = wrapWords(card.supportingCopy, 58, 3);':
+              'const copyLines = wrapWords(card.supportingCopy, 44, 3);',
+            '<text x="58" y="42" class="cue">':
+              '<text x="58" y="43" class="cue">',
+            '${textBlock(copyLines, 92, 838, 30, "copy")}':
+              '${textBlock(copyLines, 92, 826, 38, "copy")}',
+            '<text x="92" y="930" class="foot">':
+              '<text x="92" y="946" class="foot">',
+            '.cue { font: 600 20px system-ui, -apple-system, sans-serif;':
+              '.cue { font: 600 26px system-ui, -apple-system, sans-serif;',
+            '.copy { font: 400 21px system-ui, -apple-system, sans-serif;':
+              '.copy { font: 400 27px system-ui, -apple-system, sans-serif;',
+            '.foot { font: 700 15px system-ui, -apple-system, sans-serif;':
+              '.foot { font: 700 18px system-ui, -apple-system, sans-serif;',
+          }
+          for old, new in replacements.items():
+            if old not in source:
+              raise SystemExit(f'missing expected direction-card fragment: {old}')
+            source = source.replace(old, new, 1)
+          path.write_text(source)
+
+          workflow = Path('.github/workflows/apply-direction-card-mobile-legibility.yml')
+          workflow.unlink()
+          PY
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run focused preview tests
+        run: npx vitest run tests/prePaymentPreviewQuality.test.ts tests/prePaymentPreviewQualityRoutes.test.ts tests/prePaymentPreviewBenchmark.test.ts tests/paywallReferenceUpload.test.tsx
+
+      - name: Commit repair
+        run: |
+          git config user.name "ajackson59-hash"
+          git config user.email "ajackson59@gmail.com"
+          git add -A
+          git commit -m "Improve mobile legibility of safe preview cards"
+          git push origin HEAD:fix/prepayment-preview-quality-lock
