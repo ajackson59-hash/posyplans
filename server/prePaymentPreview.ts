@@ -17,11 +17,11 @@ import type { Event } from "../shared/schema";
 // product. Three tries is enough to survive one quality-gate rejection
 // without opening the door to unlimited free generations.
 export const MAX_PRE_PAYMENT_PREVIEW_ATTEMPTS = 3;
-// 160px made the teaser too soft to judge. 300px preserves enough theme and
-// subject detail to create confidence while still forcing a meaningful
-// downsample from the smallest current generated/source fixture and keeping
-// the production-quality asset behind checkout.
-export const PRE_PAYMENT_PREVIEW_LONG_EDGE = 300;
+// 300px still looked visibly degraded inside the sales card. 560px is crisp on
+// high-density mobile screens while remaining materially below the 1024px+
+// paid source asset. The private owner-token route and branded overlay—not
+// deliberate ugliness—protect the complete invitation value.
+export const PRE_PAYMENT_PREVIEW_LONG_EDGE = 560;
 
 // Preview v1 accidentally omitted the host's intake vibe and usually sent
 // only the event name to the concept generator. Treat any asset created before

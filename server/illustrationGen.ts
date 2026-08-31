@@ -137,7 +137,7 @@ Evaluate on 4 criteria, each 1-5:
 1. text_free: No garbled text, letters, numbers, or fake writing in the image. Score 1 if any text-like artifacts appear, 5 if completely text-free.
 2. composition: Is the composition clear, balanced, and intentional? Score 1 for muddy or cluttered composition, 5 for clear, well-balanced layout.
 3. premium_feel: Does this look like premium, professional illustration — not cheap clipart? Score 1 for generic/clipart-like, 5 for premium quality.
-4. theme_fit: Does the illustration match the described concept? Score 1 for irrelevant, 5 for perfect match. If the concept names a recognizable fictional world, show, film, game, character universe, or other specific cultural reference, a generic category resemblance is NOT enough. A generic unicorn image for a specifically named unicorn world, or generic pop-star imagery for a specifically named pop-culture theme, must score 3 or lower unless the image carries distinctive visual cues from the requested reference.
+4. theme_fit: Does the illustration match the ORIGINAL HOST BRIEF as well as the described concept? Score 1 for irrelevant, 5 for perfect match. When an original host brief is supplied, it is authoritative: if the generated concept drifted, grade against the host brief, not the weaker concept. A generic category resemblance is not enough for a named show, film, game, character universe or cultural reference. Missing a defining requested character, setting or activity—or replacing the requested scene with abstract symbols—must score 2 or lower.
 
 Respond as STRICT JSON only: {"text_free": N, "composition": N, "premium_feel": N, "theme_fit": N, "overall": N, "issues": "brief description of any problems, or 'none'"}
 The overall score should be the average of the 4 criteria.`;
@@ -154,10 +154,14 @@ interface ArtQualityScore {
 async function evaluateIllustrationQuality(
   imageDataUrl: string,
   concept: InviteDesignConcept,
+  sourceBrief?: string,
 ): Promise<ArtQualityScore> {
   const client = new Anthropic();
   const laneLabel = concept.styleLaneId ?? "unknown";
-  const prompt = `Evaluate this invitation illustration for a "${concept.conceptName}" concept in the "${laneLabel}" style lane. The illustration should depict: ${concept.illustrationPrompt}`;
+  const authoritativeBrief = sourceBrief
+    ? ` Original host brief (authoritative): ${sourceBrief}`
+    : "";
+  const prompt = `Evaluate this invitation illustration for a "${concept.conceptName}" concept in the "${laneLabel}" style lane. The illustration should depict: ${concept.illustrationPrompt}.${authoritativeBrief}`;
 
   const message = await client.messages.create({
     model: "claude-sonnet-4-6",
@@ -229,33 +233,76 @@ function tightenIllustrationPrompt(originalPrompt: string, score: ArtQualityScor
   return `${originalPrompt}. CRITICAL IMPROVEMENTS: ${fixes.join(". ")}`;
 }
 
+export interface IllustrationQualityOptions {
+  /** Original intake wording; authoritative when a concept or image drifts. */
+  sourceBrief?: string;
+  /** Conversion previews use medium for speed; paid artwork remains high by default. */
+  generationQuality?: "high" | "medium" | "low";
+  /** Reject the final image rather than exposing unchecked or off-brief artwork. */
+  requireFinalApproval?: boolean;
+}
+
+function qualityFailed(score: ArtQualityScore, strict: boolean): boolean {
+  const baselineFailure =
+    score.text_free <= TEXT_FAILURE_THRESHOLD
+    || score.overall < QUALITY_THRESHOLD
+    || score.theme_fit <= THEME_FIDELITY_FAILURE_THRESHOLD;
+  if (!strict) return baselineFailure;
+  return baselineFailure
+    || score.overall < 3.6
+    || score.theme_fit < 4
+    || score.composition < 3
+    || score.premium_feel < 3;
+}
+
 export async function generateInviteIllustrationWithQualityGate(
   concept: InviteDesignConcept,
   aspectRatio: "16:9" | "1:1" | "9:16",
+  options: IllustrationQualityOptions = {},
 ): Promise<string> {
-  // First generation at high quality
-  let illustrationUrl = await generateInviteIllustration(concept, aspectRatio, "high");
+  const generationQuality = options.generationQuality ?? "high";
+  const strict = options.requireFinalApproval === true;
+  let illustrationUrl = await generateInviteIllustration(
+    concept,
+    aspectRatio,
+    generationQuality,
+  );
 
-  // Evaluate quality
   try {
-    const score = await evaluateIllustrationQuality(illustrationUrl, concept);
-    const hasTextArtifacts = score.text_free <= TEXT_FAILURE_THRESHOLD;
-    const belowThreshold = score.overall < QUALITY_THRESHOLD;
-    const missesTheme = score.theme_fit <= THEME_FIDELITY_FAILURE_THRESHOLD;
+    let score = await evaluateIllustrationQuality(
+      illustrationUrl,
+      concept,
+      options.sourceBrief,
+    );
 
-    if (hasTextArtifacts || belowThreshold || missesTheme) {
+    if (qualityFailed(score, strict)) {
       console.log(`[quality-gate] Illustration scored ${score.overall.toFixed(1)} / theme ${score.theme_fit} (${score.issues}). Regenerating with tightened prompt...`);
-      // Regenerate once with a tightened prompt that addresses the critic's
-      // specific issues — not just the same prompt relying on random variance.
       const tightenedConcept: InviteDesignConcept = {
         ...concept,
-        illustrationPrompt: tightenIllustrationPrompt(concept.illustrationPrompt, score),
+        illustrationPrompt: `${tightenIllustrationPrompt(concept.illustrationPrompt, score)}. ORIGINAL HOST BRIEF REMAINS AUTHORITATIVE: ${options.sourceBrief || concept.description}. Show the literal requested people, characters, setting and activities as the main scene; never substitute an abstract accessory, bow tie, dots, color blocking or palette-only shorthand.`,
       };
-      illustrationUrl = await generateInviteIllustration(tightenedConcept, aspectRatio, "high");
+      illustrationUrl = await generateInviteIllustration(
+        tightenedConcept,
+        aspectRatio,
+        generationQuality,
+      );
+
+      if (strict) {
+        score = await evaluateIllustrationQuality(
+          illustrationUrl,
+          tightenedConcept,
+          options.sourceBrief,
+        );
+        if (qualityFailed(score, true)) {
+          console.error(`[quality-gate] Final preview artwork rejected: overall ${score.overall.toFixed(1)}, theme ${score.theme_fit} (${score.issues})`);
+          throw new Error("Generated preview artwork did not faithfully match the host brief");
+        }
+      }
     }
   } catch (err) {
-    // If the quality evaluation fails (e.g., API error), use the first generation.
-    // Better to show something than nothing.
+    if (strict) throw err;
+    // Existing paid/legacy callers preserve their graceful-degradation
+    // behavior if the optional critic is unavailable.
     console.error("[quality-gate] Evaluation failed, using first generation:", err);
   }
 
