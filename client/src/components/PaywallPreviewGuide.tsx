@@ -106,6 +106,26 @@ export default function PaywallPreviewGuide() {
     };
   }, [location]);
 
+  useEffect(() => {
+    if (!card) return;
+    const promotionalOverlay = card.querySelector<HTMLElement>(".bg-gradient-to-t");
+    const image = card.querySelector<HTMLImageElement>("[data-testid='img-prepayment-preview']");
+    const isDirectionCard = readiness?.kind === "direction-card";
+
+    card.dataset.previewKind = readiness?.kind ?? "unknown";
+    if (promotionalOverlay) promotionalOverlay.style.display = isDirectionCard ? "none" : "";
+    if (image) {
+      image.alt = isDirectionCard
+        ? "A creative direction assembled from the event details you entered"
+        : "A personalized invitation image that passed Posy's private quality review";
+    }
+
+    return () => {
+      if (promotionalOverlay) promotionalOverlay.style.removeProperty("display");
+      delete card.dataset.previewKind;
+    };
+  }, [card, readiness?.kind]);
+
   if (!card) return null;
 
   return createPortal(
@@ -125,7 +145,9 @@ export default function PaywallPreviewGuide() {
         </button>
       ) : previewReady && readiness?.kind === "direction-card" ? (
         <p className="text-xs leading-relaxed text-muted-foreground" data-testid="text-preview-quality-lock">
-          Posy captured your creative direction. Generated artwork will replace this card only after it clears Posy’s private theme and quality review.
+          {readiness.imageGenerationEnabled
+            ? "Posy captured your creative direction. Generated artwork can replace this card only after it clears Posy’s private theme and quality review."
+            : "Posy captured your creative direction. This reliable first look is shown instead of risking an off-brief generated image."}
         </p>
       ) : previewReady ? (
         <p className="text-xs leading-relaxed text-muted-foreground" data-testid="text-preview-expectation">
