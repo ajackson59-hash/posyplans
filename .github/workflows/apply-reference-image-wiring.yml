@@ -1,0 +1,101 @@
+name: Apply Reference Image Wiring
+
+on:
+  push:
+    branches:
+      - fix/prepayment-preview-quality-lock
+    paths:
+      - .github/workflows/apply-reference-image-wiring.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/prepayment-preview-quality-lock
+          fetch-depth: 0
+
+      - name: Route uploaded screenshots into GPT Image edits
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          quality = Path('server/prePaymentPreviewQuality.ts')
+          text = quality.read_text()
+
+          replacements = [
+            (
+              '  generateArtwork,\n  type ArtworkGenerator,\n} from "./aiFirst/artwork";',
+              '  generateArtwork,\n  type ArtworkGenerator,\n  type ArtworkReferenceImage,\n} from "./aiFirst/artwork";'
+            ),
+            (
+              '  inspirationNotes?: string;\n  /** Two internal candidates maximum; neither is customer-visible before approval. */',
+              '  inspirationNotes?: string;\n  /** Original uploaded pixels used as high-fidelity identity anchors. */\n  referenceImages?: ArtworkReferenceImage[];\n  /** Two internal candidates maximum; neither is customer-visible before approval. */'
+            ),
+            (
+              '  const basePrompt = `${buildArtworkPrompt(concept)}\\n\\n${buildArtworkConstraints(brief)}`;',
+              '  const referenceImageRule = dependencies.referenceImages?.length\n    ? "ATTACHED REFERENCE IMAGES ARE IDENTITY ANCHORS ONLY. Preserve their defining character and visual-world details at high fidelity while creating a new event-specific composition. Do not copy any wording, logo, watermark or invitation layout from them."\n    : "";\n  const basePrompt = [\n    buildArtworkPrompt(concept),\n    buildArtworkConstraints(brief),\n    referenceImageRule,\n  ].filter(Boolean).join("\\n\\n");'
+            ),
+            (
+              '        quality: "medium",\n      });',
+              '        quality: "medium",\n        referenceImages: dependencies.referenceImages,\n      });'
+            ),
+          ]
+
+          for old, new in replacements:
+            if text.count(old) != 1:
+              raise SystemExit(f'quality replacement count for {old[:48]!r}: {text.count(old)}')
+            text = text.replace(old, new)
+          quality.write_text(text)
+
+          routes = Path('server/prePaymentPreviewQualityRoutes.ts')
+          text = routes.read_text()
+          replacements = [
+            (
+              'import { extractInspirationNotes } from "./inviteDesignAi";\nimport { boxDownsampleRgb, decodePng, encodePng, PngDecodeError } from "./aiFirst/png";',
+              'import { extractInspirationNotes } from "./inviteDesignAi";\nimport {\n  type ArtworkReferenceImage,\n  type ArtworkReferenceMimeType,\n} from "./aiFirst/artwork";\nimport { boxDownsampleRgb, decodePng, encodePng, PngDecodeError } from "./aiFirst/png";'
+            ),
+            (
+              '    .array(z.string().startsWith("data:image/"))',
+              '    .array(z.string().max(3_500_000).startsWith("data:image/"))'
+            ),
+            (
+              'function isPngDataUrl(value: string | null | undefined): boolean {\n  return Boolean(value?.startsWith("data:image/png;base64,"));\n}\n',
+              '''function isPngDataUrl(value: string | null | undefined): boolean {\n  return Boolean(value?.startsWith("data:image/png;base64,"));\n}\n\nconst MAX_REFERENCE_IMAGE_BYTES = 2_500_000;\nconst REFERENCE_DATA_URL = /^data:(image\\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=\\r\\n]+)$/;\n\nfunction referenceImagesFromDataUrls(values: string[]): ArtworkReferenceImage[] {\n  return values.map((value, index) => {\n    const match = REFERENCE_DATA_URL.exec(value);\n    if (!match) throw new Error("unsupported reference image");\n    const mimeType = match[1] as ArtworkReferenceMimeType;\n    const bytes = Buffer.from(match[2].replace(/\\s/g, ""), "base64");\n    if (bytes.length === 0 || bytes.length > MAX_REFERENCE_IMAGE_BYTES) {\n      throw new Error("reference image size is invalid");\n    }\n    const extension = mimeType === "image/jpeg" ? "jpg" : mimeType.split("/")[1];\n    return { bytes, mimeType, filename: `host-reference-${index + 1}.${extension}` };\n  });\n}\n'''
+            ),
+            (
+              '    if (await isUnlocked(event)) {',
+              '''    let referenceImages: ArtworkReferenceImage[];\n    try {\n      referenceImages = referenceImagesFromDataUrls(parsed.data.inspirationImages);\n    } catch {\n      return res.status(400).json({\n        error: "Use a PNG, JPEG or WebP screenshot under 2.5 MB for design inspiration.",\n      });\n    }\n\n    if (await isUnlocked(event)) {'''
+            ),
+            (
+              '    const hasReference = parsed.data.inspirationImages.length > 0;',
+              '    const hasReference = referenceImages.length > 0;'
+            ),
+            (
+              '      result = await generate(event, { inspirationNotes, maxCandidates: 2 });',
+              '      result = await generate(event, { inspirationNotes, referenceImages, maxCandidates: 2 });'
+            ),
+          ]
+
+          for old, new in replacements:
+            if text.count(old) != 1:
+              raise SystemExit(f'route replacement count for {old[:48]!r}: {text.count(old)}')
+            text = text.replace(old, new)
+          routes.write_text(text)
+          PY
+
+      - name: Commit the wiring and remove this temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "ajackson59-hash"
+          git config user.email "ajackson59@gmail.com"
+          git rm .github/workflows/apply-reference-image-wiring.yml
+          git add server/prePaymentPreviewQuality.ts server/prePaymentPreviewQualityRoutes.ts
+          git commit -m "Pass named-theme screenshots directly to GPT Image 2"
+          git push origin HEAD:fix/prepayment-preview-quality-lock
