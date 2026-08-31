@@ -1,0 +1,104 @@
+name: Apply Preview Canary Structural Fix
+
+on:
+  push:
+    branches:
+      - fix/prepayment-preview-quality-lock
+    paths:
+      - .github/workflows/apply-preview-canary-structural-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/prepayment-preview-quality-lock
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.19.0
+          cache: npm
+
+      - name: Apply the measured canary corrections
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          quality = Path("server/prePaymentPreviewQuality.ts")
+          text = quality.read_text()
+
+          old_import = '''import {
+            buildArtworkPrompt,
+            type AiFirstConcept,
+          } from "@shared/aiFirstInvite";'''
+          new_import = '''import {
+            aspectRatioForLayout,
+            buildArtworkPrompt,
+            type AiFirstConcept,
+          } from "@shared/aiFirstInvite";'''
+          assert text.count(old_import) == 1, "unexpected aiFirstInvite import shape"
+          text = text.replace(old_import, new_import)
+
+          assert text.count("accentColor: card.palette[1],") == 1, "unexpected preview accent assignment"
+          text = text.replace(
+            "accentColor: card.palette[1],",
+            "accentColor: card.palette[0],",
+          )
+
+          assert text.count('aspectRatio: "1:1",') == 1, "unexpected hard-coded preview aspect"
+          text = text.replace(
+            'aspectRatio: "1:1",',
+            "aspectRatio: aspectRatioForLayout(concept.layoutStyle),",
+          )
+          quality.write_text(text)
+
+          benchmark = Path("server/prePaymentPreviewBenchmarkRoutes.ts")
+          text = benchmark.read_text()
+          assert text.count("type ArtworkResult,") == 1, "unexpected benchmark artwork imports"
+          text = text.replace(
+            "type ArtworkResult,",
+            "type ArtworkResult,\n  type ArtworkSize,",
+          )
+          assert text.count('size: "1024x1024";') == 1, "unexpected benchmark summary size type"
+          text = text.replace('size: "1024x1024";', "size: ArtworkSize;")
+          assert text.count('size: "1024x1024",') == 1, "unexpected hard-coded benchmark review size"
+          text = text.replace(
+            'size: "1024x1024",',
+            "size: sizeForAspect(capture.request.aspectRatio),",
+          )
+          benchmark.write_text(text)
+
+          test = Path("tests/prePaymentPreviewQuality.test.ts")
+          text = test.read_text()
+          old_expectation = '''expect(generateImage.mock.calls[0][0]).toEqual(expect.objectContaining({ model: "gpt-image-2", quality: "medium" }));'''
+          new_expectation = '''expect(generateImage.mock.calls[0][0]).toEqual(expect.objectContaining({
+                model: "gpt-image-2",
+                quality: "medium",
+                aspectRatio: "9:16",
+              }));'''
+          assert text.count(old_expectation) == 1, "unexpected preview request assertion"
+          test.write_text(text.replace(old_expectation, new_expectation))
+          PY
+
+      - name: Verify the repair
+        run: |
+          npm ci
+          npm run check
+          npm test
+
+      - name: Commit the correction
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add server/prePaymentPreviewQuality.ts server/prePaymentPreviewBenchmarkRoutes.ts tests/prePaymentPreviewQuality.test.ts
+          git commit -m "Fix preview aspect and contrast exposed by funded canary"
+          git push origin HEAD:fix/prepayment-preview-quality-lock
