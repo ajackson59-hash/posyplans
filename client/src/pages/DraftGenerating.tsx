@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams, useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequestJson } from "@/lib/queryClient";
@@ -103,6 +103,27 @@ export default function DraftGenerating() {
   const [demoOpen, setDemoOpen] = useState(false);
   const [previewImageLoaded, setPreviewImageLoaded] = useState(false);
   const [previewImageFailed, setPreviewImageFailed] = useState(false);
+  // A finished preview belongs to the event, not to one fragile browser
+  // mutation. Probe the private asset when this page opens so a refresh,
+  // mobile tab suspension, or return from another app restores it instantly.
+  const [persistedPreviewReady, setPersistedPreviewReady] = useState(false);
+
+  const previewAssetUrl = ownerToken
+    ? `/api/events/owner/${ownerToken}/prepayment-preview/asset`
+    : "";
+
+  const bringPreviewIntoView = useCallback((behavior: ScrollBehavior = "smooth") => {
+    if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+    window.setTimeout(() => {
+      previewCardRef.current?.scrollIntoView?.({ behavior, block: "center" });
+    }, 0);
+  }, []);
+
+  const focusPreviewEmail = useCallback(() => {
+    const input = document.getElementById("sparkEmail") as HTMLInputElement | null;
+    input?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+    window.setTimeout(() => input?.focus({ preventScroll: true }), 300);
+  }, []);
 
   // Returning from a Spark checkout lands back here with these params (see
   // server/routes.ts create-session success_url). We confirm the session to
@@ -115,6 +136,22 @@ export default function DraftGenerating() {
   useEffect(() => {
     if (ownerToken) touchRecentEvent(ownerToken);
   }, [ownerToken]);
+
+  useEffect(() => {
+    if (!previewAssetUrl) return;
+    let active = true;
+    const probe = new Image();
+    probe.onload = () => {
+      if (active) setPersistedPreviewReady(true);
+    };
+    // A 404 simply means this event has not made its one preview yet. Do not
+    // turn that normal first-visit state into an error or unlock checkout.
+    probe.onerror = () => undefined;
+    probe.src = previewAssetUrl;
+    return () => {
+      active = false;
+    };
+  }, [previewAssetUrl]);
 
   const { data: config } = useQuery<{ configured: boolean }>({
     queryKey: ["/api/checkout/config"],
@@ -228,20 +265,57 @@ export default function DraftGenerating() {
       apiRequestJson<{ ready: boolean }>("POST", `/api/events/owner/${ownerToken}/prepayment-preview`, {
         email: candidateEmail,
       }),
+    onSuccess: () => setPersistedPreviewReady(true),
   });
 
-  // The preview is the value proof before payment, not background decoration.
-  // Bring the completed image into view on smaller screens where the email
-  // form may sit below it, then let the host choose whether to unlock.
+  const requestPersonalizedPreview = useCallback(() => {
+    const candidateEmail = email.trim();
+    if (!EMAIL_LOOKS_VALID.test(candidateEmail) || previewTriggeredRef.current) return;
+    previewTriggeredRef.current = true;
+    setPreviewImageLoaded(false);
+    setPreviewImageFailed(false);
+    bringPreviewIntoView("smooth");
+    startPrePaymentPreview.mutate(candidateEmail);
+  }, [bringPreviewIntoView, email, startPrePaymentPreview]);
+
+  const previewReady = startPrePaymentPreview.isSuccess || persistedPreviewReady;
+
+  // Move the host to the visible spinner as soon as generation starts—not
+  // only after a long image call finishes—and move them back again when the
+  // pixels are ready. This directly covers the mobile checkout layout where
+  // the email field sits well below the preview card.
+  useEffect(() => {
+    if (!startPrePaymentPreview.isPending) return;
+    bringPreviewIntoView("smooth");
+  }, [bringPreviewIntoView, startPrePaymentPreview.isPending]);
+
   useEffect(() => {
     if (!previewImageLoaded) return;
-    previewCardRef.current?.scrollIntoView?.({ behavior: "smooth", block: "center" });
-  }, [previewImageLoaded]);
+    bringPreviewIntoView("smooth");
+  }, [bringPreviewIntoView, previewImageLoaded]);
 
-  const previewIsVisible = startPrePaymentPreview.isSuccess && previewImageLoaded;
-  const previewCouldNotBeShown = startPrePaymentPreview.isError || previewImageFailed;
-  const previewAssetLoading =
-    startPrePaymentPreview.isSuccess && !previewImageLoaded && !previewImageFailed;
+  // Mobile browsers may suspend smooth scrolling while another app or tab is
+  // open. Re-run the reveal when the page becomes visible again, and on the
+  // browser's pageshow restoration event, so a completed preview is never left
+  // silently above the fold.
+  useEffect(() => {
+    const restorePreview = () => {
+      if (document.visibilityState !== "visible") return;
+      if (startPrePaymentPreview.isPending || previewReady || previewImageLoaded) {
+        bringPreviewIntoView("auto");
+      }
+    };
+    document.addEventListener("visibilitychange", restorePreview);
+    window.addEventListener("pageshow", restorePreview);
+    return () => {
+      document.removeEventListener("visibilitychange", restorePreview);
+      window.removeEventListener("pageshow", restorePreview);
+    };
+  }, [bringPreviewIntoView, previewImageLoaded, previewReady, startPrePaymentPreview.isPending]);
+
+  const previewIsVisible = previewReady && previewImageLoaded;
+  const previewCouldNotBeShown = startPrePaymentPreview.isError || (previewReady && previewImageFailed);
+  const previewAssetLoading = previewReady && !previewImageLoaded && !previewImageFailed;
   const checkoutPending = startSparkCheckout.isPending || startPlusCheckout.isPending;
 
   let paywallCtaLabel = "Show me my personalized preview";
@@ -393,10 +467,10 @@ export default function DraftGenerating() {
             data-testid="prepayment-preview-card"
             aria-live="polite"
           >
-            {startPrePaymentPreview.isSuccess && !previewImageFailed ? (
+            {previewReady && !previewImageFailed ? (
               <div className="relative">
                 <img
-                  src={`/api/events/owner/${ownerToken}/prepayment-preview/asset`}
+                  src={previewAssetUrl}
                   alt="A low-resolution preview of your personalized invitation direction"
                   className="block aspect-square w-full object-cover"
                   data-testid="img-prepayment-preview"
@@ -418,17 +492,30 @@ export default function DraftGenerating() {
                 </div>
               </div>
             ) : startPrePaymentPreview.isPending ? (
-              <div className="flex aspect-square items-center justify-center gap-2 px-6 text-center text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Creating your personal preview…
+              <div className="flex aspect-square items-center justify-center gap-3 px-6 text-center text-sm text-muted-foreground">
+                <Loader2 className="h-5 w-5 shrink-0 animate-spin" />
+                <div>
+                  <p className="font-medium text-foreground">Creating your personal preview…</p>
+                  <p className="mt-1 text-xs leading-relaxed">
+                    This can take a minute or two. You can leave this tab and come back—your finished preview will be waiting.
+                  </p>
+                </div>
               </div>
             ) : previewCouldNotBeShown ? (
               <div className="flex aspect-square items-center justify-center px-6 text-center text-sm text-muted-foreground">
                 Your preview took too long this time. You can still continue—your complete invitation is included once unlocked.
               </div>
             ) : (
-              <div className="flex aspect-square items-center justify-center px-6 text-center text-sm text-muted-foreground">
-                Add your email below and Posy will create a personalized preview before checkout.
+              <div className="flex aspect-square flex-col items-center justify-center gap-2 px-6 text-center text-sm text-muted-foreground">
+                <p>Posy will create a personalized preview before checkout.</p>
+                <button
+                  type="button"
+                  onClick={focusPreviewEmail}
+                  className="font-medium text-primary underline underline-offset-2 hover:text-primary/80"
+                  data-testid="button-anchor-preview-email"
+                >
+                  Enter your email below
+                </button>
               </div>
             )}
           </div>
@@ -600,11 +687,7 @@ export default function DraftGenerating() {
                 // value is visible. If the optional preview provider fails,
                 // never block a host who is ready to buy.
                 if (!previewIsVisible && !previewCouldNotBeShown) {
-                  const candidateEmail = email.trim();
-                  if (EMAIL_LOOKS_VALID.test(candidateEmail) && !previewTriggeredRef.current) {
-                    previewTriggeredRef.current = true;
-                    startPrePaymentPreview.mutate(candidateEmail);
-                  }
+                  requestPersonalizedPreview();
                   return;
                 }
                 if (selectedPlan === "spark") startSparkCheckout.mutate();
@@ -624,17 +707,24 @@ export default function DraftGenerating() {
                   onBlur={() => {
                     // Generate early without turning a provisional field
                     // value into the event's permanent recovery identity.
-                    const candidateEmail = email.trim();
-                    if (EMAIL_LOOKS_VALID.test(candidateEmail) && !previewTriggeredRef.current) {
-                      previewTriggeredRef.current = true;
-                      startPrePaymentPreview.mutate(candidateEmail);
-                    }
+                    requestPersonalizedPreview();
                   }}
                 />
                 <p className="mt-1.5 text-xs text-muted-foreground">
                   When you continue to checkout, Posy will also email your private return link.
                 </p>
               </div>
+              {previewIsVisible && (
+                <button
+                  type="button"
+                  onClick={() => bringPreviewIntoView("smooth")}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-xs font-medium text-primary"
+                  data-testid="button-view-personalized-preview"
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Your preview is ready — view it above
+                </button>
+              )}
               <Button
                 type="submit"
                 className="w-full"
