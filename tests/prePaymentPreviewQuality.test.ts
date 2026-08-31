@@ -77,6 +77,7 @@ describe("prepayment preview quality lock", () => {
     expect(card.headline).toBe("Blippi + Meekah");
     expect(card.cues).toEqual(expect.arrayContaining(["Indoor soft play", "Bubbles", "Ice-cream treats"]));
     expect(card.referenceRecommended).toBe(true);
+    expect(card.supportingCopy).toContain("Weak or generic artwork is never shown.");
 
     const dataUrl = directionCardDataUrl(event);
     expect(dataUrl).toMatch(/^data:image\/svg\+xml;base64,/);
@@ -84,7 +85,8 @@ describe("prepayment preview quality lock", () => {
     expect(svg).toContain("Brian and Blippi&apos;s Extravaganza");
     expect(svg).toContain("Blippi + Meekah");
     expect(svg).toContain("Indoor soft play");
-    expect(svg).toContain("Weak or generic artwork is never shown.");
+    expect(svg).toContain("Weak or generic");
+    expect(svg).toContain("artwork is never shown.");
     expect(svg).toContain(".cue { font: 600 26px");
     expect(svg).toContain(".copy { font: 400 27px");
     expect(svg).toContain(".foot { font: 700 18px");
