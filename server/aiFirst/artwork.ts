@@ -18,6 +18,7 @@ export type ArtworkQuality = "high" | "medium" | "low";
 export type ArtworkAspectRatio = "16:9" | "1:1" | "9:16";
 export type ArtworkSize = "1536x1024" | "1024x1024" | "1024x1536";
 export type ArtworkReferenceMimeType = "image/png" | "image/jpeg" | "image/webp";
+export type ArtworkInputFidelity = "high" | "low";
 
 export interface ArtworkReferenceImage {
   bytes: Buffer;
@@ -36,6 +37,12 @@ export interface ArtworkRequest {
    * composition from these pixels rather than reducing them to text alone.
    */
   referenceImages?: ArtworkReferenceImage[];
+  /**
+   * Fidelity of an image-edit request to the supplied source pixels. Reference
+   * edits default to high because exact named-theme identity is the reason the
+   * source image was requested in the first place.
+   */
+  inputFidelity?: ArtworkInputFidelity;
   signal?: AbortSignal;
 }
 
@@ -92,6 +99,8 @@ function imageEditBody(
   form.append("quality", quality);
   form.append("n", "1");
   form.append("background", "opaque");
+  form.append("output_format", "png");
+  form.append("input_fidelity", request.inputFidelity ?? "high");
 
   for (let index = 0; index < (request.referenceImages ?? []).length; index += 1) {
     const reference = request.referenceImages![index];
