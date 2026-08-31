@@ -142,7 +142,7 @@ Evaluate on 4 criteria, each 1-5:
 Respond as STRICT JSON only: {"text_free": N, "composition": N, "premium_feel": N, "theme_fit": N, "overall": N, "issues": "brief description of any problems, or 'none'"}
 The overall score should be the average of the 4 criteria.`;
 
-interface ArtQualityScore {
+export interface ArtQualityScore {
   text_free: number;
   composition: number;
   premium_feel: number;
@@ -209,7 +209,7 @@ const THEME_FIDELITY_FAILURE_THRESHOLD = 3;
  * regenerating with the exact same prompt and hoping for variance, this
  * addresses the exact failure the critic identified.
  */
-function tightenIllustrationPrompt(originalPrompt: string, score: ArtQualityScore): string {
+export function tightenIllustrationPrompt(originalPrompt: string, score: ArtQualityScore): string {
   const fixes: string[] = [];
 
   if (score.text_free <= TEXT_FAILURE_THRESHOLD) {
@@ -230,7 +230,14 @@ function tightenIllustrationPrompt(originalPrompt: string, score: ArtQualityScor
     fixes.push("refined professional illustration with cleaner composition and higher polish");
   }
 
-  return `${originalPrompt}. CRITICAL IMPROVEMENTS: ${fixes.join(". ")}`;
+  // The critic often identifies the exact missing character, setting cue, or
+  // accidental text. Preserve those concrete findings instead of retrying with
+  // only a generic “be more faithful” instruction.
+  const specificIssues = score.issues?.trim()
+    ? `ART DIRECTOR'S SPECIFIC CORRECTIONS: ${score.issues.trim().slice(0, 800)}`
+    : "";
+
+  return `${originalPrompt}. CRITICAL IMPROVEMENTS: ${fixes.join(". ")}${specificIssues ? `. ${specificIssues}` : ""}`;
 }
 
 export interface IllustrationQualityOptions {
