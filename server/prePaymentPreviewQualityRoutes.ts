@@ -469,10 +469,11 @@ export function registerPrePaymentPreviewQualityRoutes(
         return res.json(readyResponse(event, mode, namedAutoEnabled, timestamp));
       }
 
-      event = await reservePreviewAttempt(store, event, timestamp);
+      const reservedEvent = await reservePreviewAttempt(store, event, timestamp);
+      event = reservedEvent;
       schedule(() => runAutomaticNamedPreviewJob({
         store,
-        event,
+        event: reservedEvent,
         namedReference,
         resolveNamedReference,
         generate,
@@ -480,7 +481,7 @@ export function registerPrePaymentPreviewQualityRoutes(
       }));
 
       res.setHeader("Retry-After", String(Math.ceil(POLL_AFTER_MS / 1000)));
-      return res.status(202).json(readiness(event, mode, namedAutoEnabled, timestamp));
+      return res.status(202).json(readiness(reservedEvent, mode, namedAutoEnabled, timestamp));
     }
 
     // Original and generic themes retain the existing explicit release gate.

@@ -7,6 +7,7 @@ type PreviewKind = "direction-card" | "reference-board" | "approved-image" | "no
 interface PreviewReadiness {
   mode: "off" | "direction-card" | "quality-image";
   kind: PreviewKind;
+  generationState?: "idle" | "generating" | "ready" | "fallback";
   imageGenerationEnabled: boolean;
   namedReference: { id: string; label: string } | null;
   referenceRecommended: boolean;

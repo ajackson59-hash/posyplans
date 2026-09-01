@@ -36,6 +36,21 @@ interface EntitlementSummary {
   canGenerate: boolean;
 }
 
+type PrePaymentPreviewKind = "direction-card" | "reference-board" | "approved-image" | "none";
+type PrePaymentPreviewGenerationState = "idle" | "generating" | "ready" | "fallback";
+
+interface PrePaymentPreviewReadiness {
+  ready: boolean;
+  generationState: PrePaymentPreviewGenerationState;
+  pollAfterMs: number | null;
+  kind: PrePaymentPreviewKind;
+  namedReference: { id: string; label: string } | null;
+  automaticReferenceResolutionEnabled?: boolean;
+  automaticReferenceAttempted?: boolean;
+}
+
+type PrePaymentPreviewStart = PrePaymentPreviewReadiness;
+
 // Same plausibility check the server applies on capture — just enough to
 // avoid firing a network request on every keystroke/blur of a clearly
 // unfinished address.
@@ -107,9 +122,11 @@ export default function DraftGenerating() {
   // mutation. Probe the private asset when this page opens so a refresh,
   // mobile tab suspension, or return from another app restores it instantly.
   const [persistedPreviewReady, setPersistedPreviewReady] = useState(false);
+  const [backgroundPreviewStarted, setBackgroundPreviewStarted] = useState(false);
+  const [previewAssetVersion, setPreviewAssetVersion] = useState(0);
 
   const previewAssetUrl = ownerToken
-    ? `/api/events/owner/${ownerToken}/prepayment-preview/asset`
+    ? `/api/events/owner/${ownerToken}/prepayment-preview/asset?v=${previewAssetVersion}`
     : "";
 
   const bringPreviewIntoView = useCallback((behavior: ScrollBehavior = "smooth") => {
@@ -162,6 +179,22 @@ export default function DraftGenerating() {
     queryFn: () =>
       apiRequestJson<EntitlementSummary>("GET", `/api/events/owner/${ownerToken}/master-planner/entitlement`),
     enabled: !!ownerToken,
+  });
+
+  const previewReadiness = useQuery<PrePaymentPreviewReadiness>({
+    queryKey: ["prepayment-preview-readiness", ownerToken],
+    queryFn: () => apiRequestJson<PrePaymentPreviewReadiness>(
+      "GET",
+      `/api/events/owner/${ownerToken}/prepayment-preview/readiness`,
+    ),
+    enabled: !!ownerToken,
+    retry: false,
+    refetchInterval: (query) => {
+      const current = query.state.data as PrePaymentPreviewReadiness | undefined;
+      return current?.generationState === "generating"
+        ? current.pollAfterMs ?? 2500
+        : false;
+    },
   });
 
   // If we came back from a completed Spark checkout, activate the unlock
@@ -262,10 +295,25 @@ export default function DraftGenerating() {
   // Stripe's verified address remains authoritative after payment.
   const startPrePaymentPreview = useMutation({
     mutationFn: (candidateEmail: string) =>
-      apiRequestJson<{ ready: boolean }>("POST", `/api/events/owner/${ownerToken}/prepayment-preview`, {
+      apiRequestJson<PrePaymentPreviewStart>("POST", `/api/events/owner/${ownerToken}/prepayment-preview`, {
         email: candidateEmail,
       }),
-    onSuccess: () => setPersistedPreviewReady(true),
+    onSuccess: (result) => {
+      if (result.ready) {
+        setBackgroundPreviewStarted(false);
+        setPreviewImageLoaded(false);
+        setPreviewImageFailed(false);
+        setPersistedPreviewReady(true);
+        setPreviewAssetVersion((current) => current + 1);
+      } else {
+        setBackgroundPreviewStarted(true);
+        void previewReadiness.refetch();
+      }
+    },
+    onError: () => {
+      setBackgroundPreviewStarted(false);
+      previewTriggeredRef.current = false;
+    },
   });
 
   const requestPersonalizedPreview = useCallback(() => {
@@ -278,16 +326,43 @@ export default function DraftGenerating() {
     startPrePaymentPreview.mutate(candidateEmail);
   }, [bringPreviewIntoView, email, startPrePaymentPreview]);
 
-  const previewReady = startPrePaymentPreview.isSuccess || persistedPreviewReady;
+  const readinessKind = previewReadiness.data?.kind ?? "none";
+  const readinessState = previewReadiness.data?.generationState ?? "idle";
+  const previewInProgress =
+    startPrePaymentPreview.isPending
+    || backgroundPreviewStarted
+    || readinessState === "generating";
+  const previewReady =
+    persistedPreviewReady
+    || (readinessKind !== "none" && readinessState !== "generating");
+
+  useEffect(() => {
+    if (readinessState === "generating") {
+      previewTriggeredRef.current = true;
+      setBackgroundPreviewStarted(true);
+      setPersistedPreviewReady(false);
+      bringPreviewIntoView("smooth");
+      return;
+    }
+    if (readinessKind === "none") return;
+
+    previewTriggeredRef.current = true;
+    setBackgroundPreviewStarted(false);
+    setPreviewImageLoaded(false);
+    setPreviewImageFailed(false);
+    setPersistedPreviewReady(true);
+    setPreviewAssetVersion((current) => current + 1);
+    bringPreviewIntoView("smooth");
+  }, [bringPreviewIntoView, readinessKind, readinessState]);
 
   // Move the host to the visible spinner as soon as generation starts—not
   // only after a long image call finishes—and move them back again when the
   // pixels are ready. This directly covers the mobile checkout layout where
   // the email field sits well below the preview card.
   useEffect(() => {
-    if (!startPrePaymentPreview.isPending) return;
+    if (!previewInProgress) return;
     bringPreviewIntoView("smooth");
-  }, [bringPreviewIntoView, startPrePaymentPreview.isPending]);
+  }, [bringPreviewIntoView, previewInProgress]);
 
   useEffect(() => {
     if (!previewImageLoaded) return;
@@ -301,7 +376,7 @@ export default function DraftGenerating() {
   useEffect(() => {
     const restorePreview = () => {
       if (document.visibilityState !== "visible") return;
-      if (startPrePaymentPreview.isPending || previewReady || previewImageLoaded) {
+      if (previewInProgress || previewReady || previewImageLoaded) {
         bringPreviewIntoView("auto");
       }
     };
@@ -311,7 +386,7 @@ export default function DraftGenerating() {
       document.removeEventListener("visibilitychange", restorePreview);
       window.removeEventListener("pageshow", restorePreview);
     };
-  }, [bringPreviewIntoView, previewImageLoaded, previewReady, startPrePaymentPreview.isPending]);
+  }, [bringPreviewIntoView, previewImageLoaded, previewInProgress, previewReady]);
 
   const previewIsVisible = previewReady && previewImageLoaded;
   const previewCouldNotBeShown = startPrePaymentPreview.isError || (previewReady && previewImageFailed);
@@ -321,7 +396,7 @@ export default function DraftGenerating() {
   let paywallCtaLabel = "Show me my personalized first look";
   if (checkoutPending) {
     paywallCtaLabel = "Starting checkout…";
-  } else if (startPrePaymentPreview.isPending) {
+  } else if (previewInProgress) {
     paywallCtaLabel = "Creating your personalized first look…";
   } else if (previewAssetLoading) {
     paywallCtaLabel = "Revealing your personalized first look…";
@@ -491,19 +566,19 @@ export default function DraftGenerating() {
                   <p className="mt-1 text-xs text-white/85">Unlock your complete plan and full invitation designs.</p>
                 </div>
               </div>
-            ) : startPrePaymentPreview.isPending ? (
+            ) : previewInProgress ? (
               <div className="flex aspect-square items-center justify-center gap-3 px-6 text-center text-sm text-muted-foreground">
                 <Loader2 className="h-5 w-5 shrink-0 animate-spin" />
                 <div>
                   <p className="font-medium text-foreground">Creating your personalized first look…</p>
                   <p className="mt-1 text-xs leading-relaxed">
-                    This can take a minute or two. You can leave this tab and come back—your finished preview will be waiting.
+                    Posy is finding the right visual references and reviewing the artwork privately. You can leave this tab and return—this will keep working.
                   </p>
                 </div>
               </div>
             ) : previewCouldNotBeShown ? (
               <div className="flex aspect-square items-center justify-center px-6 text-center text-sm text-muted-foreground">
-                Your preview took too long this time. You can still continue—your complete invitation is included once unlocked.
+                Posy couldn't complete the first look this time. You can still continue—your full invitation is included once unlocked.
               </div>
             ) : (
               <div className="flex aspect-square flex-col items-center justify-center gap-2 px-6 text-center text-sm text-muted-foreground">
@@ -730,7 +805,7 @@ export default function DraftGenerating() {
                 className="w-full"
                 data-testid="button-unlock-spark"
                 disabled={
-                  startPrePaymentPreview.isPending ||
+                  previewInProgress ||
                   previewAssetLoading ||
                   checkoutPending
                 }
