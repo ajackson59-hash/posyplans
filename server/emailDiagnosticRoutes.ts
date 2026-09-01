@@ -135,8 +135,8 @@ async function runInternalPreviewCanary() {
         generateQualityLockedPreview(event, {
           inspirationNotes: resolved.notes,
           referenceImages: resolved.images,
-          quality: "high",
-          maxCandidates: 2,
+          quality: "medium",
+          maxCandidates: 1,
           namedReference,
           attemptRetention: {
             store: attemptStore,
