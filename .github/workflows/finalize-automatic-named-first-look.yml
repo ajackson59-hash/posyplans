@@ -40,6 +40,17 @@ jobs:
                   raise SystemExit(f"Expected {count} occurrences in {path}, found {found}: {old}")
               file.write_text(text.replace(old, new))
 
+          resolver_path = Path("server/namedReferenceResolver.ts")
+          resolver = resolver_path.read_text()
+          resolver, match_count = re.subn(
+              r'for \(const match of ((?:html|text)\.matchAll\([^\n]+\))\) \{',
+              r'for (const match of Array.from(\1)) {',
+              resolver,
+          )
+          if match_count != 5:
+              raise SystemExit(f"Expected five matchAll loops, patched {match_count}")
+          resolver_path.write_text(resolver)
+
           quality_path = Path("server/prePaymentPreviewQuality.ts")
           quality = quality_path.read_text()
           quality = quality.replace(
@@ -132,6 +143,6 @@ jobs:
           git rm .github/workflows/finalize-automatic-named-first-look.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add server/prePaymentPreviewQuality.ts client/src/pages/DraftGenerating.tsx
+          git add server/namedReferenceResolver.ts server/prePaymentPreviewQuality.ts client/src/pages/DraftGenerating.tsx
           git commit -m 'Complete automatic named-theme first-look pipeline'
           git push origin HEAD:fix/launch-qa-find-my-event-label
