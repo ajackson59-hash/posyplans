@@ -26,6 +26,9 @@ jobs:
       - name: Install background-task support
         run: npm install @vercel/functions@3.9.5 --save
 
+      - name: Fix server background-job narrowing
+        run: node scripts/fix-background-route-narrowing.mjs
+
       - name: Apply client polling and recovery
         run: node scripts/finalize-background-first-look.mjs
 
@@ -41,8 +44,9 @@ jobs:
           set -euo pipefail
           git rm .github/workflows/finalize-background-first-look.yml
           git rm scripts/finalize-background-first-look.mjs
+          git rm scripts/fix-background-route-narrowing.mjs
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add package.json package-lock.json client/src/pages/DraftGenerating.tsx client/src/components/PaywallPreviewGuide.tsx tests/draftGeneratingPaywall.test.tsx
+          git add package.json package-lock.json server/prePaymentPreviewQualityRoutes.ts client/src/pages/DraftGenerating.tsx client/src/components/PaywallPreviewGuide.tsx tests/draftGeneratingPaywall.test.tsx
           git commit -m 'Make named-theme first looks durable across navigation'
           git push origin HEAD:fix/launch-qa-find-my-event-label
