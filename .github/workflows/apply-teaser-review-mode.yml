@@ -1,0 +1,44 @@
+name: Apply Standalone Teaser Review Contract
+
+on:
+  push:
+    branches:
+      - codex/launch-blockers
+    paths:
+      - .github/workflows/apply-teaser-review-mode.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: postgres://test:test@127.0.0.1:5432/test
+      ANTHROPIC_API_KEY: test
+      OPENAI_API_KEY: test
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/launch-blockers
+
+      - name: Apply teaser-specific deterministic and vision review
+        run: python script/patch_teaser_review_mode.py
+
+      - name: Verify teaser review contract
+        run: |
+          npm ci
+          npm run check
+          npm test
+          npm run vercel-build
+
+      - name: Commit and retire patch runner
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/apply-teaser-review-mode.yml script/patch_teaser_review_mode.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add server/aiFirst/tier1.ts server/aiFirst/visionGate.ts server/prePaymentPreviewQuality.ts tests/aiFirstQualityGate.test.ts tests/prePaymentPreviewQuality.test.ts
+          git commit -m 'Review pre-payment artwork as standalone teaser pixels'
+          git push origin HEAD:codex/launch-blockers
