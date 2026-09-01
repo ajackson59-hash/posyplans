@@ -36,6 +36,9 @@ jobs:
       - name: Run regression suite
         run: npm test
 
+      - name: Build production bundles
+        run: npm run vercel-build
+
       # A successful build is not proof that Find My Event can deliver mail.
       # On branch pushes, wait for the stable Vercel Preview alias to update and
       # then verify the real deployment has both the Resend key and a verified

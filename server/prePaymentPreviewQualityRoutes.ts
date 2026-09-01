@@ -27,7 +27,6 @@ import {
 import {
   PREPAYMENT_PREVIEW_QUALITY_LOCK_CUTOFF_MS,
   buildDirectionCard,
-  detectNamedCreativeReference,
   detectNamedCreativeReferenceSync,
   directionCardDataUrl,
   generateQualityLockedPreview,
@@ -96,7 +95,7 @@ export interface PrePaymentPreviewQualityRouteDependencies {
   artworkAttemptStore?: AiFirstArtworkAttemptStore;
 }
 
-type PreviewAssetKind = "direction-card" | "reference-board" | "approved-image" | "none";
+export type PreviewAssetKind = "direction-card" | "reference-board" | "approved-image" | "none";
 type PreviewGenerationState = "idle" | "generating" | "ready" | "fallback";
 
 const QUALITY_APPROVED_PNG_PREFIX = "data:image/png;posy-quality-approved;base64,";
@@ -161,22 +160,12 @@ function namedReferenceForEventSync(event: Event): NamedCreativeReference | null
   return detectNamedCreativeReferenceSync(eventNamedReferenceBrief(event));
 }
 
-/**
- * Curated + general classifier. Awaits a paid model call for anything
- * outside the curated five, so this must only ever be invoked once per
- * customer action — from the POST route, immediately before scheduling the
- * background generation job — never from a GET/read/poll path.
- */
-async function namedReferenceForEventGeneral(event: Event): Promise<NamedCreativeReference | null> {
-  return detectNamedCreativeReference(eventNamedReferenceBrief(event));
-}
-
 function imageIsCurrent(event: Event): boolean {
   return Boolean(qualityApprovedPayload(event.prePaymentPreviewUrl))
     && (event.prePaymentPreviewUsedAt ?? 0) >= PREPAYMENT_PREVIEW_QUALITY_LOCK_CUTOFF_MS;
 }
 
-function assetKind(event: Event): PreviewAssetKind {
+export function prePaymentPreviewAssetKind(event: Event): PreviewAssetKind {
   if (isReferenceBoardDataUrl(event.prePaymentPreviewUrl)) return "reference-board";
   if (isSvgDataUrl(event.prePaymentPreviewUrl)) return "direction-card";
   if (imageIsCurrent(event)) return "approved-image";
@@ -184,7 +173,7 @@ function assetKind(event: Event): PreviewAssetKind {
 }
 
 function backgroundIsStale(event: Event, timestamp: number): boolean {
-  if (assetKind(event) !== "none" || event.prePaymentPreviewAttempts <= 0) return false;
+  if (prePaymentPreviewAssetKind(event) !== "none" || event.prePaymentPreviewAttempts <= 0) return false;
   const startedAt = event.prePaymentPreviewUsedAt ?? 0;
   return startedAt <= 0 || timestamp - startedAt >= BACKGROUND_STALE_MS;
 }
@@ -283,7 +272,7 @@ async function readiness(
   // Curated-only, synchronous, network-free — this runs on every readiness
   // poll (every 2.5s while generating), so it must never await a model call.
   const card = buildDirectionCard(event);
-  const kind = assetKind(event);
+  const kind = prePaymentPreviewAssetKind(event);
   const state = generationState(event, kind, timestamp);
   const referenceCaptured = kind === "reference-board";
   const hasNamedReference = Boolean(card.namedReference);
@@ -381,6 +370,7 @@ async function runAutomaticNamedPreviewJob({
       referenceImages: resolved.images,
       quality: "high",
       maxCandidates: 2,
+      namedReference,
       attemptRetention: { store: artworkAttemptStore, eventId: event.id, ownerToken: event.ownerToken },
     });
 
@@ -484,13 +474,13 @@ export function registerPrePaymentPreviewQualityRoutes(
     const timestamp = now();
     const mode = readMode();
     const namedAutoEnabled = autoNamedEnabled();
-    let currentKind = assetKind(event);
+    let currentKind = prePaymentPreviewAssetKind(event);
     const hasHostReference = referenceImages.length > 0;
-    // Explicit customer action (POST = "show me my first look") is the one
-    // and only place allowed to await the paid general classifier. Its
-    // result is threaded into the scheduled background job below so the
-    // resolution happens once and is reused, never re-derived on reads.
-    const namedReference = await namedReferenceForEventGeneral(event);
+    // Launch-safe: only the curated, synchronous detector participates in a
+    // customer request. The arbitrary LLM classifier remains available for a
+    // future explicitly budgeted workflow, but is not reachable from this
+    // route and therefore cannot add surprise latency or spend.
+    const namedReference = namedReferenceForEventSync(event);
 
     if (backgroundIsStale(event, timestamp)) {
       event = await persistDirectionCard(store, event, timestamp);
@@ -579,6 +569,7 @@ export function registerPrePaymentPreviewQualityRoutes(
       result = await generate(event, {
         referenceImages,
         maxCandidates: 2,
+        namedReference,
         attemptRetention: { store: artworkAttemptStore, eventId: event.id, ownerToken: event.ownerToken },
       });
     } catch (error) {

@@ -133,12 +133,10 @@ function detectCuratedNamedCreativeReference(text: string): NamedCreativeReferen
 /**
  * Synchronous, network-free detection for read/poll-only call sites
  * (readiness, direction-card rendering, asset delivery). Deliberately does
- * NOT consult the general LLM classifier — those routes run on every page
- * load and every 2.5s poll, and must stay deterministic, zero-cost and
- * zero-latency. Only the explicit customer action that starts generation
- * (the POST route) is allowed to pay for and await the general classifier;
- * its resolved result is threaded back into the direction card afterward
- * rather than being re-derived here.
+ * NOT consult the general LLM classifier — customer routes must stay
+ * deterministic, zero-cost and zero-latency. A future explicitly budgeted
+ * workflow may call the asynchronous detector and pass its resolved result
+ * back into the card/generator; the launch request path does not.
  */
 export function detectNamedCreativeReferenceSync(text: string): NamedCreativeReference | null {
   if (!text.trim()) return null;
@@ -292,13 +290,10 @@ async function detectGeneralNamedCreativeReference(
 }
 
 /**
- * Recognizes ANY named entertainment property the host types, not just a
- * hardcoded shortlist. The five curated entries below stay a synchronous,
- * zero-latency fast path with hand-authored quality-gate requirements and
- * known-good reference images; everything else — Sesame Street, Cocomelon,
- * Frozen, Spider-Man, Pokemon, or any future franchise — is classified by an
- * LLM call whose (memoized) result feeds the same downstream direction card,
- * brief enrichment and reference-resolution pipeline.
+ * General detector retained for a future explicitly budgeted workflow. The
+ * five curated entries stay a synchronous, zero-latency fast path; other
+ * properties can be classified here only when a caller deliberately invokes
+ * this asynchronous function. The launch customer route does not call it.
  */
 export async function detectNamedCreativeReference(
   text: string,
@@ -530,9 +525,16 @@ function enrichBriefForNamedReference(brief: EventBrief, named: NamedCreativeRef
 export async function buildQualityLockedPreviewBrief(
   event: Event,
   inspirationNotes = "",
+  resolvedNamedReference?: NamedCreativeReference | null,
 ): Promise<{ brief: EventBrief; concept: AiFirstConcept; namedReference: NamedCreativeReference | null }> {
   const sourceBrief = prePaymentPreviewSourceBrief(event);
-  const namedReference = await detectNamedCreativeReference(sourceBrief);
+  // Launch-safe default: generation requests use the curated, synchronous
+  // detector unless a caller explicitly supplies a reference it already
+  // resolved under its own bounded budget. This keeps a generic first-look
+  // request from silently adding an uncapped Sonnet classification call.
+  const namedReference = resolvedNamedReference !== undefined
+    ? resolvedNamedReference
+    : detectNamedCreativeReferenceSync(sourceBrief);
   const baseBrief = buildEventBrief({
     event,
     dna: {},
@@ -631,6 +633,11 @@ export interface PreviewQualityDependencies {
   referenceImages?: ArtworkReferenceImage[];
   /** Reference-led named themes use high output quality; generic previews stay medium. */
   quality?: ArtworkQuality;
+  /**
+   * Optional named reference already resolved by a caller with an explicit
+   * budget. Omitted means the zero-I/O curated detector is used.
+   */
+  namedReference?: NamedCreativeReference | null;
   /** Two internal candidates maximum; neither is customer-visible before approval. */
   maxCandidates?: 1 | 2;
   /**
@@ -664,6 +671,7 @@ export async function generateQualityLockedPreview(
   const { brief, concept } = await buildQualityLockedPreviewBrief(
     event,
     dependencies.inspirationNotes ?? "",
+    dependencies.namedReference,
   );
   const referenceImageRule = dependencies.referenceImages?.length
     ? "ATTACHED REFERENCE IMAGES ARE AUTHORITATIVE IDENTITY ANCHORS. Match the defining face, hair, outfit, creature markings, proportions, silhouette and visual-world details that make the requested subjects recognizable at a glance. Create a new event-specific scene; never copy wording, logos, watermarks or an invitation layout from the references."

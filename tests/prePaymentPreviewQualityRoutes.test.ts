@@ -168,6 +168,7 @@ describe("quality-locked prepayment preview routes", () => {
       inspirationNotes: "Official Blippi and Meekah identity references",
       quality: "high",
       maxCandidates: 2,
+      namedReference: expect.objectContaining({ id: "blippi-meekah" }),
     }));
     expect(generate.mock.calls[0][1].referenceImages).toHaveLength(1);
     expect(stored.prePaymentPreviewUrl).toBe(`${QUALITY_PREFIX}${APPROVED_BYTES.toString("base64")}`);
@@ -325,7 +326,7 @@ describe("quality-locked prepayment preview routes", () => {
     expect(stored.prePaymentPreviewAttempts).toBe(0);
   });
 
-  it("keeps original themes behind the separate quality-image release gate", async () => {
+  it("returns original themes immediately without invoking the arbitrary paid classifier", async () => {
     stored = genericEvent();
 
     const response = await request(makeApp({ mode: "direction-card" }))
@@ -336,6 +337,8 @@ describe("quality-locked prepayment preview routes", () => {
     expect(response.body.kind).toBe("direction-card");
     expect(resolveNamedReference).not.toHaveBeenCalled();
     expect(generate).not.toHaveBeenCalled();
+    expect(schedule).not.toHaveBeenCalled();
+    expect(stored.prePaymentPreviewAttempts).toBe(0);
   });
 
   it("stores original-theme artwork only after the private quality function approves it", async () => {
