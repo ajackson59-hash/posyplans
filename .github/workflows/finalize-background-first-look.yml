@@ -1,0 +1,315 @@
+name: Finalize Durable Background First Look
+
+on:
+  push:
+    branches:
+      - fix/launch-qa-find-my-event-label
+    paths:
+      - .github/workflows/finalize-background-first-look.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: postgres://test:test@127.0.0.1:5432/test
+      ANTHROPIC_API_KEY: test
+      OPENAI_API_KEY: test
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/launch-qa-find-my-event-label
+
+      - name: Install Vercel background-task support
+        run: npm install @vercel/functions --save
+
+      - name: Keep the customer on a live, recoverable first-look state
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          page = Path("client/src/pages/DraftGenerating.tsx")
+          text = page.read_text()
+
+          def replace_once(old: str, new: str) -> None:
+              global text
+              if old not in text:
+                  raise SystemExit(f"DraftGenerating patch target missing:\n{old[:300]}")
+              text = text.replace(old, new, 1)
+
+          replace_once(
+              '''interface EntitlementSummary {
+            eventId: number;
+            freeDraftState: string;
+            emailCaptured: boolean;
+            planTier: string;
+            sparkUnlocked: boolean;
+            canGenerate: boolean;
+          }
+''',
+              '''interface EntitlementSummary {
+            eventId: number;
+            freeDraftState: string;
+            emailCaptured: boolean;
+            planTier: string;
+            sparkUnlocked: boolean;
+            canGenerate: boolean;
+          }
+
+          type PrePaymentPreviewKind = "direction-card" | "reference-board" | "approved-image" | "none";
+          type PrePaymentPreviewGenerationState = "idle" | "generating" | "ready" | "fallback";
+
+          interface PrePaymentPreviewReadiness {
+            ready: boolean;
+            generationState: PrePaymentPreviewGenerationState;
+            pollAfterMs: number | null;
+            kind: PrePaymentPreviewKind;
+            namedReference: { id: string; label: string } | null;
+            automaticReferenceResolutionEnabled?: boolean;
+            automaticReferenceAttempted?: boolean;
+          }
+
+          interface PrePaymentPreviewStart extends PrePaymentPreviewReadiness {}
+''',
+          )
+
+          replace_once(
+              '''  const [persistedPreviewReady, setPersistedPreviewReady] = useState(false);
+
+            const previewAssetUrl = ownerToken
+              ? `/api/events/owner/${ownerToken}/prepayment-preview/asset`
+              : "";
+''',
+              '''  const [persistedPreviewReady, setPersistedPreviewReady] = useState(false);
+            const [backgroundPreviewStarted, setBackgroundPreviewStarted] = useState(false);
+            const [previewAssetVersion, setPreviewAssetVersion] = useState(0);
+
+            const previewAssetUrl = ownerToken
+              ? `/api/events/owner/${ownerToken}/prepayment-preview/asset?v=${previewAssetVersion}`
+              : "";
+''',
+          )
+
+          entitlement_block = '''  const entitlement = useQuery<EntitlementSummary>({
+            queryKey: ["master-planner-entitlement", ownerToken],
+            queryFn: () =>
+              apiRequestJson<EntitlementSummary>("GET", `/api/events/owner/${ownerToken}/master-planner/entitlement`),
+            enabled: !!ownerToken,
+          });
+'''
+          if entitlement_block not in text:
+              raise SystemExit("Entitlement query block missing")
+          text = text.replace(
+              entitlement_block,
+              entitlement_block + '''
+            const previewReadiness = useQuery<PrePaymentPreviewReadiness>({
+              queryKey: ["prepayment-preview-readiness", ownerToken],
+              queryFn: () => apiRequestJson<PrePaymentPreviewReadiness>(
+                "GET",
+                `/api/events/owner/${ownerToken}/prepayment-preview/readiness`,
+              ),
+              enabled: !!ownerToken,
+              retry: false,
+              refetchInterval: (query) => {
+                const current = query.state.data as PrePaymentPreviewReadiness | undefined;
+                return current?.generationState === "generating"
+                  ? current.pollAfterMs ?? 2500
+                  : false;
+              },
+            });
+''',
+              1,
+          )
+
+          replace_once(
+              '''  const startPrePaymentPreview = useMutation({
+            mutationFn: (candidateEmail: string) =>
+              apiRequestJson<{ ready: boolean }>("POST", `/api/events/owner/${ownerToken}/prepayment-preview`, {
+                email: candidateEmail,
+              }),
+            onSuccess: () => setPersistedPreviewReady(true),
+          });
+''',
+              '''  const startPrePaymentPreview = useMutation({
+            mutationFn: (candidateEmail: string) =>
+              apiRequestJson<PrePaymentPreviewStart>("POST", `/api/events/owner/${ownerToken}/prepayment-preview`, {
+                email: candidateEmail,
+              }),
+            onSuccess: (result) => {
+              if (result.ready) {
+                setBackgroundPreviewStarted(false);
+                setPreviewImageLoaded(false);
+                setPreviewImageFailed(false);
+                setPersistedPreviewReady(true);
+                setPreviewAssetVersion((current) => current + 1);
+              } else {
+                setBackgroundPreviewStarted(true);
+                void previewReadiness.refetch();
+              }
+            },
+          });
+''',
+          )
+
+          replace_once(
+              '''  const previewReady = startPrePaymentPreview.isSuccess || persistedPreviewReady;
+
+            // Move the host to the visible spinner as soon as generation starts—not
+''',
+              '''  const readinessKind = previewReadiness.data?.kind ?? "none";
+            const readinessState = previewReadiness.data?.generationState ?? "idle";
+            const previewInProgress =
+              startPrePaymentPreview.isPending
+              || backgroundPreviewStarted
+              || readinessState === "generating";
+            const previewReady =
+              persistedPreviewReady
+              || (readinessKind !== "none" && readinessState !== "generating");
+
+            useEffect(() => {
+              if (readinessState === "generating") {
+                previewTriggeredRef.current = true;
+                setBackgroundPreviewStarted(true);
+                setPersistedPreviewReady(false);
+                bringPreviewIntoView("smooth");
+                return;
+              }
+              if (readinessKind === "none") return;
+
+              previewTriggeredRef.current = true;
+              setBackgroundPreviewStarted(false);
+              setPreviewImageLoaded(false);
+              setPreviewImageFailed(false);
+              setPersistedPreviewReady(true);
+              setPreviewAssetVersion((current) => current + 1);
+              bringPreviewIntoView("smooth");
+            }, [bringPreviewIntoView, readinessKind, readinessState]);
+
+            // Move the host to the visible spinner as soon as generation starts—not
+''',
+          )
+
+          replace_once(
+              '''  useEffect(() => {
+            if (!startPrePaymentPreview.isPending) return;
+            bringPreviewIntoView("smooth");
+          }, [bringPreviewIntoView, startPrePaymentPreview.isPending]);
+''',
+              '''  useEffect(() => {
+            if (!previewInProgress) return;
+            bringPreviewIntoView("smooth");
+          }, [bringPreviewIntoView, previewInProgress]);
+''',
+          )
+
+          replace_once(
+              '''      if (startPrePaymentPreview.isPending || previewReady || previewImageLoaded) {
+                bringPreviewIntoView("auto");
+              }
+''',
+              '''      if (previewInProgress || previewReady || previewImageLoaded) {
+                bringPreviewIntoView("auto");
+              }
+''',
+          )
+          replace_once(
+              '''  }, [bringPreviewIntoView, previewImageLoaded, previewReady, startPrePaymentPreview.isPending]);
+''',
+              '''  }, [bringPreviewIntoView, previewImageLoaded, previewInProgress, previewReady]);
+''',
+          )
+
+          replace_once(
+              '''  } else if (startPrePaymentPreview.isPending) {
+            paywallCtaLabel = "Creating your personalized first look…";
+''',
+              '''  } else if (previewInProgress) {
+            paywallCtaLabel = "Creating your personalized first look…";
+''',
+          )
+
+          replace_once(
+              ''') : startPrePaymentPreview.isPending ? (
+                    <div className="flex aspect-square items-center justify-center gap-3 px-6 text-center text-sm text-muted-foreground">
+                      <Loader2 className="h-5 w-5 shrink-0 animate-spin" />
+                      <div>
+                        <p className="font-medium text-foreground">Creating your personalized first look…</p>
+                        <p className="mt-1 text-xs leading-relaxed">
+                          This can take a minute or two. You can leave this tab and come back—your finished preview will be waiting.
+                        </p>
+                      </div>
+                    </div>
+''',
+              ''') : previewInProgress ? (
+                    <div className="flex aspect-square items-center justify-center gap-3 px-6 text-center text-sm text-muted-foreground">
+                      <Loader2 className="h-5 w-5 shrink-0 animate-spin" />
+                      <div>
+                        <p className="font-medium text-foreground">Creating your personalized first look…</p>
+                        <p className="mt-1 text-xs leading-relaxed">
+                          Posy is finding the right visual references and reviewing the artwork privately. You can leave this tab and return—this will keep working.
+                        </p>
+                      </div>
+                    </div>
+''',
+          )
+
+          replace_once(
+              '''                  startPrePaymentPreview.isPending ||
+                  previewAssetLoading ||
+''',
+              '''                  previewInProgress ||
+                  previewAssetLoading ||
+''',
+          )
+
+          page.write_text(text)
+
+          guide = Path("client/src/components/PaywallPreviewGuide.tsx")
+          guide_text = guide.read_text()
+          guide_text = guide_text.replace(
+              '  kind: PreviewKind;\n',
+              '  kind: PreviewKind;\n  generationState?: "idle" | "generating" | "ready" | "fallback";\n',
+              1,
+          )
+          guide.write_text(guide_text)
+
+          test = Path("tests/draftGeneratingPaywall.test.tsx")
+          test_text = test.read_text()
+          entitlement_marker = '''      if (method === "GET" && url.endsWith("/master-planner/entitlement")) {
+'''
+          readiness_handler = '''      if (method === "GET" && url.endsWith("/prepayment-preview/readiness")) {
+                return Promise.resolve({
+                  ready: false,
+                  generationState: "idle",
+                  pollAfterMs: null,
+                  kind: "none",
+                  namedReference: null,
+                });
+              }
+'''
+          count = test_text.count(entitlement_marker)
+          if count != 3:
+              raise SystemExit(f"Expected three entitlement mock blocks, found {count}")
+          test_text = test_text.replace(entitlement_marker, readiness_handler + entitlement_marker)
+          test.write_text(test_text)
+          PY
+
+      - name: Verify background first-look flow
+        run: |
+          npm run check
+          npm test
+
+      - name: Commit verified implementation and retire temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/finalize-background-first-look.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package.json package-lock.json client/src/pages/DraftGenerating.tsx client/src/components/PaywallPreviewGuide.tsx tests/draftGeneratingPaywall.test.tsx
+          git commit -m 'Make named-theme first looks durable across navigation'
+          git push origin HEAD:fix/launch-qa-find-my-event-label
