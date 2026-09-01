@@ -1,0 +1,125 @@
+name: Finalize Automatic Named Theme First Look
+
+on:
+  push:
+    branches:
+      - fix/launch-qa-find-my-event-label
+    paths:
+      - .github/workflows/finalize-automatic-named-first-look.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      DATABASE_URL: postgres://test:test@127.0.0.1:5432/test
+      ANTHROPIC_API_KEY: test
+      OPENAI_API_KEY: test
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/launch-qa-find-my-event-label
+
+      - name: Diversify private reference generation and finish first-look copy
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_required(path: str, old: str, new: str, count: int | None = None) -> None:
+              file = Path(path)
+              text = file.read_text()
+              found = text.count(old)
+              if found == 0:
+                  raise SystemExit(f"Expected text not found in {path}: {old}")
+              if count is not None and found != count:
+                  raise SystemExit(f"Expected {count} occurrences in {path}, found {found}: {old}")
+              file.write_text(text.replace(old, new))
+
+          quality = "server/prePaymentPreviewQuality.ts"
+          replace_required(
+              quality,
+              "  type ArtworkGenerator,\n  type ArtworkQuality,",
+              "  type ArtworkGenerator,\n  type ArtworkModel,\n  type ArtworkQuality,",
+              1,
+          )
+          replace_required(
+              quality,
+              "      model: typeof DEFAULT_ARTWORK_MODEL;",
+              "      model: ArtworkModel;",
+              2,
+          )
+          replace_required(
+              quality,
+              '''  const quality = dependencies.quality ?? (dependencies.referenceImages?.length ? "high" : "medium");
+          const model = dependencies.referenceImages?.length ? REFERENCE_ARTWORK_MODEL : DEFAULT_ARTWORK_MODEL;''',
+              '''  const referenceLed = Boolean(dependencies.referenceImages?.length);
+          const quality = dependencies.quality ?? (referenceLed ? "high" : "medium");
+          const modelForCandidate = (candidate: number): ArtworkModel =>
+            referenceLed && candidate > 1 ? REFERENCE_ARTWORK_MODEL : DEFAULT_ARTWORK_MODEL;
+          let lastModel: ArtworkModel = modelForCandidate(1);''',
+              1,
+          )
+          replace_required(
+              quality,
+              '''  for (let candidate = 1; candidate <= maxCandidates; candidate += 1) {
+            const prompt = candidate === 1''',
+              '''  for (let candidate = 1; candidate <= maxCandidates; candidate += 1) {
+            const model = modelForCandidate(candidate);
+            lastModel = model;
+            const prompt = candidate === 1''',
+              1,
+          )
+          replace_required(
+              quality,
+              '        inputFidelity: dependencies.referenceImages?.length ? "high" : undefined,',
+              '        inputFidelity: referenceLed && model === REFERENCE_ARTWORK_MODEL ? "high" : undefined,',
+              1,
+          )
+          replace_required(
+              quality,
+              '''  return {
+            kind: "rejected",
+            attempts: maxCandidates,
+            model,
+            reviews,
+          };''',
+              '''  return {
+            kind: "rejected",
+            attempts: maxCandidates,
+            model: lastModel,
+            reviews,
+          };''',
+              1,
+          )
+
+          page = "client/src/pages/DraftGenerating.tsx"
+          replace_required(page, "Posy preview", "Posy first look", 1)
+          replace_required(
+              page,
+              'alt="A low-resolution preview of your personalized invitation direction"',
+              'alt="A personalized first look built from your event direction"',
+              1,
+          )
+          PY
+
+      - name: Verify automatic named-theme path
+        shell: bash
+        run: |
+          npm ci
+          npm run check
+          npm test
+
+      - name: Commit verified implementation and retire temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/finalize-automatic-named-first-look.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add server/prePaymentPreviewQuality.ts client/src/pages/DraftGenerating.tsx
+          git commit -m 'Complete automatic named-theme first-look pipeline'
+          git push origin HEAD:fix/launch-qa-find-my-event-label
