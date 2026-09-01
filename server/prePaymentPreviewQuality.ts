@@ -317,7 +317,8 @@ async function detectGeneralNamedCreativeReference(
  * General detector retained for a future explicitly budgeted workflow. The
  * five curated entries stay a synchronous, zero-latency fast path; other
  * properties can be classified here only when a caller deliberately invokes
- * this asynchronous function. The launch customer route does not call it.
+ * this asynchronous function. The customer POST schedules it once in the
+ * background; pure GET/read paths never call it.
  */
 export async function detectNamedCreativeReference(
   text: string,
@@ -397,8 +398,9 @@ export function buildDirectionCard(
   const detectedCues = CUE_RULES
     .filter((rule) => rule.trigger.test(brief))
     .map((rule) => rule.label);
+  const themeCue = event.themeName?.trim() || "";
   const fallbackCue = event.eventType?.trim() || "Personal celebration";
-  const cues = unique([...(named?.cues ?? []), ...detectedCues, fallbackCue]).slice(0, 4);
+  const cues = unique([...(named?.cues ?? []), themeCue, ...detectedCues, fallbackCue]).slice(0, 4);
   while (cues.length < 4) {
     const fallback = ["Made from your details", "Invitation-ready direction", "Event-specific styling", "Editable after unlock"][cues.length];
     cues.push(fallback);
@@ -416,7 +418,7 @@ export function buildDirectionCard(
   return {
     eventName: event.eventName?.trim() || "Your celebration",
     eyebrow: named ? "THEME RECOGNIZED" : "POSY CREATIVE DIRECTION",
-    headline: named?.label || cues[0],
+    headline: named?.label || themeCue || cues[0],
     supportingCopy: named
       ? "Posy captured the named visual world and every defining detail. Weak or generic artwork is never shown."
       : "A reliable first direction assembled from the details you shared. Weak or off-brief artwork is never shown.",
@@ -672,6 +674,8 @@ export interface PreviewQualityDependencies {
    * best-effort and never blocks the customer-visible result).
    */
   attemptRetention?: PreviewQualityAttemptRetention;
+  /** Aborts active image generation and vision review at the route deadline. */
+  signal?: AbortSignal;
 }
 
 /**
@@ -710,6 +714,17 @@ export async function generateQualityLockedPreview(
   let concreteNotes = "";
 
   for (let candidate = 1; candidate <= maxCandidates; candidate += 1) {
+    if (dependencies.signal?.aborted) {
+      return {
+        kind: "unavailable",
+        attempts: candidate - 1,
+        model: lastModel,
+        reviews,
+        error: dependencies.signal.reason instanceof Error
+          ? dependencies.signal.reason.message
+          : "Preview generation was cancelled.",
+      };
+    }
     const model = modelForCandidate(candidate);
     lastModel = model;
     const prompt = candidate === 1
@@ -725,6 +740,7 @@ export async function generateQualityLockedPreview(
         quality,
         inputFidelity: referenceLed && model === REFERENCE_ARTWORK_MODEL ? "high" : undefined,
         referenceImages: dependencies.referenceImages,
+        signal: dependencies.signal,
       });
     } catch (error) {
       return {
@@ -762,7 +778,13 @@ export async function generateQualityLockedPreview(
         ocr: true,
       });
       if (tier1.passed) {
-        vision = await runVision({ bytes: reviewedBytes, concept, brief, reviewMode: "teaser" });
+        vision = await runVision({
+          bytes: reviewedBytes,
+          concept,
+          brief,
+          reviewMode: "teaser",
+          signal: dependencies.signal,
+        });
       }
     } catch (error) {
       return {

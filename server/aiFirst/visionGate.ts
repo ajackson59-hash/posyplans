@@ -92,6 +92,7 @@ export interface VisionGateInput {
   client?: Anthropic;
   /** Invitation is the default; teaser reviews exact standalone pixels. */
   reviewMode?: "invitation" | "teaser";
+  signal?: AbortSignal;
 }
 
 export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdict> {
@@ -111,6 +112,22 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
       requiredPresent: [],
       excludedFound: [],
       notes: "ANTHROPIC_API_KEY is not configured",
+      passed: false,
+      failureCodes: [],
+      unavailable: true,
+      durationMs: Date.now() - started,
+      usage: { inputTokens: 0, outputTokens: 0 },
+    };
+  }
+
+  if (input.signal?.aborted) {
+    return {
+      scores: empty,
+      requiredPresent: [],
+      excludedFound: [],
+      notes: input.signal.reason instanceof Error
+        ? input.signal.reason.message
+        : "vision review was cancelled",
       passed: false,
       failureCodes: [],
       unavailable: true,
@@ -175,7 +192,7 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
           ],
         },
       ],
-    });
+    }, { signal: input.signal });
     raw = response.content.map((b) => (b.type === "text" ? b.text : "")).join("");
     usage = {
       inputTokens: response.usage?.input_tokens ?? 0,

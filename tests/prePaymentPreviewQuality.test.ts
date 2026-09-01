@@ -335,6 +335,29 @@ describe("prepayment preview quality lock", () => {
     expect(runVision.mock.calls[0][0].reviewMode).toBe("teaser");
   });
 
+  it("forwards one AbortSignal to image generation and vision review", async () => {
+    const sourceBytes = generatedPng(10);
+    const controller = new AbortController();
+    const generateImage = vi.fn(async () => ({
+      bytes: sourceBytes,
+      dataUrl: `data:image/png;base64,${sourceBytes.toString("base64")}`,
+      durationMs: 10,
+    }));
+    const runVision = vi.fn(async () => vision(true));
+
+    const result = await generateQualityLockedPreview(event, {
+      generateImage,
+      runTier1: () => tier1(true),
+      runVision,
+      maxCandidates: 1,
+      signal: controller.signal,
+    });
+
+    expect(result.kind).toBe("approved-image");
+    expect(generateImage.mock.calls[0][0].signal).toBe(controller.signal);
+    expect(runVision.mock.calls[0][0].signal).toBe(controller.signal);
+  });
+
   it("returns no customer-visible pixels when both private candidates fail", async () => {
     const generateImage = vi.fn(async () => ({
       bytes: generatedPng(3),

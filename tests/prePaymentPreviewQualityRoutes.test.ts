@@ -175,6 +175,7 @@ describe("quality-locked prepayment preview routes", () => {
       quality: "high",
       maxCandidates: 2,
       namedReference: expect.objectContaining({ id: "blippi-meekah" }),
+      signal: expect.any(AbortSignal),
     }));
     expect(generate.mock.calls[0][1].referenceImages).toHaveLength(1);
     expect(stored.prePaymentPreviewUrl).toBe(`${QUALITY_PREFIX}${APPROVED_BYTES.toString("base64")}`);
@@ -345,20 +346,25 @@ describe("quality-locked prepayment preview routes", () => {
     expect(stored.prePaymentPreviewAttempts).toBe(0);
   });
 
-  it("classifies an original theme once on the explicit action, then continues safely when it is not named IP", async () => {
+  it("returns immediately, then classifies an original theme once in the scheduled job", async () => {
     stored = genericEvent();
 
     const response = await request(makeApp({ mode: "direction-card" }))
       .post(`/api/events/owner/${OWNER}/prepayment-preview`)
       .send({ email: "host@example.com" });
 
-    expect(response.status).toBe(200);
-    expect(response.body.kind).toBe("direction-card");
+    expect(response.status).toBe(202);
+    expect(response.body.kind).toBe("none");
+    expect(response.body.directionCard.headline).toContain("Candlelit");
+    expect(classifyNamedReference).not.toHaveBeenCalled();
+    expect(schedule).toHaveBeenCalledTimes(1);
+
+    await runScheduledTask();
     expect(classifyNamedReference).toHaveBeenCalledTimes(1);
     expect(resolveNamedReference).not.toHaveBeenCalled();
     expect(generate).not.toHaveBeenCalled();
-    expect(schedule).not.toHaveBeenCalled();
-    expect(stored.prePaymentPreviewAttempts).toBe(0);
+    expect(stored.prePaymentPreviewAttempts).toBe(1);
+    expect(stored.prePaymentPreviewUrl).toMatch(/^data:image\/svg\+xml;base64,/);
   });
 
   it("recognizes an arbitrary named world once on POST and never reclassifies it from GET polling", async () => {
@@ -385,8 +391,15 @@ describe("quality-locked prepayment preview routes", () => {
 
     expect(response.status).toBe(202);
     expect(response.body.directionCard.headline).toBe("Sesame Street");
-    expect(classifyNamedReference).toHaveBeenCalledTimes(1);
+    expect(classifyNamedReference).not.toHaveBeenCalled();
+
+    const pollingBeforeWork = await request(makeApp())
+      .get(`/api/events/owner/${OWNER}/prepayment-preview/readiness`);
+    expect(pollingBeforeWork.status).toBe(200);
+    expect(classifyNamedReference).not.toHaveBeenCalled();
+
     await runScheduledTask();
+    expect(classifyNamedReference).toHaveBeenCalledTimes(1);
     expect(decodedStoredSvg()).toContain("Sesame Street");
 
     const ready = await request(makeApp())
@@ -395,12 +408,30 @@ describe("quality-locked prepayment preview routes", () => {
     expect(classifyNamedReference).toHaveBeenCalledTimes(1);
   });
 
-  it("stores original-theme artwork only after the private quality function approves it", async () => {
+  it("serves a quality-approved arbitrary named theme without reclassifying on GET", async () => {
+    stored = {
+      ...genericEvent(),
+      eventName: "Ella's Sesame Street Party",
+      themeName: "Sesame Street",
+      prePaymentPreviewUrl: `${QUALITY_PREFIX}${APPROVED_BYTES.toString("base64")}`,
+      prePaymentPreviewUsedAt: NOW,
+      prePaymentPreviewAttempts: 1,
+    } as unknown as Event;
+
+    const response = await request(makeApp({ mode: "direction-card", unlocked: true }))
+      .get(`/api/events/owner/${OWNER}/prepayment-preview/asset`);
+
+    expect(response.status).toBe(200);
+    expect(Buffer.compare(response.body, APPROVED_BYTES)).toBe(0);
+    expect(classifyNamedReference).not.toHaveBeenCalled();
+  });
+
+  it("stores original-theme artwork only after the scheduled private quality function approves it", async () => {
     stored = genericEvent();
     generate.mockResolvedValue({
       kind: "approved-image",
       dataUrl: APPROVED_PNG,
-      attempts: 2,
+      attempts: 1,
       model: "gpt-image-2",
       reviews: [],
     });
@@ -409,11 +440,28 @@ describe("quality-locked prepayment preview routes", () => {
       .post(`/api/events/owner/${OWNER}/prepayment-preview`)
       .send({ email: "host@example.com" });
 
-    expect(response.status).toBe(200);
-    expect(response.body.kind).toBe("approved-image");
+    expect(response.status).toBe(202);
+    expect(response.body.kind).toBe("none");
+    expect(classifyNamedReference).not.toHaveBeenCalled();
+    expect(generate).not.toHaveBeenCalled();
+
+    await runScheduledTask();
+
+    expect(classifyNamedReference).toHaveBeenCalledTimes(1);
     expect(generate).toHaveBeenCalledTimes(1);
+    expect(generate.mock.calls[0][1]).toEqual(expect.objectContaining({
+      quality: "medium",
+      maxCandidates: 1,
+      namedReference: null,
+      signal: expect.any(AbortSignal),
+    }));
     expect(stored.prePaymentPreviewUrl).toBe(`${QUALITY_PREFIX}${APPROVED_BYTES.toString("base64")}`);
     expect(stored.prePaymentPreviewAttempts).toBe(1);
+
+    const ready = await request(makeApp({ mode: "quality-image" }))
+      .get(`/api/events/owner/${OWNER}/prepayment-preview/readiness`);
+    expect(ready.status).toBe(200);
+    expect(ready.body.kind).toBe("approved-image");
   });
 
   it("never serves an ordinary PNG left by an older preview experiment", async () => {
