@@ -1,8 +1,9 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { Event } from "@shared/schema";
 import {
+  ARTWORK_EDGE_REQUIREMENT,
+  ARTWORK_TEXT_REQUIREMENT,
   aspectRatioForLayout,
-  buildArtworkPrompt,
   type AiFirstConcept,
 } from "@shared/aiFirstInvite";
 import { OVERLAY_COVERAGE } from "@shared/aiFirstLayout";
@@ -47,6 +48,17 @@ export type PrePaymentPreviewMode = "off" | "direction-card" | "quality-image";
 export function customerVisiblePreviewBytes(source: Buffer): Buffer {
   const decoded = decodePng(source);
   return encodePng(boxDownsampleRgb(decoded, PRE_PAYMENT_PREVIEW_LONG_EDGE));
+}
+
+/** The first-look image is standalone artwork, not the later invitation card. */
+function buildTeaserArtworkPrompt(concept: AiFirstConcept): string {
+  return [
+    `${concept.art.medium} illustration.`,
+    `${concept.art.composition}.`,
+    concept.art.prompt.trim().replace(/\s+$/, ""),
+    ARTWORK_EDGE_REQUIREMENT,
+    ARTWORK_TEXT_REQUIREMENT,
+  ].filter(Boolean).join(" ");
 }
 
 /**
@@ -689,7 +701,7 @@ export async function generateQualityLockedPreview(
     ? "ATTACHED REFERENCE IMAGES ARE AUTHORITATIVE IDENTITY ANCHORS. Match the defining face, hair, outfit, creature markings, proportions, silhouette and visual-world details that make the requested subjects recognizable at a glance. Create a new event-specific scene; never copy wording, logos, watermarks or an invitation layout from the references."
     : "";
   const basePrompt = [
-    buildArtworkPrompt(concept),
+    buildTeaserArtworkPrompt(concept),
     buildArtworkConstraints(brief),
     referenceImageRule,
   ].filter(Boolean).join("\n\n");
