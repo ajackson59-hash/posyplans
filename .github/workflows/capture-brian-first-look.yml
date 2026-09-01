@@ -1,0 +1,48 @@
+name: Capture Brian First Look for Visual QA
+
+on:
+  push:
+    branches:
+      - fix/launch-qa-find-my-event-label
+    paths:
+      - .github/workflows/capture-brian-first-look.yml
+
+permissions:
+  contents: write
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/launch-qa-find-my-event-label
+
+      - name: Download exact customer-facing first look
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location \
+            'https://zniggkeyyohniqrccblm.supabase.co/functions/v1/qa-brian-first-look-4f8c2a' \
+            --output brian-approved-first-look.png
+          test "$(stat -c%s brian-approved-first-look.png)" -gt 10000
+          file brian-approved-first-look.png
+
+      - name: Preserve private visual-QA evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: brian-approved-first-look
+          path: brian-approved-first-look.png
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Retire capture workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/capture-brian-first-look.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Retire Brian first-look capture workflow'
+          git push origin HEAD:fix/launch-qa-find-my-event-label
