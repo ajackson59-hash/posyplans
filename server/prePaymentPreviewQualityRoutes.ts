@@ -26,6 +26,7 @@ import {
   PREPAYMENT_PREVIEW_QUALITY_LOCK_CUTOFF_MS,
   buildDirectionCard,
   detectNamedCreativeReference,
+  detectNamedCreativeReferenceSync,
   directionCardDataUrl,
   generateQualityLockedPreview,
   readPrePaymentPreviewMode,
@@ -115,12 +116,29 @@ function referenceImagesFromDataUrls(values: string[]): ArtworkReferenceImage[] 
   });
 }
 
-function namedReferenceForEvent(event: Event): NamedCreativeReference | null {
-  return detectNamedCreativeReference(
-    [event.eventName, event.eventType, event.themeName, event.vibeDescription]
-      .filter(Boolean)
-      .join(" "),
-  );
+function eventNamedReferenceBrief(event: Event): string {
+  return [event.eventName, event.eventType, event.themeName, event.vibeDescription]
+    .filter(Boolean)
+    .join(" ");
+}
+
+/**
+ * Curated-only, synchronous, network-free. Used by every pure read path
+ * (readiness polling, asset delivery, direction-card rendering) so an
+ * ordinary page load or poll never pays for or awaits a model call.
+ */
+function namedReferenceForEventSync(event: Event): NamedCreativeReference | null {
+  return detectNamedCreativeReferenceSync(eventNamedReferenceBrief(event));
+}
+
+/**
+ * Curated + general classifier. Awaits a paid model call for anything
+ * outside the curated five, so this must only ever be invoked once per
+ * customer action — from the POST route, immediately before scheduling the
+ * background generation job — never from a GET/read/poll path.
+ */
+async function namedReferenceForEventGeneral(event: Event): Promise<NamedCreativeReference | null> {
+  return detectNamedCreativeReference(eventNamedReferenceBrief(event));
 }
 
 function imageIsCurrent(event: Event): boolean {
@@ -175,14 +193,20 @@ async function persistDirectionCard(
   store: PrePaymentPreviewQualityStorage,
   event: Event,
   timestamp: number,
+  resolvedNamed?: NamedCreativeReference | null,
 ): Promise<Event> {
+  // directionCardDataUrl is synchronous/network-free by default (curated-only
+  // detection). resolvedNamed lets the background job pass an already-paid,
+  // already-awaited general-classifier result so the card correctly reflects
+  // it instead of silently falling back to the generic card.
+  const dataUrl = directionCardDataUrl(event, resolvedNamed);
   const updated = await store.updateEventById(event.id, {
-    prePaymentPreviewUrl: directionCardDataUrl(event),
+    prePaymentPreviewUrl: dataUrl,
     prePaymentPreviewUsedAt: timestamp,
   });
   return updated ?? {
     ...event,
-    prePaymentPreviewUrl: directionCardDataUrl(event),
+    prePaymentPreviewUrl: dataUrl,
     prePaymentPreviewUsedAt: timestamp,
   };
 }
@@ -193,7 +217,7 @@ async function persistReferenceBoard(
   references: ArtworkReferenceImage[],
   timestamp: number,
 ): Promise<Event> {
-  const dataUrl = referenceBoardDataUrl(event, references);
+  const dataUrl = await referenceBoardDataUrl(event, references);
   const updated = await store.updateEventById(event.id, {
     prePaymentPreviewUrl: dataUrl,
     prePaymentPreviewUsedAt: timestamp,
@@ -220,12 +244,14 @@ interface ReadinessResponse {
   directionCard: DirectionCard;
 }
 
-function readiness(
+async function readiness(
   event: Event,
   mode: PrePaymentPreviewMode,
   autoNamedEnabled: boolean,
   timestamp: number,
-): ReadinessResponse {
+): Promise<ReadinessResponse> {
+  // Curated-only, synchronous, network-free — this runs on every readiness
+  // poll (every 2.5s while generating), so it must never await a model call.
   const card = buildDirectionCard(event);
   const kind = assetKind(event);
   const state = generationState(event, kind, timestamp);
@@ -308,7 +334,7 @@ async function runAutomaticNamedPreviewJob({
     }
 
     if (!resolved?.images.length) {
-      await persistDirectionCard(store, event, now());
+      await persistDirectionCard(store, event, now(), namedReference);
       console.warn(`[prepayment-preview] ${JSON.stringify({
         eventId: event.id,
         kind: "direction-card",
@@ -338,7 +364,7 @@ async function runAutomaticNamedPreviewJob({
       return;
     }
 
-    await persistDirectionCard(store, event, now());
+    await persistDirectionCard(store, event, now(), namedReference);
     console.warn(`[prepayment-preview] ${JSON.stringify({
       eventId: event.id,
       kind: result.kind,
@@ -350,7 +376,7 @@ async function runAutomaticNamedPreviewJob({
     })}`);
   } catch (error) {
     try {
-      await persistDirectionCard(store, event, now());
+      await persistDirectionCard(store, event, now(), namedReference);
     } catch (persistError) {
       console.error("[prepayment-preview] could not persist the safe named-theme fallback:", persistError);
     }
@@ -358,7 +384,7 @@ async function runAutomaticNamedPreviewJob({
   }
 }
 
-function readyResponse(event: Event, mode: PrePaymentPreviewMode, autoNamed: boolean, timestamp: number) {
+async function readyResponse(event: Event, mode: PrePaymentPreviewMode, autoNamed: boolean, timestamp: number) {
   return readiness(event, mode, autoNamed, timestamp);
 }
 
@@ -392,7 +418,7 @@ export function registerPrePaymentPreviewQualityRoutes(
     }
 
     res.setHeader("Cache-Control", "private, no-store");
-    return res.json(readiness(event, readMode(), autoNamedEnabled(), timestamp));
+    return res.json(await readiness(event, readMode(), autoNamedEnabled(), timestamp));
   });
 
   app.post("/api/events/owner/:ownerToken/prepayment-preview", async (req, res) => {
@@ -422,7 +448,11 @@ export function registerPrePaymentPreviewQualityRoutes(
     const namedAutoEnabled = autoNamedEnabled();
     let currentKind = assetKind(event);
     const hasHostReference = referenceImages.length > 0;
-    const namedReference = namedReferenceForEvent(event);
+    // Explicit customer action (POST = "show me my first look") is the one
+    // and only place allowed to await the paid general classifier. Its
+    // result is threaded into the scheduled background job below so the
+    // resolution happens once and is reused, never re-derived on reads.
+    const namedReference = await namedReferenceForEventGeneral(event);
 
     if (backgroundIsStale(event, timestamp)) {
       event = await persistDirectionCard(store, event, timestamp);
@@ -431,34 +461,34 @@ export function registerPrePaymentPreviewQualityRoutes(
 
     if (namedReference) {
       if (currentKind === "approved-image" && namedAutoEnabled && !hasHostReference) {
-        return res.json(readyResponse(event, mode, namedAutoEnabled, timestamp));
+        return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
       }
 
       if (currentKind === "reference-board" && !hasHostReference) {
-        return res.json(readyResponse(event, mode, namedAutoEnabled, timestamp));
+        return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
       }
 
       // This remains only as a backward-compatible optional override. The
       // normal screen no longer asks the customer to research or upload.
       if (hasHostReference) {
         event = await persistReferenceBoard(store, event, referenceImages, timestamp);
-        return res.json(readyResponse(event, mode, namedAutoEnabled, timestamp));
+        return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
       }
 
       if (!namedAutoEnabled) {
         if (currentKind !== "direction-card") {
           event = await persistDirectionCard(store, event, timestamp);
         }
-        return res.json(readyResponse(event, mode, namedAutoEnabled, timestamp));
+        return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
       }
 
       if (currentKind === "none" && event.prePaymentPreviewAttempts > 0) {
         res.setHeader("Retry-After", String(Math.ceil(POLL_AFTER_MS / 1000)));
-        return res.status(202).json(readiness(event, mode, namedAutoEnabled, timestamp));
+        return res.status(202).json(await readiness(event, mode, namedAutoEnabled, timestamp));
       }
 
       if (currentKind === "direction-card" && event.prePaymentPreviewAttempts > 0) {
-        return res.json(readyResponse(event, mode, namedAutoEnabled, timestamp));
+        return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
       }
 
       const allowance = canAttemptPrePaymentPreview(event);
@@ -466,7 +496,7 @@ export function registerPrePaymentPreviewQualityRoutes(
         if (currentKind !== "direction-card") {
           event = await persistDirectionCard(store, event, timestamp);
         }
-        return res.json(readyResponse(event, mode, namedAutoEnabled, timestamp));
+        return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
       }
 
       const reservedEvent = await reservePreviewAttempt(store, event, timestamp);
@@ -481,26 +511,26 @@ export function registerPrePaymentPreviewQualityRoutes(
       }));
 
       res.setHeader("Retry-After", String(Math.ceil(POLL_AFTER_MS / 1000)));
-      return res.status(202).json(readiness(reservedEvent, mode, namedAutoEnabled, timestamp));
+      return res.status(202).json(await readiness(reservedEvent, mode, namedAutoEnabled, timestamp));
     }
 
     // Original and generic themes retain the existing explicit release gate.
     if (currentKind === "approved-image" && mode === "quality-image") {
-      return res.json(readyResponse(event, mode, namedAutoEnabled, timestamp));
+      return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
     }
     if (currentKind === "direction-card" && mode !== "quality-image") {
-      return res.json(readyResponse(event, mode, namedAutoEnabled, timestamp));
+      return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
     }
 
     if (mode !== "quality-image") {
       event = await persistDirectionCard(store, event, timestamp);
-      return res.json(readyResponse(event, mode, namedAutoEnabled, timestamp));
+      return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
     }
 
     const allowance = canAttemptPrePaymentPreview(event);
     if (!allowance.ok) {
       event = await persistDirectionCard(store, event, timestamp);
-      return res.json(readyResponse(event, mode, namedAutoEnabled, timestamp));
+      return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
     }
 
     event = await reservePreviewAttempt(store, event, timestamp);
@@ -514,7 +544,7 @@ export function registerPrePaymentPreviewQualityRoutes(
     } catch (error) {
       event = await persistDirectionCard(store, event, now());
       console.error("[prepayment-preview] private quality pipeline failed closed:", error);
-      return res.json(readyResponse(event, mode, namedAutoEnabled, now()));
+      return res.json(await readyResponse(event, mode, namedAutoEnabled, now()));
     }
 
     if (result.kind === "approved-image"
@@ -526,7 +556,7 @@ export function registerPrePaymentPreviewQualityRoutes(
         privateCandidates: result.attempts,
       })}`);
       const completed = await store.getEventByOwnerToken(req.params.ownerToken) ?? event;
-      return res.json(readyResponse(completed, mode, namedAutoEnabled, now()));
+      return res.json(await readyResponse(completed, mode, namedAutoEnabled, now()));
     }
 
     event = await persistDirectionCard(store, event, now());
@@ -537,7 +567,7 @@ export function registerPrePaymentPreviewQualityRoutes(
       privateCandidates: result.attempts,
       error: result.kind === "unavailable" ? result.error : undefined,
     })}`);
-    return res.json(readyResponse(event, mode, namedAutoEnabled, now()));
+    return res.json(await readyResponse(event, mode, namedAutoEnabled, now()));
   });
 
   app.get("/api/events/owner/:ownerToken/prepayment-preview/asset", async (req, res) => {
@@ -545,7 +575,10 @@ export function registerPrePaymentPreviewQualityRoutes(
     if (!event) return res.status(404).json({ error: "No first look available yet" });
 
     const mode = readMode();
-    const namedReference = namedReferenceForEvent(event);
+    // Pure read path (asset delivery) — curated-only, synchronous, no model
+    // call. The already-resolved general-path identity (if any) lives in the
+    // persisted direction card itself, not re-derived here.
+    const namedReference = namedReferenceForEventSync(event);
     const namedAutoEnabled = autoNamedEnabled();
     const stored = event.prePaymentPreviewUrl || "";
     res.setHeader("Cache-Control", "private, no-store");

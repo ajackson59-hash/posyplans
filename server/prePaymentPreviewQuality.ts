@@ -1,3 +1,4 @@
+import Anthropic from "@anthropic-ai/sdk";
 import type { Event } from "@shared/schema";
 import {
   aspectRatioForLayout,
@@ -117,25 +118,192 @@ const NAMED_REFERENCES: readonly NamedCreativeReference[] = [
   },
 ];
 
-const GENERIC_MEDIA_REFERENCE =
-  /\b(tv(?:[- ]?series| show)?|television|netflix|disney|nickelodeon|movie|film|anime|video game|character universe|characters? from)\b/i;
-
-export function detectNamedCreativeReference(text: string): NamedCreativeReference | null {
+/** Curated fast path only. Zero I/O, zero latency, unchanged behavior for these five. */
+function detectCuratedNamedCreativeReference(text: string): NamedCreativeReference | null {
   for (const reference of NAMED_REFERENCES) {
     if (reference.trigger.test(text)) return reference;
   }
-  if (!GENERIC_MEDIA_REFERENCE.test(text)) return null;
+  return null;
+}
+
+/**
+ * Synchronous, network-free detection for read/poll-only call sites
+ * (readiness, direction-card rendering, asset delivery). Deliberately does
+ * NOT consult the general LLM classifier — those routes run on every page
+ * load and every 2.5s poll, and must stay deterministic, zero-cost and
+ * zero-latency. Only the explicit customer action that starts generation
+ * (the POST route) is allowed to pay for and await the general classifier;
+ * its resolved result is threaded back into the direction card afterward
+ * rather than being re-derived here.
+ */
+export function detectNamedCreativeReferenceSync(text: string): NamedCreativeReference | null {
+  if (!text.trim()) return null;
+  return detectCuratedNamedCreativeReference(text);
+}
+
+export const NAMED_THEME_DETECTION_MODEL = "claude-sonnet-4-6";
+
+const NAMED_THEME_DETECTION_SYSTEM = `You help a premium invitation studio understand whether a host's free-text event description names a SPECIFIC, identifiable entertainment property: a TV show, movie, streaming series, book series, video game, toy line, band/artist, or a named fictional character from one of those (e.g. "Sesame Street", "Cocomelon", "Frozen", "Spider-Man", "Pokemon", "Mickey Mouse", "Barbie", "Minecraft", "Taylor Swift"). This is different from a purely generic theme with no owned intellectual property (e.g. "unicorn party", "dinosaur party", "princess party", "jungle safari", "under the sea", "superhero party" with no named hero).
+
+If, and only if, a specific named property or character is identifiable, respond with strict JSON only (no markdown fences, no commentary):
+{"named": true, "label": "the real, correctly capitalized name of the show/movie/character/franchise", "cues": ["four short (2-4 word) visual cue phrases distinctive to this property"], "palette": ["#hex1", "#hex2", "#hex3", "#hex4"], "requirements": ["two or three sentences, each describing a concrete visual fact a reviewer could check for, phrased like: 'The <property> identity is unmistakable through <specific recognizable visual detail>—not a generic substitute.' Avoid vague phrases like 'themed' or 'inspired by'."]}
+
+The four palette hex colors should be four DISTINCT colors that evoke this property's real, recognizable brand palette: [dominant/ink color, accent color, light paper/background color, soft secondary color].
+
+If no specific named property is identifiable, respond with strict JSON only:
+{"named": false}
+
+Only ever output that one JSON object.`;
+
+interface NamedThemeDetectionDependencies {
+  client?: Anthropic;
+}
+
+interface LlmNamedThemeResult {
+  named: boolean;
+  label?: string;
+  cues?: string[];
+  palette?: string[];
+  requirements?: string[];
+}
+
+function extractJsonObject(raw: string): Record<string, any> | null {
+  const start = raw.indexOf("{");
+  const end = raw.lastIndexOf("}");
+  if (start === -1 || end <= start) return null;
+  try {
+    return JSON.parse(raw.slice(start, end + 1));
+  } catch {
+    return null;
+  }
+}
+
+const HEX_COLOR = /^#[0-9a-f]{6}$/i;
+const FALLBACK_GENERIC_PALETTE: [string, string, string, string] = [
+  "#445248", "#C9866B", "#F4EEE6", "#879887",
+];
+
+function slugifyLabel(label: string): string {
+  const slug = label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug ? `named-theme-${slug}` : "named-theme-unlabeled";
+}
+
+function escapeForRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function coerceLlmDetection(parsed: Record<string, any> | null): NamedCreativeReference | null {
+  if (!parsed || parsed.named !== true) return null;
+  const label = typeof parsed.label === "string" ? parsed.label.trim() : "";
+  if (!label) return null;
+
+  const rawCues = Array.isArray(parsed.cues)
+    ? parsed.cues.filter((c: unknown): c is string => typeof c === "string" && c.trim().length > 0)
+    : [];
+  const cues = rawCues.length > 0
+    ? rawCues.slice(0, 4)
+    : [label, "Recognizable visual world", "Event-specific setting", "No generic substitute"];
+
+  const rawPalette = Array.isArray(parsed.palette)
+    ? parsed.palette.filter((c: unknown): c is string => typeof c === "string" && HEX_COLOR.test(c))
+    : [];
+  const palette: [string, string, string, string] = [
+    rawPalette[0] ?? FALLBACK_GENERIC_PALETTE[0],
+    rawPalette[1] ?? FALLBACK_GENERIC_PALETTE[1],
+    rawPalette[2] ?? FALLBACK_GENERIC_PALETTE[2],
+    rawPalette[3] ?? FALLBACK_GENERIC_PALETTE[3],
+  ];
+
+  const rawRequirements = Array.isArray(parsed.requirements)
+    ? parsed.requirements.filter((r: unknown): r is string => typeof r === "string" && r.trim().length > 0)
+    : [];
+  const requirements = rawRequirements.length > 0
+    ? rawRequirements.slice(0, 3)
+    : [
+        `The ${label} identity is unmistakable through its real, recognizable visual details—not a generic adjacent category`,
+        "The requested event setting and activities remain visibly present alongside the named identity",
+      ];
+
   return {
-    id: "unregistered-media-reference",
-    label: "Named character or entertainment theme",
-    trigger: GENERIC_MEDIA_REFERENCE,
-    cues: ["Named visual world", "Recognizable characters", "Event-specific setting", "No generic substitute"],
-    palette: ["#445248", "#C9866B", "#F4EEE6", "#879887"],
-    requirements: [
-      "The named entertainment or character identity is recognizable at a glance and is not replaced by a generic adjacent category",
-      "The requested event setting and activities remain visibly present alongside the named identity",
-    ],
+    id: slugifyLabel(label),
+    label,
+    trigger: new RegExp(escapeForRegExp(label), "i"),
+    cues,
+    palette,
+    requirements,
   };
+}
+
+/** Normalized-text memoization so a single generation/polling session never
+ * pays for the same classification twice. Not a substitute for the curated
+ * fast path above — this only guards the general LLM path. */
+const NAMED_THEME_DETECTION_CACHE_TTL_MS = 15 * 60 * 1000;
+const namedThemeDetectionCache = new Map<string, { expiresAt: number; value: NamedCreativeReference | null }>();
+
+function cacheKeyFor(text: string): string {
+  return text.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+export function clearNamedThemeDetectionCache(): void {
+  namedThemeDetectionCache.clear();
+}
+
+async function detectGeneralNamedCreativeReference(
+  text: string,
+  dependencies: NamedThemeDetectionDependencies,
+): Promise<NamedCreativeReference | null> {
+  const key = cacheKeyFor(text);
+  const cached = namedThemeDetectionCache.get(key);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+
+  if (!process.env.ANTHROPIC_API_KEY && !dependencies.client) return null;
+
+  let result: NamedCreativeReference | null = null;
+  try {
+    // Client construction itself can throw (missing/invalid key, disallowed
+    // runtime, SDK misconfiguration) — that must fail closed too, not bubble
+    // out of this "never throws" detector.
+    const client = dependencies.client ?? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const response = await client.messages.create({
+      model: NAMED_THEME_DETECTION_MODEL,
+      max_tokens: 500,
+      system: NAMED_THEME_DETECTION_SYSTEM,
+      messages: [{ role: "user", content: text }],
+    });
+    const raw = response.content.map((b) => (b.type === "text" ? b.text : "")).join("");
+    const parsed = extractJsonObject(raw) as LlmNamedThemeResult | null;
+    result = coerceLlmDetection(parsed);
+  } catch (error) {
+    // Fail closed to "no named theme detected" rather than breaking the
+    // preview flow — same fail-open-to-safe-default posture as visionGate.
+    console.warn("[prepayment-preview] named-theme detection call failed:", error);
+    return null;
+  }
+
+  namedThemeDetectionCache.set(key, { expiresAt: Date.now() + NAMED_THEME_DETECTION_CACHE_TTL_MS, value: result });
+  return result;
+}
+
+/**
+ * Recognizes ANY named entertainment property the host types, not just a
+ * hardcoded shortlist. The five curated entries below stay a synchronous,
+ * zero-latency fast path with hand-authored quality-gate requirements and
+ * known-good reference images; everything else — Sesame Street, Cocomelon,
+ * Frozen, Spider-Man, Pokemon, or any future franchise — is classified by an
+ * LLM call whose (memoized) result feeds the same downstream direction card,
+ * brief enrichment and reference-resolution pipeline.
+ */
+export async function detectNamedCreativeReference(
+  text: string,
+  dependencies: NamedThemeDetectionDependencies = {},
+): Promise<NamedCreativeReference | null> {
+  if (!text.trim()) return null;
+  const curated = detectCuratedNamedCreativeReference(text);
+  if (curated) return curated;
+  return detectGeneralNamedCreativeReference(text, dependencies);
 }
 
 interface CueRule {
@@ -189,9 +357,20 @@ export interface DirectionCard {
   referenceRecommended: boolean;
 }
 
-export function buildDirectionCard(event: Event): DirectionCard {
+/**
+ * Synchronous and network-free: renders the card customers see on every page
+ * load and 2.5s poll from curated-only detection. Pass `resolvedNamed` when
+ * the caller already paid for and awaited the general classifier (i.e. only
+ * from the background job after the customer's explicit request) so the
+ * real identity is reflected without this function ever awaiting anything
+ * itself.
+ */
+export function buildDirectionCard(
+  event: Event,
+  resolvedNamed?: NamedCreativeReference | null,
+): DirectionCard {
   const brief = prePaymentPreviewSourceBrief(event);
-  const named = detectNamedCreativeReference(brief);
+  const named = resolvedNamed !== undefined ? resolvedNamed : detectNamedCreativeReferenceSync(brief);
   const detectedCues = CUE_RULES
     .filter((rule) => rule.trigger.test(brief))
     .map((rule) => rule.label);
@@ -311,8 +490,11 @@ export function renderDirectionCardSvg(card: DirectionCard): string {
 </svg>`;
 }
 
-export function directionCardDataUrl(event: Event): string {
-  const svg = renderDirectionCardSvg(buildDirectionCard(event));
+export function directionCardDataUrl(
+  event: Event,
+  resolvedNamed?: NamedCreativeReference | null,
+): string {
+  const svg = renderDirectionCardSvg(buildDirectionCard(event, resolvedNamed));
   return `data:image/svg+xml;base64,${Buffer.from(svg, "utf8").toString("base64")}`;
 }
 
@@ -341,12 +523,12 @@ function enrichBriefForNamedReference(brief: EventBrief, named: NamedCreativeRef
   };
 }
 
-export function buildQualityLockedPreviewBrief(
+export async function buildQualityLockedPreviewBrief(
   event: Event,
   inspirationNotes = "",
-): { brief: EventBrief; concept: AiFirstConcept; namedReference: NamedCreativeReference | null } {
+): Promise<{ brief: EventBrief; concept: AiFirstConcept; namedReference: NamedCreativeReference | null }> {
   const sourceBrief = prePaymentPreviewSourceBrief(event);
-  const namedReference = detectNamedCreativeReference(sourceBrief);
+  const namedReference = await detectNamedCreativeReference(sourceBrief);
   const baseBrief = buildEventBrief({
     event,
     dna: {},
@@ -354,7 +536,7 @@ export function buildQualityLockedPreviewBrief(
     inspirationNotes,
   });
   const brief = enrichBriefForNamedReference(baseBrief, namedReference);
-  const card = buildDirectionCard(event);
+  const card = buildDirectionCard(event, namedReference);
   const prompt = [
     "Premium editorial invitation artwork that proves the host's specific event was understood at a glance.",
     `ORIGINAL HOST BRIEF — authoritative: ${sourceBrief}`,
@@ -450,7 +632,7 @@ export async function generateQualityLockedPreview(
   const modelForCandidate = (candidate: number): ArtworkModel =>
     referenceLed && candidate > 1 ? REFERENCE_ARTWORK_MODEL : DEFAULT_ARTWORK_MODEL;
   let lastModel: ArtworkModel = modelForCandidate(1);
-  const { brief, concept } = buildQualityLockedPreviewBrief(
+  const { brief, concept } = await buildQualityLockedPreviewBrief(
     event,
     dependencies.inspirationNotes ?? "",
   );

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import type { Event } from "@shared/schema";
 import {
   REFERENCE_BOARD_DATA_URL_PREFIX,
@@ -35,8 +36,8 @@ const references = [
 ];
 
 describe("reference-backed prepayment preview board", () => {
-  it("embeds only the host's exact reference bytes alongside the captured event direction", () => {
-    const svg = renderReferenceBoardSvg(event, references);
+  it("embeds only the host's exact reference bytes alongside the captured event direction", async () => {
+    const svg = await renderReferenceBoardSvg(event, references);
 
     expect(svg).toContain('data-posy-preview-kind="reference-board"');
     expect(svg).toContain("Hayden&apos;s Unicorn Academy 7th Birthday");
@@ -53,8 +54,8 @@ describe("reference-backed prepayment preview board", () => {
     expect(svg).toContain('preserveAspectRatio="xMidYMid meet"');
   });
 
-  it("uses a distinct data-URL marker without decoding a large stored SVG", () => {
-    const dataUrl = referenceBoardDataUrl(event, references.slice(0, 1));
+  it("uses a distinct data-URL marker without decoding a large stored SVG", async () => {
+    const dataUrl = await referenceBoardDataUrl(event, references.slice(0, 1));
     expect(dataUrl.startsWith(REFERENCE_BOARD_DATA_URL_PREFIX)).toBe(true);
     expect(isReferenceBoardDataUrl(dataUrl)).toBe(true);
     expect(isReferenceBoardDataUrl("data:image/svg+xml;base64,AAAA")).toBe(false);
@@ -64,8 +65,8 @@ describe("reference-backed prepayment preview board", () => {
     expect(svg).toContain("VISUAL REFERENCE CAPTURED");
   });
 
-  it("requires one or two validated reference images", () => {
-    expect(() => renderReferenceBoardSvg(event, [])).toThrow(/one or two/i);
-    expect(() => renderReferenceBoardSvg(event, [...references, references[0]])).toThrow(/one or two/i);
+  it("requires one or two validated reference images", async () => {
+    await expect(renderReferenceBoardSvg(event, [])).rejects.toThrow(/one or two/i);
+    await expect(renderReferenceBoardSvg(event, [...references, references[0]])).rejects.toThrow(/one or two/i);
   });
 });
