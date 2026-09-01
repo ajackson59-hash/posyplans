@@ -53,6 +53,23 @@ Reply with JSON only:
 {"textLogoWatermarkFree":0,"artifactFree":0,"premiumFinish":0,"briefFidelity":0,"compositionQuality":0,"ageAppropriate":0,"requiredPresent":[{"requirement":"","present":true}],"excludedFound":[],"notes":""}`;
 
 /** Which retry remedy each failed dimension maps onto. */
+const TEASER_SYSTEM = `You are a strict art director reviewing the exact final pixels of a personalized pre-payment artwork teaser. The customer sees this artwork at its native aspect ratio with no browser crop, text box, badge, gradient, panel or other overlay.
+
+Score each 1-5. 4 means "a professional stationery studio would confidently show this as a compelling first look". 3 means acceptable but visibly compromised and is a FAIL.
+
+- textLogoWatermarkFree: 5 = no letters, words, numbers, logos, signatures or watermarks anywhere, including stylised or partial ones.
+- artifactFree: 5 = no melted, duplicated, malformed or anatomically broken forms.
+- premiumFinish: 5 = genuinely premium editorial illustration. Score 1-2 for clipart, stock-template or generic AI look.
+- briefFidelity: 5 = the artwork unmistakably delivers the host's named world, requested setting, activities and defining details.
+- compositionQuality: 5 = clear, balanced, intentional full-bleed composition in the exact supplied pixels. Any cropped face or head, edge-clipped lead subject, awkward empty panel, or required hero subject pushed partly outside the canvas forces 3 or lower.
+- ageAppropriate: 5 = correctly pitched for the celebrant's age. When the host explicitly requests an all-ages action or fantasy identity, do not fail merely because faithful imagery includes stylized fantasy weapons, non-graphic supernatural creatures, performance costumes or dramatic poses.
+
+Judge BRIEF REQUIREMENTS holistically through briefFidelity and ageAppropriate. For each VISIBLE MUST-HAVE, report whether that concrete subject is visibly present. List any EXCLUDED item you can actually see.
+
+Reply with JSON only:
+{"textLogoWatermarkFree":0,"artifactFree":0,"premiumFinish":0,"briefFidelity":0,"compositionQuality":0,"ageAppropriate":0,"requiredPresent":[{"requirement":"","present":true}],"excludedFound":[],"notes":""}`;
+
+/** Which retry remedy each failed dimension maps onto. */
 const CODE_FOR_DIMENSION: Record<keyof VisionScores, string> = {
   textLogoWatermarkFree: "text-detected",
   artifactFree: "artifact",
@@ -73,6 +90,8 @@ export interface VisionGateInput {
   concept: AiFirstConcept;
   brief: EventBrief;
   client?: Anthropic;
+  /** Invitation is the default; teaser reviews exact standalone pixels. */
+  reviewMode?: "invitation" | "teaser";
 }
 
 export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdict> {
@@ -102,11 +121,13 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
 
   const client = input.client ?? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const { brief, concept } = input;
+  const reviewMode = input.reviewMode ?? "invitation";
   const reviewRequirements = concreteSubjectReviewRequirementsForBrief(brief);
   const typeBox = typePlacementFrame(concept);
   const protectionAlpha = LOCAL_TYPE_SURFACE_ALPHA[concept.minOverlay];
-  const protectionInstruction =
-    concept.minOverlay === "plate"
+  const protectionInstruction = reviewMode === "teaser"
+    ? "FINAL CUSTOMER SURFACE: judge the supplied image exactly as shown. The browser adds no crop, type, badge, gradient, panel or overlay."
+    : concept.minOverlay === "plate"
       ? `FINAL TYPE PROTECTION: a ${(protectionAlpha * 100).toFixed(0)}%-opaque solid paper panel in ${concept.semanticPalette.textSurface} covers the LIVE TYPOGRAPHY BOX in the rendered invitation. Treat raw pixels beneath the box as covered. Required subjects must remain clearly recognizable outside the panel, and the remaining visible composition must still feel balanced.`
       : `FINAL TYPE PROTECTION: ${concept.minOverlay} (${(protectionAlpha * 100).toFixed(0)}% local surface opacity). The LIVE TYPOGRAPHY BOX must contain no face, person, hero object or required subject.`;
 
@@ -118,7 +139,9 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
         ? `Intended feeling: ${brief.vibe}`
         : "",
     `Direction: ${concept.conceptName} — ${concept.description}`,
-    `LIVE TYPOGRAPHY BOX (percentage of final card): left ${typeBox.left.toFixed(0)}%, top ${typeBox.top.toFixed(0)}%, width ${typeBox.width.toFixed(0)}%, height ${typeBox.height.toFixed(0)}%.`,
+    reviewMode === "teaser"
+      ? ""
+      : `LIVE TYPOGRAPHY BOX (percentage of final card): left ${typeBox.left.toFixed(0)}%, top ${typeBox.top.toFixed(0)}%, width ${typeBox.width.toFixed(0)}%, height ${typeBox.height.toFixed(0)}%.`,
     protectionInstruction,
     "",
     "BRIEF REQUIREMENTS (judge holistically in briefFidelity and ageAppropriate):",
@@ -139,7 +162,7 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
     const response = await client.messages.create({
       model: VISION_MODEL,
       max_tokens: 700,
-      system: SYSTEM,
+      system: reviewMode === "teaser" ? TEASER_SYSTEM : SYSTEM,
       messages: [
         {
           role: "user",

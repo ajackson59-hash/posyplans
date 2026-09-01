@@ -87,8 +87,9 @@ describe("prepayment preview quality lock", () => {
 
   it("keeps teaser artwork full-bleed instead of generating an unfinished blank panel", async () => {
     const { brief, concept } = await buildQualityLockedPreviewBrief(event);
-    expect(concept.minOverlay).toBe("veil");
-    expect(concept.art.composition).toContain("no visible panel");
+    expect(concept.minOverlay).toBe("none");
+    expect(concept.art.composition).toContain("no panel");
+    expect(concept.art.prompt).toContain("use the full portrait canvas");
     expect(concept.art.prompt).toContain("Do not draw a blank card");
     expect(brief.requirements.excluded).toContain(
       "a visible blank card, white rectangle, paper panel, placard, sign, frame or placeholder box inside the artwork",
@@ -328,6 +329,8 @@ describe("prepayment preview quality lock", () => {
     expect(readPngSize(returnedBytes)).toEqual({ width: 315, height: 560 });
     expect(Buffer.compare(runTier1.mock.calls[0][0].bytes, returnedBytes)).toBe(0);
     expect(Buffer.compare(runVision.mock.calls[0][0].bytes, returnedBytes)).toBe(0);
+    expect(runTier1.mock.calls[0][0].layoutApplied).toBe(false);
+    expect(runVision.mock.calls[0][0].reviewMode).toBe("teaser");
   });
 
   it("returns no customer-visible pixels when both private candidates fail", async () => {

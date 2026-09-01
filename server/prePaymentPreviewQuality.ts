@@ -558,7 +558,7 @@ export async function buildQualityLockedPreviewBrief(
   const prompt = [
     "Premium editorial invitation artwork that proves the host's specific event was understood at a glance.",
     `ORIGINAL HOST BRIEF — authoritative: ${sourceBrief}`,
-    "LAYOUT CONTRACT: reserve a naturally calm, low-detail typography zone at approximately left 21%, top 32%, width 58%, height 40%. Keep every required person, face, creature, signature object and defining interaction fully visible outside that zone. Do not draw a blank card, white rectangle, paper panel, placard, sign, frame or placeholder box—the quiet area must remain part of the continuous full-bleed scene.",
+    "TEASER COMPOSITION CONTRACT: use the full portrait canvas for one cohesive, compelling scene. Keep every required person, face, creature, signature object and defining interaction fully visible with comfortable breathing room at every edge. Do not draw a blank card, white rectangle, paper panel, placard, sign, frame or placeholder box anywhere in the artwork.",
     inspirationNotes ? `HOST-PROVIDED VISUAL REFERENCE NOTES — authoritative: ${inspirationNotes}` : "",
     "Depict the actual people, characters, setting, activities and defining objects requested. The event scene—not an accessory, logo-like symbol, pattern, palette or abstract shorthand—must dominate the composition.",
     "FINISH CONTRACT: create bespoke editorial stationery artwork with layered depth, tactile material detail, controlled lighting and refined art direction. It must not resemble generic clipart, stock illustration, a television promo still, a merchandising graphic or a flat commercial poster. Keep faces, hands, limbs and object interactions anatomically coherent.",
@@ -586,11 +586,11 @@ export async function buildQualityLockedPreviewBrief(
     },
     art: {
       medium: namedReference ? "premium character-led editorial illustration" : "premium narrative editorial illustration",
-      composition: "portrait scene-led full-bleed composition arranged around a naturally quiet central typography zone; all required subjects, faces and defining objects remain fully visible, with no visible panel, blank rectangle or cropped head",
+      composition: "portrait scene-led full-bleed teaser using the full canvas; all required subjects, faces and defining objects remain fully visible, with no panel, blank rectangle, cropped head or edge-clipped hero subject",
       prompt: prompt.slice(0, 1200),
     },
     safeTypographyRegion: "center",
-    minOverlay: "veil",
+    minOverlay: "none",
   };
 
   return { brief, concept, namedReference };
@@ -746,10 +746,11 @@ export async function generateQualityLockedPreview(
         concept,
         overlayCoverage: OVERLAY_COVERAGE[concept.minOverlay],
         artworkOpacity: 1,
+        layoutApplied: false,
         ocr: true,
       });
       if (tier1.passed) {
-        vision = await runVision({ bytes: reviewedBytes, concept, brief });
+        vision = await runVision({ bytes: reviewedBytes, concept, brief, reviewMode: "teaser" });
       }
     } catch (error) {
       return {

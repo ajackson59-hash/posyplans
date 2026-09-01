@@ -139,6 +139,31 @@ describe("tier 1 — palette diagnostics", () => {
     expect(finding?.critical).toBe(true);
     expect(result.passed).toBe(false);
   });
+
+  it("does not apply invitation-only crop, type and overlay checks to a standalone teaser", () => {
+    const result = tier1(busyTypeRegionPng(), {
+      concept: concept({
+        minOverlay: "none",
+        placementId: "centre",
+        safeTypographyRegion: "center",
+        semanticPalette: {
+          textSurface: "#FFFFFF",
+          headlineColor: "#F2F2F2",
+          bodyColor: "#EFEFEF",
+          accentColor: "#EEEEEE",
+        },
+      }),
+      overlayCoverage: 0.9,
+      artworkOpacity: 0.2,
+      layoutApplied: false,
+    });
+    const found = result.findings.map((finding) => finding.code);
+    expect(found).not.toContain("crop-unsafe");
+    expect(found).not.toContain("quiet-region");
+    expect(found).not.toContain("text-contrast");
+    expect(found).not.toContain("overlay-coverage");
+    expect(found).not.toContain("layout-opacity");
+  });
 });
 
 describe("tier 1 — the measurements themselves", () => {
@@ -483,6 +508,38 @@ describe("tier 2 — acceptance", () => {
     expect(reviewText).toContain("left 21%, top 32%, width 58%, height 40%");
     expect(reviewText).toContain("FINAL TYPE PROTECTION: veil (88% local surface opacity)");
     expect(reviewText).toContain("no face, person, hero object or required subject");
+  });
+
+  it("reviews a teaser as exact standalone pixels without inventing a live type box", async () => {
+    let reviewText = "";
+    let systemText = "";
+    const capturingCritic = {
+      messages: {
+        create: async (request: any) => {
+          systemText = request.system;
+          reviewText = request.messages[0].content.find((part: any) => part.type === "text")?.text ?? "";
+          return {
+            content: [{ type: "text", text: JSON.stringify({ ...allFive, requiredPresent: [], excludedFound: [], notes: "" }) }],
+            usage: { input_tokens: 1200, output_tokens: 180 },
+          };
+        },
+      },
+    } as unknown as Anthropic;
+
+    const verdict = await runVisionGate({
+      bytes: artworkPng(),
+      concept: concept({ minOverlay: "none" }),
+      brief: brief(),
+      client: capturingCritic,
+      reviewMode: "teaser",
+    });
+
+    expect(verdict.passed).toBe(true);
+    expect(systemText).toContain("exact final pixels");
+    expect(systemText).toContain("no browser crop");
+    expect(reviewText).toContain("FINAL CUSTOMER SURFACE");
+    expect(reviewText).not.toContain("LIVE TYPOGRAPHY BOX");
+    expect(reviewText).not.toContain("FINAL TYPE PROTECTION");
   });
 
   it("reviews a paper-panel concept as the final protected card without hiding required subjects", async () => {

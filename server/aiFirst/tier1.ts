@@ -121,6 +121,11 @@ export interface Tier1Input {
   overlayCoverage: number;
   /** Artwork opacity actually applied by the layout. */
   artworkOpacity: number;
+  /**
+   * False for a standalone artwork teaser shown at its native ratio with no
+   * live type or browser crop. Invitation rendering keeps the default true.
+   */
+  layoutApplied?: boolean;
   /** Enables the OCR pass. Off in unit tests, on in production. */
   ocr?: boolean;
 }
@@ -216,7 +221,7 @@ export function runTier1Checks(input: Tier1Input): Tier1Result {
   // D7 — object-cover crop safety.
   const salientRegions = findSalientRegions(grid);
   const crop = evaluateCropSafety(concept.layoutStyle, image, salientRegions);
-  if (!crop.safe) {
+  if (input.layoutApplied !== false && !crop.safe) {
     findings.push({
       code: "crop-unsafe",
       critical: true,
@@ -228,7 +233,7 @@ export function runTier1Checks(input: Tier1Input): Tier1Result {
 
   // D8 — the declared typography-safe region is actually quiet.
   const quiet = quietnessOfTypeRegion(grid, concept);
-  if (!quiet.quiet) {
+  if (input.layoutApplied !== false && !quiet.quiet) {
     findings.push({
       code: "quiet-region",
       critical: true,
@@ -247,7 +252,7 @@ export function runTier1Checks(input: Tier1Input): Tier1Result {
     ["accentColor", 4.5],
   ] as const) {
     const ratio = contrastRatio(concept.semanticPalette[role], concept.semanticPalette.textSurface);
-    if (ratio < floor) {
+    if (input.layoutApplied !== false && ratio < floor) {
       findings.push({
         code: "text-contrast",
         critical: true,
@@ -259,7 +264,7 @@ export function runTier1Checks(input: Tier1Input): Tier1Result {
   }
 
   // D10 — overlay coverage.
-  if (input.overlayCoverage > 0.4) {
+  if (input.layoutApplied !== false && input.overlayCoverage > 0.4) {
     findings.push({
       code: "overlay-coverage",
       critical: false,
@@ -271,7 +276,7 @@ export function runTier1Checks(input: Tier1Input): Tier1Result {
 
   // D11 — layout-opacity sanity. A focal subject faded to invisibility is the
   // defect that passed every check the old gate had.
-  if (input.artworkOpacity < 0.5) {
+  if (input.layoutApplied !== false && input.artworkOpacity < 0.5) {
     const visibility = focalVisibilityAfterOpacity(grid, input.artworkOpacity, concept.semanticPalette.textSurface);
     if (visibility < MIN_FOCAL_VISIBILITY_RATIO) {
       findings.push({
