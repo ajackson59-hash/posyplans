@@ -1,15 +1,28 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import type Anthropic from "@anthropic-ai/sdk";
 import type { Event } from "@shared/schema";
 import type { Tier1Result } from "../server/aiFirst/tier1";
 import type { VisionVerdict } from "../server/aiFirst/visionGate";
 import {
   buildDirectionCard,
   buildQualityLockedPreviewBrief,
+  clearNamedThemeDetectionCache,
   detectNamedCreativeReference,
   directionCardDataUrl,
   generateQualityLockedPreview,
   readPrePaymentPreviewMode,
 } from "../server/prePaymentPreviewQuality";
+
+/** Minimal fake matching the one Anthropic call shape this module needs. */
+function fakeAnthropicClient(jsonText: string): Anthropic {
+  return {
+    messages: {
+      create: vi.fn(async () => ({
+        content: [{ type: "text", text: jsonText }],
+      })),
+    },
+  } as unknown as Anthropic;
+}
 
 const event = {
   id: 10,
@@ -60,8 +73,12 @@ function vision(passed: boolean, notes = "none"): VisionVerdict {
 }
 
 describe("prepayment preview quality lock", () => {
-  it("keeps teaser artwork full-bleed instead of generating an unfinished blank panel", () => {
-    const { brief, concept } = buildQualityLockedPreviewBrief(event);
+  afterEach(() => {
+    clearNamedThemeDetectionCache();
+  });
+
+  it("keeps teaser artwork full-bleed instead of generating an unfinished blank panel", async () => {
+    const { brief, concept } = await buildQualityLockedPreviewBrief(event);
     expect(concept.minOverlay).toBe("veil");
     expect(concept.art.composition).toContain("no visible panel");
     expect(concept.art.prompt).toContain("Do not draw a blank card");
@@ -78,21 +95,84 @@ describe("prepayment preview quality lock", () => {
     expect(readPrePaymentPreviewMode({ POSY_PREPAYMENT_PREVIEW_MODE: "quality-image" })).toBe("quality-image");
   });
 
-  it("detects exact entertainment references instead of collapsing them to a generic category", () => {
-    expect(detectNamedCreativeReference("Blippi and Meekah party")?.id).toBe("blippi-meekah");
-    expect(detectNamedCreativeReference("Unicorn Academy TV series winter party")?.id).toBe("unicorn-academy");
-    expect(detectNamedCreativeReference("simple unicorn garden party")).toBeNull();
+  it("detects exact entertainment references instead of collapsing them to a generic category via the curated fast path", async () => {
+    expect((await detectNamedCreativeReference("Blippi and Meekah party"))?.id).toBe("blippi-meekah");
+    expect((await detectNamedCreativeReference("Unicorn Academy TV series winter party"))?.id).toBe("unicorn-academy");
+    expect(await detectNamedCreativeReference("simple unicorn garden party")).toBeNull();
   });
 
-  it("builds a useful deterministic proof from the host's actual details", () => {
-    const card = buildDirectionCard(event);
+  it("has no curated entry for a generic theme with no named IP, and the classifier is never consulted when a client is not supplied", async () => {
+    // No client and no API key: the general path must fail closed to null
+    // rather than throwing, so a transient outage never breaks the preview.
+    vi.stubEnv("ANTHROPIC_API_KEY", "");
+    expect(await detectNamedCreativeReference("simple dinosaur museum party")).toBeNull();
+    vi.unstubAllEnvs();
+  });
+
+  it("recognizes an arbitrary named entertainment property via the general LLM classifier, not just the five curated franchises", async () => {
+    const cases: { text: string; label: string }[] = [
+      { text: "Sesame Street themed party", label: "Sesame Street" },
+      { text: "Cocomelon birthday bash", label: "Cocomelon" },
+      { text: "Frozen party for my daughter", label: "Frozen" },
+      { text: "Spider-Man party for my son", label: "Spider-Man" },
+      { text: "Pokemon themed celebration", label: "Pokemon" },
+      { text: "Mickey Mouse clubhouse party", label: "Mickey Mouse" },
+    ];
+    for (const { text, label } of cases) {
+      clearNamedThemeDetectionCache();
+      const client = fakeAnthropicClient(JSON.stringify({
+        named: true,
+        label,
+        cues: [`${label} world`, "Signature characters", "Event setting", "No generic substitute"],
+        palette: ["#111111", "#222222", "#eeeeee", "#999999"],
+        requirements: [`The ${label} identity is unmistakable through its real, recognizable visual details—not a generic substitute.`],
+      }));
+      const detected = await detectNamedCreativeReference(text, { client });
+      expect(detected).not.toBeNull();
+      expect(detected?.label).toBe(label);
+      expect(detected?.id).toMatch(/^named-theme-/);
+      expect(detected?.requirements.join(" ")).toContain(label);
+    }
+  });
+
+  it("memoizes a general classification so a second identical lookup does not call the model again", async () => {
+    const client = fakeAnthropicClient(JSON.stringify({
+      named: true,
+      label: "Bobs Burgers",
+      cues: ["a", "b", "c", "d"],
+      palette: ["#111111", "#222222", "#eeeeee", "#999999"],
+      requirements: ["req one"],
+    }));
+    const first = await detectNamedCreativeReference("Bobs Burgers party", { client });
+    const second = await detectNamedCreativeReference("Bobs Burgers party", { client });
+    expect(first?.label).toBe("Bobs Burgers");
+    expect(second?.label).toBe("Bobs Burgers");
+    expect((client.messages.create as ReturnType<typeof vi.fn>)).toHaveBeenCalledTimes(1);
+  });
+
+  it("treats a clearly generic theme as not-named even when the classifier is consulted", async () => {
+    const client = fakeAnthropicClient(JSON.stringify({ named: false }));
+    const detected = await detectNamedCreativeReference("simple dinosaur museum party", { client });
+    expect(detected).toBeNull();
+  });
+
+  it("fails closed to null instead of throwing when the classifier call errors", async () => {
+    const client = {
+      messages: { create: vi.fn(async () => { throw new Error("boom"); }) },
+    } as unknown as Anthropic;
+    const detected = await detectNamedCreativeReference("some never-before-seen franchise party", { client });
+    expect(detected).toBeNull();
+  });
+
+  it("builds a useful deterministic proof from the host's actual details", async () => {
+    const card = await buildDirectionCard(event);
     expect(card.eventName).toContain("Brian");
     expect(card.headline).toBe("Blippi + Meekah");
     expect(card.cues).toEqual(expect.arrayContaining(["Indoor soft play", "Bubbles", "Ice-cream treats"]));
     expect(card.referenceRecommended).toBe(true);
     expect(card.supportingCopy).toContain("Weak or generic artwork is never shown.");
 
-    const dataUrl = directionCardDataUrl(event);
+    const dataUrl = await directionCardDataUrl(event);
     expect(dataUrl).toMatch(/^data:image\/svg\+xml;base64,/);
     const svg = Buffer.from(dataUrl.split(",")[1], "base64").toString("utf8");
     expect(svg).toContain("Brian and Blippi&apos;s Extravaganza");

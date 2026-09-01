@@ -539,9 +539,9 @@ export function registerPrePaymentPreviewBenchmarkRoutes(
       caseId: testCase.id,
       run: parsed.data.run,
       eventName: testCase.eventName,
-      namedReference: detectNamedCreativeReference(
+      namedReference: (await detectNamedCreativeReference(
         `${testCase.eventName} ${testCase.eventType} ${testCase.vibeDescription}`,
-      )?.id ?? null,
+      ))?.id ?? null,
       referenceNotesUsed: Boolean(testCase.benchmarkReferenceNotes),
       referencePixelsUsed: referenceImages.length > 0,
       kind: result.kind,

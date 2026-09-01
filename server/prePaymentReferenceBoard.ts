@@ -56,15 +56,15 @@ function embeddedImage(reference: ArtworkReferenceImage): string {
  * reference pixels alongside the event details Posy captured. It is therefore
  * deterministic, private and free of image-provider spend.
  */
-export function renderReferenceBoardSvg(
+export async function renderReferenceBoardSvg(
   event: Event,
   references: ArtworkReferenceImage[],
-): string {
+): Promise<string> {
   if (references.length < 1 || references.length > 2) {
     throw new Error("A reference board requires one or two images.");
   }
 
-  const card = buildDirectionCard(event);
+  const card = await buildDirectionCard(event);
   const [ink, accent, paper, soft] = card.palette;
   const eventLines = wrapWords(card.eventName, 31, 2);
   const headlineLines = wrapWords(card.headline, 27, 2);
@@ -151,11 +151,11 @@ export function renderReferenceBoardSvg(
 </svg>`;
 }
 
-export function referenceBoardDataUrl(
+export async function referenceBoardDataUrl(
   event: Event,
   references: ArtworkReferenceImage[],
-): string {
-  const svg = renderReferenceBoardSvg(event, references);
+): Promise<string> {
+  const svg = await renderReferenceBoardSvg(event, references);
   return `${REFERENCE_BOARD_DATA_URL_PREFIX}${Buffer.from(svg, "utf8").toString("base64")}`;
 }
 

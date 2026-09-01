@@ -115,7 +115,7 @@ function referenceImagesFromDataUrls(values: string[]): ArtworkReferenceImage[] 
   });
 }
 
-function namedReferenceForEvent(event: Event): NamedCreativeReference | null {
+async function namedReferenceForEvent(event: Event): Promise<NamedCreativeReference | null> {
   return detectNamedCreativeReference(
     [event.eventName, event.eventType, event.themeName, event.vibeDescription]
       .filter(Boolean)
@@ -176,13 +176,14 @@ async function persistDirectionCard(
   event: Event,
   timestamp: number,
 ): Promise<Event> {
+  const dataUrl = await directionCardDataUrl(event);
   const updated = await store.updateEventById(event.id, {
-    prePaymentPreviewUrl: directionCardDataUrl(event),
+    prePaymentPreviewUrl: dataUrl,
     prePaymentPreviewUsedAt: timestamp,
   });
   return updated ?? {
     ...event,
-    prePaymentPreviewUrl: directionCardDataUrl(event),
+    prePaymentPreviewUrl: dataUrl,
     prePaymentPreviewUsedAt: timestamp,
   };
 }
@@ -193,7 +194,7 @@ async function persistReferenceBoard(
   references: ArtworkReferenceImage[],
   timestamp: number,
 ): Promise<Event> {
-  const dataUrl = referenceBoardDataUrl(event, references);
+  const dataUrl = await referenceBoardDataUrl(event, references);
   const updated = await store.updateEventById(event.id, {
     prePaymentPreviewUrl: dataUrl,
     prePaymentPreviewUsedAt: timestamp,
@@ -220,13 +221,13 @@ interface ReadinessResponse {
   directionCard: DirectionCard;
 }
 
-function readiness(
+async function readiness(
   event: Event,
   mode: PrePaymentPreviewMode,
   autoNamedEnabled: boolean,
   timestamp: number,
-): ReadinessResponse {
-  const card = buildDirectionCard(event);
+): Promise<ReadinessResponse> {
+  const card = await buildDirectionCard(event);
   const kind = assetKind(event);
   const state = generationState(event, kind, timestamp);
   const referenceCaptured = kind === "reference-board";
@@ -358,7 +359,7 @@ async function runAutomaticNamedPreviewJob({
   }
 }
 
-function readyResponse(event: Event, mode: PrePaymentPreviewMode, autoNamed: boolean, timestamp: number) {
+async function readyResponse(event: Event, mode: PrePaymentPreviewMode, autoNamed: boolean, timestamp: number) {
   return readiness(event, mode, autoNamed, timestamp);
 }
 
@@ -392,7 +393,7 @@ export function registerPrePaymentPreviewQualityRoutes(
     }
 
     res.setHeader("Cache-Control", "private, no-store");
-    return res.json(readiness(event, readMode(), autoNamedEnabled(), timestamp));
+    return res.json(await readiness(event, readMode(), autoNamedEnabled(), timestamp));
   });
 
   app.post("/api/events/owner/:ownerToken/prepayment-preview", async (req, res) => {
@@ -422,7 +423,7 @@ export function registerPrePaymentPreviewQualityRoutes(
     const namedAutoEnabled = autoNamedEnabled();
     let currentKind = assetKind(event);
     const hasHostReference = referenceImages.length > 0;
-    const namedReference = namedReferenceForEvent(event);
+    const namedReference = await namedReferenceForEvent(event);
 
     if (backgroundIsStale(event, timestamp)) {
       event = await persistDirectionCard(store, event, timestamp);
@@ -431,34 +432,34 @@ export function registerPrePaymentPreviewQualityRoutes(
 
     if (namedReference) {
       if (currentKind === "approved-image" && namedAutoEnabled && !hasHostReference) {
-        return res.json(readyResponse(event, mode, namedAutoEnabled, timestamp));
+        return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
       }
 
       if (currentKind === "reference-board" && !hasHostReference) {
-        return res.json(readyResponse(event, mode, namedAutoEnabled, timestamp));
+        return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
       }
 
       // This remains only as a backward-compatible optional override. The
       // normal screen no longer asks the customer to research or upload.
       if (hasHostReference) {
         event = await persistReferenceBoard(store, event, referenceImages, timestamp);
-        return res.json(readyResponse(event, mode, namedAutoEnabled, timestamp));
+        return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
       }
 
       if (!namedAutoEnabled) {
         if (currentKind !== "direction-card") {
           event = await persistDirectionCard(store, event, timestamp);
         }
-        return res.json(readyResponse(event, mode, namedAutoEnabled, timestamp));
+        return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
       }
 
       if (currentKind === "none" && event.prePaymentPreviewAttempts > 0) {
         res.setHeader("Retry-After", String(Math.ceil(POLL_AFTER_MS / 1000)));
-        return res.status(202).json(readiness(event, mode, namedAutoEnabled, timestamp));
+        return res.status(202).json(await readiness(event, mode, namedAutoEnabled, timestamp));
       }
 
       if (currentKind === "direction-card" && event.prePaymentPreviewAttempts > 0) {
-        return res.json(readyResponse(event, mode, namedAutoEnabled, timestamp));
+        return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
       }
 
       const allowance = canAttemptPrePaymentPreview(event);
@@ -466,7 +467,7 @@ export function registerPrePaymentPreviewQualityRoutes(
         if (currentKind !== "direction-card") {
           event = await persistDirectionCard(store, event, timestamp);
         }
-        return res.json(readyResponse(event, mode, namedAutoEnabled, timestamp));
+        return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
       }
 
       const reservedEvent = await reservePreviewAttempt(store, event, timestamp);
@@ -481,26 +482,26 @@ export function registerPrePaymentPreviewQualityRoutes(
       }));
 
       res.setHeader("Retry-After", String(Math.ceil(POLL_AFTER_MS / 1000)));
-      return res.status(202).json(readiness(reservedEvent, mode, namedAutoEnabled, timestamp));
+      return res.status(202).json(await readiness(reservedEvent, mode, namedAutoEnabled, timestamp));
     }
 
     // Original and generic themes retain the existing explicit release gate.
     if (currentKind === "approved-image" && mode === "quality-image") {
-      return res.json(readyResponse(event, mode, namedAutoEnabled, timestamp));
+      return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
     }
     if (currentKind === "direction-card" && mode !== "quality-image") {
-      return res.json(readyResponse(event, mode, namedAutoEnabled, timestamp));
+      return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
     }
 
     if (mode !== "quality-image") {
       event = await persistDirectionCard(store, event, timestamp);
-      return res.json(readyResponse(event, mode, namedAutoEnabled, timestamp));
+      return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
     }
 
     const allowance = canAttemptPrePaymentPreview(event);
     if (!allowance.ok) {
       event = await persistDirectionCard(store, event, timestamp);
-      return res.json(readyResponse(event, mode, namedAutoEnabled, timestamp));
+      return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
     }
 
     event = await reservePreviewAttempt(store, event, timestamp);
@@ -514,7 +515,7 @@ export function registerPrePaymentPreviewQualityRoutes(
     } catch (error) {
       event = await persistDirectionCard(store, event, now());
       console.error("[prepayment-preview] private quality pipeline failed closed:", error);
-      return res.json(readyResponse(event, mode, namedAutoEnabled, now()));
+      return res.json(await readyResponse(event, mode, namedAutoEnabled, now()));
     }
 
     if (result.kind === "approved-image"
@@ -526,7 +527,7 @@ export function registerPrePaymentPreviewQualityRoutes(
         privateCandidates: result.attempts,
       })}`);
       const completed = await store.getEventByOwnerToken(req.params.ownerToken) ?? event;
-      return res.json(readyResponse(completed, mode, namedAutoEnabled, now()));
+      return res.json(await readyResponse(completed, mode, namedAutoEnabled, now()));
     }
 
     event = await persistDirectionCard(store, event, now());
@@ -537,7 +538,7 @@ export function registerPrePaymentPreviewQualityRoutes(
       privateCandidates: result.attempts,
       error: result.kind === "unavailable" ? result.error : undefined,
     })}`);
-    return res.json(readyResponse(event, mode, namedAutoEnabled, now()));
+    return res.json(await readyResponse(event, mode, namedAutoEnabled, now()));
   });
 
   app.get("/api/events/owner/:ownerToken/prepayment-preview/asset", async (req, res) => {
@@ -545,7 +546,7 @@ export function registerPrePaymentPreviewQualityRoutes(
     if (!event) return res.status(404).json({ error: "No first look available yet" });
 
     const mode = readMode();
-    const namedReference = namedReferenceForEvent(event);
+    const namedReference = await namedReferenceForEvent(event);
     const namedAutoEnabled = autoNamedEnabled();
     const stored = event.prePaymentPreviewUrl || "";
     res.setHeader("Cache-Control", "private, no-store");
