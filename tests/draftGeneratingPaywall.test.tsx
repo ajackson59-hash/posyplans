@@ -117,6 +117,44 @@ describe("DraftGenerating pre-payment preview", () => {
     await waitFor(() => expect(callsTo("/api/checkout/create-session")).toHaveLength(1));
   });
 
+  it("renders the preview at its natural aspect ratio instead of a forced square crop", async () => {
+    // Regression guard: the generated illustration's aspect ratio depends on the
+    // AI concept's layoutStyle (banner => 3:2 landscape, full-bleed => 2:3
+    // portrait, other styles => square). Forcing a fixed aspect-square box with
+    // object-cover silently crops every non-square result — confirmed in
+    // production, where both real preview images ever generated were non-square
+    // and both were cropped. This asserts the container never reintroduces a
+    // fixed-ratio crop class and instead lets the image size itself naturally.
+    const preview = deferred<{ ready: boolean }>();
+
+    apiRequestJson.mockImplementation((method: string, url: string) => {
+      if (method === "GET" && url.endsWith("/master-planner/entitlement")) {
+        return Promise.resolve({
+          eventId: 94,
+          freeDraftState: "none",
+          emailCaptured: false,
+          planTier: "spark",
+          sparkUnlocked: false,
+          canGenerate: false,
+        });
+      }
+      if (method === "POST" && url.endsWith("/prepayment-preview")) return preview.promise;
+      throw new Error(`Unexpected request: ${method} ${url}`);
+    });
+
+    renderPaywall();
+
+    fireEvent.change(await screen.findByTestId("input-spark-email"), { target: { value: EMAIL } });
+    fireEvent.click(screen.getByTestId("button-unlock-spark"));
+
+    await act(async () => preview.resolve({ ready: true }));
+
+    const previewImage = await screen.findByTestId("img-prepayment-preview");
+    expect(previewImage.className).not.toMatch(/aspect-square/);
+    expect(previewImage.className).not.toMatch(/object-cover/);
+    expect(previewImage.className).toMatch(/h-auto/);
+  });
+
   it("allows checkout after a preview-provider failure instead of trapping the host", async () => {
     const checkout = deferred<{ url: string }>();
 

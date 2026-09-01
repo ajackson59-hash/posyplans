@@ -394,11 +394,19 @@ export default function DraftGenerating() {
             aria-live="polite"
           >
             {startPrePaymentPreview.isSuccess && !previewImageFailed ? (
-              <div className="relative">
+              // The generated illustration's aspect ratio depends on the AI-chosen
+              // concept's layoutStyle (banner => landscape 3:2, full-bleed => portrait
+              // 2:3, everything else => square). A fixed aspect-square + object-cover
+              // box previously cropped every non-square result — the only two real
+              // previews ever generated in production were both non-square and both
+              // got cropped. Let the image render at its own natural aspect ratio
+              // (w-full h-auto) instead of forcing a square crop. min-h keeps the
+              // loading spinner visible before the image has painted.
+              <div className="relative min-h-[240px]">
                 <img
                   src={`/api/events/owner/${ownerToken}/prepayment-preview/asset`}
                   alt="A low-resolution preview of your personalized invitation direction"
-                  className="block aspect-square w-full object-cover"
+                  className="block w-full h-auto"
                   data-testid="img-prepayment-preview"
                   onLoad={() => setPreviewImageLoaded(true)}
                   onError={() => setPreviewImageFailed(true)}
