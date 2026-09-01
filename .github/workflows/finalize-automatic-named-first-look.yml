@@ -28,6 +28,7 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
 
           def replace_required(path: str, old: str, new: str, count: int | None = None) -> None:
               file = Path(path)
@@ -39,62 +40,73 @@ jobs:
                   raise SystemExit(f"Expected {count} occurrences in {path}, found {found}: {old}")
               file.write_text(text.replace(old, new))
 
-          quality = "server/prePaymentPreviewQuality.ts"
-          replace_required(
-              quality,
+          quality_path = Path("server/prePaymentPreviewQuality.ts")
+          quality = quality_path.read_text()
+          quality = quality.replace(
               "  type ArtworkGenerator,\n  type ArtworkQuality,",
               "  type ArtworkGenerator,\n  type ArtworkModel,\n  type ArtworkQuality,",
               1,
           )
-          replace_required(
-              quality,
-              "      model: typeof DEFAULT_ARTWORK_MODEL;",
-              "      model: ArtworkModel;",
-              2,
+          if "type ArtworkModel," not in quality:
+              raise SystemExit("ArtworkModel import was not added")
+          if quality.count("model: typeof DEFAULT_ARTWORK_MODEL;") != 2:
+              raise SystemExit("Expected two preview-result model declarations")
+          quality = quality.replace("model: typeof DEFAULT_ARTWORK_MODEL;", "model: ArtworkModel;")
+
+          old = (
+              '  const quality = dependencies.quality ?? (dependencies.referenceImages?.length ? "high" : "medium");\n'
+              '  const model = dependencies.referenceImages?.length ? REFERENCE_ARTWORK_MODEL : DEFAULT_ARTWORK_MODEL;'
           )
-          replace_required(
-              quality,
-              '''  const quality = dependencies.quality ?? (dependencies.referenceImages?.length ? "high" : "medium");
-          const model = dependencies.referenceImages?.length ? REFERENCE_ARTWORK_MODEL : DEFAULT_ARTWORK_MODEL;''',
-              '''  const referenceLed = Boolean(dependencies.referenceImages?.length);
-          const quality = dependencies.quality ?? (referenceLed ? "high" : "medium");
-          const modelForCandidate = (candidate: number): ArtworkModel =>
-            referenceLed && candidate > 1 ? REFERENCE_ARTWORK_MODEL : DEFAULT_ARTWORK_MODEL;
-          let lastModel: ArtworkModel = modelForCandidate(1);''',
-              1,
+          new = (
+              '  const referenceLed = Boolean(dependencies.referenceImages?.length);\n'
+              '  const quality = dependencies.quality ?? (referenceLed ? "high" : "medium");\n'
+              '  const modelForCandidate = (candidate: number): ArtworkModel =>\n'
+              '    referenceLed && candidate > 1 ? REFERENCE_ARTWORK_MODEL : DEFAULT_ARTWORK_MODEL;\n'
+              '  let lastModel: ArtworkModel = modelForCandidate(1);'
           )
-          replace_required(
-              quality,
-              '''  for (let candidate = 1; candidate <= maxCandidates; candidate += 1) {
-            const prompt = candidate === 1''',
-              '''  for (let candidate = 1; candidate <= maxCandidates; candidate += 1) {
-            const model = modelForCandidate(candidate);
-            lastModel = model;
-            const prompt = candidate === 1''',
-              1,
+          if old not in quality:
+              raise SystemExit("Reference model selection block not found")
+          quality = quality.replace(old, new, 1)
+
+          old = (
+              '  for (let candidate = 1; candidate <= maxCandidates; candidate += 1) {\n'
+              '    const prompt = candidate === 1'
           )
-          replace_required(
-              quality,
-              '        inputFidelity: dependencies.referenceImages?.length ? "high" : undefined,',
-              '        inputFidelity: referenceLed && model === REFERENCE_ARTWORK_MODEL ? "high" : undefined,',
-              1,
+          new = (
+              '  for (let candidate = 1; candidate <= maxCandidates; candidate += 1) {\n'
+              '    const model = modelForCandidate(candidate);\n'
+              '    lastModel = model;\n'
+              '    const prompt = candidate === 1'
           )
-          replace_required(
-              quality,
-              '''  return {
-            kind: "rejected",
-            attempts: maxCandidates,
-            model,
-            reviews,
-          };''',
-              '''  return {
-            kind: "rejected",
-            attempts: maxCandidates,
-            model: lastModel,
-            reviews,
-          };''',
-              1,
+          if old not in quality:
+              raise SystemExit("Candidate loop block not found")
+          quality = quality.replace(old, new, 1)
+
+          old = '        inputFidelity: dependencies.referenceImages?.length ? "high" : undefined,'
+          new = '        inputFidelity: referenceLed && model === REFERENCE_ARTWORK_MODEL ? "high" : undefined,'
+          if old not in quality:
+              raise SystemExit("Input fidelity line not found")
+          quality = quality.replace(old, new, 1)
+
+          old = (
+              '  return {\n'
+              '    kind: "rejected",\n'
+              '    attempts: maxCandidates,\n'
+              '    model,\n'
+              '    reviews,\n'
+              '  };'
           )
+          new = (
+              '  return {\n'
+              '    kind: "rejected",\n'
+              '    attempts: maxCandidates,\n'
+              '    model: lastModel,\n'
+              '    reviews,\n'
+              '  };'
+          )
+          if old not in quality:
+              raise SystemExit("Final rejected result block not found")
+          quality_path.write_text(quality.replace(old, new, 1))
 
           page = "client/src/pages/DraftGenerating.tsx"
           replace_required(page, "Posy preview", "Posy first look", 1)
