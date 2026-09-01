@@ -256,13 +256,13 @@ function collectImageCandidates(
     }
   };
 
-  for (const match of html.matchAll(/<meta\b[^>]*(?:property|name)=["'](?:og:image(?::secure_url)?|twitter:image(?::src)?)["'][^>]*content=["']([^"']+)["'][^>]*>/gi)) {
+  for (const match of Array.from(html.matchAll(/<meta\b[^>]*(?:property|name)=["'](?:og:image(?::secure_url)?|twitter:image(?::src)?)["'][^>]*content=["']([^"']+)["'][^>]*>/gi))) {
     add(match[1], match[0]);
   }
-  for (const match of html.matchAll(/<meta\b[^>]*content=["']([^"']+)["'][^>]*(?:property|name)=["'](?:og:image(?::secure_url)?|twitter:image(?::src)?)["'][^>]*>/gi)) {
+  for (const match of Array.from(html.matchAll(/<meta\b[^>]*content=["']([^"']+)["'][^>]*(?:property|name)=["'](?:og:image(?::secure_url)?|twitter:image(?::src)?)["'][^>]*>/gi))) {
     add(match[1], match[0]);
   }
-  for (const match of html.matchAll(/<img\b[^>]*>/gi)) {
+  for (const match of Array.from(html.matchAll(/<img\b[^>]*>/gi))) {
     const tag = match[0];
     const source = /(?:src|data-src|data-lazy-src)=["']([^"']+)["']/i.exec(tag)?.[1];
     if (source) add(source, tag);
@@ -274,7 +274,7 @@ function collectImageCandidates(
       }
     }
   }
-  for (const match of html.matchAll(/["'](?:image|contentUrl|thumbnailUrl)["']\s*:\s*["']([^"']+)["']/gi)) {
+  for (const match of Array.from(html.matchAll(/["'](?:image|contentUrl|thumbnailUrl)["']\s*:\s*["']([^"']+)["']/gi))) {
     add(match[1], match[0]);
   }
 
@@ -329,7 +329,7 @@ function responseTextAndUrls(payload: unknown): { text: string; urls: string[] }
     }
   }
   const text = textParts.join("\n");
-  for (const match of text.matchAll(/https:\/\/[^\s\]})>"']+/g)) urls.push(match[0]);
+  for (const match of Array.from(text.matchAll(/https:\/\/[^\s\]})>"']+/g))) urls.push(match[0]);
   return { text, urls: Array.from(new Set(urls.filter(isSafePublicHttpsUrl))) };
 }
 

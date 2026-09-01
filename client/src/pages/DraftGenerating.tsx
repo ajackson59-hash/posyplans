@@ -471,7 +471,7 @@ export default function DraftGenerating() {
               <div className="relative">
                 <img
                   src={previewAssetUrl}
-                  alt="A low-resolution preview of your personalized invitation direction"
+                  alt="A personalized first look built from your event direction"
                   className="block aspect-square w-full object-cover"
                   data-testid="img-prepayment-preview"
                   onLoad={() => setPreviewImageLoaded(true)}
@@ -484,7 +484,7 @@ export default function DraftGenerating() {
                   </div>
                 )}
                 <span className="absolute right-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground shadow-sm">
-                  Posy preview
+                  Posy first look
                 </span>
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent px-5 pb-4 pt-16 text-white">
                   <p className="font-serif text-lg font-semibold">A first look, made from your details</p>

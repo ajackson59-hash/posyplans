@@ -10,6 +10,7 @@ import {
   REFERENCE_ARTWORK_MODEL,
   generateArtwork,
   type ArtworkGenerator,
+  type ArtworkModel,
   type ArtworkQuality,
   type ArtworkReferenceImage,
 } from "./aiFirst/artwork";
@@ -404,13 +405,13 @@ export type QualityLockedPreviewResult =
       kind: "approved-image";
       dataUrl: string;
       attempts: number;
-      model: typeof DEFAULT_ARTWORK_MODEL;
+      model: ArtworkModel;
       reviews: PreviewQualityReview[];
     }
   | {
       kind: "rejected" | "unavailable";
       attempts: number;
-      model: typeof DEFAULT_ARTWORK_MODEL;
+      model: ArtworkModel;
       reviews: PreviewQualityReview[];
       error?: string;
     };
@@ -441,8 +442,11 @@ export async function generateQualityLockedPreview(
   const runTier1 = dependencies.runTier1 ?? runTier1Checks;
   const runVision = dependencies.runVision ?? runVisionGate;
   const maxCandidates = dependencies.maxCandidates ?? 2;
-  const quality = dependencies.quality ?? (dependencies.referenceImages?.length ? "high" : "medium");
-  const model = dependencies.referenceImages?.length ? REFERENCE_ARTWORK_MODEL : DEFAULT_ARTWORK_MODEL;
+  const referenceLed = Boolean(dependencies.referenceImages?.length);
+  const quality = dependencies.quality ?? (referenceLed ? "high" : "medium");
+  const modelForCandidate = (candidate: number): ArtworkModel =>
+    referenceLed && candidate > 1 ? REFERENCE_ARTWORK_MODEL : DEFAULT_ARTWORK_MODEL;
+  let lastModel: ArtworkModel = modelForCandidate(1);
   const { brief, concept } = buildQualityLockedPreviewBrief(
     event,
     dependencies.inspirationNotes ?? "",
@@ -460,6 +464,8 @@ export async function generateQualityLockedPreview(
   let concreteNotes = "";
 
   for (let candidate = 1; candidate <= maxCandidates; candidate += 1) {
+    const model = modelForCandidate(candidate);
+    lastModel = model;
     const prompt = candidate === 1
       ? basePrompt
       : `${buildRetryPrompt(basePrompt, failureCodes)}\n\nPRIVATE ART-DIRECTOR CORRECTION FROM THE REJECTED CANDIDATE:\n${concreteNotes || "The first candidate did not meet every required quality dimension. Rebuild the scene from the original brief rather than making a cosmetic variation."}`;
@@ -471,7 +477,7 @@ export async function generateQualityLockedPreview(
         aspectRatio: aspectRatioForLayout(concept.layoutStyle),
         model,
         quality,
-        inputFidelity: dependencies.referenceImages?.length ? "high" : undefined,
+        inputFidelity: referenceLed && model === REFERENCE_ARTWORK_MODEL ? "high" : undefined,
         referenceImages: dependencies.referenceImages,
       });
     } catch (error) {
@@ -535,7 +541,7 @@ export async function generateQualityLockedPreview(
   return {
     kind: "rejected",
     attempts: maxCandidates,
-    model,
+    model: lastModel,
     reviews,
   };
 }
