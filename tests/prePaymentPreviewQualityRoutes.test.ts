@@ -47,6 +47,7 @@ const updateEventById = vi.fn(async (id: number, data: Partial<Event>) => {
   return stored;
 });
 const generate = vi.fn();
+const classifyNamedReference = vi.fn();
 const resolveNamedReference = vi.fn();
 const scheduledTasks: Array<() => Promise<void>> = [];
 const schedule = vi.fn((task: () => Promise<void>) => {
@@ -57,6 +58,7 @@ function makeApp(options: {
   mode?: "off" | "direction-card" | "quality-image";
   autoNamed?: boolean;
   unlocked?: boolean;
+  jobTimeoutMs?: number;
 } = {}) {
   const app = express();
   app.use(express.json({ limit: "6mb" }));
@@ -65,10 +67,12 @@ function makeApp(options: {
     isUnlocked: async () => options.unlocked ?? false,
     mode: () => options.mode ?? "direction-card",
     autoNamedEnabled: () => options.autoNamed ?? true,
+    classifyNamedReference,
     resolveNamedReference,
     generate,
     schedule,
     now: () => NOW,
+    jobTimeoutMs: options.jobTimeoutMs,
   });
   return app;
 }
@@ -113,6 +117,8 @@ beforeEach(() => {
   getEventByOwnerToken.mockClear();
   updateEventById.mockClear();
   generate.mockReset();
+  classifyNamedReference.mockReset();
+  classifyNamedReference.mockResolvedValue(null);
   resolveNamedReference.mockReset();
   schedule.mockClear();
   scheduledTasks.length = 0;
@@ -206,6 +212,19 @@ describe("quality-locked prepayment preview routes", () => {
       automaticReferenceAttempted: true,
       namedReference: { id: "blippi-meekah", label: "Blippi + Meekah" },
     }));
+  });
+
+  it("falls back within the bounded deadline instead of making the customer wait indefinitely", async () => {
+    resolveNamedReference.mockResolvedValue(automaticResolution());
+    generate.mockImplementation(() => new Promise(() => undefined));
+
+    const response = await request(makeApp({ jobTimeoutMs: 5 }))
+      .post(`/api/events/owner/${OWNER}/prepayment-preview`)
+      .send({ email: "host@example.com" });
+
+    expect(response.status).toBe(202);
+    await runScheduledTask();
+    expect(stored.prePaymentPreviewUrl).toMatch(/^data:image\/svg\+xml;base64,/);
   });
 
   it("keeps rejected named-theme candidates private and shows the reliable direction", async () => {
@@ -326,7 +345,7 @@ describe("quality-locked prepayment preview routes", () => {
     expect(stored.prePaymentPreviewAttempts).toBe(0);
   });
 
-  it("returns original themes immediately without invoking the arbitrary paid classifier", async () => {
+  it("classifies an original theme once on the explicit action, then continues safely when it is not named IP", async () => {
     stored = genericEvent();
 
     const response = await request(makeApp({ mode: "direction-card" }))
@@ -335,10 +354,45 @@ describe("quality-locked prepayment preview routes", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.kind).toBe("direction-card");
+    expect(classifyNamedReference).toHaveBeenCalledTimes(1);
     expect(resolveNamedReference).not.toHaveBeenCalled();
     expect(generate).not.toHaveBeenCalled();
     expect(schedule).not.toHaveBeenCalled();
     expect(stored.prePaymentPreviewAttempts).toBe(0);
+  });
+
+  it("recognizes an arbitrary named world once on POST and never reclassifies it from GET polling", async () => {
+    stored = {
+      ...stored,
+      eventName: "Ella's Sesame Street Party",
+      themeName: "Sesame Street",
+      vibeDescription: "Sesame Street characters at a neighborhood block party with bubbles",
+    } as unknown as Event;
+    const sesame = {
+      id: "named-theme-sesame-street",
+      label: "Sesame Street",
+      trigger: /sesame street/i,
+      cues: ["Sesame Street", "Neighborhood friends", "Playful learning", "Block-party joy"],
+      palette: ["#1b5e9b", "#f2c230", "#f7f1e5", "#d84f45"],
+      requirements: ["The Sesame Street identity is unmistakable through its recognizable neighborhood character world."],
+    };
+    classifyNamedReference.mockResolvedValue(sesame);
+    resolveNamedReference.mockResolvedValue(null);
+
+    const response = await request(makeApp())
+      .post(`/api/events/owner/${OWNER}/prepayment-preview`)
+      .send({ email: "host@example.com" });
+
+    expect(response.status).toBe(202);
+    expect(response.body.directionCard.headline).toBe("Sesame Street");
+    expect(classifyNamedReference).toHaveBeenCalledTimes(1);
+    await runScheduledTask();
+    expect(decodedStoredSvg()).toContain("Sesame Street");
+
+    const ready = await request(makeApp())
+      .get(`/api/events/owner/${OWNER}/prepayment-preview/readiness`);
+    expect(ready.status).toBe(200);
+    expect(classifyNamedReference).toHaveBeenCalledTimes(1);
   });
 
   it("stores original-theme artwork only after the private quality function approves it", async () => {
