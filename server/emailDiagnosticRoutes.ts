@@ -23,7 +23,7 @@ const INTERNAL_PREVIEW_CANARY_TOKEN_SHA256 =
 const INTERNAL_PREVIEW_CANARY_OWNER_TOKEN = "qa-preview-blippi-20260901-a7f3c9";
 const QUALITY_APPROVED_PNG_PREFIX = "data:image/png;posy-quality-approved;base64,";
 const STANDARD_PNG_PREFIX = "data:image/png;base64,";
-const INTERNAL_CANARY_DEADLINE_MS = 52_000;
+const INTERNAL_CANARY_DEADLINE_MS = 115_000;
 
 function allowTest(ownerToken: string, now = Date.now()): boolean {
   const current = attempts.get(ownerToken);
@@ -135,7 +135,7 @@ async function runInternalPreviewCanary() {
         generateQualityLockedPreview(event, {
           inspirationNotes: resolved.notes,
           referenceImages: resolved.images,
-          quality: "low",
+          quality: "medium",
           maxCandidates: 1,
           namedReference,
           attemptRetention: {
