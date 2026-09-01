@@ -3,6 +3,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import type { Event } from "@shared/schema";
 import type { Tier1Result } from "../server/aiFirst/tier1";
 import type { VisionVerdict } from "../server/aiFirst/visionGate";
+import { encodePng, readPngSize } from "../server/aiFirst/png";
 import {
   buildDirectionCard,
   buildQualityLockedPreviewBrief,
@@ -40,6 +41,12 @@ const event = {
   prePaymentPreviewUsedAt: null,
   sparkUnlockedAt: null,
 } as unknown as Event;
+
+function generatedPng(fill: number, width = 630, height = 1120): Buffer {
+  const rgb = new Uint8Array(width * height * 3);
+  rgb.fill(fill);
+  return encodePng({ width, height, rgb });
+}
 
 function tier1(passed = true): Tier1Result {
   return {
@@ -262,12 +269,12 @@ describe("prepayment preview quality lock", () => {
   it("keeps a rejected first candidate private and returns only the approved correction", async () => {
     const generateImage = vi.fn()
       .mockResolvedValueOnce({
-        bytes: Buffer.alloc(50_000, 1),
+        bytes: generatedPng(1),
         dataUrl: "data:image/png;base64,FIRST",
         durationMs: 100,
       })
       .mockResolvedValueOnce({
-        bytes: Buffer.alloc(50_000, 2),
+        bytes: generatedPng(2),
         dataUrl: "data:image/png;base64,SECOND",
         durationMs: 100,
       });
@@ -285,7 +292,8 @@ describe("prepayment preview quality lock", () => {
 
     expect(result.kind).toBe("approved-image");
     if (result.kind !== "approved-image") throw new Error("expected approved image");
-    expect(result.dataUrl).toBe("data:image/png;base64,SECOND");
+    expect(result.dataUrl).toMatch(/^data:image\/png;base64,/);
+    expect(readPngSize(Buffer.from(result.dataUrl.split(",")[1], "base64"))).toEqual({ width: 315, height: 560 });
     expect(result.attempts).toBe(2);
     expect(generateImage).toHaveBeenCalledTimes(2);
     expect(generateImage.mock.calls[0][0]).toEqual(expect.objectContaining({
@@ -299,9 +307,32 @@ describe("prepayment preview quality lock", () => {
     expect(JSON.stringify(result)).not.toContain("FIRST");
   });
 
+  it("reviews and returns the exact 560px customer-visible teaser pixels", async () => {
+    const sourceBytes = generatedPng(9);
+    const runTier1 = vi.fn(() => tier1(true));
+    const runVision = vi.fn(async () => vision(true));
+    const result = await generateQualityLockedPreview(event, {
+      generateImage: async () => ({
+        bytes: sourceBytes,
+        dataUrl: `data:image/png;base64,${sourceBytes.toString("base64")}`,
+        durationMs: 100,
+      }),
+      runTier1,
+      runVision,
+      maxCandidates: 1,
+    });
+
+    expect(result.kind).toBe("approved-image");
+    if (result.kind !== "approved-image") throw new Error("expected approved image");
+    const returnedBytes = Buffer.from(result.dataUrl.split(",")[1], "base64");
+    expect(readPngSize(returnedBytes)).toEqual({ width: 315, height: 560 });
+    expect(Buffer.compare(runTier1.mock.calls[0][0].bytes, returnedBytes)).toBe(0);
+    expect(Buffer.compare(runVision.mock.calls[0][0].bytes, returnedBytes)).toBe(0);
+  });
+
   it("returns no customer-visible pixels when both private candidates fail", async () => {
     const generateImage = vi.fn(async () => ({
-      bytes: Buffer.alloc(50_000, 3),
+      bytes: generatedPng(3),
       dataUrl: "data:image/png;base64,REJECTED",
       durationMs: 100,
     }));
@@ -358,7 +389,7 @@ describe("prepayment preview quality lock", () => {
     it("records a rejected candidate with its failure codes and gate findings", async () => {
       const { store, records } = fakeAttemptStore();
       const generateImage = vi.fn(async () => ({
-        bytes: Buffer.alloc(50_000, 3),
+        bytes: generatedPng(3),
         dataUrl: "data:image/png;base64,REJECTED",
         durationMs: 100,
       }));
@@ -387,7 +418,7 @@ describe("prepayment preview quality lock", () => {
     it("records an approved candidate as accepted", async () => {
       const { store, records } = fakeAttemptStore();
       const generateImage = vi.fn(async () => ({
-        bytes: Buffer.alloc(50_000, 4),
+        bytes: generatedPng(4),
         dataUrl: "data:image/png;base64,APPROVED",
         durationMs: 100,
       }));
@@ -415,7 +446,7 @@ describe("prepayment preview quality lock", () => {
         findById: vi.fn(async () => undefined),
       };
       const generateImage = vi.fn(async () => ({
-        bytes: Buffer.alloc(50_000, 5),
+        bytes: generatedPng(5),
         dataUrl: "data:image/png;base64,APPROVED",
         durationMs: 100,
       }));
@@ -430,12 +461,13 @@ describe("prepayment preview quality lock", () => {
 
       expect(result.kind).toBe("approved-image");
       if (result.kind !== "approved-image") throw new Error("expected approved image");
-      expect(result.dataUrl).toBe("data:image/png;base64,APPROVED");
+      expect(result.dataUrl).toMatch(/^data:image\/png;base64,/);
+      expect(readPngSize(Buffer.from(result.dataUrl.split(",")[1], "base64"))).toEqual({ width: 315, height: 560 });
     });
 
     it("omits retention entirely when no store is supplied, exactly as before", async () => {
       const generateImage = vi.fn(async () => ({
-        bytes: Buffer.alloc(50_000, 6),
+        bytes: generatedPng(6),
         dataUrl: "data:image/png;base64,APPROVED",
         durationMs: 100,
       }));

@@ -19,6 +19,7 @@ import {
   type ArtworkSize,
 } from "./aiFirst/artwork";
 import type { AiFirstArtworkAttemptStore } from "./aiFirst/artworkAttemptStore";
+import { boxDownsampleRgb, decodePng, encodePng } from "./aiFirst/png";
 import { buildEventBrief, type EventBrief } from "./aiFirst/brief";
 import { buildArtworkConstraints, buildRetryPrompt } from "./aiFirst/prompt";
 import {
@@ -30,12 +31,23 @@ import {
   runVisionGate,
   type VisionVerdict,
 } from "./aiFirst/visionGate";
+import { PRE_PAYMENT_PREVIEW_LONG_EDGE } from "./prePaymentPreview";
 import { prePaymentPreviewSourceBrief } from "./prePaymentPreviewConcept";
 
 export const PREPAYMENT_PREVIEW_MODE_ENV = "POSY_PREPAYMENT_PREVIEW_MODE";
 export const PREPAYMENT_PREVIEW_QUALITY_LOCK_CUTOFF_MS = Date.UTC(2026, 7, 31, 2, 0, 0);
 
 export type PrePaymentPreviewMode = "off" | "direction-card" | "quality-image";
+
+/**
+ * Produces the exact low-resolution PNG bytes an unpaid customer receives.
+ * Quality review runs on these bytes—not a larger source that the browser later
+ * transforms—so the approved pixels and the served pixels are equivalent.
+ */
+export function customerVisiblePreviewBytes(source: Buffer): Buffer {
+  const decoded = decodePng(source);
+  return encodePng(boxDownsampleRgb(decoded, PRE_PAYMENT_PREVIEW_LONG_EDGE));
+}
 
 /**
  * Fail closed. Until a benchmark explicitly enables quality-image, every
@@ -712,18 +724,32 @@ export async function generateQualityLockedPreview(
       };
     }
 
+    let reviewedBytes: Buffer;
+    try {
+      reviewedBytes = customerVisiblePreviewBytes(generated.bytes);
+    } catch (error) {
+      return {
+        kind: "unavailable",
+        attempts: candidate,
+        model,
+        reviews,
+        error: `Generated artwork could not be prepared for customer review: ${error instanceof Error ? error.message : String(error)}`,
+      };
+    }
+    const reviewedDataUrl = `data:image/png;base64,${reviewedBytes.toString("base64")}`;
+
     let tier1: Tier1Result;
     let vision: VisionVerdict | undefined;
     try {
       tier1 = runTier1({
-        bytes: generated.bytes,
+        bytes: reviewedBytes,
         concept,
         overlayCoverage: OVERLAY_COVERAGE[concept.minOverlay],
         artworkOpacity: 1,
         ocr: true,
       });
       if (tier1.passed) {
-        vision = await runVision({ bytes: generated.bytes, concept, brief });
+        vision = await runVision({ bytes: reviewedBytes, concept, brief });
       }
     } catch (error) {
       return {
@@ -765,7 +791,7 @@ export async function generateQualityLockedPreview(
           directionIndex: 0,
           attempt: candidate,
           status: passed ? "accepted" : "rejected",
-          bytes: generated.bytes,
+          bytes: reviewedBytes,
           previewId: null,
           concept,
           failureCodes: passed ? [] : failureCodes,
@@ -784,7 +810,7 @@ export async function generateQualityLockedPreview(
     if (passed) {
       return {
         kind: "approved-image",
-        dataUrl: generated.dataUrl,
+        dataUrl: reviewedDataUrl,
         attempts: candidate,
         model,
         reviews,
