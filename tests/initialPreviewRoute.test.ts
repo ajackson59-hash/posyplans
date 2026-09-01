@@ -30,6 +30,7 @@ const { registerInitialPreviewRoute } = await import("../server/initialPreviewRo
 const OWNER = "owner-approved-preview";
 const EVENT_ID = 812;
 const APPROVED_URL = `data:image/png;posy-quality-approved;base64,${Buffer.from("approved pixels").toString("base64")}`;
+const RENDERABLE_APPROVED_URL = `data:image/png;base64,${Buffer.from("approved pixels").toString("base64")}`;
 
 function eventWith(prePaymentPreviewUrl: string): Event {
   return {
@@ -61,8 +62,8 @@ describe("POST /invite/use-prepayment-preview", () => {
     mocks.getEventByOwnerToken.mockResolvedValue(event);
     mocks.updateEventById.mockResolvedValue({
       ...event,
-      inviteIllustrationUrl: APPROVED_URL,
-      inviteArtworkUrl: APPROVED_URL,
+      inviteIllustrationUrl: RENDERABLE_APPROVED_URL,
+      inviteArtworkUrl: RENDERABLE_APPROVED_URL,
     });
 
     const response = await request(makeApp())
@@ -72,8 +73,8 @@ describe("POST /invite/use-prepayment-preview", () => {
     expect(response.status).toBe(200);
     expect(response.body.reusedExistingArtwork).toBe(true);
     expect(mocks.updateEventById).toHaveBeenCalledWith(EVENT_ID, {
-      inviteIllustrationUrl: APPROVED_URL,
-      inviteArtworkUrl: APPROVED_URL,
+      inviteIllustrationUrl: RENDERABLE_APPROVED_URL,
+      inviteArtworkUrl: RENDERABLE_APPROVED_URL,
     });
   });
 
