@@ -26,6 +26,7 @@ import {
   PREPAYMENT_PREVIEW_QUALITY_LOCK_CUTOFF_MS,
   buildDirectionCard,
   detectNamedCreativeReference,
+  detectNamedCreativeReferenceSync,
   directionCardDataUrl,
   generateQualityLockedPreview,
   readPrePaymentPreviewMode,
@@ -115,12 +116,29 @@ function referenceImagesFromDataUrls(values: string[]): ArtworkReferenceImage[] 
   });
 }
 
-async function namedReferenceForEvent(event: Event): Promise<NamedCreativeReference | null> {
-  return detectNamedCreativeReference(
-    [event.eventName, event.eventType, event.themeName, event.vibeDescription]
-      .filter(Boolean)
-      .join(" "),
-  );
+function eventNamedReferenceBrief(event: Event): string {
+  return [event.eventName, event.eventType, event.themeName, event.vibeDescription]
+    .filter(Boolean)
+    .join(" ");
+}
+
+/**
+ * Curated-only, synchronous, network-free. Used by every pure read path
+ * (readiness polling, asset delivery, direction-card rendering) so an
+ * ordinary page load or poll never pays for or awaits a model call.
+ */
+function namedReferenceForEventSync(event: Event): NamedCreativeReference | null {
+  return detectNamedCreativeReferenceSync(eventNamedReferenceBrief(event));
+}
+
+/**
+ * Curated + general classifier. Awaits a paid model call for anything
+ * outside the curated five, so this must only ever be invoked once per
+ * customer action — from the POST route, immediately before scheduling the
+ * background generation job — never from a GET/read/poll path.
+ */
+async function namedReferenceForEventGeneral(event: Event): Promise<NamedCreativeReference | null> {
+  return detectNamedCreativeReference(eventNamedReferenceBrief(event));
 }
 
 function imageIsCurrent(event: Event): boolean {
@@ -175,8 +193,13 @@ async function persistDirectionCard(
   store: PrePaymentPreviewQualityStorage,
   event: Event,
   timestamp: number,
+  resolvedNamed?: NamedCreativeReference | null,
 ): Promise<Event> {
-  const dataUrl = await directionCardDataUrl(event);
+  // directionCardDataUrl is synchronous/network-free by default (curated-only
+  // detection). resolvedNamed lets the background job pass an already-paid,
+  // already-awaited general-classifier result so the card correctly reflects
+  // it instead of silently falling back to the generic card.
+  const dataUrl = directionCardDataUrl(event, resolvedNamed);
   const updated = await store.updateEventById(event.id, {
     prePaymentPreviewUrl: dataUrl,
     prePaymentPreviewUsedAt: timestamp,
@@ -227,7 +250,9 @@ async function readiness(
   autoNamedEnabled: boolean,
   timestamp: number,
 ): Promise<ReadinessResponse> {
-  const card = await buildDirectionCard(event);
+  // Curated-only, synchronous, network-free — this runs on every readiness
+  // poll (every 2.5s while generating), so it must never await a model call.
+  const card = buildDirectionCard(event);
   const kind = assetKind(event);
   const state = generationState(event, kind, timestamp);
   const referenceCaptured = kind === "reference-board";
@@ -309,7 +334,7 @@ async function runAutomaticNamedPreviewJob({
     }
 
     if (!resolved?.images.length) {
-      await persistDirectionCard(store, event, now());
+      await persistDirectionCard(store, event, now(), namedReference);
       console.warn(`[prepayment-preview] ${JSON.stringify({
         eventId: event.id,
         kind: "direction-card",
@@ -339,7 +364,7 @@ async function runAutomaticNamedPreviewJob({
       return;
     }
 
-    await persistDirectionCard(store, event, now());
+    await persistDirectionCard(store, event, now(), namedReference);
     console.warn(`[prepayment-preview] ${JSON.stringify({
       eventId: event.id,
       kind: result.kind,
@@ -351,7 +376,7 @@ async function runAutomaticNamedPreviewJob({
     })}`);
   } catch (error) {
     try {
-      await persistDirectionCard(store, event, now());
+      await persistDirectionCard(store, event, now(), namedReference);
     } catch (persistError) {
       console.error("[prepayment-preview] could not persist the safe named-theme fallback:", persistError);
     }
@@ -423,7 +448,11 @@ export function registerPrePaymentPreviewQualityRoutes(
     const namedAutoEnabled = autoNamedEnabled();
     let currentKind = assetKind(event);
     const hasHostReference = referenceImages.length > 0;
-    const namedReference = await namedReferenceForEvent(event);
+    // Explicit customer action (POST = "show me my first look") is the one
+    // and only place allowed to await the paid general classifier. Its
+    // result is threaded into the scheduled background job below so the
+    // resolution happens once and is reused, never re-derived on reads.
+    const namedReference = await namedReferenceForEventGeneral(event);
 
     if (backgroundIsStale(event, timestamp)) {
       event = await persistDirectionCard(store, event, timestamp);
@@ -546,7 +575,10 @@ export function registerPrePaymentPreviewQualityRoutes(
     if (!event) return res.status(404).json({ error: "No first look available yet" });
 
     const mode = readMode();
-    const namedReference = await namedReferenceForEvent(event);
+    // Pure read path (asset delivery) — curated-only, synchronous, no model
+    // call. The already-resolved general-path identity (if any) lives in the
+    // persisted direction card itself, not re-derived here.
+    const namedReference = namedReferenceForEventSync(event);
     const namedAutoEnabled = autoNamedEnabled();
     const stored = event.prePaymentPreviewUrl || "";
     res.setHeader("Cache-Control", "private, no-store");

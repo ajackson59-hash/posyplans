@@ -126,6 +126,21 @@ function detectCuratedNamedCreativeReference(text: string): NamedCreativeReferen
   return null;
 }
 
+/**
+ * Synchronous, network-free detection for read/poll-only call sites
+ * (readiness, direction-card rendering, asset delivery). Deliberately does
+ * NOT consult the general LLM classifier — those routes run on every page
+ * load and every 2.5s poll, and must stay deterministic, zero-cost and
+ * zero-latency. Only the explicit customer action that starts generation
+ * (the POST route) is allowed to pay for and await the general classifier;
+ * its resolved result is threaded back into the direction card afterward
+ * rather than being re-derived here.
+ */
+export function detectNamedCreativeReferenceSync(text: string): NamedCreativeReference | null {
+  if (!text.trim()) return null;
+  return detectCuratedNamedCreativeReference(text);
+}
+
 export const NAMED_THEME_DETECTION_MODEL = "claude-sonnet-4-6";
 
 const NAMED_THEME_DETECTION_SYSTEM = `You help a premium invitation studio understand whether a host's free-text event description names a SPECIFIC, identifiable entertainment property: a TV show, movie, streaming series, book series, video game, toy line, band/artist, or a named fictional character from one of those (e.g. "Sesame Street", "Cocomelon", "Frozen", "Spider-Man", "Pokemon", "Mickey Mouse", "Barbie", "Minecraft", "Taylor Swift"). This is different from a purely generic theme with no owned intellectual property (e.g. "unicorn party", "dinosaur party", "princess party", "jungle safari", "under the sea", "superhero party" with no named hero).
@@ -245,10 +260,13 @@ async function detectGeneralNamedCreativeReference(
   if (cached && cached.expiresAt > Date.now()) return cached.value;
 
   if (!process.env.ANTHROPIC_API_KEY && !dependencies.client) return null;
-  const client = dependencies.client ?? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
   let result: NamedCreativeReference | null = null;
   try {
+    // Client construction itself can throw (missing/invalid key, disallowed
+    // runtime, SDK misconfiguration) — that must fail closed too, not bubble
+    // out of this "never throws" detector.
+    const client = dependencies.client ?? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const response = await client.messages.create({
       model: NAMED_THEME_DETECTION_MODEL,
       max_tokens: 500,
@@ -339,9 +357,20 @@ export interface DirectionCard {
   referenceRecommended: boolean;
 }
 
-export async function buildDirectionCard(event: Event): Promise<DirectionCard> {
+/**
+ * Synchronous and network-free: renders the card customers see on every page
+ * load and 2.5s poll from curated-only detection. Pass `resolvedNamed` when
+ * the caller already paid for and awaited the general classifier (i.e. only
+ * from the background job after the customer's explicit request) so the
+ * real identity is reflected without this function ever awaiting anything
+ * itself.
+ */
+export function buildDirectionCard(
+  event: Event,
+  resolvedNamed?: NamedCreativeReference | null,
+): DirectionCard {
   const brief = prePaymentPreviewSourceBrief(event);
-  const named = await detectNamedCreativeReference(brief);
+  const named = resolvedNamed !== undefined ? resolvedNamed : detectNamedCreativeReferenceSync(brief);
   const detectedCues = CUE_RULES
     .filter((rule) => rule.trigger.test(brief))
     .map((rule) => rule.label);
@@ -461,8 +490,11 @@ export function renderDirectionCardSvg(card: DirectionCard): string {
 </svg>`;
 }
 
-export async function directionCardDataUrl(event: Event): Promise<string> {
-  const svg = renderDirectionCardSvg(await buildDirectionCard(event));
+export function directionCardDataUrl(
+  event: Event,
+  resolvedNamed?: NamedCreativeReference | null,
+): string {
+  const svg = renderDirectionCardSvg(buildDirectionCard(event, resolvedNamed));
   return `data:image/svg+xml;base64,${Buffer.from(svg, "utf8").toString("base64")}`;
 }
 
@@ -504,7 +536,7 @@ export async function buildQualityLockedPreviewBrief(
     inspirationNotes,
   });
   const brief = enrichBriefForNamedReference(baseBrief, namedReference);
-  const card = await buildDirectionCard(event);
+  const card = buildDirectionCard(event, namedReference);
   const prompt = [
     "Premium editorial invitation artwork that proves the host's specific event was understood at a glance.",
     `ORIGINAL HOST BRIEF — authoritative: ${sourceBrief}`,

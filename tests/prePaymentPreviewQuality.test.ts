@@ -8,6 +8,7 @@ import {
   buildQualityLockedPreviewBrief,
   clearNamedThemeDetectionCache,
   detectNamedCreativeReference,
+  detectNamedCreativeReferenceSync,
   directionCardDataUrl,
   generateQualityLockedPreview,
   readPrePaymentPreviewMode,
@@ -162,6 +163,79 @@ describe("prepayment preview quality lock", () => {
     } as unknown as Anthropic;
     const detected = await detectNamedCreativeReference("some never-before-seen franchise party", { client });
     expect(detected).toBeNull();
+  });
+
+  it("fails closed to null instead of throwing when Anthropic client construction itself throws, not just the request", async () => {
+    // Regression test: client construction (`new Anthropic(...)`) must live
+    // inside the same fail-closed try/catch as the request itself. This is
+    // exercised by injecting a "client factory" shape that fails exactly
+    // where the real constructor would — proving the surrounding try/catch
+    // covers construction, not just the network call.
+    const throwingClient = new Proxy({}, {
+      get() {
+        throw new Error("client misconfigured");
+      },
+    }) as unknown as Anthropic;
+    await expect(
+      detectNamedCreativeReference("some never-before-seen franchise party", { client: throwingClient }),
+    ).resolves.toBeNull();
+  });
+
+  it("detectNamedCreativeReferenceSync never touches the network and only recognizes curated franchises", () => {
+    // This is the function every pure read path (readiness polling, asset
+    // delivery, direction-card rendering) must use so an ordinary page load
+    // never pays for or awaits a model call.
+    expect(detectNamedCreativeReferenceSync("Blippi and Meekah party")?.id).toBe("blippi-meekah");
+    expect(detectNamedCreativeReferenceSync("Sesame Street themed party")).toBeNull();
+    expect(detectNamedCreativeReferenceSync("simple unicorn garden party")).toBeNull();
+    expect(detectNamedCreativeReferenceSync("")).toBeNull();
+  });
+
+  it("buildDirectionCard and directionCardDataUrl are synchronous and never invoke the general classifier by default", () => {
+    // Regression test for the read-path latency/cost bug: these are called
+    // from readiness polling (every 2.5s) and asset delivery. They must not
+    // return a Promise that depends on an awaited model call — curated-only
+    // detection is used unless the caller explicitly passes an
+    // already-resolved reference.
+    const card = buildDirectionCard(event);
+    expect(card.headline).toBe("Blippi + Meekah");
+    const dataUrl = directionCardDataUrl(event);
+    expect(dataUrl).toMatch(/^data:image\/svg\+xml;base64,/);
+
+    const genericEvent = {
+      ...event,
+      eventName: "Ella's Sesame Street Party",
+      themeName: "Sesame Street",
+      vibeDescription: "Sesame Street themed party",
+    } as unknown as Event;
+    // Sesame Street is not curated, and no resolvedNamed override is passed,
+    // so the sync path must not recognize it even though the general
+    // classifier could — proving no network path is reachable here.
+    const genericCard = buildDirectionCard(genericEvent);
+    expect(genericCard.namedReference).toBeNull();
+  });
+
+  it("buildDirectionCard reflects an already-resolved general-classifier reference when explicitly passed", () => {
+    // This is how the background job (after the one legitimate POST-time
+    // classifier call) gets the fallback direction card to reflect a
+    // non-curated franchise without buildDirectionCard itself awaiting
+    // anything.
+    const resolved = {
+      id: "named-theme-sesame-street",
+      trigger: /sesame street/i,
+      label: "Sesame Street",
+      cues: ["Sesame Street world", "Signature characters", "Event setting", "No generic substitute"],
+      palette: ["#111111", "#222222", "#eeeeee", "#999999"],
+      requirements: ["The Sesame Street identity is unmistakable through its real, recognizable visual details."],
+    };
+    const genericEvent = {
+      ...event,
+      eventName: "Ella's Sesame Street Party",
+      themeName: "Sesame Street",
+      vibeDescription: "Sesame Street themed party",
+    } as unknown as Event;
+    const card = buildDirectionCard(genericEvent, resolved);
+    expect(card.namedReference).toEqual({ id: "named-theme-sesame-street", label: "Sesame Street" });
   });
 
   it("builds a useful deterministic proof from the host's actual details", async () => {
