@@ -1,0 +1,79 @@
+name: Preserve General Named Theme Detection
+
+on:
+  push:
+    branches:
+      - codex/launch-blockers
+    paths:
+      - .github/workflows/preserve-general-theme-classifier.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      DATABASE_URL: postgres://test:test@127.0.0.1:5432/test
+      ANTHROPIC_API_KEY: test
+      OPENAI_API_KEY: test
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/launch-blockers
+
+      - name: Restore explicit-action general classifier only
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('server/prePaymentPreviewQualityRoutes.ts')
+          text = path.read_text()
+
+          old_import = '''  PREPAYMENT_PREVIEW_QUALITY_LOCK_CUTOFF_MS,
+  buildDirectionCard,
+  detectNamedCreativeReferenceSync,'''
+          new_import = '''  PREPAYMENT_PREVIEW_QUALITY_LOCK_CUTOFF_MS,
+  buildDirectionCard,
+  detectNamedCreativeReference,
+  detectNamedCreativeReferenceSync,'''
+          if text.count(old_import) != 1:
+              raise SystemExit('Expected quality import block not found exactly once')
+          text = text.replace(old_import, new_import, 1)
+
+          old_block = '''    // Launch-safe: only the curated, synchronous detector participates in a
+    // customer request. The arbitrary LLM classifier remains available for a
+    // future explicitly budgeted workflow, but is not reachable from this
+    // route and therefore cannot add surprise latency or spend.
+    const namedReference = namedReferenceForEventSync(event);'''
+          new_block = '''    // This explicit POST is the one customer action allowed to run the general
+    // classifier. GET readiness/asset routes remain curated-only, synchronous,
+    // zero-cost and network-free. The resolved identity is then threaded into
+    // the existing background job and persisted fallback instead of re-derived.
+    const namedReference = await detectNamedCreativeReference(eventNamedReferenceBrief(event));'''
+          if text.count(old_block) != 1:
+              raise SystemExit('Expected launch-safe classifier block not found exactly once')
+          text = text.replace(old_block, new_block, 1)
+          path.write_text(text)
+          PY
+
+      - name: Verify application
+        shell: bash
+        run: |
+          npm ci
+          npm run check
+          npm test
+          npm run vercel-build
+
+      - name: Commit verified correction and retire workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/preserve-general-theme-classifier.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add server/prePaymentPreviewQualityRoutes.ts
+          git commit -m 'Keep one-shot general named-theme detection'
+          git push origin HEAD:codex/launch-blockers
