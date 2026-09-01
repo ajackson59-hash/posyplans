@@ -47,8 +47,8 @@ jobs:
               r'for (const match of Array.from(\1)) {',
               resolver,
           )
-          if match_count != 5:
-              raise SystemExit(f"Expected five matchAll loops, patched {match_count}")
+          if match_count != 4:
+              raise SystemExit(f"Expected four matchAll loops, patched {match_count}")
           resolver_path.write_text(resolver)
 
           quality_path = Path("server/prePaymentPreviewQuality.ts")
