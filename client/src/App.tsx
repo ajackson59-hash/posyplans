@@ -19,6 +19,14 @@ import SmsTerms from "@/pages/SmsTerms";
 import EventLanding from "@/pages/EventLanding";
 import Recover from "@/pages/Recover";
 import { CookieConsentBanner } from "@/components/CookieConsentBanner";
+import DashboardEntitlementGuard from "@/components/DashboardEntitlementGuard";
+import PaywallPreviewGuide from "@/components/PaywallPreviewGuide";
+import DirectCheckoutShortcut from "@/components/DirectCheckoutShortcut";
+import InitialPreviewReuse from "@/components/InitialPreviewReuse";
+import RsvpNoteSuggestions from "@/components/RsvpNoteSuggestions";
+import DashboardSmsInvitations from "@/components/DashboardSmsInvitations";
+import GenerationResultGuide from "@/components/GenerationResultGuide";
+import "@/styles/launchQa.css";
 
 function AppRouter() {
   return (
@@ -53,6 +61,13 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
+        <DashboardEntitlementGuard />
+        <PaywallPreviewGuide />
+        <DirectCheckoutShortcut />
+        <InitialPreviewReuse />
+        <RsvpNoteSuggestions />
+        <DashboardSmsInvitations />
+        <GenerationResultGuide />
         <AppRouter />
         <CookieConsentBanner />
       </TooltipProvider>

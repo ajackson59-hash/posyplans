@@ -132,10 +132,6 @@ function milestonePattern(milestone: string): RegExp | null {
 }
 
 function dominantMachine(concept: AiFirstConcept): string | null {
-  // Provider prompts are the spend boundary. A concept cannot hide a
-  // repeated hero machine in `art.prompt` while keeping `composition`
-  // generic: every strategy is judged from the complete art brief that will
-  // actually be sent to the image model.
   const focalText = `${concept.art.medium} ${concept.art.composition} ${concept.art.prompt}`;
   return MACHINE_PATTERNS.find(([, pattern]) => pattern.test(focalText))?.[0] ?? null;
 }
@@ -212,7 +208,14 @@ export function preflightConceptQuartet(
   if (concepts.length === REQUIRED_CONCEPT_QUARTET_SIZE) {
     addUniquenessError(errors, "focal strategies", concepts.map((concept) => concept.focalStrategy ?? ""));
     addUniquenessError(errors, "visual moods", concepts.map((concept) => concept.visualMood ?? ""));
-    addUniquenessError(errors, "illustration media", concepts.map((concept) => mediumFamily(concept.art.medium)));
+    // Four distinct illustration media remain the ideal designed set, but
+    // medium is a creative-variety signal rather than a rendering safety
+    // boundary. At least three are required; one intentional repeat is allowed
+    // when it gives the named theme a stronger, more coherent result.
+    const media = concepts.map((concept) => mediumFamily(concept.art.medium));
+    if (uniqueCount(media) < 3) {
+      errors.push("quartet should aim for 4 distinct illustration media; at least 3 are required");
+    }
     addUniquenessError(errors, "style lanes", concepts.map((concept) => concept.styleLaneId));
     addUniquenessError(errors, "font pairings", concepts.map((concept) => concept.fontPairingId));
     addUniquenessError(errors, "focal compositions", concepts.map((concept) => concept.art.composition));
@@ -253,12 +256,6 @@ export function preflightConceptQuartet(
   return { passed: errors.length === 0, errors, concepts, reviewCards, perConceptErrors };
 }
 
-/**
- * True when every remaining error is attributable to a single concept — i.e.
- * dropping the bad concept(s) would leave a set with zero outstanding errors.
- * Whole-quartet errors (uniqueness/count checks) are never per-concept, so
- * this is false whenever one of those fired.
- */
 export function allErrorsAreSingleConcept(preflight: ConceptQuartetPreflight): boolean {
   const perConceptTotal = Array.from(preflight.perConceptErrors.values()).reduce((sum, list) => sum + list.length, 0);
   return perConceptTotal === preflight.errors.length;

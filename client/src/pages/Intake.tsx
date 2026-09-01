@@ -3,6 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
 import { Link } from "wouter";
 import { apiRequest, apiRequestJson } from "@/lib/queryClient";
+import { clearPendingEventStartKey, startEventWithRecovery } from "@/lib/eventStartup";
 import { Wordmark } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +23,7 @@ import { EVENT_TYPES } from "@/lib/types";
 import type { EventRecord } from "@/lib/types";
 import { touchRecentEvent } from "@/lib/eventRecovery";
 import { useToast } from "@/hooks/use-toast";
-import { Sparkles, ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
+import { Sparkles, ArrowLeft, ArrowRight, Loader2, RefreshCw } from "lucide-react";
 
 const STEPS = ["basics", "vibe", "sizing", "review"] as const;
 type Step = (typeof STEPS)[number];
@@ -34,12 +35,13 @@ const STEP_LABELS: Record<Step, string> = {
   review: "Review",
 };
 
-// The AI Master Planner Intake wizard. This is Phase 1 (foundation) only:
-// it creates the event and progressively saves intake fields via
-// PATCH .../intake so nothing is lost if the host closes the browser
-// mid-wizard. It does NOT run any AI generation yet — that's the Phase 3
-// orchestrator. Finishing the wizard here hands off to the normal dashboard,
-// same destination the manual create-event flow reaches.
+const START_RECOVERY_MESSAGE =
+  "Posy couldn't finish securing this event yet. Your answers are still here.";
+
+// The AI Master Planner Intake wizard. It creates the event in the background
+// and progressively saves each step. A fresh-start connection failure must
+// never replace the form with a dead loader: hosts can keep typing, and every
+// retry resolves to the same event rather than creating duplicates.
 export default function Intake() {
   const [, navigate] = useLocation();
   const params = useParams<{ ownerToken?: string }>();
@@ -48,11 +50,11 @@ export default function Intake() {
   const [ownerToken, setOwnerToken] = useState(params.ownerToken || "");
   const [step, setStep] = useState<Step>("basics");
   const [creating, setCreating] = useState(!params.ownerToken);
-  // Separate from `creating` (brand-new event) — this covers the resume
-  // path, where an ownerToken is already in the URL but the saved fields
-  // haven't been fetched yet. Without this, the wizard briefly renders
-  // blank/default fields, then visibly jumps to the real saved values a
-  // moment later, which reads as the page reloading or the form glitching.
+  const [startError, setStartError] = useState<string | null>(null);
+  const [transitioning, setTransitioning] = useState(false);
+  // Separate from `creating` (brand-new event) — this covers the resume path,
+  // where a private owner token is already in the URL but saved fields have not
+  // been fetched yet.
   const [resuming, setResuming] = useState(!!params.ownerToken);
 
   const [eventName, setEventName] = useState("");
@@ -62,32 +64,71 @@ export default function Intake() {
   const [estimatedGuestCount, setEstimatedGuestCount] = useState(15);
   const [budgetCeiling, setBudgetCeiling] = useState<string>("");
 
-  // Fields the host has typed into during this session. The resume fetch below
-  // lands asynchronously and must never overwrite them.
+  // Fields the host has typed into during this session. A late resume read must
+  // never overwrite them.
   const editedRef = useRef(new Set<string>());
   const markEdited = (field: string) => editedRef.current.add(field);
 
-  // True once this session has created the event itself. A brand-new event has
-  // nothing to resume, so the fetch is skipped entirely rather than racing the
-  // host's first keystrokes.
+  // Synchronous refs close the small gaps before React paints state changes:
+  // one logical event start and one step transition can be in flight at a time.
   const createdHereRef = useRef(false);
+  const ownerTokenRef = useRef(params.ownerToken || "");
+  const startInFlightRef = useRef<Promise<string> | null>(null);
+  const transitionInFlightRef = useRef(false);
+  const finishInFlightRef = useRef(false);
+
+  const ensureEvent = async (): Promise<string> => {
+    const existing = ownerTokenRef.current || params.ownerToken || ownerToken;
+    if (existing) return existing;
+    if (startInFlightRef.current) return startInFlightRef.current;
+
+    setCreating(true);
+    setStartError(null);
+
+    const startPromise = (async () => {
+      const { event, startKey } = await startEventWithRecovery({
+        eventName: eventName.trim() || "My Celebration",
+        eventType,
+        eventDate,
+        inviteSubject: "You're invited!",
+        inviteMessage: "",
+      });
+      const token = event.ownerToken?.trim();
+      if (!token) throw new Error("Posy couldn't confirm the private event link.");
+
+      // Record the token synchronously before navigation so a quick Next click
+      // can save against the event even before React renders the new URL.
+      ownerTokenRef.current = token;
+      createdHereRef.current = true;
+      setOwnerToken(token);
+      touchRecentEvent(token);
+      navigate(`/intake/${token}`, { replace: true });
+      clearPendingEventStartKey(startKey);
+      setCreating(false);
+      setStartError(null);
+      return token;
+    })();
+
+    startInFlightRef.current = startPromise;
+    try {
+      return await startPromise;
+    } catch (error) {
+      setCreating(false);
+      setStartError(START_RECOVERY_MESSAGE);
+      throw error;
+    } finally {
+      if (startInFlightRef.current === startPromise) startInFlightRef.current = null;
+    }
+  };
 
   // ownerToken IS in the URL -> the host is resuming a wizard they already
-  // started (bookmarked link, or simply a page refresh mid-wizard). Local
-  // state always starts blank on mount, so without this fetch, everything
-  // already saved via PATCH .../intake would silently disappear from the
-  // screen -- including on the Review step -- even though it's safe on the
-  // server.
-  //
-  // The form stays interactive while this request is in flight, and on the
-  // fresh-start path the create effect below navigates a token into the URL,
-  // which re-triggers this effect. Both mean the response can arrive after the
-  // host has already typed -- so a seed is only applied to fields they have not
-  // touched. Without that guard the response overwrites a typed event name with
-  // the "My Celebration" default and blanks the date and vibe, which is exactly
-  // what surfaces as "Not set yet" on Review.
+  // started. Seed only untouched fields so a slow response cannot replace
+  // something the host has already typed.
   useEffect(() => {
-    if (!params.ownerToken) return;
+    const resumeToken = params.ownerToken;
+    if (!resumeToken) return;
+    ownerTokenRef.current = resumeToken;
+    setOwnerToken(resumeToken);
     if (createdHereRef.current) {
       setResuming(false);
       return;
@@ -96,7 +137,7 @@ export default function Intake() {
       try {
         const data = await apiRequestJson<{ event: EventRecord }>(
           "GET",
-          `/api/events/owner/${params.ownerToken}`,
+          `/api/events/owner/${resumeToken}`,
         );
         const event = data.event;
         const edited = editedRef.current;
@@ -110,7 +151,7 @@ export default function Intake() {
         if (event.budgetCeiling != null && !edited.has("budgetCeiling")) {
           setBudgetCeiling(String(event.budgetCeiling));
         }
-        touchRecentEvent(params.ownerToken || "");
+        touchRecentEvent(resumeToken);
       } catch {
         toast({
           title: "Couldn't load your saved progress",
@@ -124,43 +165,19 @@ export default function Intake() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.ownerToken]);
 
-  // No ownerToken in the URL yet -> this is a fresh wizard start. Create a
-  // bare event immediately (same defaults as the manual flow) so every step
-  // from here on has a real event to autosave against, and the URL becomes
-  // bookmarkable/resumable.
+  // A fresh form starts securing its resumable event immediately, but the form
+  // remains visible and usable throughout. Automatic retries are bounded and
+  // idempotent; after that, an inline Try again action uses the same start key.
   useEffect(() => {
     if (params.ownerToken) return;
-    (async () => {
-      try {
-        const res = await apiRequest("POST", "/api/events", {
-          eventName: "My Celebration",
-          eventType,
-          eventDate: "",
-          inviteSubject: "You're invited!",
-          inviteMessage: "",
-        });
-        const event = (await res.json()) as EventRecord;
-        createdHereRef.current = true;
-        setOwnerToken(event.ownerToken || "");
-        setCreating(false);
-        touchRecentEvent(event.ownerToken || "");
-        navigate(`/intake/${event.ownerToken}`, { replace: true });
-      } catch {
-        toast({
-          title: "Couldn't start your event",
-          description: "Please try again.",
-          variant: "destructive",
-        });
-      }
-    })();
+    void ensureEvent().catch(() => {
+      // The inline recovery state above is the customer-facing outcome. Do not
+      // add a destructive toast or leave the page trapped behind a spinner.
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Plan-status awareness for the Review step (secondary UX fix): lets us
-  // tell a returning host up front if this event already has its full plan,
-  // instead of only finding out from a generic message after clicking
-  // "Start my event". A brand-new event always comes back "none" here, so
-  // this never fires for first-time hosts.
+  // Plan-status awareness for the Review step.
   const { data: entitlement } = useQuery({
     queryKey: ["master-planner-entitlement", ownerToken],
     queryFn: () =>
@@ -173,49 +190,70 @@ export default function Intake() {
   const freeDraftAlreadyUsed = entitlement?.freeDraftState === "ready";
 
   const saveIntake = useMutation({
-    mutationFn: async (patch: Record<string, unknown>) => {
-      const res = await apiRequest("PATCH", `/api/events/owner/${ownerToken}/intake`, patch);
+    mutationFn: async ({ token, patch }: { token: string; patch: Record<string, unknown> }) => {
+      const res = await apiRequest("PATCH", `/api/events/owner/${token}/intake`, patch);
       return (await res.json()) as EventRecord;
     },
   });
 
   const goNext = async (patch: Record<string, unknown>, next: Step | null) => {
-    if (ownerToken) {
-      try {
-        await saveIntake.mutateAsync(patch);
-      } catch {
-        toast({
-          title: "Couldn't save that step",
-          description: "Your progress up to the previous step is still safe. Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
+    if (transitionInFlightRef.current) return;
+    transitionInFlightRef.current = true;
+    setTransitioning(true);
+
+    let token = "";
+    try {
+      token = await ensureEvent();
+    } catch {
+      transitionInFlightRef.current = false;
+      setTransitioning(false);
+      return;
     }
-    if (next) setStep(next);
+
+    try {
+      await saveIntake.mutateAsync({ token, patch });
+      if (next) setStep(next);
+    } catch {
+      toast({
+        title: "Couldn't save that step",
+        description: "Your progress up to the previous step is still safe. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      transitionInFlightRef.current = false;
+      setTransitioning(false);
+    }
   };
 
   const finish = useMutation({
     mutationFn: async () => {
+      const token = await ensureEvent();
       // Always send budgetCeiling explicitly (a number, or null to clear) —
-      // never omit the key. Omitting it left a previously-saved budget
-      // silently in place on the server even after the host cleared the
-      // field, since PATCH .../intake only touches keys present in the body.
+      // never omit the key, which would leave an old server value in place.
       const parsedBudget = budgetCeiling.trim() ? Number(budgetCeiling) : NaN;
-      await apiRequest("PATCH", `/api/events/owner/${ownerToken}/intake`, {
+      await apiRequest("PATCH", `/api/events/owner/${token}/intake`, {
         estimatedGuestCount,
         budgetCeiling: Number.isNaN(parsedBudget) ? null : parsedBudget,
       });
+      return token;
     },
-    onSuccess: () => {
-      navigate(`/draft-generating/${ownerToken}`);
+    onSuccess: (token) => {
+      navigate(`/draft-generating/${token}`);
     },
     onError: () => {
-      toast({ title: "I couldn't get that saved", description: "Please try again.", variant: "destructive" });
+      // Startup failures already have a calm, persistent inline recovery. Only
+      // show a save error once an event token actually exists.
+      if (ownerTokenRef.current) {
+        toast({ title: "I couldn't get that saved", description: "Please try again.", variant: "destructive" });
+      }
+    },
+    onSettled: () => {
+      finishInFlightRef.current = false;
     },
   });
 
   const stepIndex = STEPS.indexOf(step);
+  const stepPending = saveIntake.isPending || transitioning;
 
   return (
     <div className="min-h-screen bg-background">
@@ -246,17 +284,52 @@ export default function Intake() {
 
         <Card className="border-card-border shadow-sm" data-testid="card-intake-wizard">
           <CardContent className="p-6 sm:p-8">
-            {(creating || resuming) && (
+            {resuming && (
               <p
                 className="flex items-center gap-2 text-sm text-muted-foreground"
                 data-testid="text-intake-loading"
               >
                 <Loader2 className="h-4 w-4 animate-spin" />
-                {creating ? "Setting things up…" : "Picking up where you left off…"}
+                Picking up where you left off…
               </p>
             )}
 
-            {!creating && !resuming && step === "basics" && (
+            {!resuming && creating && (
+              <p
+                className="mb-4 flex items-center gap-2 rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground"
+                data-testid="text-intake-starting"
+                aria-live="polite"
+              >
+                <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+                Securing your event in the background. You can start filling this out now.
+              </p>
+            )}
+
+            {!resuming && startError && !creating && (
+              <div
+                className="mb-4 rounded-md border border-primary/25 bg-primary/5 p-4"
+                data-testid="card-intake-start-recovery"
+                role="status"
+              >
+                <p className="text-sm font-medium text-foreground">{startError}</p>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  Nothing you typed has been lost. Try again when your connection is ready.
+                </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="mt-3"
+                  data-testid="button-retry-event-start"
+                  onClick={() => void ensureEvent().catch(() => undefined)}
+                >
+                  <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                  Try again
+                </Button>
+              </div>
+            )}
+
+            {!resuming && step === "basics" && (
               <div className="space-y-4">
                 <h2 className="font-serif text-lg font-semibold text-foreground">What are we planning?</h2>
                 <p className="text-sm text-muted-foreground" data-testid="text-intake-basics-subtitle">
@@ -311,7 +384,7 @@ export default function Intake() {
                 <div className="flex justify-end pt-2">
                   <Button
                     data-testid="button-intake-next-basics"
-                    disabled={saveIntake.isPending}
+                    disabled={stepPending}
                     onClick={() =>
                       goNext(
                         { eventName: eventName || "My Celebration", eventType, eventDate },
@@ -319,7 +392,7 @@ export default function Intake() {
                       )
                     }
                   >
-                    {saveIntake.isPending ? (
+                    {stepPending ? (
                       <>
                         <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Saving…
                       </>
@@ -333,7 +406,7 @@ export default function Intake() {
               </div>
             )}
 
-            {!creating && !resuming && step === "vibe" && (
+            {!resuming && step === "vibe" && (
               <div className="space-y-4">
                 <h2 className="font-serif text-lg font-semibold text-foreground">
                   Describe it in a sentence or two
@@ -362,10 +435,10 @@ export default function Intake() {
                   </Button>
                   <Button
                     data-testid="button-intake-next-vibe"
-                    disabled={saveIntake.isPending}
+                    disabled={stepPending}
                     onClick={() => goNext({ vibeDescription }, "sizing")}
                   >
-                    {saveIntake.isPending ? (
+                    {stepPending ? (
                       <>
                         <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Saving…
                       </>
@@ -379,7 +452,7 @@ export default function Intake() {
               </div>
             )}
 
-            {!creating && !resuming && step === "sizing" && (
+            {!resuming && step === "sizing" && (
               <div className="space-y-4">
                 <h2 className="font-serif text-lg font-semibold text-foreground">Roughly how big?</h2>
                 <p className="text-sm text-muted-foreground">
@@ -421,11 +494,8 @@ export default function Intake() {
                   </Button>
                   <Button
                     data-testid="button-intake-next-sizing"
-                    disabled={saveIntake.isPending}
+                    disabled={stepPending}
                     onClick={() => {
-                      // Always send budgetCeiling explicitly (a number, or
-                      // null to clear) — never omit the key. See the same
-                      // note in the `finish` mutation above.
                       const parsedBudget = budgetCeiling.trim() ? Number(budgetCeiling) : NaN;
                       goNext(
                         {
@@ -436,7 +506,7 @@ export default function Intake() {
                       );
                     }}
                   >
-                    {saveIntake.isPending ? (
+                    {stepPending ? (
                       <>
                         <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Saving…
                       </>
@@ -450,7 +520,7 @@ export default function Intake() {
               </div>
             )}
 
-            {!creating && !resuming && step === "review" && (
+            {!resuming && step === "review" && (
               <div className="space-y-4">
                 <h2 className="font-serif text-lg font-semibold text-foreground">Ready to go</h2>
                 <dl className="space-y-2 rounded-md border border-border p-4 text-sm">
@@ -495,7 +565,11 @@ export default function Intake() {
                   <Button
                     data-testid="button-intake-finish"
                     disabled={finish.isPending}
-                    onClick={() => finish.mutate()}
+                    onClick={() => {
+                      if (finishInFlightRef.current) return;
+                      finishInFlightRef.current = true;
+                      finish.mutate();
+                    }}
                   >
                     {finish.isPending ? "Starting…" : "Start my event"}
                   </Button>

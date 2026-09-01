@@ -73,6 +73,15 @@ describe("DraftGenerating pre-payment preview", () => {
     const checkout = deferred<{ url: string }>();
 
     apiRequestJson.mockImplementation((method: string, url: string) => {
+      if (method === "GET" && url.endsWith("/prepayment-preview/readiness")) {
+        return Promise.resolve({
+          ready: false,
+          generationState: "idle",
+          pollAfterMs: null,
+          kind: "none",
+          namedReference: null,
+        });
+      }
       if (method === "GET" && url.endsWith("/master-planner/entitlement")) {
         return Promise.resolve({
           eventId: 91,
@@ -92,7 +101,7 @@ describe("DraftGenerating pre-payment preview", () => {
 
     const email = await screen.findByTestId("input-spark-email");
     const cta = screen.getByTestId("button-unlock-spark");
-    expect(cta.textContent).toContain("Show me my personalized preview");
+    expect(cta.textContent).toContain("Show me my personalized first look");
 
     fireEvent.change(email, { target: { value: EMAIL } });
     fireEvent.click(cta);
@@ -101,12 +110,13 @@ describe("DraftGenerating pre-payment preview", () => {
       expect(callsTo(`/api/events/owner/${OWNER}/prepayment-preview`)).toHaveLength(1);
     });
     expect(callsTo("/api/checkout/create-session")).toHaveLength(0);
-    expect(screen.getByTestId("button-unlock-spark").textContent).toContain("Creating your personal preview");
+    expect(screen.getByTestId("button-unlock-spark").textContent).toContain("Creating your personalized first look");
 
     await act(async () => preview.resolve({ ready: true }));
 
     const previewImage = await screen.findByTestId("img-prepayment-preview");
-    expect(screen.getByTestId("button-unlock-spark").textContent).toContain("Revealing your personal preview");
+    expect(previewImage.className).toContain("aspect-[9/16]");
+    expect(screen.getByTestId("button-unlock-spark").textContent).toContain("Revealing your personalized first look");
     expect(callsTo("/api/checkout/create-session")).toHaveLength(0);
 
     fireEvent.load(previewImage);
@@ -121,6 +131,15 @@ describe("DraftGenerating pre-payment preview", () => {
     const checkout = deferred<{ url: string }>();
 
     apiRequestJson.mockImplementation((method: string, url: string) => {
+      if (method === "GET" && url.endsWith("/prepayment-preview/readiness")) {
+        return Promise.resolve({
+          ready: false,
+          generationState: "idle",
+          pollAfterMs: null,
+          kind: "none",
+          namedReference: null,
+        });
+      }
       if (method === "GET" && url.endsWith("/master-planner/entitlement")) {
         return Promise.resolve({
           eventId: 92,
@@ -143,7 +162,7 @@ describe("DraftGenerating pre-payment preview", () => {
     fireEvent.change(await screen.findByTestId("input-spark-email"), { target: { value: EMAIL } });
     fireEvent.click(screen.getByTestId("button-unlock-spark"));
 
-    await screen.findByText(/Your preview took too long this time/);
+    await screen.findByText(/Posy couldn't complete the first look this time/);
     expect(screen.getByTestId("button-unlock-spark").textContent).toContain("Continue to checkout — $9.99");
     expect(callsTo("/api/checkout/create-session")).toHaveLength(0);
 
@@ -155,6 +174,15 @@ describe("DraftGenerating pre-payment preview", () => {
     const checkout = deferred<{ url: string }>();
 
     apiRequestJson.mockImplementation((method: string, url: string) => {
+      if (method === "GET" && url.endsWith("/prepayment-preview/readiness")) {
+        return Promise.resolve({
+          ready: false,
+          generationState: "idle",
+          pollAfterMs: null,
+          kind: "none",
+          namedReference: null,
+        });
+      }
       if (method === "GET" && url.endsWith("/master-planner/entitlement")) {
         return Promise.resolve({
           eventId: 93,
@@ -178,7 +206,7 @@ describe("DraftGenerating pre-payment preview", () => {
     fireEvent.click(screen.getByTestId("button-unlock-spark"));
 
     fireEvent.error(await screen.findByTestId("img-prepayment-preview"));
-    await screen.findByText(/Your preview took too long this time/);
+    await screen.findByText(/Posy couldn't complete the first look this time/);
     expect(screen.getByTestId("button-unlock-spark").textContent).toContain("Continue to checkout — $9.99");
     expect(callsTo("/api/checkout/create-session")).toHaveLength(0);
 

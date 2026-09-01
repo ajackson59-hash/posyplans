@@ -24,7 +24,7 @@ const EVENT_ID = 205;
 // has real detail to genuinely destroy, and the full-quality reveal has
 // real bytes to compare against.
 function syntheticInviteDataUrl(): string {
-  const size = 320;
+  const size = 640;
   const rgb = new Uint8Array(size * size * 3);
   for (let y = 0; y < size; y += 1) {
     for (let x = 0; x < size; x += 1) {
@@ -133,11 +133,7 @@ describe("POST /prepayment-preview", () => {
     expect(stored.prePaymentPreviewUrl).toBe(SYNTHETIC_INVITE);
     expect(stored.prePaymentPreviewAttempts).toBe(1);
     expect(stored.capturedEmail).toBeNull();
-    expect(generateInviteDesignConcepts).toHaveBeenCalledWith(
-      expect.objectContaining({
-        themePrompt: "Candlelit rooftop dinner in terracotta and gold at sunset",
-      }),
-    );
+    expect(generateInviteDesignConcepts).not.toHaveBeenCalled();
     // Never leaks the raw data URL in the response body.
     expect(JSON.stringify(res.body)).not.toContain("base64");
   });
@@ -168,11 +164,7 @@ describe("POST /prepayment-preview", () => {
       .send({ email: "host@example.com" });
 
     expect(res.status).toBe(200);
-    expect(generateInviteDesignConcepts).toHaveBeenCalledWith(
-      expect.objectContaining({
-        themePrompt: "Candlelit rooftop dinner in terracotta and gold at sunset",
-      }),
-    );
+    expect(generateInviteDesignConcepts).not.toHaveBeenCalled();
     expect(generateInviteIllustrationWithQualityGate).toHaveBeenCalledTimes(1);
     expect(stored.prePaymentPreviewUrl).toBe(SYNTHETIC_INVITE);
     expect(stored.prePaymentPreviewAttempts).toBe(1);

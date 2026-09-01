@@ -28,6 +28,7 @@ import {
   PRE_PAYMENT_PREVIEW_FIDELITY_CUTOFF_MS,
   PRE_PAYMENT_PREVIEW_LONG_EDGE,
 } from "./prePaymentPreview";
+import { buildPrePaymentPreviewConcept } from "./prePaymentPreviewConcept";
 import { boxDownsampleRgb, decodePng, encodePng, PngDecodeError } from "./aiFirst/png";
 import { isValidInviteDesignConcept, type InviteDesignConcept, parseInviteDesignConcept, getFontPairing, FONT_PAIRINGS, LAYOUT_STYLES, BORDER_STYLES } from "@shared/inviteDesign";
 import { deriveThemeDna, isLinerPattern, isStampStyle } from "@shared/themeDna";
@@ -1356,23 +1357,21 @@ export async function registerRoutes(
     });
 
     try {
-      const concepts = await generateInviteDesignConcepts({
-        // New intake events have no generated themeName before payment. The
-        // host's own vibeDescription is therefore the source of truth for the
-        // conversion preview, with event type/name only as a true fallback.
-        themePrompt: eventStyleSummary(event),
-        eventName: event.eventName,
-        eventType: event.eventType,
-        eventDate: event.eventDate,
-        location: event.location,
-        hostNames: event.hostNames,
-        themeName: event.themeName,
-      });
-      const concept = concepts[0];
-      if (!concept) throw new Error("No design concept returned");
-
-      const aspectRatio = concept.layoutStyle === "banner" ? "16:9" : concept.layoutStyle === "full-bleed" ? "9:16" : "1:1";
-      const illustrationUrl = await generateInviteIllustrationWithQualityGate(concept, aspectRatio);
+const { sourceBrief, concept } = buildPrePaymentPreviewConcept(event);
+const aspectRatio = concept.layoutStyle === "banner"
+  ? "16:9"
+  : concept.layoutStyle === "full-bleed"
+    ? "9:16"
+    : "1:1";
+const illustrationUrl = await generateInviteIllustrationWithQualityGate(
+  concept,
+  aspectRatio,
+  {
+    sourceBrief,
+    generationQuality: "medium",
+    requireFinalApproval: true,
+  },
+);
 
       await storage.updateEventById(event.id, {
         prePaymentPreviewUrl: illustrationUrl,

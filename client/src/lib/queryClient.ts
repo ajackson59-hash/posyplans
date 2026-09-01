@@ -9,6 +9,14 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+function shouldRetryQuery(failureCount: number, error: unknown): boolean {
+  if (failureCount >= 2) return false;
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  // Do not retry deterministic client/auth/not-found failures. Network errors
+  // and 5xx responses are safe to retry because queryFns are GET-only reads.
+  return !/^(4\d\d):/.test(message);
+}
+
 export async function apiRequest(
   method: string,
   url: string,
@@ -68,10 +76,14 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
       staleTime: Infinity,
-      retry: false,
+      retry: shouldRetryQuery,
+      retryDelay: (attemptIndex) => Math.min(500 * 2 ** attemptIndex, 2000),
     },
     mutations: {
+      // Mutations remain non-retrying by default. Some POSTs spend AI credits
+      // or trigger delivery, so recovery must be explicitly idempotent there.
       retry: false,
     },
   },

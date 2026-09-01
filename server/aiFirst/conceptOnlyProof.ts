@@ -17,9 +17,12 @@ import { briefForHostDirection } from "./conceptPreflight";
 import { buildConceptCorrectionPrompt, buildSystemPrompt, buildUserPrompt } from "./prompt";
 
 export const CONCEPT_MODEL = "claude-sonnet-4-6";
+// Preserve one ordinary text-only correction for a concept set that parsed but
+// missed a quality rule. A completely empty/unparseable provider response gets
+// one additional, narrowly-scoped format recovery below. That fixes the real
+// zero-concept failure without turning every creative miss into a retry loop.
 export const MAX_TEXT_ONLY_CONCEPT_CORRECTIONS = 1;
-// A run can still deliver a customer-safe set with fewer than four concepts.
-// Below this, a partial set is not worth showing over a text-only retry.
+export const MAX_EMPTY_RESPONSE_RECOVERIES = 1;
 export const MIN_VIABLE_CONCEPTS = 1;
 
 export interface ConceptOnlyProofInput {
@@ -97,36 +100,51 @@ export async function runConceptOnlyProof(input: ConceptOnlyProofInput): Promise
     avoidConceptNames: input.avoidConceptNames,
     keepConstraints: input.keepConstraints,
   });
+
   let attempt = await requestQuartet([{ role: "user", content: userPrompt }]);
   let conceptRejections = attempt.parserErrors.length + attempt.quartet.errors.length;
 
+  // One normal correction: the provider can repair a parsed set that missed a
+  // milestone, layout or diversity constraint, but cannot loop indefinitely.
   if (!attempt.quartet.passed) {
-    const firstErrors = [...attempt.parserErrors, ...attempt.quartet.errors];
+    const currentErrors = [...attempt.parserErrors, ...attempt.quartet.errors];
     const assistantContent = attempt.candidates.length
       ? attempt.candidates.map((concept) => JSON.stringify(concept)).join("\n")
       : "No valid concept objects were parsed from the first response.";
 
-    // One correction is permitted because it remains entirely before the
-    // image provider boundary. Artwork automatic retry remains disabled and
-    // no run, usage reservation, preview, attempt, or ledger can exist here.
     attempt = await requestQuartet([
       { role: "user", content: userPrompt },
       { role: "assistant", content: assistantContent },
-      { role: "user", content: buildConceptCorrectionPrompt(firstErrors) },
+      { role: "user", content: buildConceptCorrectionPrompt(currentErrors) },
     ]);
+    conceptRejections += attempt.parserErrors.length + attempt.quartet.errors.length;
+  }
+
+  // The observed Unicorn Academy failure was categorically different: after
+  // the normal correction, the provider still returned zero parseable concept
+  // objects. Spend remains zero here, so allow one strict JSON-format rescue.
+  // A non-empty but weak set never reaches this extra pass.
+  let emptyRecoveries = 0;
+  if (!attempt.quartet.passed && attempt.candidates.length === 0) {
+    const currentErrors = [...attempt.parserErrors, ...attempt.quartet.errors];
+    const strictRecovery = [
+      "CRITICAL FORMAT RECOVERY: Return exactly four complete concept JSON objects, one object per line.",
+      "No prose, no markdown fences, no headings, and no refusal text.",
+      "Keep the user's named theme as a high-level creative reference while using an original composition and avoiding copied logos or exact protected character likenesses.",
+      buildConceptCorrectionPrompt(currentErrors),
+    ].join("\n\n");
+
+    attempt = await requestQuartet([
+      { role: "user", content: userPrompt },
+      { role: "assistant", content: "No valid concept objects were parsed from the previous response." },
+      { role: "user", content: strictRecovery },
+    ]);
+    emptyRecoveries = MAX_EMPTY_RESPONSE_RECOVERIES;
     conceptRejections += attempt.parserErrors.length + attempt.quartet.errors.length;
   }
 
   if (!attempt.quartet.passed) {
     const finalErrors = [...attempt.parserErrors, ...attempt.quartet.errors];
-
-    // Every logged production failure had at least two sound concepts out of
-    // four — the violation was isolated to one or two, never the whole set.
-    // When every remaining error is attributable to a specific concept (as
-    // opposed to a whole-quartet uniqueness/count violation that cannot be
-    // fixed by dropping one), and the parser itself produced no unattributed
-    // errors, drop only the flagged concept(s) and deliver the rest instead
-    // of discarding a set that is mostly fine.
     const canDropBadConcepts =
       attempt.parserErrors.length === 0 &&
       attempt.quartet.concepts.length > 0 &&
@@ -148,8 +166,11 @@ export async function runConceptOnlyProof(input: ConceptOnlyProofInput): Promise
     }
 
     for (const error of finalErrors) input.onPreflightWarning?.(error);
+    const emptyRecoverySuffix = emptyRecoveries
+      ? ` and ${emptyRecoveries} empty-response recovery`
+      : "";
     throw new Error(
-      `creative quartet failed zero-image preflight after ${MAX_TEXT_ONLY_CONCEPT_CORRECTIONS} text-only correction pass: ${finalErrors.join("; ")}`,
+      `creative quartet failed zero-image preflight after ${MAX_TEXT_ONLY_CONCEPT_CORRECTIONS} text-only correction pass${emptyRecoverySuffix}: ${finalErrors.join("; ")}`,
     );
   }
 

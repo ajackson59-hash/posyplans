@@ -1,30 +1,9 @@
-// Sends RSVP reminder texts through Twilio's REST API.
+// Sends Posy SMS messages through Twilio's REST API.
 //
-// Requires TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN (and ideally
-// TWILIO_MESSAGING_SERVICE_SID) to be set in the environment (Vercel
-// production env vars). This intentionally uses a plain fetch() rather than
-// the Twilio SDK — same lightweight pattern as email.ts — since this is a
-// single, simple request with no need for the extra dependency.
-//
-// Sending through a Messaging Service (TWILIO_MESSAGING_SERVICE_SID) rather
-// than a bare "From" number matters for compliance: Twilio's Advanced
-// Opt-Out feature, configured once on the Messaging Service in the Twilio
-// Console, automatically handles STOP/HELP/CANCEL/UNSUBSCRIBE/etc. replies
-// for you. That's exactly what /sms-terms promises guests, so this module
-// deliberately does not build custom keyword-handling logic — it should
-// come from the Messaging Service's built-in Opt-Out Management, not a
-// webhook we maintain here. If TWILIO_MESSAGING_SERVICE_SID isn't set yet,
-// this falls back to TWILIO_FROM_NUMBER, but that fallback path does NOT
-// get automatic opt-out handling — it's only meant for early testing before
-// a Messaging Service is configured, never for real guest sends.
-//
-// Before this can send real messages, a Twilio account needs:
-//   1. A2P 10DLC brand registration (using the PosyPlans LLC EIN once issued)
-//   2. Campaign registration (the "Low Volume Mixed" / RSVP-reminder use case)
-//   3. A purchased phone number, attached to a Messaging Service with
-//      Advanced Opt-Out enabled
-// None of that can happen from here — it requires the user's own Twilio
-// account, billing, and business verification.
+// Requires TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN plus preferably
+// TWILIO_MESSAGING_SERVICE_SID. The Messaging Service path is the production
+// path because Twilio Advanced Opt-Out can handle STOP/HELP/START consistently.
+// TWILIO_FROM_NUMBER remains a testing fallback only.
 
 export interface SendSmsResult {
   ok: boolean;
@@ -34,10 +13,27 @@ export interface SendSmsResult {
 
 const TWILIO_API_BASE = "https://api.twilio.com/2010-04-01";
 
-export async function sendReminderSms(opts: {
-  to: string;
-  body: string;
-}): Promise<SendSmsResult> {
+export function smsConfiguration() {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  const messagingServiceSid = process.env.TWILIO_MESSAGING_SERVICE_SID;
+  const fromNumber = process.env.TWILIO_FROM_NUMBER;
+  return {
+    configured: Boolean(accountSid && authToken && (messagingServiceSid || fromNumber)),
+    messagingServiceConfigured: Boolean(accountSid && authToken && messagingServiceSid),
+  };
+}
+
+export function normalizeSmsDestination(value: string): string {
+  const trimmed = value.trim();
+  if (/^\+[1-9]\d{7,14}$/.test(trimmed)) return trimmed;
+  const digits = trimmed.replace(/\D/g, "");
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
+  return trimmed;
+}
+
+async function sendSms(opts: { to: string; body: string }): Promise<SendSmsResult> {
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
   const messagingServiceSid = process.env.TWILIO_MESSAGING_SERVICE_SID;
@@ -47,19 +43,21 @@ export async function sendReminderSms(opts: {
     return {
       ok: false,
       skipped: "not_configured",
-      error: "Text reminders aren't set up yet. Please contact support.",
+      error: "Posy text messaging is not fully configured yet.",
     };
   }
 
+  const destination = normalizeSmsDestination(opts.to);
+  if (!/^\+[1-9]\d{7,14}$/.test(destination)) {
+    return { ok: false, skipped: "no_phone", error: "Enter a valid mobile number before sending." };
+  }
+
   const params = new URLSearchParams({
-    To: opts.to,
+    To: destination,
     Body: opts.body,
   });
-  if (messagingServiceSid) {
-    params.set("MessagingServiceSid", messagingServiceSid);
-  } else if (fromNumber) {
-    params.set("From", fromNumber);
-  }
+  if (messagingServiceSid) params.set("MessagingServiceSid", messagingServiceSid);
+  else if (fromNumber) params.set("From", fromNumber);
 
   try {
     const response = await fetch(`${TWILIO_API_BASE}/Accounts/${accountSid}/Messages.json`, {
@@ -78,7 +76,7 @@ export async function sendReminderSms(opts: {
         const parsed = JSON.parse(errorBody) as { message?: string };
         if (parsed.message) message = parsed.message;
       } catch {
-        // Keep the generic message above if the error body isn't JSON.
+        // Keep the generic message above if Twilio did not return JSON.
       }
       return { ok: false, error: message };
     }
@@ -90,4 +88,14 @@ export async function sendReminderSms(opts: {
       error: err instanceof Error ? err.message : "Couldn't send this text — please try again.",
     };
   }
+}
+
+/** Initial event invitation. Permission is enforced by the owner route before this transport is called. */
+export async function sendInvitationSms(opts: { to: string; body: string }): Promise<SendSmsResult> {
+  return sendSms(opts);
+}
+
+/** Reminder/update path. Callers must continue enforcing guest smsOptIn. */
+export async function sendReminderSms(opts: { to: string; body: string }): Promise<SendSmsResult> {
+  return sendSms(opts);
 }
