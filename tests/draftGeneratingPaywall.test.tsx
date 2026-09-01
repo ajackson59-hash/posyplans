@@ -115,6 +115,7 @@ describe("DraftGenerating pre-payment preview", () => {
     await act(async () => preview.resolve({ ready: true }));
 
     const previewImage = await screen.findByTestId("img-prepayment-preview");
+    expect(previewImage.className).toContain("aspect-[9/16]");
     expect(screen.getByTestId("button-unlock-spark").textContent).toContain("Revealing your personalized first look");
     expect(callsTo("/api/checkout/create-session")).toHaveLength(0);
 

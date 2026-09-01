@@ -547,7 +547,7 @@ export default function DraftGenerating() {
                 <img
                   src={previewAssetUrl}
                   alt="A personalized first look built from your event direction"
-                  className="block aspect-square w-full object-cover"
+                  className="block aspect-[9/16] w-full object-cover"
                   data-testid="img-prepayment-preview"
                   onLoad={() => setPreviewImageLoaded(true)}
                   onError={() => setPreviewImageFailed(true)}
@@ -567,7 +567,7 @@ export default function DraftGenerating() {
                 </div>
               </div>
             ) : previewInProgress ? (
-              <div className="flex aspect-square items-center justify-center gap-3 px-6 text-center text-sm text-muted-foreground">
+              <div className="flex aspect-[9/16] items-center justify-center gap-3 px-6 text-center text-sm text-muted-foreground">
                 <Loader2 className="h-5 w-5 shrink-0 animate-spin" />
                 <div>
                   <p className="font-medium text-foreground">Creating your personalized first look…</p>
@@ -577,11 +577,11 @@ export default function DraftGenerating() {
                 </div>
               </div>
             ) : previewCouldNotBeShown ? (
-              <div className="flex aspect-square items-center justify-center px-6 text-center text-sm text-muted-foreground">
+              <div className="flex aspect-[9/16] items-center justify-center px-6 text-center text-sm text-muted-foreground">
                 Posy couldn't complete the first look this time. You can still continue—your full invitation is included once unlocked.
               </div>
             ) : (
-              <div className="flex aspect-square flex-col items-center justify-center gap-2 px-6 text-center text-sm text-muted-foreground">
+              <div className="flex aspect-[9/16] flex-col items-center justify-center gap-2 px-6 text-center text-sm text-muted-foreground">
                 <p>Posy will create a personalized first look before checkout.</p>
                 <button
                   type="button"

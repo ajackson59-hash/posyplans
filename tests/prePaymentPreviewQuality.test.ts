@@ -4,6 +4,7 @@ import type { Tier1Result } from "../server/aiFirst/tier1";
 import type { VisionVerdict } from "../server/aiFirst/visionGate";
 import {
   buildDirectionCard,
+  buildQualityLockedPreviewBrief,
   detectNamedCreativeReference,
   directionCardDataUrl,
   generateQualityLockedPreview,
@@ -59,6 +60,18 @@ function vision(passed: boolean, notes = "none"): VisionVerdict {
 }
 
 describe("prepayment preview quality lock", () => {
+  it("keeps teaser artwork full-bleed instead of generating an unfinished blank panel", () => {
+    const { brief, concept } = buildQualityLockedPreviewBrief(event);
+    expect(concept.minOverlay).toBe("veil");
+    expect(concept.art.composition).toContain("no visible panel");
+    expect(concept.art.prompt).toContain("Do not draw a blank card");
+    expect(brief.requirements.excluded).toContain(
+      "a visible blank card, white rectangle, paper panel, placard, sign, frame or placeholder box inside the artwork",
+    );
+    expect(brief.requirements.excluded).toContain(
+      "a lead character's face or head cropped off by the canvas edge",
+    );
+  });
   it("fails closed to the deterministic direction-card mode", () => {
     expect(readPrePaymentPreviewMode({})).toBe("direction-card");
     expect(readPrePaymentPreviewMode({ POSY_PREPAYMENT_PREVIEW_MODE: "nonsense" })).toBe("direction-card");

@@ -317,20 +317,25 @@ export function directionCardDataUrl(event: Event): string {
 }
 
 function enrichBriefForNamedReference(brief: EventBrief, named: NamedCreativeReference | null): EventBrief {
-  if (!named) return brief;
   return {
     ...brief,
-    themeName: named.label,
+    themeName: named?.label ?? brief.themeName,
     requirements: {
       required: unique([
         ...brief.requirements.required,
-        ...named.requirements,
+        ...(named?.requirements ?? []),
       ]),
       preferred: brief.requirements.preferred,
       excluded: unique([
         ...brief.requirements.excluded,
-        `a generic adjacent aesthetic standing in for ${named.label}`,
-        "isolated accessories or palette-only shorthand standing in for the requested characters or world",
+        ...(named
+          ? [
+              `a generic adjacent aesthetic standing in for ${named.label}`,
+              "isolated accessories or palette-only shorthand standing in for the requested characters or world",
+            ]
+          : []),
+        "a visible blank card, white rectangle, paper panel, placard, sign, frame or placeholder box inside the artwork",
+        "a lead character's face or head cropped off by the canvas edge",
       ]),
     },
   };
@@ -350,15 +355,13 @@ export function buildQualityLockedPreviewBrief(
   });
   const brief = enrichBriefForNamedReference(baseBrief, namedReference);
   const card = buildDirectionCard(event);
-  const explicitRequirements = namedReference?.requirements ?? [];
   const prompt = [
     "Premium editorial invitation artwork that proves the host's specific event was understood at a glance.",
     `ORIGINAL HOST BRIEF — authoritative: ${sourceBrief}`,
-    ...explicitRequirements.map((requirement) => `REQUIRED VISUAL FACT: ${requirement}.`),
+    "LAYOUT CONTRACT: reserve a naturally calm, low-detail typography zone at approximately left 21%, top 32%, width 58%, height 40%. Keep every required person, face, creature, signature object and defining interaction fully visible outside that zone. Do not draw a blank card, white rectangle, paper panel, placard, sign, frame or placeholder box—the quiet area must remain part of the continuous full-bleed scene.",
     inspirationNotes ? `HOST-PROVIDED VISUAL REFERENCE NOTES — authoritative: ${inspirationNotes}` : "",
     "Depict the actual people, characters, setting, activities and defining objects requested. The event scene—not an accessory, logo-like symbol, pattern, palette or abstract shorthand—must dominate the composition.",
     "FINISH CONTRACT: create bespoke editorial stationery artwork with layered depth, tactile material detail, controlled lighting and refined art direction. It must not resemble generic clipart, stock illustration, a television promo still, a merchandising graphic or a flat commercial poster. Keep faces, hands, limbs and object interactions anatomically coherent.",
-    "LAYOUT CONTRACT: the live opaque typography box occupies approximately left 21%, top 32%, width 58%, height 40%. Keep every required person, face, creature, signature object and defining interaction fully visible outside that box. Treat the box as protected negative space, not as an area that can cover a hero subject.",
   ].filter(Boolean).join(" ");
 
   const concept: AiFirstConcept = {
@@ -383,11 +386,11 @@ export function buildQualityLockedPreviewBrief(
     },
     art: {
       medium: namedReference ? "premium character-led editorial illustration" : "premium narrative editorial illustration",
-      composition: "portrait scene-led full-bleed composition arranged around a protected central typography box; all required subjects, faces and defining objects remain fully visible in the side and lower framing, with calm negative space reserved only for type",
+      composition: "portrait scene-led full-bleed composition arranged around a naturally quiet central typography zone; all required subjects, faces and defining objects remain fully visible, with no visible panel, blank rectangle or cropped head",
       prompt: prompt.slice(0, 1200),
     },
     safeTypographyRegion: "center",
-    minOverlay: "plate",
+    minOverlay: "veil",
   };
 
   return { brief, concept, namedReference };
