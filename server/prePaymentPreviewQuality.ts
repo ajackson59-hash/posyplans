@@ -9,12 +9,16 @@ import { OVERLAY_COVERAGE } from "@shared/aiFirstLayout";
 import {
   DEFAULT_ARTWORK_MODEL,
   REFERENCE_ARTWORK_MODEL,
+  estimateImageCostUsdMicros,
   generateArtwork,
+  sizeForAspect,
   type ArtworkGenerator,
   type ArtworkModel,
   type ArtworkQuality,
   type ArtworkReferenceImage,
+  type ArtworkSize,
 } from "./aiFirst/artwork";
+import type { AiFirstArtworkAttemptStore } from "./aiFirst/artworkAttemptStore";
 import { buildEventBrief, type EventBrief } from "./aiFirst/brief";
 import { buildArtworkConstraints, buildRetryPrompt } from "./aiFirst/prompt";
 import {
@@ -585,6 +589,23 @@ export interface PreviewQualityReview {
   notes: string;
 }
 
+/**
+ * A rejected preview candidate's gate evidence evaporated the moment this
+ * function returned: `reviews[]` lived only in the caller's local variable
+ * and was never logged in full or persisted, so once the request finished
+ * the actual reason a candidate failed was unrecoverable — only the top
+ * level `kind`/`model`/`attempts` survived in a warn log. This mirrors the
+ * durable, owner-scoped evidence retention already used for the main
+ * AI-first pipeline (see aiFirst/artworkAttemptStore.ts): every billed
+ * attempt, accepted and rejected alike, is retained for protected review.
+ */
+export interface PreviewQualityAttemptRetention {
+  store: AiFirstArtworkAttemptStore;
+  eventId: number;
+  ownerToken: string;
+  runId?: string | null;
+}
+
 export type QualityLockedPreviewResult =
   | {
       kind: "approved-image";
@@ -612,6 +633,14 @@ export interface PreviewQualityDependencies {
   quality?: ArtworkQuality;
   /** Two internal candidates maximum; neither is customer-visible before approval. */
   maxCandidates?: 1 | 2;
+  /**
+   * When provided, every billed candidate — accepted or rejected — is
+   * durably recorded for protected owner-scoped review, matching the main
+   * AI-first pipeline. Optional so existing tests/callers that don't pass a
+   * store keep working exactly as before (fail-open: retention is
+   * best-effort and never blocks the customer-visible result).
+   */
+  attemptRetention?: PreviewQualityAttemptRetention;
 }
 
 /**
@@ -711,6 +740,38 @@ export async function generateQualityLockedPreview(
       ...(vision?.excludedFound ?? []).map((item) => `Remove excluded visual: ${item}`),
     ].filter(Boolean).join(" ").slice(0, 1200);
     reviews.push({ tier1, vision, failureCodes: passed ? [] : failureCodes, notes: concreteNotes });
+
+    // Every billed candidate is retained for protected owner-scoped review,
+    // accepted and rejected alike — mirroring aiFirst/artworkAttemptStore.ts.
+    // Best-effort and fail-open: a retention failure must never change the
+    // customer-visible result or mask the real approve/reject outcome.
+    if (dependencies.attemptRetention) {
+      const { store: attemptStore, eventId, ownerToken, runId } = dependencies.attemptRetention;
+      const size: ArtworkSize = sizeForAspect(aspectRatioForLayout(concept.layoutStyle));
+      try {
+        await attemptStore.record({
+          eventId,
+          ownerToken,
+          runId: runId ?? null,
+          idempotencyKey: null,
+          directionIndex: 0,
+          attempt: candidate,
+          status: passed ? "accepted" : "rejected",
+          bytes: generated.bytes,
+          previewId: null,
+          concept,
+          failureCodes: passed ? [] : failureCodes,
+          tier1Findings: tier1.findings,
+          visionScores: vision?.scores ?? null,
+          model,
+          quality,
+          size,
+          costUsdMicros: estimateImageCostUsdMicros(model, quality, size),
+        });
+      } catch (error) {
+        console.error("[prepayment-preview] failed to persist attempt evidence (non-fatal):", error);
+      }
+    }
 
     if (passed) {
       return {

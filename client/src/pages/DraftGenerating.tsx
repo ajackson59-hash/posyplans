@@ -543,11 +543,20 @@ export default function DraftGenerating() {
             aria-live="polite"
           >
             {previewReady && !previewImageFailed ? (
-              <div className="relative">
+              // The generated illustration's aspect ratio depends on the AI-chosen
+              // concept's layoutStyle (currently always full-bleed => native 9:16
+              // portrait, but this must stay correct even if that changes). A fixed
+              // aspect-[9/16] + object-cover box silently crops the moment the real
+              // image differs from that exact ratio (rounding, future layout changes,
+              // etc.) — the same forced-crop bug PR #41 already fixed once. Let the
+              // image render at its own natural aspect ratio (w-full h-auto) instead.
+              // min-h keeps the loading spinner and card frame visible before the
+              // image has painted.
+              <div className="relative min-h-[240px]">
                 <img
                   src={previewAssetUrl}
                   alt="A personalized first look built from your event direction"
-                  className="block aspect-[9/16] w-full object-cover"
+                  className="block w-full h-auto"
                   data-testid="img-prepayment-preview"
                   onLoad={() => setPreviewImageLoaded(true)}
                   onError={() => setPreviewImageFailed(true)}

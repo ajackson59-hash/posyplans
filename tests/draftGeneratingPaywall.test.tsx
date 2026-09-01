@@ -115,7 +115,16 @@ describe("DraftGenerating pre-payment preview", () => {
     await act(async () => preview.resolve({ ready: true }));
 
     const previewImage = await screen.findByTestId("img-prepayment-preview");
-    expect(previewImage.className).toContain("aspect-[9/16]");
+    // Regression test (B4): the preview must render at its own natural
+    // aspect ratio, never a fixed box + object-cover crop. A fixed ratio
+    // silently crops the moment the real generated image's ratio differs
+    // from that hardcoded value (rounding, or a future layout change) —
+    // this is the same bug PR #41 fixed once already.
+    expect(previewImage.className).toContain("w-full");
+    expect(previewImage.className).toContain("h-auto");
+    expect(previewImage.className).not.toContain("object-cover");
+    expect(previewImage.className).not.toContain("aspect-square");
+    expect(previewImage.className).not.toMatch(/aspect-\[/);
     expect(screen.getByTestId("button-unlock-spark").textContent).toContain("Revealing your personalized first look");
     expect(callsTo("/api/checkout/create-session")).toHaveLength(0);
 
