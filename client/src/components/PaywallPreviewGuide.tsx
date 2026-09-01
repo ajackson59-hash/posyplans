@@ -11,6 +11,8 @@ interface PreviewReadiness {
   namedReference: { id: string; label: string } | null;
   referenceRecommended: boolean;
   referenceCaptured?: boolean;
+  automaticReferenceResolutionEnabled?: boolean;
+  automaticReferenceAttempted?: boolean;
 }
 
 function ownerTokenFromLocation(location: string): string | null {
@@ -20,8 +22,8 @@ function ownerTokenFromLocation(location: string): string | null {
 
 /**
  * Explains exactly which kind of first look Posy is showing. A structured
- * direction or reference board must never be mistaken for AI-generated art;
- * only a privately approved PNG receives the generated-preview language.
+ * direction or legacy reference board must never be mistaken for generated
+ * artwork; only a privately approved PNG receives generated-image language.
  */
 export default function PaywallPreviewGuide() {
   const [location] = useLocation();
@@ -44,7 +46,7 @@ export default function PaywallPreviewGuide() {
       headers: { Accept: "application/json" },
     })
       .then(async (response) => {
-        if (!response.ok) throw new Error("preview readiness unavailable");
+        if (!response.ok) throw new Error("first-look readiness unavailable");
         return response.json() as Promise<PreviewReadiness>;
       })
       .then((result) => {
@@ -115,7 +117,7 @@ export default function PaywallPreviewGuide() {
     if (promotionalOverlay) promotionalOverlay.style.display = structuredPreview ? "none" : "";
     if (image) {
       if (readiness?.kind === "reference-board") {
-        image.alt = "The exact visual references you selected, paired with your event direction";
+        image.alt = "A specific visual reference paired with this event direction";
       } else if (readiness?.kind === "direction-card") {
         image.alt = "A creative direction assembled from the event details you entered";
       } else {
@@ -130,6 +132,12 @@ export default function PaywallPreviewGuide() {
   }, [card, readiness?.kind]);
 
   if (!card) return null;
+
+  const namedLabel = readiness?.namedReference?.label;
+  const automaticNamedResearch = Boolean(
+    namedLabel && readiness?.automaticReferenceResolutionEnabled,
+  );
+  const automaticAttempted = Boolean(readiness?.automaticReferenceAttempted);
 
   return createPortal(
     <div className="border-t border-border bg-card px-5 py-3 text-center">
@@ -148,15 +156,19 @@ export default function PaywallPreviewGuide() {
         </button>
       ) : previewReady && readiness?.kind === "reference-board" ? (
         <p className="text-xs leading-relaxed text-muted-foreground" data-testid="text-preview-reference-board">
-          Your exact visual reference and event direction are captured together. Posy will not replace them with a generic character lookalike.
+          A specific visual reference and your event direction are captured together. Posy will not replace them with a generic lookalike.
         </p>
       ) : previewReady && readiness?.kind === "direction-card" ? (
         <p className="text-xs leading-relaxed text-muted-foreground" data-testid="text-preview-quality-lock">
-          {readiness.namedReference
-            ? `Posy recognized ${readiness.namedReference.label}. Add a screenshot below to pin the exact visual world, or continue with this reliable direction.`
-            : readiness.imageGenerationEnabled
-              ? "Posy captured your creative direction. Generated artwork can replace this card only after it clears Posy’s private theme and quality review."
-              : "Posy captured your creative direction. This reliable first look is shown instead of risking an off-brief generated image."}
+          {automaticNamedResearch && automaticAttempted
+            ? `Posy recognized ${namedLabel} and completed the visual research. The generated option did not clear Posy’s standard, so this reliable direction stayed in place instead of showing weak artwork.`
+            : automaticNamedResearch
+              ? `Posy recognized ${namedLabel}. Visual research and private quality review are handled automatically—there is nothing else for you to find or upload.`
+              : namedLabel
+                ? `Posy recognized ${namedLabel} and captured every defining event detail without showing a generic substitute.`
+                : readiness.imageGenerationEnabled
+                  ? "Posy captured your creative direction. Generated artwork can replace this card only after it clears Posy’s private theme and quality review."
+                  : "Posy captured your creative direction. This reliable first look is shown instead of risking an off-brief generated image."}
         </p>
       ) : previewReady ? (
         <p className="text-xs leading-relaxed text-muted-foreground" data-testid="text-preview-expectation">
@@ -164,7 +176,9 @@ export default function PaywallPreviewGuide() {
         </p>
       ) : (
         <p className="text-xs text-muted-foreground" aria-live="polite">
-          Posy is building this from the details you already shared. Unapproved artwork is never shown.
+          {automaticNamedResearch
+            ? `Posy is resolving the right ${namedLabel} visual world and reviewing the artwork privately. Nothing unapproved will be shown.`
+            : "Posy is building this from the details you already shared. Unapproved artwork is never shown."}
         </p>
       )}
     </div>,
