@@ -5,8 +5,9 @@ import { readFileSync } from "node:fs";
  * Customer-visible release contract for the pre-payment first look.
  * These assertions intentionally inspect the production page source rather
  * than mocking <img> behavior: the browser must never crop a reviewed asset,
- * and raw artwork must not be covered by a sales gradient/text overlay after
- * the private quality gate has already approved its pixels.
+ * raw artwork must not be covered by a sales overlay after private approval,
+ * and a host should see immediate proof that Posy understood the event while
+ * slower artwork work continues in the background.
  */
 describe("pre-payment rendered first-look contract", () => {
   const source = readFileSync("client/src/pages/DraftGenerating.tsx", "utf8");
@@ -25,8 +26,11 @@ describe("pre-payment rendered first-look contract", () => {
     expect(readyBranch).not.toContain("Unlock your complete plan and full invitation designs");
   });
 
-  it("keeps the generation state useful instead of an empty artwork box", () => {
-    expect(source).toContain("Creating your personalized first look");
-    expect(source).toMatch(/finding the right visual references|reviewing the artwork privately/i);
+  it("shows event-specific understanding immediately while artwork is generating", () => {
+    expect(source).toMatch(/directionCard\??:/);
+    const progressBranch = source.match(/previewInProgress \? \([\s\S]*?\) : previewCouldNotBeShown/)?.[0] ?? "";
+    expect(progressBranch).toMatch(/directionCard/);
+    expect(progressBranch).toMatch(/headline|cues|eventName/);
+    expect(progressBranch).toContain("Creating your personalized first look");
   });
 });
