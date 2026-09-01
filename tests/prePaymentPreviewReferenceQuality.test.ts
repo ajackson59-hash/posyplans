@@ -4,8 +4,6 @@ import type { Tier1Result } from "../server/aiFirst/tier1";
 import type { VisionVerdict } from "../server/aiFirst/visionGate";
 import { generateQualityLockedPreview } from "../server/prePaymentPreviewQuality";
 
-// The live image-edits API currently accepts explicit input fidelity on the
-// reference model, while generic text-only generation remains on GPT Image 2.
 const event = {
   id: 710,
   eventName: "Hayden's Unicorn Academy Birthday",
@@ -24,55 +22,80 @@ const tier1: Tier1Result = {
   durationMs: 1,
 };
 
-const vision: VisionVerdict = {
-  scores: {
-    textLogoWatermarkFree: 5,
-    artifactFree: 5,
-    premiumFinish: 5,
-    briefFidelity: 5,
-    compositionQuality: 5,
-    ageAppropriate: 5,
-  },
-  requiredPresent: [{ requirement: "recognizable academy riders and bonded unicorns", present: true }],
-  excludedFound: [],
-  notes: "approved",
-  passed: true,
-  failureCodes: [],
-  unavailable: false,
-  durationMs: 1,
-  usage: { inputTokens: 10, outputTokens: 5 },
-};
+function vision(passed: boolean, notes = "approved"): VisionVerdict {
+  return {
+    scores: {
+      textLogoWatermarkFree: 5,
+      artifactFree: passed ? 5 : 4,
+      premiumFinish: passed ? 5 : 3,
+      briefFidelity: passed ? 5 : 2,
+      compositionQuality: passed ? 5 : 4,
+      ageAppropriate: 5,
+    },
+    requiredPresent: [{
+      requirement: "recognizable academy riders and bonded unicorns",
+      present: passed,
+    }],
+    excludedFound: passed ? [] : ["generic adjacent aesthetic"],
+    notes,
+    passed,
+    failureCodes: passed ? [] : ["brief-fidelity"],
+    unavailable: false,
+    durationMs: 1,
+    usage: { inputTokens: 10, outputTokens: 5 },
+  };
+}
 
 describe("reference-led preview quality", () => {
-  it("uses the supported high-fidelity reference model and forwards the original pixels", async () => {
+  it("tries GPT Image 2 first, then one high-fidelity reference correction when needed", async () => {
     const referenceImages = [{
       bytes: Buffer.from("official-reference-pixels"),
       mimeType: "image/png" as const,
       filename: "reference.png",
     }];
-    const generateImage = vi.fn(async () => ({
-      bytes: Buffer.alloc(50_000, 1),
-      dataUrl: "data:image/png;base64,APPROVED",
-      durationMs: 100,
-    }));
+    const generateImage = vi.fn()
+      .mockResolvedValueOnce({
+        bytes: Buffer.alloc(50_000, 1),
+        dataUrl: "data:image/png;base64,FIRST",
+        durationMs: 100,
+      })
+      .mockResolvedValueOnce({
+        bytes: Buffer.alloc(50_000, 2),
+        dataUrl: "data:image/png;base64,SECOND",
+        durationMs: 100,
+      });
+    const runVision = vi.fn()
+      .mockResolvedValueOnce(vision(false, "The rider and unicorn identity is too generic."))
+      .mockResolvedValueOnce(vision(true));
 
     const result = await generateQualityLockedPreview(event, {
       referenceImages,
       generateImage,
       runTier1: () => tier1,
-      runVision: async () => vision,
-      maxCandidates: 1,
+      runVision,
+      maxCandidates: 2,
     });
 
     expect(result.kind).toBe("approved-image");
-    expect(generateImage).toHaveBeenCalledTimes(1);
+    if (result.kind !== "approved-image") throw new Error("expected approved image");
+    expect(result.dataUrl).toBe("data:image/png;base64,SECOND");
+    expect(result.model).toBe("gpt-image-1.5");
+    expect(generateImage).toHaveBeenCalledTimes(2);
     expect(generateImage.mock.calls[0][0]).toEqual(expect.objectContaining({
+      model: "gpt-image-2",
+      quality: "high",
+      inputFidelity: undefined,
+      aspectRatio: "9:16",
+      referenceImages,
+    }));
+    expect(generateImage.mock.calls[1][0]).toEqual(expect.objectContaining({
       model: "gpt-image-1.5",
       quality: "high",
       inputFidelity: "high",
       aspectRatio: "9:16",
       referenceImages,
     }));
+    expect(generateImage.mock.calls[1][0].prompt).toContain("too generic");
   });
 
   it("keeps generic no-reference preview generation on GPT Image 2 at medium quality", async () => {
@@ -89,7 +112,7 @@ describe("reference-led preview quality", () => {
     }, {
       generateImage,
       runTier1: () => tier1,
-      runVision: async () => vision,
+      runVision: async () => vision(true),
       maxCandidates: 1,
     });
 
