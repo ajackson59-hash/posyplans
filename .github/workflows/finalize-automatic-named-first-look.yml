@@ -48,7 +48,12 @@ jobs:
               resolver,
           )
           if match_count != 4:
-              raise SystemExit(f"Expected four matchAll loops, patched {match_count}")
+              raise SystemExit(f"Expected four HTML matchAll loops, patched {match_count}")
+          old_text_loop = '  for (const match of text.matchAll(/https:\\/\\/[^\\s\\]})>"\']+/g)) urls.push(match[0]);'
+          new_text_loop = '  for (const match of Array.from(text.matchAll(/https:\\/\\/[^\\s\\]})>"\']+/g))) urls.push(match[0]);'
+          if old_text_loop not in resolver:
+              raise SystemExit("Response-text matchAll loop not found")
+          resolver = resolver.replace(old_text_loop, new_text_loop, 1)
           resolver_path.write_text(resolver)
 
           quality_path = Path("server/prePaymentPreviewQuality.ts")
