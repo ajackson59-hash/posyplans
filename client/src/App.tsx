@@ -21,7 +21,6 @@ import Recover from "@/pages/Recover";
 import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import DashboardEntitlementGuard from "@/components/DashboardEntitlementGuard";
 import PaywallPreviewGuide from "@/components/PaywallPreviewGuide";
-import PaywallReferenceUpload from "@/components/PaywallReferenceUpload";
 import DirectCheckoutShortcut from "@/components/DirectCheckoutShortcut";
 import InitialPreviewReuse from "@/components/InitialPreviewReuse";
 import RsvpNoteSuggestions from "@/components/RsvpNoteSuggestions";
@@ -64,7 +63,6 @@ function App() {
         <Toaster />
         <DashboardEntitlementGuard />
         <PaywallPreviewGuide />
-        <PaywallReferenceUpload />
         <DirectCheckoutShortcut />
         <InitialPreviewReuse />
         <RsvpNoteSuggestions />
