@@ -74,7 +74,7 @@ function withDeadline<T>(promise: Promise<T>, timeoutMs: number, stage: string):
   });
 }
 
-async function runInternalPreviewCanary() {
+export async function runInternalPreviewCanary() {
   if (process.env.VERCEL_ENV !== "preview") {
     return { status: 404, body: { error: "Not found" } };
   }
