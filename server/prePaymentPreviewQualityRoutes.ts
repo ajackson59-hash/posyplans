@@ -116,10 +116,19 @@ class PrePaymentPreviewDeadlineError extends Error {
   }
 }
 
-function withPreviewDeadline<T>(promise: Promise<T>, timeoutMs: number, stage: string): Promise<T> {
+function withPreviewDeadline<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  stage: string,
+  onTimeout?: (error: PrePaymentPreviewDeadlineError) => void,
+): Promise<T> {
   const boundedMs = Math.max(1, Math.floor(timeoutMs));
   return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new PrePaymentPreviewDeadlineError(stage)), boundedMs);
+    const timer = setTimeout(() => {
+      const error = new PrePaymentPreviewDeadlineError(stage);
+      onTimeout?.(error);
+      reject(error);
+    }, boundedMs);
     promise.then(
       (value) => {
         clearTimeout(timer);
@@ -394,10 +403,6 @@ async function runAutomaticNamedPreviewJob({
 }: AutomaticNamedJobDependencies): Promise<void> {
   const jobStartedAt = Date.now();
   const remainingMs = () => Math.max(1, jobTimeoutMs - (Date.now() - jobStartedAt));
-  const abortController = new AbortController();
-  const abortTimer = setTimeout(() => {
-    abortController.abort(new PrePaymentPreviewDeadlineError("Artwork generation and private review"));
-  }, Math.max(1, jobTimeoutMs));
   try {
     let resolved: ResolvedNamedReference | null = null;
     try {
@@ -421,15 +426,22 @@ async function runAutomaticNamedPreviewJob({
       return;
     }
 
-    const result = await withPreviewDeadline(generate(event, {
-      inspirationNotes: resolved.notes,
-      referenceImages: resolved.images,
-      quality: "high",
-      maxCandidates: 2,
-      namedReference,
-      attemptRetention: { store: artworkAttemptStore, eventId: event.id, ownerToken: event.ownerToken },
-      signal: abortController.signal,
-    }), remainingMs(), "Artwork generation and private review");
+    const abortController = new AbortController();
+    const generationTimeoutMs = remainingMs();
+    const result = await withPreviewDeadline(
+      generate(event, {
+        inspirationNotes: resolved.notes,
+        referenceImages: resolved.images,
+        quality: "high",
+        maxCandidates: 2,
+        namedReference,
+        attemptRetention: { store: artworkAttemptStore, eventId: event.id, ownerToken: event.ownerToken },
+        signal: abortController.signal,
+      }),
+      generationTimeoutMs,
+      "Artwork generation and private review",
+      (error) => abortController.abort(error),
+    );
 
     if (result.kind === "approved-image"
       && await persistApprovedImage(store, event, result.dataUrl, now())) {
@@ -465,8 +477,6 @@ async function runAutomaticNamedPreviewJob({
       console.error("[prepayment-preview] could not persist the safe named-theme fallback:", persistError);
     }
     console.error("[prepayment-preview] automatic named-theme background task failed closed:", error);
-  } finally {
-    clearTimeout(abortTimer);
   }
 }
 
@@ -519,17 +529,20 @@ async function runAutomaticClassifiedPreviewJob({
   }
 
   const abortController = new AbortController();
-  const abortTimer = setTimeout(() => {
-    abortController.abort(new PrePaymentPreviewDeadlineError("Artwork generation and private review"));
-  }, remainingMs());
+  const generationTimeoutMs = remainingMs();
   try {
-    const result = await withPreviewDeadline(generate(event, {
-      quality: "medium",
-      maxCandidates: 1,
-      namedReference: null,
-      attemptRetention: { store: artworkAttemptStore, eventId: event.id, ownerToken: event.ownerToken },
-      signal: abortController.signal,
-    }), remainingMs(), "Artwork generation and private review");
+    const result = await withPreviewDeadline(
+      generate(event, {
+        quality: "medium",
+        maxCandidates: 1,
+        namedReference: null,
+        attemptRetention: { store: artworkAttemptStore, eventId: event.id, ownerToken: event.ownerToken },
+        signal: abortController.signal,
+      }),
+      generationTimeoutMs,
+      "Artwork generation and private review",
+      (error) => abortController.abort(error),
+    );
 
     if (result.kind === "approved-image"
       && await persistApprovedImage(store, event, result.dataUrl, now())) {
@@ -547,8 +560,6 @@ async function runAutomaticClassifiedPreviewJob({
   } catch (error) {
     await persistDirectionCard(store, event, now());
     console.error("[prepayment-preview] classified background preview failed closed:", error);
-  } finally {
-    clearTimeout(abortTimer);
   }
 }
 

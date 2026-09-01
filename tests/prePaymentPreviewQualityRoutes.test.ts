@@ -215,9 +215,13 @@ describe("quality-locked prepayment preview routes", () => {
     }));
   });
 
-  it("falls back within the bounded deadline instead of making the customer wait indefinitely", async () => {
+  it("falls back at the bounded deadline and aborts the active provider work", async () => {
     resolveNamedReference.mockResolvedValue(automaticResolution());
-    generate.mockImplementation(() => new Promise(() => undefined));
+    let providerSignal: AbortSignal | undefined;
+    generate.mockImplementation((_event: Event, dependencies?: { signal?: AbortSignal }) => {
+      providerSignal = dependencies?.signal;
+      return new Promise(() => undefined);
+    });
 
     const response = await request(makeApp({ jobTimeoutMs: 5 }))
       .post(`/api/events/owner/${OWNER}/prepayment-preview`)
@@ -225,6 +229,9 @@ describe("quality-locked prepayment preview routes", () => {
 
     expect(response.status).toBe(202);
     await runScheduledTask();
+    expect(providerSignal).toBeDefined();
+    expect(providerSignal?.aborted).toBe(true);
+    expect((providerSignal?.reason as Error | undefined)?.message).toContain("preview deadline");
     expect(stored.prePaymentPreviewUrl).toMatch(/^data:image\/svg\+xml;base64,/);
   });
 
