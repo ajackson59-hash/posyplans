@@ -3,6 +3,8 @@ import type { Event } from "@shared/schema";
 import { waitUntil } from "@vercel/functions";
 import { z } from "zod";
 import { storage } from "./storage";
+import { DbArtworkAttemptStore } from "./aiFirst/dbStore";
+import type { AiFirstArtworkAttemptStore } from "./aiFirst/artworkAttemptStore";
 import { canGenerateDraft } from "./masterPlannerEntitlement";
 import {
   type ArtworkReferenceImage,
@@ -34,7 +36,24 @@ import {
   type NamedCreativeReference,
   type PrePaymentPreviewMode,
   type PreviewQualityDependencies,
+  type PreviewQualityReview,
 } from "./prePaymentPreviewQuality";
+
+/**
+ * Compact, log-safe summary of why the pipeline did not return an approved
+ * image. Full per-candidate tier1/vision evidence lives in
+ * artworkAttemptStore; this keeps the reason legible in the warn log
+ * itself without duplicating that evidence or growing unbounded.
+ */
+function summarizeRejectionForLog(reviews: PreviewQualityReview[]): unknown {
+  if (reviews.length === 0) return null;
+  const last = reviews[reviews.length - 1];
+  return {
+    candidates: reviews.length,
+    lastFailureCodes: last.failureCodes,
+    lastNotes: last.notes || undefined,
+  };
+}
 
 const requestSchema = z.object({
   email: z.string().trim().email().max(254),
@@ -64,6 +83,17 @@ export interface PrePaymentPreviewQualityRouteDependencies {
   ) => ReturnType<typeof generateQualityLockedPreview>;
   schedule?: PreviewBackgroundScheduler;
   now?: () => number;
+  /**
+   * Every billed pre-payment preview candidate — accepted or rejected — is
+   * durably retained here for protected owner-scoped review, the same store
+   * and the same /ai-first/review/attempts routes the main AI-first
+   * pipeline already uses. Before this was wired in, a rejected candidate's
+   * tier1/vision findings only ever reached a compact warn log for the
+   * duration of that one request. Defaults to the real DB-backed store so
+   * production gets retention automatically; tests can inject an in-memory
+   * one or omit it entirely (retention is best-effort and optional).
+   */
+  artworkAttemptStore?: AiFirstArtworkAttemptStore;
 }
 
 type PreviewAssetKind = "direction-card" | "reference-board" | "approved-image" | "none";
@@ -314,6 +344,7 @@ interface AutomaticNamedJobDependencies {
   namedReference: NamedCreativeReference;
   resolveNamedReference: typeof resolveNamedCreativeReference;
   generate: NonNullable<PrePaymentPreviewQualityRouteDependencies["generate"]>;
+  artworkAttemptStore: AiFirstArtworkAttemptStore;
   now: () => number;
 }
 
@@ -323,6 +354,7 @@ async function runAutomaticNamedPreviewJob({
   namedReference,
   resolveNamedReference,
   generate,
+  artworkAttemptStore,
   now,
 }: AutomaticNamedJobDependencies): Promise<void> {
   try {
@@ -349,6 +381,7 @@ async function runAutomaticNamedPreviewJob({
       referenceImages: resolved.images,
       quality: "high",
       maxCandidates: 2,
+      attemptRetention: { store: artworkAttemptStore, eventId: event.id, ownerToken: event.ownerToken },
     });
 
     if (result.kind === "approved-image"
@@ -373,6 +406,10 @@ async function runAutomaticNamedPreviewJob({
       namedReference: namedReference.id,
       automaticReferenceStrategy: resolved.strategy,
       error: result.kind === "unavailable" ? result.error : undefined,
+      // Full per-candidate tier1/vision evidence is durably retained in
+      // artworkAttemptStore (see /ai-first/review/attempts); this compact
+      // summary just keeps the last candidate's reason legible inline.
+      rejectionSummary: summarizeRejectionForLog(result.reviews),
     })}`);
   } catch (error) {
     try {
@@ -407,6 +444,7 @@ export function registerPrePaymentPreviewQualityRoutes(
   const generate = dependencies.generate ?? generateQualityLockedPreview;
   const schedule = dependencies.schedule ?? defaultSchedule;
   const now = dependencies.now ?? Date.now;
+  const artworkAttemptStore = dependencies.artworkAttemptStore ?? new DbArtworkAttemptStore();
 
   app.get("/api/events/owner/:ownerToken/prepayment-preview/readiness", async (req, res) => {
     let event = await store.getEventByOwnerToken(req.params.ownerToken);
@@ -507,6 +545,7 @@ export function registerPrePaymentPreviewQualityRoutes(
         namedReference,
         resolveNamedReference,
         generate,
+        artworkAttemptStore,
         now,
       }));
 
@@ -540,6 +579,7 @@ export function registerPrePaymentPreviewQualityRoutes(
       result = await generate(event, {
         referenceImages,
         maxCandidates: 2,
+        attemptRetention: { store: artworkAttemptStore, eventId: event.id, ownerToken: event.ownerToken },
       });
     } catch (error) {
       event = await persistDirectionCard(store, event, now());
@@ -566,6 +606,10 @@ export function registerPrePaymentPreviewQualityRoutes(
       model: result.model,
       privateCandidates: result.attempts,
       error: result.kind === "unavailable" ? result.error : undefined,
+      // Full per-candidate tier1/vision evidence is durably retained in
+      // artworkAttemptStore (see /ai-first/review/attempts); this compact
+      // summary just keeps the last candidate's reason legible inline.
+      rejectionSummary: summarizeRejectionForLog(result.reviews),
     })}`);
     return res.json(await readyResponse(event, mode, namedAutoEnabled, now()));
   });

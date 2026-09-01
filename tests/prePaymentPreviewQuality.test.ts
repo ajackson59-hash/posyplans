@@ -331,4 +331,123 @@ describe("prepayment preview quality lock", () => {
     expect(result.attempts).toBe(0);
     expect(JSON.stringify(result)).not.toContain("data:image");
   });
+
+  // Item 3 (retained rejection diagnostics): before this, a rejected
+  // candidate's tier1/vision evidence lived only in the local `reviews[]`
+  // variable and evaporated once the request finished. These tests prove
+  // every billed candidate — rejected or approved — is durably recorded
+  // when a retention store is supplied, and that retention is genuinely
+  // optional and fail-open so it can never change the customer-visible
+  // approve/reject outcome.
+  describe("attempt evidence retention", () => {
+    function fakeAttemptStore() {
+      const records: Array<Record<string, unknown>> = [];
+      return {
+        records,
+        store: {
+          record: vi.fn(async (input: Record<string, unknown>) => {
+            records.push(input);
+            return { id: `attempt-${records.length}`, ...input } as never;
+          }),
+          listForOwner: vi.fn(async () => []),
+          findById: vi.fn(async () => undefined),
+        },
+      };
+    }
+
+    it("records a rejected candidate with its failure codes and gate findings", async () => {
+      const { store, records } = fakeAttemptStore();
+      const generateImage = vi.fn(async () => ({
+        bytes: Buffer.alloc(50_000, 3),
+        dataUrl: "data:image/png;base64,REJECTED",
+        durationMs: 100,
+      }));
+
+      const result = await generateQualityLockedPreview(event, {
+        generateImage,
+        runTier1: () => tier1(true),
+        runVision: async () => vision(false, "generic adjacent character art"),
+        maxCandidates: 2,
+        attemptRetention: { store: store as never, eventId: event.id, ownerToken: "owner-token-abc" },
+      });
+
+      expect(result.kind).toBe("rejected");
+      expect(store.record).toHaveBeenCalledTimes(2);
+      for (const record of records) {
+        expect(record.eventId).toBe(event.id);
+        expect(record.ownerToken).toBe("owner-token-abc");
+        expect(record.status).toBe("rejected");
+        expect(record.failureCodes).toEqual(["brief-fidelity"]);
+        // The raw bytes must be retained too — a reviewer needs to see the
+        // actual rejected image, not only the codes that rejected it.
+        expect(Buffer.isBuffer(record.bytes)).toBe(true);
+      }
+    });
+
+    it("records an approved candidate as accepted", async () => {
+      const { store, records } = fakeAttemptStore();
+      const generateImage = vi.fn(async () => ({
+        bytes: Buffer.alloc(50_000, 4),
+        dataUrl: "data:image/png;base64,APPROVED",
+        durationMs: 100,
+      }));
+
+      const result = await generateQualityLockedPreview(event, {
+        generateImage,
+        runTier1: () => tier1(true),
+        runVision: async () => vision(true),
+        maxCandidates: 2,
+        attemptRetention: { store: store as never, eventId: event.id, ownerToken: "owner-token-abc" },
+      });
+
+      expect(result.kind).toBe("approved-image");
+      expect(store.record).toHaveBeenCalledTimes(1);
+      expect(records[0].status).toBe("accepted");
+      expect(records[0].failureCodes).toEqual([]);
+    });
+
+    it("stays fail-open: a retention error never changes the customer-visible result", async () => {
+      const store = {
+        record: vi.fn(async () => {
+          throw new Error("db unavailable");
+        }),
+        listForOwner: vi.fn(async () => []),
+        findById: vi.fn(async () => undefined),
+      };
+      const generateImage = vi.fn(async () => ({
+        bytes: Buffer.alloc(50_000, 5),
+        dataUrl: "data:image/png;base64,APPROVED",
+        durationMs: 100,
+      }));
+
+      const result = await generateQualityLockedPreview(event, {
+        generateImage,
+        runTier1: () => tier1(true),
+        runVision: async () => vision(true),
+        maxCandidates: 2,
+        attemptRetention: { store: store as never, eventId: event.id, ownerToken: "owner-token-abc" },
+      });
+
+      expect(result.kind).toBe("approved-image");
+      if (result.kind !== "approved-image") throw new Error("expected approved image");
+      expect(result.dataUrl).toBe("data:image/png;base64,APPROVED");
+    });
+
+    it("omits retention entirely when no store is supplied, exactly as before", async () => {
+      const generateImage = vi.fn(async () => ({
+        bytes: Buffer.alloc(50_000, 6),
+        dataUrl: "data:image/png;base64,APPROVED",
+        durationMs: 100,
+      }));
+
+      const result = await generateQualityLockedPreview(event, {
+        generateImage,
+        runTier1: () => tier1(true),
+        runVision: async () => vision(true),
+        maxCandidates: 2,
+      });
+
+      expect(result.kind).toBe("approved-image");
+    });
+  });
 });
