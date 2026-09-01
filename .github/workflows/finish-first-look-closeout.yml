@@ -1,19 +1,17 @@
-name: Finish First-Look Release Contract
+name: Close Out First-Look Presentation
 
 on:
   push:
-    branches:
-      - codex/launch-blockers
-    paths:
-      - .github/workflows/finish-first-look-closeout.yml
+    branches: [codex/launch-blockers]
+    paths: [.github/workflows/finish-first-look-closeout.yml]
 
 permissions:
   contents: write
 
 jobs:
-  closeout:
+  patch:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 20
     env:
       DATABASE_URL: postgres://test:test@127.0.0.1:5432/test
       ANTHROPIC_API_KEY: test
@@ -23,36 +21,29 @@ jobs:
         with:
           ref: codex/launch-blockers
 
-      - name: Complete customer-visible first-look contract
-        shell: bash
+      - name: Make the customer-visible first look truthful and non-blocking
         run: |
           python - <<'PY'
           from pathlib import Path
           import re
 
-          def replace_once(path: str, old: str, new: str) -> None:
-              file = Path(path)
-              text = file.read_text()
+          def one(path, old, new):
+              p = Path(path)
+              text = p.read_text()
               count = text.count(old)
               if count != 1:
-                  raise SystemExit(f"Expected exactly one match in {path}, found {count}: {old[:120]!r}")
-              file.write_text(text.replace(old, new, 1))
+                  raise SystemExit(f"expected one match in {path}, found {count}: {old[:100]!r}")
+              p.write_text(text.replace(old, new, 1))
 
-          def sub_once(path: str, pattern: str, replacement: str, flags: int = 0) -> None:
-              file = Path(path)
-              text = file.read_text()
-              updated, count = re.subn(pattern, replacement, text, count=1, flags=flags)
+          def sub(path, pattern, replacement):
+              p = Path(path)
+              text, count = re.subn(pattern, replacement, p.read_text(), count=1, flags=re.S)
               if count != 1:
-                  raise SystemExit(f"Expected exactly one regex match in {path}, found {count}: {pattern[:120]!r}")
-              file.write_text(updated)
+                  raise SystemExit(f"expected one regex match in {path}, found {count}")
+              p.write_text(text)
 
-          # -----------------------------------------------------------------
-          # Client: reviewed pixels stay untouched; generation shows an
-          # immediate event-specific proof and never traps checkout.
-          # -----------------------------------------------------------------
           page = "client/src/pages/DraftGenerating.tsx"
-          replace_once(
-              page,
+          one(page,
               'type PrePaymentPreviewGenerationState = "idle" | "generating" | "ready" | "fallback";\n\ninterface PrePaymentPreviewReadiness {',
               '''type PrePaymentPreviewGenerationState = "idle" | "generating" | "ready" | "fallback";
 
@@ -64,20 +55,16 @@ interface PreviewDirectionCard {
   cues: string[];
 }
 
-interface PrePaymentPreviewReadiness {''',
-          )
-          replace_once(
-              page,
+interface PrePaymentPreviewReadiness {''')
+          one(page,
               '''  automaticReferenceResolutionEnabled?: boolean;
   automaticReferenceAttempted?: boolean;
 }''',
               '''  automaticReferenceResolutionEnabled?: boolean;
   automaticReferenceAttempted?: boolean;
   directionCard?: PreviewDirectionCard;
-}''',
-          )
-          replace_once(
-              page,
+}''')
+          one(page,
               '''  const readinessKind = previewReadiness.data?.kind ?? "none";
   const readinessState = previewReadiness.data?.generationState ?? "idle";
   const previewInProgress =''',
@@ -92,12 +79,10 @@ interface PrePaymentPreviewReadiness {''',
     || backgroundPreviewStarted
     || readinessState === "generating"
     || readinessKind !== "none";
-  const previewInProgress =''',
-          )
+  const previewInProgress =''')
 
-          sub_once(
-              page,
-              r'''  let paywallCtaLabel = "Show me my personalized first look";[\s\S]*?\n\n  // Only auto-fire generation once we know this event is allowed to draft''',
+          sub(page,
+              r'  let paywallCtaLabel = "Show me my personalized first look";.*?\n\n  // Only auto-fire generation once we know this event is allowed to draft',
               '''  const continueCheckoutLabel =
     selectedPlan === "spark"
       ? "Continue to checkout — $9.99"
@@ -116,12 +101,9 @@ interface PrePaymentPreviewReadiness {''',
         : `Subscribe to Plus — ${plusInterval === "annual" ? "$99/yr" : "$11.99/mo"}`;
   }
 
-  // Only auto-fire generation once we know this event is allowed to draft''',
-              flags=re.MULTILINE,
-          )
+  // Only auto-fire generation once we know this event is allowed to draft''')
 
-          replace_once(
-              page,
+          one(page,
               '''                <span className="absolute right-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground shadow-sm">
                   Posy first look
                 </span>
@@ -129,12 +111,9 @@ interface PrePaymentPreviewReadiness {''',
                   <p className="font-serif text-lg font-semibold">A first look, made from your details</p>
                   <p className="mt-1 text-xs text-white/85">Unlock your complete plan and full invitation designs.</p>
                 </div>
-''',
-              '',
-          )
+''', '')
 
-          replace_once(
-              page,
+          one(page,
               '''            ) : previewInProgress ? (
               <div className="flex aspect-[9/16] items-center justify-center gap-3 px-6 text-center text-sm text-muted-foreground">
                 <Loader2 className="h-5 w-5 shrink-0 animate-spin" />
@@ -184,11 +163,9 @@ interface PrePaymentPreviewReadiness {''',
                   </p>
                 )}
               </div>
-''',
-          )
+''')
 
-          replace_once(
-              page,
+          one(page,
               '''                if (!previewIsVisible && !previewCouldNotBeShown) {
                   requestPersonalizedPreview();
                   return;
@@ -196,11 +173,8 @@ interface PrePaymentPreviewReadiness {''',
               '''                if (!previewRequestAccepted && !previewIsVisible && !previewCouldNotBeShown) {
                   requestPersonalizedPreview();
                   return;
-                }''',
-          )
-
-          replace_once(
-              page,
+                }''')
+          one(page,
               '''                  onChange={(e) => setEmail(e.target.value)}
                   onBlur={() => {
                     // Generate early without turning a provisional field
@@ -209,652 +183,20 @@ interface PrePaymentPreviewReadiness {''',
                   }}
 ''',
               '''                  onChange={(e) => setEmail(e.target.value)}
-''',
-          )
-
-          replace_once(
-              page,
+''')
+          one(page,
               '''                disabled={
                   previewInProgress ||
                   previewAssetLoading ||
                   checkoutPending
                 }''',
-              '''                disabled={startPrePaymentPreview.isPending || checkoutPending}''',
-          )
+              '''                disabled={startPrePaymentPreview.isPending || checkoutPending}''')
 
-          # -----------------------------------------------------------------
-          # Server: classify arbitrary named worlds once on the explicit POST,
-          # keep reads network-free, impose a bounded background deadline, and
-          # review the exact 560px pixels that the unpaid customer receives.
-          # -----------------------------------------------------------------
-          routes = "server/prePaymentPreviewQualityRoutes.ts"
-          replace_once(
-              routes,
-              '''  buildDirectionCard,
-  detectNamedCreativeReferenceSync,
-  directionCardDataUrl,''',
-              '''  buildDirectionCard,
-  detectNamedCreativeReference,
-  detectNamedCreativeReferenceSync,
-  directionCardDataUrl,''',
-          )
-          replace_once(
-              routes,
-              '''  autoNamedEnabled?: () => boolean;
-  resolveNamedReference?: typeof resolveNamedCreativeReference;''',
-              '''  autoNamedEnabled?: () => boolean;
-  classifyNamedReference?: (text: string) => Promise<NamedCreativeReference | null>;
-  resolveNamedReference?: typeof resolveNamedCreativeReference;''',
-          )
-          replace_once(
-              routes,
-              '''  schedule?: PreviewBackgroundScheduler;
-  now?: () => number;''',
-              '''  schedule?: PreviewBackgroundScheduler;
-  now?: () => number;
-  jobTimeoutMs?: number;''',
-          )
-          replace_once(
-              routes,
-              '''const QUALITY_APPROVED_PNG_PREFIX = "data:image/png;posy-quality-approved;base64,";
-const STANDARD_PNG_PREFIX = "data:image/png;base64,";
-const BACKGROUND_STALE_MS = 6 * 60 * 1000;
-const POLL_AFTER_MS = 2500;''',
-              '''const QUALITY_APPROVED_PNG_PREFIX = "data:image/png;posy-quality-approved;base64,";
-const STANDARD_PNG_PREFIX = "data:image/png;base64,";
-export const PREPAYMENT_PREVIEW_JOB_TIMEOUT_MS = 60_000;
-const GENERAL_CLASSIFIER_TIMEOUT_MS = 7_500;
-const REFERENCE_RESOLUTION_TIMEOUT_MS = 12_000;
-const BACKGROUND_STALE_MS = PREPAYMENT_PREVIEW_JOB_TIMEOUT_MS + 15_000;
-const POLL_AFTER_MS = 2500;
-
-class PrePaymentPreviewDeadlineError extends Error {
-  constructor(stage: string) {
-    super(`${stage} exceeded Posy's preview deadline`);
-    this.name = "PrePaymentPreviewDeadlineError";
-  }
-}
-
-function withPreviewDeadline<T>(promise: Promise<T>, timeoutMs: number, stage: string): Promise<T> {
-  const boundedMs = Math.max(1, Math.floor(timeoutMs));
-  return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new PrePaymentPreviewDeadlineError(stage)), boundedMs);
-    promise.then(
-      (value) => {
-        clearTimeout(timer);
-        resolve(value);
-      },
-      (error) => {
-        clearTimeout(timer);
-        reject(error);
-      },
-    );
-  });
-}''',
-          )
-          replace_once(
-              routes,
-              '''async function readiness(
-  event: Event,
-  mode: PrePaymentPreviewMode,
-  autoNamedEnabled: boolean,
-  timestamp: number,
-): Promise<ReadinessResponse> {
-  // Curated-only, synchronous, network-free — this runs on every readiness
-  // poll (every 2.5s while generating), so it must never await a model call.
-  const card = buildDirectionCard(event);''',
-              '''async function readiness(
-  event: Event,
-  mode: PrePaymentPreviewMode,
-  autoNamedEnabled: boolean,
-  timestamp: number,
-  resolvedNamed?: NamedCreativeReference | null,
-): Promise<ReadinessResponse> {
-  // Curated-only, synchronous, network-free on GET. The explicit POST may
-  // pass its one already-resolved general classification into this response.
-  const card = buildDirectionCard(event, resolvedNamed);''',
-          )
-          replace_once(
-              routes,
-              '''  artworkAttemptStore: AiFirstArtworkAttemptStore;
-  now: () => number;''',
-              '''  artworkAttemptStore: AiFirstArtworkAttemptStore;
-  now: () => number;
-  jobTimeoutMs: number;''',
-          )
-          replace_once(
-              routes,
-              '''  artworkAttemptStore,
-  now,
-}: AutomaticNamedJobDependencies): Promise<void> {
-  try {
-    let resolved: ResolvedNamedReference | null = null;
-    try {
-      resolved = await resolveNamedReference(event, namedReference);''',
-              '''  artworkAttemptStore,
-  now,
-  jobTimeoutMs,
-}: AutomaticNamedJobDependencies): Promise<void> {
-  const jobStartedAt = Date.now();
-  const remainingMs = () => Math.max(1, jobTimeoutMs - (Date.now() - jobStartedAt));
-  try {
-    let resolved: ResolvedNamedReference | null = null;
-    try {
-      resolved = await withPreviewDeadline(
-        resolveNamedReference(event, namedReference),
-        Math.min(REFERENCE_RESOLUTION_TIMEOUT_MS, remainingMs()),
-        "Named-theme visual research",
-      );''',
-          )
-          replace_once(
-              routes,
-              '''    const result = await generate(event, {
-      inspirationNotes: resolved.notes,
-      referenceImages: resolved.images,
-      quality: "high",
-      maxCandidates: 2,
-      namedReference,
-      attemptRetention: { store: artworkAttemptStore, eventId: event.id, ownerToken: event.ownerToken },
-    });''',
-              '''    const result = await withPreviewDeadline(generate(event, {
-      inspirationNotes: resolved.notes,
-      referenceImages: resolved.images,
-      quality: "high",
-      maxCandidates: 2,
-      namedReference,
-      attemptRetention: { store: artworkAttemptStore, eventId: event.id, ownerToken: event.ownerToken },
-    }), remainingMs(), "Artwork generation and private review");''',
-          )
-          replace_once(
-              routes,
-              '''async function readyResponse(event: Event, mode: PrePaymentPreviewMode, autoNamed: boolean, timestamp: number) {
-  return readiness(event, mode, autoNamed, timestamp);
-}''',
-              '''async function readyResponse(
-  event: Event,
-  mode: PrePaymentPreviewMode,
-  autoNamed: boolean,
-  timestamp: number,
-  resolvedNamed?: NamedCreativeReference | null,
-) {
-  return readiness(event, mode, autoNamed, timestamp, resolvedNamed);
-}''',
-          )
-          replace_once(
-              routes,
-              '''  const autoNamedEnabled = dependencies.autoNamedEnabled
-    ?? (() => namedReferenceAutoResolutionEnabled());
-  const resolveNamedReference = dependencies.resolveNamedReference
-    ?? resolveNamedCreativeReference;''',
-              '''  const autoNamedEnabled = dependencies.autoNamedEnabled
-    ?? (() => namedReferenceAutoResolutionEnabled());
-  const classifyNamedReference = dependencies.classifyNamedReference
-    ?? ((text: string) => detectNamedCreativeReference(text));
-  const resolveNamedReference = dependencies.resolveNamedReference
-    ?? resolveNamedCreativeReference;''',
-          )
-          replace_once(
-              routes,
-              '''  const now = dependencies.now ?? Date.now;
-  const artworkAttemptStore = dependencies.artworkAttemptStore ?? new DbArtworkAttemptStore();''',
-              '''  const now = dependencies.now ?? Date.now;
-  const jobTimeoutMs = dependencies.jobTimeoutMs ?? PREPAYMENT_PREVIEW_JOB_TIMEOUT_MS;
-  const artworkAttemptStore = dependencies.artworkAttemptStore ?? new DbArtworkAttemptStore();''',
-          )
-
-          replace_once(
-              routes,
-              '''    const hasHostReference = referenceImages.length > 0;
-    // Launch-safe: only the curated, synchronous detector participates in a
-    // customer request. The arbitrary LLM classifier remains available for a
-    // future explicitly budgeted workflow, but is not reachable from this
-    // route and therefore cannot add surprise latency or spend.
-    const namedReference = namedReferenceForEventSync(event);
-
-    if (backgroundIsStale(event, timestamp)) {
-      event = await persistDirectionCard(store, event, timestamp);
-      currentKind = "direction-card";
-    }
-
-    if (namedReference) {''',
-              '''    const hasHostReference = referenceImages.length > 0;
-
-    if (backgroundIsStale(event, timestamp)) {
-      event = await persistDirectionCard(store, event, timestamp);
-      currentKind = "direction-card";
-    }
-
-    // A repeated submit while background work is active is idempotent for all
-    // theme types. In particular, a non-curated named world has not been
-    // persisted separately yet, so never reclassify it or fall into the
-    // generic branch merely because a second browser request arrived.
-    if (currentKind === "none" && event.prePaymentPreviewAttempts > 0) {
-      res.setHeader("Retry-After", String(Math.ceil(POLL_AFTER_MS / 1000)));
-      return res.status(202).json(await readiness(event, mode, namedAutoEnabled, timestamp));
-    }
-    if (currentKind === "direction-card" && event.prePaymentPreviewAttempts > 0) {
-      return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
-    }
-
-    let namedReference = namedReferenceForEventSync(event);
-    if (!namedReference && currentKind === "none" && event.prePaymentPreviewAttempts === 0) {
-      try {
-        namedReference = await withPreviewDeadline(
-          classifyNamedReference(eventNamedReferenceBrief(event)),
-          Math.min(GENERAL_CLASSIFIER_TIMEOUT_MS, jobTimeoutMs),
-          "Named-theme recognition",
-        );
-      } catch (error) {
-        console.warn("[prepayment-preview] one-shot named-theme recognition failed closed:", error);
-        namedReference = null;
-      }
-    }
-
-    if (namedReference) {''',
-          )
-
-          # The two in-branch idempotency guards are now handled before the
-          # one-shot classifier for every theme type.
-          replace_once(
-              routes,
-              '''      if (currentKind === "none" && event.prePaymentPreviewAttempts > 0) {
-        res.setHeader("Retry-After", String(Math.ceil(POLL_AFTER_MS / 1000)));
-        return res.status(202).json(await readiness(event, mode, namedAutoEnabled, timestamp));
-      }
-
-      if (currentKind === "direction-card" && event.prePaymentPreviewAttempts > 0) {
-        return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
-      }
-
-''',
-              '',
-          )
-
-          replace_once(
-              routes,
-              '''          event = await persistDirectionCard(store, event, timestamp);
-        }
-        return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
-      }
-
-      const allowance = canAttemptPrePaymentPreview(event);''',
-              '''          event = await persistDirectionCard(store, event, timestamp, namedReference);
-        }
-        return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp, namedReference));
-      }
-
-      const allowance = canAttemptPrePaymentPreview(event);''',
-          )
-          replace_once(
-              routes,
-              '''          event = await persistDirectionCard(store, event, timestamp);
-        }
-        return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
-      }
-
-      const reservedEvent = await reservePreviewAttempt(store, event, timestamp);''',
-              '''          event = await persistDirectionCard(store, event, timestamp, namedReference);
-        }
-        return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp, namedReference));
-      }
-
-      const reservedEvent = await reservePreviewAttempt(store, event, timestamp);''',
-          )
-          replace_once(
-              routes,
-              '''        artworkAttemptStore,
-        now,
-      }));
-
-      res.setHeader("Retry-After", String(Math.ceil(POLL_AFTER_MS / 1000)));
-      return res.status(202).json(await readiness(reservedEvent, mode, namedAutoEnabled, timestamp));''',
-              '''        artworkAttemptStore,
-        now,
-        jobTimeoutMs,
-      }));
-
-      res.setHeader("Retry-After", String(Math.ceil(POLL_AFTER_MS / 1000)));
-      return res.status(202).json(await readiness(reservedEvent, mode, namedAutoEnabled, timestamp, namedReference));''',
-          )
-          replace_once(
-              routes,
-              '''      result = await generate(event, {
-        referenceImages,
-        maxCandidates: 2,
-        namedReference,
-        attemptRetention: { store: artworkAttemptStore, eventId: event.id, ownerToken: event.ownerToken },
-      });''',
-              '''      result = await withPreviewDeadline(generate(event, {
-        referenceImages,
-        maxCandidates: 2,
-        namedReference,
-        attemptRetention: { store: artworkAttemptStore, eventId: event.id, ownerToken: event.ownerToken },
-      }), jobTimeoutMs, "Artwork generation and private review");''',
-          )
-
-          quality = "server/prePaymentPreviewQuality.ts"
-          replace_once(
-              quality,
-              '''import type { AiFirstArtworkAttemptStore } from "./aiFirst/artworkAttemptStore";
-import { buildEventBrief, type EventBrief } from "./aiFirst/brief";''',
-              '''import type { AiFirstArtworkAttemptStore } from "./aiFirst/artworkAttemptStore";
-import { boxDownsampleRgb, decodePng, encodePng } from "./aiFirst/png";
-import { buildEventBrief, type EventBrief } from "./aiFirst/brief";''',
-          )
-          replace_once(
-              quality,
-              '''import { prePaymentPreviewSourceBrief } from "./prePaymentPreviewConcept";
-''',
-              '''import { PRE_PAYMENT_PREVIEW_LONG_EDGE } from "./prePaymentPreview";
-import { prePaymentPreviewSourceBrief } from "./prePaymentPreviewConcept";
-''',
-          )
-          replace_once(
-              quality,
-              '''export type PrePaymentPreviewMode = "off" | "direction-card" | "quality-image";
-''',
-              '''export type PrePaymentPreviewMode = "off" | "direction-card" | "quality-image";
-
-/**
- * Produces the exact low-resolution PNG bytes an unpaid customer receives.
- * Quality review runs on these bytes—not a larger source that the browser later
- * transforms—so the approved pixels and the served pixels are equivalent.
- */
-export function customerVisiblePreviewBytes(source: Buffer): Buffer {
-  const decoded = decodePng(source);
-  return encodePng(boxDownsampleRgb(decoded, PRE_PAYMENT_PREVIEW_LONG_EDGE));
-}
-''',
-          )
-          replace_once(
-              quality,
-              '''    let tier1: Tier1Result;
-    let vision: VisionVerdict | undefined;
-    try {
-      tier1 = runTier1({
-        bytes: generated.bytes,''',
-              '''    let reviewedBytes: Buffer;
-    try {
-      reviewedBytes = customerVisiblePreviewBytes(generated.bytes);
-    } catch (error) {
-      return {
-        kind: "unavailable",
-        attempts: candidate,
-        model,
-        reviews,
-        error: `Generated artwork could not be prepared for customer review: ${error instanceof Error ? error.message : String(error)}`,
-      };
-    }
-    const reviewedDataUrl = `data:image/png;base64,${reviewedBytes.toString("base64")}`;
-
-    let tier1: Tier1Result;
-    let vision: VisionVerdict | undefined;
-    try {
-      tier1 = runTier1({
-        bytes: reviewedBytes,''',
-          )
-          replace_once(
-              quality,
-              '''        vision = await runVision({ bytes: generated.bytes, concept, brief });''',
-              '''        vision = await runVision({ bytes: reviewedBytes, concept, brief });''',
-          )
-          replace_once(
-              quality,
-              '''          bytes: generated.bytes,
-          previewId: null,''',
-              '''          bytes: reviewedBytes,
-          previewId: null,''',
-          )
-          replace_once(
-              quality,
-              '''        dataUrl: generated.dataUrl,
-        attempts: candidate,''',
-              '''        dataUrl: reviewedDataUrl,
-        attempts: candidate,''',
-          )
-
-          # -----------------------------------------------------------------
-          # Tests: real PNG fixtures prove the reviewed/returned pixels are the
-          # final 560px asset, general classification is one-shot POST-only,
-          # timeout falls back safely, and checkout can continue in background.
-          # -----------------------------------------------------------------
-          test_quality = "tests/prePaymentPreviewQuality.test.ts"
-          replace_once(
-              test_quality,
-              '''import type { VisionVerdict } from "../server/aiFirst/visionGate";
-import {''',
-              '''import type { VisionVerdict } from "../server/aiFirst/visionGate";
-import { encodePng, readPngSize } from "../server/aiFirst/png";
-import {''',
-          )
-          replace_once(
-              test_quality,
-              '''} as unknown as Event;
-
-function tier1''',
-              '''} as unknown as Event;
-
-function generatedPng(fill: number, width = 630, height = 1120): Buffer {
-  const rgb = new Uint8Array(width * height * 3);
-  rgb.fill(fill);
-  return encodePng({ width, height, rgb });
-}
-
-function tier1''',
-          )
-          quality_text = Path(test_quality).read_text()
-          quality_text = re.sub(r'Buffer\.alloc\(50_000,\s*(\d+)\)', r'generatedPng(\1)', quality_text)
-          Path(test_quality).write_text(quality_text)
-          replace_once(
-              test_quality,
-              '''    expect(result.dataUrl).toBe("data:image/png;base64,SECOND");''',
-              '''    expect(result.dataUrl).toMatch(/^data:image\/png;base64,/);
-    expect(readPngSize(Buffer.from(result.dataUrl.split(",")[1], "base64"))).toEqual({ width: 315, height: 560 });''',
-          )
-          replace_once(
-              test_quality,
-              '''      expect(result.dataUrl).toBe("data:image/png;base64,APPROVED");''',
-              '''      expect(result.dataUrl).toMatch(/^data:image\/png;base64,/);
-      expect(readPngSize(Buffer.from(result.dataUrl.split(",")[1], "base64"))).toEqual({ width: 315, height: 560 });''',
-          )
-          replace_once(
-              test_quality,
-              '''  it("returns no customer-visible pixels when both private candidates fail", async () => {''',
-              '''  it("reviews and returns the exact 560px customer-visible teaser pixels", async () => {
-    const sourceBytes = generatedPng(9);
-    const runTier1 = vi.fn(() => tier1(true));
-    const runVision = vi.fn(async () => vision(true));
-    const result = await generateQualityLockedPreview(event, {
-      generateImage: async () => ({
-        bytes: sourceBytes,
-        dataUrl: `data:image/png;base64,${sourceBytes.toString("base64")}`,
-        durationMs: 100,
-      }),
-      runTier1,
-      runVision,
-      maxCandidates: 1,
-    });
-
-    expect(result.kind).toBe("approved-image");
-    if (result.kind !== "approved-image") throw new Error("expected approved image");
-    const returnedBytes = Buffer.from(result.dataUrl.split(",")[1], "base64");
-    expect(readPngSize(returnedBytes)).toEqual({ width: 315, height: 560 });
-    expect(Buffer.compare(runTier1.mock.calls[0][0].bytes, returnedBytes)).toBe(0);
-    expect(Buffer.compare(runVision.mock.calls[0][0].bytes, returnedBytes)).toBe(0);
-  });
-
-  it("returns no customer-visible pixels when both private candidates fail", async () => {''',
-          )
-
-          test_reference = "tests/prePaymentPreviewReferenceQuality.test.ts"
-          replace_once(
-              test_reference,
-              '''import type { VisionVerdict } from "../server/aiFirst/visionGate";
-import { generateQualityLockedPreview }''',
-              '''import type { VisionVerdict } from "../server/aiFirst/visionGate";
-import { encodePng, readPngSize } from "../server/aiFirst/png";
-import { generateQualityLockedPreview }''',
-          )
-          replace_once(
-              test_reference,
-              '''} as unknown as Event;
-
-const tier1''',
-              '''} as unknown as Event;
-
-function generatedPng(fill: number, width = 630, height = 1120): Buffer {
-  const rgb = new Uint8Array(width * height * 3);
-  rgb.fill(fill);
-  return encodePng({ width, height, rgb });
-}
-
-const tier1''',
-          )
-          reference_text = Path(test_reference).read_text()
-          reference_text = re.sub(r'Buffer\.alloc\(50_000,\s*(\d+)\)', r'generatedPng(\1)', reference_text)
-          Path(test_reference).write_text(reference_text)
-          replace_once(
-              test_reference,
-              '''    expect(result.dataUrl).toBe("data:image/png;base64,SECOND");''',
-              '''    expect(result.dataUrl).toMatch(/^data:image\/png;base64,/);
-    expect(readPngSize(Buffer.from(result.dataUrl.split(",")[1], "base64"))).toEqual({ width: 315, height: 560 });''',
-          )
-
-          test_routes = "tests/prePaymentPreviewQualityRoutes.test.ts"
-          replace_once(
-              test_routes,
-              '''const generate = vi.fn();
-const resolveNamedReference = vi.fn();''',
-              '''const generate = vi.fn();
-const classifyNamedReference = vi.fn();
-const resolveNamedReference = vi.fn();''',
-          )
-          replace_once(
-              test_routes,
-              '''  unlocked?: boolean;
-} = {}) {''',
-              '''  unlocked?: boolean;
-  jobTimeoutMs?: number;
-} = {}) {''',
-          )
-          replace_once(
-              test_routes,
-              '''    autoNamedEnabled: () => options.autoNamed ?? true,
-    resolveNamedReference,''',
-              '''    autoNamedEnabled: () => options.autoNamed ?? true,
-    classifyNamedReference,
-    resolveNamedReference,''',
-          )
-          replace_once(
-              test_routes,
-              '''    now: () => NOW,
-  });''',
-              '''    now: () => NOW,
-    jobTimeoutMs: options.jobTimeoutMs,
-  });''',
-          )
-          replace_once(
-              test_routes,
-              '''  generate.mockReset();
-  resolveNamedReference.mockReset();''',
-              '''  generate.mockReset();
-  classifyNamedReference.mockReset();
-  classifyNamedReference.mockResolvedValue(null);
-  resolveNamedReference.mockReset();''',
-          )
-          replace_once(
-              test_routes,
-              '''  it("returns original themes immediately without invoking the arbitrary paid classifier", async () => {
-    stored = genericEvent();
-
-    const response = await request(makeApp({ mode: "direction-card" }))
-      .post(`/api/events/owner/${OWNER}/prepayment-preview`)
-      .send({ email: "host@example.com" });
-
-    expect(response.status).toBe(200);
-    expect(response.body.kind).toBe("direction-card");
-    expect(resolveNamedReference).not.toHaveBeenCalled();
-    expect(generate).not.toHaveBeenCalled();
-    expect(schedule).not.toHaveBeenCalled();
-    expect(stored.prePaymentPreviewAttempts).toBe(0);
-  });''',
-              '''  it("classifies an original theme once on the explicit action, then continues safely when it is not named IP", async () => {
-    stored = genericEvent();
-
-    const response = await request(makeApp({ mode: "direction-card" }))
-      .post(`/api/events/owner/${OWNER}/prepayment-preview`)
-      .send({ email: "host@example.com" });
-
-    expect(response.status).toBe(200);
-    expect(response.body.kind).toBe("direction-card");
-    expect(classifyNamedReference).toHaveBeenCalledTimes(1);
-    expect(resolveNamedReference).not.toHaveBeenCalled();
-    expect(generate).not.toHaveBeenCalled();
-    expect(schedule).not.toHaveBeenCalled();
-    expect(stored.prePaymentPreviewAttempts).toBe(0);
-  });
-
-  it("recognizes an arbitrary named world once on POST and never reclassifies it from GET polling", async () => {
-    stored = {
-      ...stored,
-      eventName: "Ella's Sesame Street Party",
-      themeName: "Sesame Street",
-      vibeDescription: "Sesame Street characters at a neighborhood block party with bubbles",
-    } as unknown as Event;
-    const sesame = {
-      id: "named-theme-sesame-street",
-      label: "Sesame Street",
-      trigger: /sesame street/i,
-      cues: ["Sesame Street", "Neighborhood friends", "Playful learning", "Block-party joy"],
-      palette: ["#1b5e9b", "#f2c230", "#f7f1e5", "#d84f45"],
-      requirements: ["The Sesame Street identity is unmistakable through its recognizable neighborhood character world."],
-    };
-    classifyNamedReference.mockResolvedValue(sesame);
-    resolveNamedReference.mockResolvedValue(null);
-
-    const response = await request(makeApp())
-      .post(`/api/events/owner/${OWNER}/prepayment-preview`)
-      .send({ email: "host@example.com" });
-
-    expect(response.status).toBe(202);
-    expect(response.body.directionCard.headline).toBe("Sesame Street");
-    expect(classifyNamedReference).toHaveBeenCalledTimes(1);
-    await runScheduledTask();
-    expect(decodedStoredSvg()).toContain("Sesame Street");
-
-    const ready = await request(makeApp())
-      .get(`/api/events/owner/${OWNER}/prepayment-preview/readiness`);
-    expect(ready.status).toBe(200);
-    expect(classifyNamedReference).toHaveBeenCalledTimes(1);
-  });''',
-          )
-          replace_once(
-              test_routes,
-              '''  it("keeps rejected named-theme candidates private and shows the reliable direction", async () => {''',
-              '''  it("falls back within the bounded deadline instead of making the customer wait indefinitely", async () => {
-    resolveNamedReference.mockResolvedValue(automaticResolution());
-    generate.mockImplementation(() => new Promise(() => undefined));
-
-    const response = await request(makeApp({ jobTimeoutMs: 5 }))
-      .post(`/api/events/owner/${OWNER}/prepayment-preview`)
-      .send({ email: "host@example.com" });
-
-    expect(response.status).toBe(202);
-    await runScheduledTask();
-    expect(stored.prePaymentPreviewUrl).toMatch(/^data:image\/svg\+xml;base64,/);
-  });
-
-  it("keeps rejected named-theme candidates private and shows the reliable direction", async () => {''',
-          )
-
-          test_page = "tests/draftGeneratingPaywall.test.tsx"
-          replace_once(
-              test_page,
-              '''    expect(screen.getByTestId("button-unlock-spark").textContent).toContain("Revealing your personalized first look");''',
-              '''    expect(screen.getByTestId("button-unlock-spark").textContent).toContain("Continue to checkout — $9.99");''',
-          )
-          replace_once(
-              test_page,
+          test = "tests/draftGeneratingPaywall.test.tsx"
+          one(test,
+              '    expect(screen.getByTestId("button-unlock-spark").textContent).toContain("Revealing your personalized first look");',
+              '    expect(screen.getByTestId("button-unlock-spark").textContent).toContain("Continue to checkout — $9.99");')
+          one(test,
               '''  it("allows checkout after a preview-provider failure instead of trapping the host", async () => {''',
               '''  it("shows the event direction immediately and lets checkout continue while artwork finishes", async () => {
     const checkout = deferred<{ url: string }>();
@@ -868,34 +210,13 @@ const resolveNamedReference = vi.fn();''',
 
     apiRequestJson.mockImplementation((method: string, url: string) => {
       if (method === "GET" && url.endsWith("/prepayment-preview/readiness")) {
-        return Promise.resolve({
-          ready: false,
-          generationState: "idle",
-          pollAfterMs: null,
-          kind: "none",
-          namedReference: { id: "blippi-meekah", label: "Blippi + Meekah" },
-          directionCard,
-        });
+        return Promise.resolve({ ready: false, generationState: "idle", pollAfterMs: null, kind: "none", namedReference: null, directionCard });
       }
       if (method === "GET" && url.endsWith("/master-planner/entitlement")) {
-        return Promise.resolve({
-          eventId: 94,
-          freeDraftState: "none",
-          emailCaptured: false,
-          planTier: "spark",
-          sparkUnlocked: false,
-          canGenerate: false,
-        });
+        return Promise.resolve({ eventId: 94, freeDraftState: "none", emailCaptured: false, planTier: "spark", sparkUnlocked: false, canGenerate: false });
       }
       if (method === "POST" && url.endsWith("/prepayment-preview")) {
-        return Promise.resolve({
-          ready: false,
-          generationState: "generating",
-          pollAfterMs: 2500,
-          kind: "none",
-          namedReference: { id: "blippi-meekah", label: "Blippi + Meekah" },
-          directionCard,
-        });
+        return Promise.resolve({ ready: false, generationState: "generating", pollAfterMs: 2500, kind: "none", namedReference: null, directionCard });
       }
       if (method === "POST" && url === "/api/checkout/create-session") return checkout.promise;
       throw new Error(`Unexpected request: ${method} ${url}`);
@@ -914,64 +235,29 @@ const resolveNamedReference = vi.fn();''',
     await waitFor(() => expect(callsTo("/api/checkout/create-session")).toHaveLength(1));
   });
 
-  it("allows checkout after a preview-provider failure instead of trapping the host", async () => {''',
-          )
+  it("allows checkout after a preview-provider failure instead of trapping the host", async () => {''')
 
-          # -----------------------------------------------------------------
-          # CI: code/build checks remain mandatory. Protected Preview email
-          # verification runs when the bypass secret exists; otherwise CI
-          # clearly skips that network-only step (the exact deployment is
-          # verified through Vercel's authenticated connector before merge).
-          # -----------------------------------------------------------------
-          workflow = ".github/workflows/verify.yml"
-          replace_once(
-              workflow,
-              '''          if [ -n "${VERCEL_AUTOMATION_BYPASS_SECRET:-}" ]; then
-            curl_args+=(--header "x-vercel-protection-bypass: ${VERCEL_AUTOMATION_BYPASS_SECRET}")
-          fi
-''',
-              '''          if [ -z "${VERCEL_AUTOMATION_BYPASS_SECRET:-}" ]; then
-            echo "::warning::Skipping protected Preview email-health curl because VERCEL_AUTOMATION_BYPASS_SECRET is not configured. The exact deployment must be verified through authenticated Vercel access before merge."
-            exit 0
-          fi
-          curl_args+=(--header "x-vercel-protection-bypass: ${VERCEL_AUTOMATION_BYPASS_SECRET}")
-''',
-          )
-
-          # Sanity checks that directly reflect the release contract.
-          page_text = Path(page).read_text()
-          ready_branch = re.search(r'previewReady && !previewImageFailed[\s\S]*?: previewInProgress', page_text)
-          if not ready_branch or "bg-gradient-to-t" in ready_branch.group(0):
-              raise SystemExit("Reviewed artwork is still altered by a browser overlay")
-          if "directionCard?: PreviewDirectionCard" not in page_text:
-              raise SystemExit("Direction-card contract was not threaded into the client")
-          if "onBlur={() =>" in page_text:
-              raise SystemExit("Email blur still auto-triggers preview spend")
+          source = Path(page).read_text()
+          ready = re.search(r'previewReady && !previewImageFailed[\s\S]*?: previewInProgress', source)
+          if not ready or "bg-gradient-to-t" in ready.group(0):
+              raise SystemExit("browser overlay still alters reviewed artwork")
+          if "onBlur={() =>" in source:
+              raise SystemExit("email blur still starts preview generation")
           PY
 
-      - name: Verify closeout
-        shell: bash
+      - name: Verify client closeout
         run: |
           npm ci
           npm run check
           npm test
           npm run vercel-build
 
-      - name: Commit verified closeout and retire workflow
-        shell: bash
+      - name: Commit and retire patch workflow
         run: |
           set -euo pipefail
           git rm .github/workflows/finish-first-look-closeout.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add client/src/pages/DraftGenerating.tsx \
-            server/prePaymentPreviewQuality.ts \
-            server/prePaymentPreviewQualityRoutes.ts \
-            tests/prePaymentRenderedContract.test.ts \
-            tests/prePaymentPreviewQuality.test.ts \
-            tests/prePaymentPreviewReferenceQuality.test.ts \
-            tests/prePaymentPreviewQualityRoutes.test.ts \
-            tests/draftGeneratingPaywall.test.tsx \
-            .github/workflows/verify.yml
-          git commit -m 'Complete rendered first-look release contract'
+          git add client/src/pages/DraftGenerating.tsx tests/draftGeneratingPaywall.test.tsx
+          git commit -m 'Make first-look presentation truthful and non-blocking'
           git push origin HEAD:codex/launch-blockers
