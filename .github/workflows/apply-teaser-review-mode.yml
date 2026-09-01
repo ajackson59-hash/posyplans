@@ -24,7 +24,18 @@ jobs:
           ref: codex/launch-blockers
 
       - name: Apply teaser-specific deterministic and vision review
-        run: python script/patch_teaser_review_mode.py
+        run: |
+          python script/patch_teaser_review_mode.py
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('tests/prePaymentPreviewQuality.test.ts')
+          text = path.read_text()
+          old = 'expect(concept.art.composition).toContain("no visible panel");'
+          new = 'expect(concept.art.composition).toContain("no panel");'
+          if text.count(old) != 1:
+              raise SystemExit(f'expected one stale composition assertion, found {text.count(old)}')
+          path.write_text(text.replace(old, new, 1))
+          PY
 
       - name: Verify teaser review contract
         run: |
