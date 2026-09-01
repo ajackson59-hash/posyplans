@@ -29,13 +29,13 @@ jobs:
           from pathlib import Path
           path = Path('server/emailDiagnosticRoutes.ts')
           text = path.read_text()
-          old = '''          quality: "high",
-          maxCandidates: 2,'''
-          new = '''          quality: "medium",
-          maxCandidates: 1,'''
-          if text.count(old) != 1:
-              raise SystemExit(f'expected one canary quality block, found {text.count(old)}')
-          path.write_text(text.replace(old, new, 1))
+          if text.count('quality: "high",') != 1:
+              raise SystemExit(f'expected one canary high-quality setting, found {text.count(chr(113)+"uality: "+chr(34)+"high"+chr(34)+",")}')
+          if text.count('maxCandidates: 2,') != 1:
+              raise SystemExit(f'expected one canary two-candidate setting, found {text.count("maxCandidates: 2,")}')
+          text = text.replace('quality: "high",', 'quality: "medium",', 1)
+          text = text.replace('maxCandidates: 2,', 'maxCandidates: 1,', 1)
+          path.write_text(text)
           PY
 
       - name: Verify tuned canary build
