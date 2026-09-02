@@ -155,6 +155,27 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
   };
 
   /**
+   * The named pre-payment canary intentionally runs while the broader
+   * AI-first invitation flag remains off. Its retained evidence still needs
+   * the same owner-scoped audit/recheck surface on the two certified Preview
+   * branches; otherwise paid pixels can be retained but never reviewed.
+   * Everywhere else keeps the existing AI-first flag boundary.
+   */
+  const retainedEvidenceGated = (handler: (req: Request, res: Response) => Promise<void> | void) => {
+    return async (req: Request, res: Response) => {
+      const environment = env();
+      const certifiedNamedPreview = environment.VERCEL_ENV === "preview"
+        && ["fix/launch-qa-find-my-event-label", "codex/launch-blockers"]
+          .includes(environment.VERCEL_GIT_COMMIT_REF || "");
+      if (!flags().aiFirstInvitations && !certifiedNamedPreview) {
+        res.status(404).json({ error: "Not found" });
+        return;
+      }
+      await handler(req, res);
+    };
+  };
+
+  /**
    * Reviewer diagnostics exist only on Vercel Preview, use the event's secret
    * owner token as their authorization boundary, and require the generation
    * kill switch to be ON. Production and local requests receive 404 so this
@@ -852,7 +873,7 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
    */
   app.get(
     "/api/events/owner/:ownerToken/ai-first/review/attempts",
-    gated(async (req, res) => {
+    retainedEvidenceGated(async (req, res) => {
       const ownerToken = String(req.params.ownerToken);
       const event = await deps.storage.getEventByOwnerToken(ownerToken);
       if (!event) {
@@ -897,7 +918,7 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
    */
   app.get(
     "/api/events/owner/:ownerToken/ai-first/review/attempts/:id/asset",
-    gated(async (req, res) => {
+    retainedEvidenceGated(async (req, res) => {
       const ownerToken = String(req.params.ownerToken);
       const event = await deps.storage.getEventByOwnerToken(ownerToken);
       if (!event) {
@@ -934,7 +955,7 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
    */
   app.post(
     "/api/events/owner/:ownerToken/ai-first/review/attempts/:id/recheck",
-    gated(async (req, res) => {
+    retainedEvidenceGated(async (req, res) => {
       const ownerToken = String(req.params.ownerToken);
       const event = await deps.storage.getEventByOwnerToken(ownerToken);
       if (!event) {
