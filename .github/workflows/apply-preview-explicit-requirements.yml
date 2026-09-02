@@ -25,7 +25,7 @@ jobs:
         with:
           ref: codex/launch-blockers
 
-      # Retry after aligning the regression-test insertion point with current source.
+      # Retry with target-compatible regex iteration.
       - name: Bind explicit host scene details to the teaser quality gate
         run: python script/patch_preview_explicit_requirements.py
 
