@@ -768,14 +768,47 @@ describe("tier 2 — acceptance", () => {
   });
 
   it("is never a silent pass when the critic returns unparseable prose", async () => {
+    let calls = 0;
     const verdict = await runVisionGate({
       bytes: artworkPng(),
       concept: concept(),
       brief: brief(),
-      client: { messages: { create: async () => ({ content: [{ type: "text", text: "looks nice!" }], usage: {} }) } } as unknown as Anthropic,
+      client: { messages: { create: async () => {
+        calls += 1;
+        return { content: [{ type: "text", text: "looks nice!" }], usage: {} };
+      } } } as unknown as Anthropic,
     });
+    expect(calls).toBe(2);
     expect(verdict.unavailable).toBe(true);
     expect(verdict.passed).toBe(false);
+  });
+
+  it("retries one malformed critic response and accepts only a valid ordinary verdict", async () => {
+    let calls = 0;
+    const valid = {
+      ...allFive,
+      requiredPresent: [],
+      excludedFound: [],
+      notes: "clean repair",
+    };
+    const verdict = await runVisionGate({
+      bytes: artworkPng(),
+      concept: concept(),
+      brief: brief(),
+      client: { messages: { create: async () => {
+        calls += 1;
+        return {
+          content: [{ type: "text", text: calls === 1 ? "The image is excellent." : JSON.stringify(valid) }],
+          usage: { input_tokens: 10, output_tokens: 5 },
+        };
+      } } } as unknown as Anthropic,
+    });
+
+    expect(calls).toBe(2);
+    expect(verdict.unavailable).toBe(false);
+    expect(verdict.passed).toBe(true);
+    expect(verdict.notes).toBe("clean repair");
+    expect(verdict.usage).toEqual({ inputTokens: 20, outputTokens: 10 });
   });
 
   it("prices the critic call for the ledger", () => {

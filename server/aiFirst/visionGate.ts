@@ -224,31 +224,40 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
     .filter(Boolean)
     .join("\n");
 
-  let raw = "";
   let usage = { inputTokens: 0, outputTokens: 0 };
-  try {
+  const reviewSystem = reviewMode === "teaser" ? TEASER_SYSTEM : SYSTEM;
+  const reviewContent = [
+    {
+      type: "image" as const,
+      source: { type: "base64" as const, media_type: "image/png" as const, data: input.bytes.toString("base64") },
+    },
+    { type: "text" as const, text: userText },
+  ];
+  const reviewOnce = async (jsonRepair: boolean): Promise<Record<string, any> | null> => {
     const response = await client.messages.create({
       model: VISION_MODEL,
       max_tokens: reviewMode === "teaser" ? 950 : 700,
-      system: reviewMode === "teaser" ? TEASER_SYSTEM : SYSTEM,
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "image",
-              source: { type: "base64", media_type: "image/png", data: input.bytes.toString("base64") },
-            },
-            { type: "text", text: userText },
-          ],
-        },
-      ],
+      system: jsonRepair
+        ? `${reviewSystem}\n\nOUTPUT REPAIR: Return one complete valid JSON object matching the required schema. No prose, markdown fence or trailing commentary. Do not omit any field.`
+        : reviewSystem,
+      messages: [{ role: "user", content: reviewContent }],
     }, { signal: input.signal });
-    raw = response.content.map((b) => (b.type === "text" ? b.text : "")).join("");
     usage = {
-      inputTokens: response.usage?.input_tokens ?? 0,
-      outputTokens: response.usage?.output_tokens ?? 0,
+      inputTokens: usage.inputTokens + (response.usage?.input_tokens ?? 0),
+      outputTokens: usage.outputTokens + (response.usage?.output_tokens ?? 0),
     };
+    const raw = response.content.map((b) => (b.type === "text" ? b.text : "")).join("");
+    return extractJson(raw);
+  };
+
+  let parsed: Record<string, any> | null = null;
+  try {
+    parsed = await reviewOnce(false);
+    // One bounded format-repair call prevents excellent paid pixels from being
+    // discarded merely because the critic wrapped or truncated its JSON. The
+    // second result still has to parse and satisfy every ordinary gate; two
+    // malformed responses remain a hard fail-closed outcome.
+    if (!parsed && !input.signal?.aborted) parsed = await reviewOnce(true);
   } catch (err) {
     return {
       scores: empty,
@@ -263,7 +272,6 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
     };
   }
 
-  const parsed = extractJson(raw);
   if (!parsed) {
     return {
       scores: empty,
