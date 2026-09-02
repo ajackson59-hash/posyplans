@@ -762,6 +762,13 @@ export interface PreviewQualityDependencies {
   /** Two internal candidates maximum; neither is customer-visible before approval. */
   maxCandidates?: 1 | 2;
   /**
+   * Text-first named previews may privately render both candidates at once,
+   * then quality-review both and choose the stronger approved result. This
+   * spends two bounded image calls but avoids making conversion depend on one
+   * stochastic draw or doubling customer latency with a sequential retry.
+   */
+  parallelCandidates?: boolean;
+  /**
    * When provided, every billed candidate — accepted or rejected — is
    * durably recorded for protected owner-scoped review, matching the main
    * AI-first pipeline. Optional so existing tests/callers that don't pass a
@@ -811,6 +818,199 @@ export async function generateQualityLockedPreview(
   const reviews: PreviewQualityReview[] = [];
   let failureCodes: string[] = [];
   let concreteNotes = "";
+
+  if (dependencies.parallelCandidates && maxCandidates === 2 && !referenceLed) {
+    type ParallelOutcome = {
+      candidate: number;
+      model: ArtworkModel;
+      passed: boolean;
+      dataUrl?: string;
+      review?: PreviewQualityReview;
+      error?: string;
+    };
+
+    const prompts = [
+      basePrompt,
+      `${basePrompt}
+
+PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuinely different camera position and staging while preserving every binding requirement and exclusion. Prioritize anatomically clean hands, coherent shadows, believable prop scale, natural foreground-to-background depth, controlled saturation and non-repeating physical detail. Do not make a cosmetic variation of the first take.`,
+    ];
+
+    const evaluateParallelCandidate = async (candidate: number): Promise<ParallelOutcome> => {
+      const model = DEFAULT_ARTWORK_MODEL;
+      if (dependencies.signal?.aborted) {
+        return {
+          candidate,
+          model,
+          passed: false,
+          error: dependencies.signal.reason instanceof Error
+            ? dependencies.signal.reason.message
+            : "Preview generation was cancelled.",
+        };
+      }
+
+      let generated: Awaited<ReturnType<ArtworkGenerator>>;
+      try {
+        generated = await generateImage({
+          prompt: prompts[candidate - 1],
+          aspectRatio: aspectRatioForLayout(concept.layoutStyle),
+          model,
+          quality,
+          referenceImages: undefined,
+          signal: dependencies.signal,
+        });
+      } catch (error) {
+        return {
+          candidate,
+          model,
+          passed: false,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
+
+      let reviewedBytes: Buffer;
+      try {
+        reviewedBytes = customerVisiblePreviewBytes(generated.bytes);
+      } catch (error) {
+        return {
+          candidate,
+          model,
+          passed: false,
+          error: `Generated artwork could not be prepared for customer review: ${error instanceof Error ? error.message : String(error)}`,
+        };
+      }
+      const dataUrl = `data:image/png;base64,${reviewedBytes.toString("base64")}`;
+
+      let tier1: Tier1Result;
+      let vision: VisionVerdict | undefined;
+      try {
+        tier1 = runTier1({
+          bytes: reviewedBytes,
+          concept,
+          overlayCoverage: OVERLAY_COVERAGE[concept.minOverlay],
+          artworkOpacity: 1,
+          layoutApplied: false,
+          ocr: true,
+        });
+        if (tier1.passed) {
+          vision = await runVision({
+            bytes: reviewedBytes,
+            concept,
+            brief,
+            reviewMode: "teaser",
+            signal: dependencies.signal,
+          });
+        }
+      } catch (error) {
+        return {
+          candidate,
+          model,
+          passed: false,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
+
+      const passed = tier1.passed && vision?.passed === true;
+      const candidateFailureCodes = tier1.passed
+        ? (vision?.failureCodes ?? ["vision-unavailable"])
+        : retryCodesFor(tier1.findings);
+      const notes = [
+        ...tier1.findings.filter((finding) => finding.critical).map((finding) => finding.message),
+        vision?.notes ?? "",
+        ...(vision?.requiredPresent ?? [])
+          .filter((item) => !item.present)
+          .map((item) => `Missing required visual: ${item.requirement}`),
+        ...(vision?.excludedFound ?? []).map((item) => `Remove excluded visual: ${item}`),
+      ].filter(Boolean).join(" ").slice(0, 1200);
+      const review: PreviewQualityReview = {
+        tier1,
+        vision,
+        failureCodes: passed ? [] : candidateFailureCodes,
+        notes,
+      };
+
+      if (dependencies.attemptRetention) {
+        const { store: attemptStore, eventId, ownerToken, runId } = dependencies.attemptRetention;
+        const size: ArtworkSize = sizeForAspect(aspectRatioForLayout(concept.layoutStyle));
+        try {
+          await attemptStore.record({
+            eventId,
+            ownerToken,
+            runId: runId ?? null,
+            idempotencyKey: null,
+            directionIndex: 0,
+            attempt: candidate,
+            status: passed ? "accepted" : "rejected",
+            bytes: reviewedBytes,
+            previewId: null,
+            concept,
+            failureCodes: passed ? [] : candidateFailureCodes,
+            tier1Findings: tier1.findings,
+            visionScores: vision?.scores ?? null,
+            model,
+            quality,
+            size,
+            costUsdMicros: estimateImageCostUsdMicros(model, quality, size),
+          });
+        } catch (error) {
+          console.error("[prepayment-preview] failed to persist parallel attempt evidence (non-fatal):", error);
+        }
+      }
+
+      return { candidate, model, passed, dataUrl, review };
+    };
+
+    const outcomes = await Promise.all([
+      evaluateParallelCandidate(1),
+      evaluateParallelCandidate(2),
+    ]);
+    reviews.push(...outcomes.flatMap((outcome) => outcome.review ? [outcome.review] : []));
+
+    const approved = outcomes
+      .filter((outcome): outcome is ParallelOutcome & { dataUrl: string; review: PreviewQualityReview } =>
+        outcome.passed && Boolean(outcome.dataUrl) && Boolean(outcome.review?.vision),
+      )
+      .sort((a, b) => {
+        const av = a.review.vision!.scores;
+        const bv = b.review.vision!.scores;
+        const weighted = (scores: VisionVerdict["scores"]) =>
+          scores.premiumFinish * 4
+          + scores.briefFidelity * 4
+          + scores.artifactFree * 3
+          + scores.compositionQuality * 3
+          + scores.textLogoWatermarkFree
+          + scores.ageAppropriate;
+        return weighted(bv) - weighted(av);
+      })[0];
+
+    if (approved) {
+      return {
+        kind: "approved-image",
+        dataUrl: approved.dataUrl,
+        attempts: outcomes.filter((outcome) => outcome.dataUrl || outcome.review).length,
+        model: approved.model,
+        reviews,
+      };
+    }
+
+    const reviewedCount = outcomes.filter((outcome) => outcome.review).length;
+    if (reviewedCount === 0) {
+      return {
+        kind: "unavailable",
+        attempts: 0,
+        model: DEFAULT_ARTWORK_MODEL,
+        reviews,
+        error: outcomes.map((outcome) => outcome.error).filter(Boolean).join(" | ") || "Both private preview candidates were unavailable.",
+      };
+    }
+
+    return {
+      kind: "rejected",
+      attempts: reviewedCount,
+      model: DEFAULT_ARTWORK_MODEL,
+      reviews,
+    };
+  }
 
   for (let candidate = 1; candidate <= maxCandidates; candidate += 1) {
     if (dependencies.signal?.aborted) {

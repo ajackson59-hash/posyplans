@@ -3,7 +3,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import type { Event } from "@shared/schema";
 import type { Tier1Result } from "../server/aiFirst/tier1";
 import type { VisionVerdict } from "../server/aiFirst/visionGate";
-import { encodePng, readPngSize } from "../server/aiFirst/png";
+import { decodePng, encodePng, readPngSize } from "../server/aiFirst/png";
 import {
   buildDirectionCard,
   buildQualityLockedPreviewBrief,
@@ -328,6 +328,44 @@ describe("prepayment preview quality lock", () => {
     expect(svg).toContain(".cue { font: 600 26px");
     expect(svg).toContain(".copy { font: 400 27px");
     expect(svg).toContain(".foot { font: 700 18px");
+  });
+
+  it("renders two private text-first candidates in parallel and returns only the stronger approved result", async () => {
+    let started = 0;
+    let release!: () => void;
+    const bothStarted = new Promise<void>((resolve) => { release = resolve; });
+    const generateImage = vi.fn(async () => {
+      const candidate = ++started;
+      if (started === 2) release();
+      await bothStarted;
+      const bytes = generatedPng(candidate);
+      return {
+        bytes,
+        dataUrl: `data:image/png;base64,${bytes.toString("base64")}`,
+        durationMs: 100,
+      };
+    });
+    const runVision = vi.fn(async (input: { bytes: Buffer }) => {
+      const fill = decodePng(input.bytes).rgb[0];
+      return vision(fill === 2, fill === 2 ? "strong alternate" : "first take rejected");
+    });
+
+    const result = await generateQualityLockedPreview(event, {
+      generateImage,
+      runTier1: () => tier1(true),
+      runVision: runVision as never,
+      maxCandidates: 2,
+      parallelCandidates: true,
+    });
+
+    expect(result.kind).toBe("approved-image");
+    expect(generateImage).toHaveBeenCalledTimes(2);
+    expect(runVision).toHaveBeenCalledTimes(2);
+    expect(result.attempts).toBe(2);
+    expect(result.reviews).toHaveLength(2);
+    expect(generateImage.mock.calls[1][0].prompt).toContain("PRIVATE ALTERNATE TAKE");
+    if (result.kind !== "approved-image") throw new Error("expected approved image");
+    expect(decodePng(Buffer.from(result.dataUrl.split(",")[1], "base64")).rgb[0]).toBe(2);
   });
 
   it("keeps a rejected first candidate private and returns only the approved correction", async () => {
