@@ -88,6 +88,9 @@ describe("prepayment preview quality lock", () => {
   it("keeps teaser artwork full-bleed instead of generating an unfinished blank panel", async () => {
     const { brief, concept } = await buildQualityLockedPreviewBrief(event);
     expect(concept.minOverlay).toBe("none");
+    const binding = brief.requirements.required.join(" ");
+    expect(binding).toContain("indoor soft play with bubbles and ice cream treats");
+    expect(binding).toContain("four separate unnumbered birthday candles");
     expect(concept.art.composition).toContain("no panel");
     expect(concept.art.prompt).toContain("full portrait canvas");
     expect(concept.art.prompt).toContain("NO DESIGN SURFACES");
@@ -112,6 +115,23 @@ describe("prepayment preview quality lock", () => {
     expect(readPrePaymentPreviewMode({})).toBe("direction-card");
     expect(readPrePaymentPreviewMode({ POSY_PREPAYMENT_PREVIEW_MODE: "nonsense" })).toBe("direction-card");
     expect(readPrePaymentPreviewMode({ POSY_PREPAYMENT_PREVIEW_MODE: "quality-image" })).toBe("quality-image");
+  });
+
+  it("makes an explicit host scene list binding for the final teaser pixels", async () => {
+    const detailed = {
+      ...event,
+      eventName: "Brian's 4th Birthday",
+      themeName: "Blippi + Meekah",
+      vibeDescription:
+        "A joyful fourth birthday at an upscale indoor soft-play center. Include bright foam climbing structures, a ball pit, floating bubbles, and colorful ice-cream treats. The result should feel polished and premium.",
+    } as unknown as Event;
+
+    const { brief } = await buildQualityLockedPreviewBrief(detailed);
+    const required = brief.requirements.required.join(" \n ");
+    expect(required).toContain("host-explicit scene detail: bright foam climbing structures, a ball pit, floating bubbles, and colorful ice-cream treats");
+    expect(required).toContain("host-explicit scene detail: an upscale indoor soft-play center");
+    expect(required).toContain("four separate unnumbered birthday candles");
+    expect(brief.requirements.preferred.join(" ")).not.toContain("ball pit");
   });
 
   it("detects exact entertainment references instead of collapsing them to a generic category via the curated fast path", async () => {
