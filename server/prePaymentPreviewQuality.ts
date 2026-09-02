@@ -654,20 +654,21 @@ export async function buildQualityLockedPreviewBrief(
   const hostExplicitlyRequestedCandles = /\bcandles?\b/i.test(brief.vibe);
   const milestoneDirection = teaserAge !== null && teaserAge >= 1 && teaserAge <= 9 && CHILD_AGE_WORDS[teaserAge]
     ? hostExplicitlyRequestedCandles
-      ? `MILESTONE: show exactly ${CHILD_AGE_WORDS[teaserAge]} separate unnumbered birthday candles; no extra candle-like decorations and no written numerals.`
-      : "MILESTONE: match the child's age through age-appropriate energy only. Do not show birthday candles, numeral-shaped props or other countable age markers; the surrounding Posy UI carries the exact age."
-    : "MILESTONE: communicate any stated milestone through age-appropriate tone, never invented written names, dates or logos.";
+      ? `MILESTONE: show exactly ${CHILD_AGE_WORDS[teaserAge]} separate unnumbered birthday candles; no extras or written numerals.`
+      : "MILESTONE: age-appropriate energy only. Do not show birthday candles, numeral props or countable age markers; Posy UI carries the exact age."
+    : "MILESTONE: age-appropriate tone only; no invented names, dates or logos.";
   const prompt = [
-    "Create one premium cinematic event-world image: full portrait canvas, one continuous believable environment.",
-    `IDENTITY: ${identity}; venue, activities and party details in the same scene.`,
-    "NATIVE STYLE: natural skin, hair, fabric and light in live action; polished native animation. No generic mascot art.",
+    "Premium event-world, full portrait canvas, one cinematic environment.",
+    `IDENTITY: ${identity}; venue, activities and party details share the scene.`,
+    "NATIVE STYLE: natural live-action materials/light; polished native animation; no generic mascots.",
     namedReference
-      ? "STORY: named characters and event details are the hero in candid interaction; do not invent any child in the foreground or central hero plane without a supplied celebrant reference."
+      ? "STORY: candid named-character interaction; do not invent any child in the foreground or central hero plane without a supplied celebrant reference."
       : "STORY: asymmetric candid interaction and varied poses, not a front-facing catalog or character-promo pose.",
-    "DEPTH/MATERIAL: crisp hero focus with natural depth falloff; motivated directional key/fill/rim light, contact/cast shadows, controlled saturation, color bounce and micro-detail; correct hands, joints, scale, gravity and perspective. No waxy skin, plastic food, repeated object clusters, stamped bubbles or composite seams.",
+    "DEPTH/MATERIAL: natural depth falloff; directional key/fill/rim, contact/cast shadows, controlled saturation/color bounce; correct hands, scale, gravity/perspective. No waxy skin, plastic food, tiled/repeated object clusters, stamped bubbles or composite seams.",
+    "HANDS/PROPS: natural hands/clean grips; unless required, put food/small props on stable surfaces at believable scale, not in hands.",
     milestoneDirection,
-    "COMPOSITION: fully frame required faces, primary celebration object, hands and props; leave breathing room and control foreground clutter.",
-    "NO DESIGN SURFACES: no blank card, panel, sign, frame, collage, sticker sheet, poster, merchandise mockup, screen, invitation card or text-reserved rectangle.",
+    "COMPOSITION: fully frame faces, hands and required objects; add breathing room; avoid dense repeated foreground clutter.",
+    "NO DESIGN SURFACES: no card, panel, sign, frame, collage, poster, mockup or text box.",
   ].join(" ");
 
   const concept: AiFirstConcept = {
