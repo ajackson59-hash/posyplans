@@ -20,7 +20,7 @@ const attempts = new Map<string, { count: number; resetsAt: number }>();
 // removed immediately after the canary evidence is collected.
 const INTERNAL_PREVIEW_CANARY_TOKEN_SHA256 =
   "9d8fffe0244c2716a1704b00b3ffb661a615635369818afa28af15cb8de5892b";
-const INTERNAL_PREVIEW_CANARY_OWNER_TOKEN = "qa-preview-brian-visual-lock-20260901-c1";
+const INTERNAL_PREVIEW_CANARY_OWNER_TOKEN = "qa-preview-brian-medium-lock-20260901-c2";
 const QUALITY_APPROVED_PNG_PREFIX = "data:image/png;posy-quality-approved;base64,";
 const STANDARD_PNG_PREFIX = "data:image/png;base64,";
 const INTERNAL_CANARY_DEADLINE_MS = 115_000;
@@ -135,7 +135,7 @@ export async function runInternalPreviewCanary() {
         generateQualityLockedPreview(event, {
           inspirationNotes: resolved.notes,
           referenceImages: resolved.images,
-          quality: "high",
+          quality: "medium",
           maxCandidates: 1,
           namedReference,
           attemptRetention: {
