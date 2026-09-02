@@ -59,9 +59,9 @@ Score each 1-5. 4 means "a professional stationery studio would confidently show
 
 - textLogoWatermarkFree: 5 = no letters, words, numbers, logos, signatures or watermarks anywhere, including stylised or partial ones.
 - artifactFree: 5 = no melted, duplicated, malformed or anatomically broken forms.
-- premiumFinish: 5 = genuinely premium editorial illustration. Score 1-2 for clipart, stock-template or generic AI look.
+- premiumFinish: 5 = art-directed, dimensional and commercially polished enough to create purchase desire on its own. Score 1-2 for clipart, stock-template, merchandise-ad, flat-vector mascot or generic AI look; score 3 for competent but ordinary or synthetic-looking work.
 - briefFidelity: 5 = the artwork unmistakably delivers the host's named world, requested setting, activities and defining details.
-- compositionQuality: 5 = clear, balanced, intentional full-bleed composition in the exact supplied pixels. Any cropped face or head, edge-clipped lead subject, awkward empty panel, or required hero subject pushed partly outside the canvas forces 3 or lower.
+- compositionQuality: 5 = one clear, balanced, intentional full-bleed scene in the exact supplied pixels. Any collage/split-panel treatment, pasted cutout look, poster/sign/card surface, cropped face or head, edge-clipped lead subject, awkward empty panel, or required hero subject pushed partly outside the canvas forces 3 or lower.
 - ageAppropriate: 5 = correctly pitched for the celebrant's age. When the host explicitly requests an all-ages action or fantasy identity, do not fail merely because faithful imagery includes stylized fantasy weapons, non-graphic supernatural creatures, performance costumes or dramatic poses.
 
 Judge BRIEF REQUIREMENTS holistically through briefFidelity and ageAppropriate. For each VISIBLE MUST-HAVE, report whether that concrete subject is visibly present. List any EXCLUDED item you can actually see.

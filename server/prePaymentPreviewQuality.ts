@@ -542,6 +542,8 @@ function enrichBriefForNamedReference(brief: EventBrief, named: NamedCreativeRef
             ]
           : []),
         "a visible blank card, white rectangle, paper panel, placard, sign, frame or placeholder box inside the artwork",
+        "a collage, split panel, sticker sheet, merchandise mockup, pasted character cutout or television-promo layout",
+        "a freestanding poster, banner, easel, title card, invitation card, menu board, screen or other rectangular surface reserved for text",
         "a lead character's face or head cropped off by the canvas edge",
       ]),
     },
@@ -570,12 +572,15 @@ export async function buildQualityLockedPreviewBrief(
   const brief = enrichBriefForNamedReference(baseBrief, namedReference);
   const card = buildDirectionCard(event, namedReference);
   const prompt = [
-    "Premium editorial invitation artwork that proves the host's specific event was understood at a glance.",
-    `ORIGINAL HOST BRIEF — authoritative: ${sourceBrief}`,
-    "TEASER COMPOSITION CONTRACT: use the full portrait canvas for one cohesive, compelling scene. Keep every required person, face, creature, signature object and defining interaction fully visible with comfortable breathing room at every edge. Do not draw a blank card, white rectangle, paper panel, placard, sign, frame or placeholder box anywhere in the artwork.",
-    inspirationNotes ? `HOST-PROVIDED VISUAL REFERENCE NOTES — authoritative: ${inspirationNotes}` : "",
-    "Depict the actual people, characters, setting, activities and defining objects requested. The event scene—not an accessory, logo-like symbol, pattern, palette or abstract shorthand—must dominate the composition.",
-    "FINISH CONTRACT: create bespoke editorial stationery artwork with layered depth, tactile material detail, controlled lighting and refined art direction. It must not resemble generic clipart, stock illustration, a television promo still, a merchandising graphic or a flat commercial poster. Keep faces, hands, limbs and object interactions anatomically coherent.",
+    "Create one premium cinematic event-world illustration that proves the host's specific celebration was understood at a glance.",
+    `HOST EVENT WORLD — authoritative: ${sourceBrief}`,
+    "FULL-CANVAS SCENE CONTRACT: use the full portrait canvas as one continuous, believable environment. Keep every required person, face, creature, signature object and defining interaction fully visible with comfortable breathing room at every edge. Do not draw a blank card, white rectangle, paper panel, placard, sign, frame or placeholder box anywhere in the artwork.",
+    namedReference
+      ? `IDENTITY HIERARCHY: ${namedReference.label} must be immediately recognizable and central; the requested venue, activities and party details must visibly belong to the same scene.`
+      : "STORY HIERARCHY: the requested setting, activities and defining event details must be materially visible in the same cohesive scene.",
+    "NO DESIGN SURFACES: no collage, split panel, sticker sheet, poster, merchandise mockup, stage backdrop, photo-booth frame, sign, screen, invitation card, blank rectangle or text-reserved area.",
+    "FINISH CONTRACT: polished high-end cinematic illustration with dimensional light, believable material texture, clean silhouettes, natural expressions and anatomically coherent hands and limbs. Avoid flat-vector mascot art, clipart, stock-template sheen, merchandising-ad composition, generic AI clutter and oversaturated plastic rendering.",
+    inspirationNotes ? `IDENTITY REFERENCE NOTES — authoritative: ${inspirationNotes.slice(0, 320)}` : "",
   ].filter(Boolean).join(" ");
 
   const concept: AiFirstConcept = {
@@ -585,12 +590,15 @@ export async function buildQualityLockedPreviewBrief(
     visualMood: "cinematic-narrative",
     styleLaneId: "editorial-premium",
     layoutStyle: "full-bleed",
-    borderStyle: "thin-frame",
-    fontPairingId: "editorial-serif",
+    // Teaser generation consumes only concept.art; keep schema-required invitation
+    // furniture deliberately inert so retained QA evidence cannot imply a floral
+    // frame, paper texture or typography treatment that was never requested.
+    borderStyle: "none",
+    fontPairingId: "modern-sans",
     baseThemeId: "garden-editorial",
     placementId: "centre",
-    texture: { style: "cotton", intensity: 0.45 },
-    dividerStyle: "diamond-rule",
+    texture: { style: "none", intensity: 0 },
+    dividerStyle: "none",
     motif: { id: "botanical-sprig", placement: "side-mirrored" },
     semanticPalette: {
       textSurface: card.palette[2],
@@ -599,7 +607,7 @@ export async function buildQualityLockedPreviewBrief(
       accentColor: card.palette[0],
     },
     art: {
-      medium: namedReference ? "premium character-led editorial illustration" : "premium narrative editorial illustration",
+      medium: namedReference ? "polished cinematic character illustration" : "polished cinematic event illustration",
       composition: "portrait scene-led full-bleed teaser using the full canvas; all required subjects, faces and defining objects remain fully visible, with no panel, blank rectangle, cropped head or edge-clipped hero subject",
       prompt: prompt.slice(0, 1200),
     },
@@ -701,12 +709,16 @@ export async function generateQualityLockedPreview(
     dependencies.inspirationNotes ?? "",
     dependencies.namedReference,
   );
+  const referenceIdentityNotes = dependencies.inspirationNotes?.trim()
+    ? `AUTHORITATIVE IDENTITY NOTES: ${dependencies.inspirationNotes.trim()}`
+    : "";
   const referenceImageRule = dependencies.referenceImages?.length
-    ? "ATTACHED REFERENCE IMAGES ARE AUTHORITATIVE IDENTITY ANCHORS. Match the defining face, hair, outfit, creature markings, proportions, silhouette and visual-world details that make the requested subjects recognizable at a glance. Create a new event-specific scene; never copy wording, logos, watermarks or an invitation layout from the references."
+    ? "ATTACHED REFERENCE IMAGES ARE IDENTITY ANCHORS ONLY. Preserve the defining face, hair, outfit, creature markings, proportions, silhouette and world details that make the requested subjects recognizable. Integrate them naturally into a new event-specific environment. Do not copy the source background, pose, crop, wording, logo, watermark, card, poster or layout; do not paste cutout characters onto an unrelated scene."
     : "";
   const basePrompt = [
     buildTeaserArtworkPrompt(concept),
     buildArtworkConstraints(brief),
+    referenceIdentityNotes,
     referenceImageRule,
   ].filter(Boolean).join("\n\n");
   const reviews: PreviewQualityReview[] = [];
