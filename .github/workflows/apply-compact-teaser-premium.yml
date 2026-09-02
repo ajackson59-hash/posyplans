@@ -25,6 +25,7 @@ jobs:
         with:
           ref: codex/launch-blockers
 
+      # Retry after targeting only the teaser concept prompt field.
       - name: Fit premium teaser direction inside the schema budget
         run: python script/patch_teaser_premium_finish.py
 
