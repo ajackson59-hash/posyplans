@@ -793,7 +793,7 @@ export interface PreviewQualityDependencies {
   inspirationNotes?: string;
   /** Original uploaded pixels used as high-fidelity identity anchors. */
   referenceImages?: ArtworkReferenceImage[];
-  /** Reference-led named themes use high output quality; generic previews stay medium. */
+  /** Named themes use high output quality; generic previews stay medium. */
   quality?: ArtworkQuality;
   /**
    * Optional named reference already resolved by a caller with an explicit
@@ -835,15 +835,19 @@ export async function generateQualityLockedPreview(
   const runVision = dependencies.runVision ?? runVisionGate;
   const maxCandidates = dependencies.maxCandidates ?? 2;
   const referenceLed = Boolean(dependencies.referenceImages?.length);
-  const quality = dependencies.quality ?? (referenceLed ? "high" : "medium");
   const modelForCandidate = (candidate: number): ArtworkModel =>
     referenceLed && candidate > 1 ? REFERENCE_ARTWORK_MODEL : DEFAULT_ARTWORK_MODEL;
   let lastModel: ArtworkModel = modelForCandidate(1);
-  const { brief, concept } = await buildQualityLockedPreviewBrief(
+  const { brief, concept, namedReference } = await buildQualityLockedPreviewBrief(
     event,
     dependencies.inspirationNotes ?? "",
     dependencies.namedReference,
   );
+  // Named entertainment worlds are the hardest pre-payment images: identity,
+  // scene fidelity and artifact-free character integration all have to pass at
+  // once. Spend the higher render tier only there; generic previews remain on
+  // medium and every unpaid event still has the same hard two-candidate cap.
+  const quality = dependencies.quality ?? (referenceLed || namedReference ? "high" : "medium");
   const referenceIdentityNotes = dependencies.inspirationNotes?.trim()
     ? `AUTHORITATIVE IDENTITY NOTES: ${dependencies.inspirationNotes.trim()}`
     : "";

@@ -412,7 +412,7 @@ describe("prepayment preview quality lock", () => {
     expect(generateImage).toHaveBeenCalledTimes(2);
     expect(generateImage.mock.calls[0][0]).toEqual(expect.objectContaining({
       model: "gpt-image-2",
-      quality: "medium",
+      quality: "high",
       aspectRatio: "9:16",
     }));
     expect(generateImage.mock.calls[1][0].prompt).toContain("Meekah is missing");
