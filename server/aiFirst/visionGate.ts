@@ -15,6 +15,7 @@ import { typePlacementFrame } from "@shared/aiFirstLayout";
 import { LOCAL_TYPE_SURFACE_ALPHA } from "@shared/themeCatalog";
 
 export const VISION_MODEL = "claude-sonnet-4-6";
+export const TEASER_MIN_DIMENSION_SCORE = 5;
 
 export { MIN_DIMENSION_SCORE };
 export type { VisionScores };
@@ -32,6 +33,12 @@ export interface VisionVerdict {
   unavailable: boolean;
   durationMs: number;
   usage: { inputTokens: number; outputTokens: number };
+  /** Extra fail-closed facts required only for standalone first-look artwork. */
+  teaserChecks?: {
+    milestone: { required: boolean; evidence: string; correct: boolean };
+    identity: { required: boolean; evidence: string; accurate: boolean };
+    purchase: { evidence: string; wouldCreatePurchaseDesire: boolean };
+  };
 }
 
 const SYSTEM = `You are a strict art director reviewing AI-generated artwork for a printed invitation a host will send to real guests. You are the last check before a customer sees it.
@@ -55,19 +62,21 @@ Reply with JSON only:
 /** Which retry remedy each failed dimension maps onto. */
 const TEASER_SYSTEM = `You are a strict art director reviewing the exact final pixels of a personalized pre-payment artwork teaser. The customer sees this artwork at its native aspect ratio with no browser crop, text box, badge, gradient, panel or other overlay.
 
-Score each 1-5. 4 means "a professional stationery studio would confidently show this as a compelling first look". 3 means acceptable but visibly compromised and is a FAIL.
+Score each 1-5. Posy's teaser gate requires 5 in every dimension: this image must be exceptional, not merely passable. A 4 may be professional but is still held private for correction.
 
 - textLogoWatermarkFree: 5 = no letters, words, numbers, logos, signatures or watermarks anywhere, including stylised or partial ones.
 - artifactFree: 5 = no melted, duplicated, malformed or anatomically broken forms, cutout/composite halos, copy-stamped effects, inconsistent light physics or other visible generation artifacts.
 - premiumFinish: 5 = art-directed, dimensional and commercially polished enough to create purchase desire on its own. Look for purposeful depth hierarchy, native-medium fidelity, believable materials, controlled saturation and an emotionally specific moment. Score 1-2 for clipart, stock-template, merchandise-ad, flat-vector mascot or generic AI look; score 3 for competent but ordinary/synthetic work such as waxy skin, plastic food, uniform specular highlights, flat painted backgrounds, copy-stamped bubbles/effects or front-facing catalog poses.
 - briefFidelity: 5 = the artwork unmistakably delivers the host's named world, requested setting, activities and defining details.
 - compositionQuality: 5 = one clear, balanced, intentional full-bleed scene in the exact supplied pixels. Any collage/split-panel treatment, pasted cutout look, poster/sign/card surface, cropped face or head, edge-clipped lead subject, awkward empty panel, or required hero subject pushed partly outside the canvas forces 3 or lower.
-- ageAppropriate: 5 = correctly pitched for the celebrant's age. When the host explicitly requests an all-ages action or fantasy identity, do not fail merely because faithful imagery includes stylized fantasy weapons, non-graphic supernatural creatures, performance costumes or dramatic poses.
+- ageAppropriate: 5 = correctly pitched for the celebrant's age. If a specific physical milestone count is required, count each visible item one by one; a missing, ambiguous or wrong count forces ageAppropriate and briefFidelity to 3 or lower. When the host explicitly requests an all-ages action or fantasy identity, do not fail merely because faithful imagery includes stylized fantasy weapons, non-graphic supernatural creatures, performance costumes or dramatic poses.
 
 Judge BRIEF REQUIREMENTS holistically through briefFidelity and ageAppropriate. VISIBLE MUST-HAVES are stricter binary facts: an exact count must match the stated number exactly, and a named lead/co-host identity is false when it is generic, colour-only, or only ambiguously recognizable. Never average a wrong count or weak named identity into an overall 4/5 score. For each VISIBLE MUST-HAVE, report whether that concrete subject is visibly present. List any EXCLUDED item you can actually see.
 
+Then make three explicit teaser checks. For milestone, describe and count the visible physical cue; never infer the requested age from the prompt. For identity, every specifically named subject must be independently recognizable through canonical face, hair, costume, silhouette and world details—palette-only or adjacent generic characters are false. For purchase, false means the scene reads as a stock promo, generic AI image, synthetic render or otherwise would not create desire to continue. Missing check fields are failures.
+
 Reply with JSON only:
-{"textLogoWatermarkFree":0,"artifactFree":0,"premiumFinish":0,"briefFidelity":0,"compositionQuality":0,"ageAppropriate":0,"requiredPresent":[{"requirement":"","present":true}],"excludedFound":[],"notes":""}`;
+{"textLogoWatermarkFree":0,"artifactFree":0,"premiumFinish":0,"briefFidelity":0,"compositionQuality":0,"ageAppropriate":0,"requiredPresent":[{"requirement":"","present":true}],"excludedFound":[],"teaserChecks":{"milestone":{"evidence":"","correct":true},"identity":{"evidence":"","accurate":true},"purchase":{"evidence":"","wouldCreatePurchaseDesire":true}},"notes":""}`;
 
 /** Which retry remedy each failed dimension maps onto. */
 const CODE_FOR_DIMENSION: Record<keyof VisionScores, string> = {
@@ -159,6 +168,15 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
     ...concreteSubjectReviewRequirementsForBrief(brief),
     ...visibleReviewRequirementsForBrief(brief),
   ]));
+  const milestoneRequirement = reviewMode === "teaser"
+    ? brief.requirements.required
+        .find((requirement) => /^\[VISIBLE MILESTONE\]/i.test(requirement) || /^a clear non-text .* birthday cue/i.test(requirement))
+        ?.replace(VISIBLE_REQUIREMENT_PREFIX, "")
+        .trim() ?? ""
+    : "";
+  const identityExpectation = reviewMode === "teaser"
+    ? (brief.visualIdentityOverride || brief.themeName || "").trim()
+    : "";
   const typeBox = typePlacementFrame(concept);
   const protectionAlpha = LOCAL_TYPE_SURFACE_ALPHA[concept.minOverlay];
   const protectionInstruction = reviewMode === "teaser"
@@ -188,6 +206,20 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
     "",
     "EXCLUDED:",
     ...brief.requirements.excluded.map((r) => `- ${r}`),
+    reviewMode === "teaser" ? "TEASER PASS/FAIL CHECKS:" : "",
+    reviewMode === "teaser"
+      ? milestoneRequirement
+        ? `- MILESTONE (required): ${milestoneRequirement}. Count the visible physical cue exactly and report what you counted.`
+        : "- MILESTONE: no exact physical milestone count is required; mark correct true."
+      : "",
+    reviewMode === "teaser"
+      ? identityExpectation
+        ? `- IDENTITY (required): ${identityExpectation}. Palette, accessories or an adjacent generic substitute do not count as accurate.`
+        : "- IDENTITY: judge the host's requested event world and scene details as a whole."
+      : "",
+    reviewMode === "teaser"
+      ? "- PURCHASE: would these exact pixels, by themselves, make a discerning host want to continue toward purchase?"
+      : "",
   ]
     .filter(Boolean)
     .join("\n");
@@ -197,7 +229,7 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
   try {
     const response = await client.messages.create({
       model: VISION_MODEL,
-      max_tokens: 700,
+      max_tokens: reviewMode === "teaser" ? 950 : 700,
       system: reviewMode === "teaser" ? TEASER_SYSTEM : SYSTEM,
       messages: [
         {
@@ -274,10 +306,38 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
   const excludedFound = Array.isArray(parsed.excludedFound)
     ? parsed.excludedFound.filter((e: unknown): e is string => typeof e === "string" && e.trim().length > 0)
     : [];
+  const teaserChecks = reviewMode === "teaser"
+    ? {
+        milestone: {
+          required: Boolean(milestoneRequirement),
+          evidence: typeof parsed.teaserChecks?.milestone?.evidence === "string"
+            ? parsed.teaserChecks.milestone.evidence
+            : "",
+          correct: milestoneRequirement
+            ? parsed.teaserChecks?.milestone?.correct === true
+            : true,
+        },
+        identity: {
+          required: Boolean(identityExpectation),
+          evidence: typeof parsed.teaserChecks?.identity?.evidence === "string"
+            ? parsed.teaserChecks.identity.evidence
+            : "",
+          accurate: parsed.teaserChecks?.identity?.accurate === true,
+        },
+        purchase: {
+          evidence: typeof parsed.teaserChecks?.purchase?.evidence === "string"
+            ? parsed.teaserChecks.purchase.evidence
+            : "",
+          wouldCreatePurchaseDesire:
+            parsed.teaserChecks?.purchase?.wouldCreatePurchaseDesire === true,
+        },
+      }
+    : undefined;
 
   const failureCodes: string[] = [];
+  const scoreFloor = reviewMode === "teaser" ? TEASER_MIN_DIMENSION_SCORE : MIN_DIMENSION_SCORE;
   for (const key of Object.keys(scores) as (keyof VisionScores)[]) {
-    if (scores[key] < MIN_DIMENSION_SCORE) failureCodes.push(CODE_FOR_DIMENSION[key]);
+    if (scores[key] < scoreFloor) failureCodes.push(CODE_FOR_DIMENSION[key]);
   }
   // A missing concrete VISIBLE MUST-HAVE is a failure even if every
   // dimension scored well. Holistic theme/age requirements stay governed by
@@ -290,6 +350,13 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
     failureCodes.push("brief-fidelity");
   }
   if (excludedFound.length > 0) failureCodes.push("excluded-present");
+  if (teaserChecks) {
+    if (teaserChecks.milestone.required && !teaserChecks.milestone.correct) {
+      failureCodes.push("brief-fidelity", "age-appropriate");
+    }
+    if (!teaserChecks.identity.accurate) failureCodes.push("brief-fidelity");
+    if (!teaserChecks.purchase.wouldCreatePurchaseDesire) failureCodes.push("premium-feel");
+  }
 
   return {
     scores,
@@ -301,6 +368,7 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
     unavailable: false,
     durationMs: Date.now() - started,
     usage,
+    teaserChecks,
   };
 }
 

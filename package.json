@@ -7,7 +7,7 @@
     "dev": "NODE_ENV=development tsx server/index.ts",
     "build": "tsx script/build.ts",
     "build:vercel-fn": "esbuild server/vercel-entry.ts --bundle --platform=node --format=cjs --outfile=api/index.js --external:pg-native",
-    "vercel-build": "vite build && rm -rf public && cp -r dist/public public && npm run build:vercel-fn && tsx script/run_preview_build_canary.ts",
+    "vercel-build": "vite build && rm -rf public && cp -r dist/public public && npm run build:vercel-fn",
     "start": "NODE_ENV=production node dist/index.cjs",
     "check": "tsc",
     "test": "vitest run",

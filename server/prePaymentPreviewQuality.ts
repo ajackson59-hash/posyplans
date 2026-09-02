@@ -658,13 +658,13 @@ export async function buildQualityLockedPreviewBrief(
       : "MILESTONE: match the child's age through age-appropriate energy only. Do not show birthday candles, numeral-shaped props or other countable age markers; the surrounding Posy UI carries the exact age."
     : "MILESTONE: communicate any stated milestone through age-appropriate tone, never invented written names, dates or logos.";
   const prompt = [
-    "Create one premium cinematic event-world illustration: full portrait canvas, one continuous believable environment.",
+    "Create one premium cinematic event-world image: full portrait canvas, one continuous believable environment.",
     `IDENTITY: ${identity}; venue, activities and party details in the same scene.`,
-    "NATIVE STYLE: live-action references need natural skin, hair, fabric and light; animation keeps its polished native style. No generic mascot art.",
+    "NATIVE STYLE: natural skin, hair, fabric and light in live action; polished native animation. No generic mascot art.",
     namedReference
-      ? "STORY: named characters and event details are the hero. Use asymmetric candid interaction and varied poses; do not invent any child in the foreground or central hero plane when no personal celebrant reference was supplied."
+      ? "STORY: named characters and event details are the hero in candid interaction; do not invent any child in the foreground or central hero plane without a supplied celebrant reference."
       : "STORY: asymmetric candid interaction and varied poses, not a front-facing catalog or character-promo pose.",
-    "DEPTH/MATERIAL: crisp hero focus, believable venue depth, coherent light/shadow/color bounce and micro-detail. No waxy skin, plastic food, uniform gloss, stamped bubbles or cutout halos.",
+    "DEPTH/MATERIAL: crisp hero focus with natural depth falloff; motivated directional key/fill/rim light, contact/cast shadows, controlled saturation, color bounce and micro-detail; correct hands, joints, scale, gravity and perspective. No waxy skin, plastic food, repeated object clusters, stamped bubbles or composite seams.",
     milestoneDirection,
     "COMPOSITION: fully frame required faces, primary celebration object, hands and props; leave breathing room and control foreground clutter.",
     "NO DESIGN SURFACES: no blank card, panel, sign, frame, collage, sticker sheet, poster, merchandise mockup, screen, invitation card or text-reserved rectangle.",
@@ -824,7 +824,7 @@ export async function generateQualityLockedPreview(
       candidate: number;
       model: ArtworkModel;
       passed: boolean;
-      dataUrl?: string;
+      sourceBytes?: Buffer;
       review?: PreviewQualityReview;
       error?: string;
     };
@@ -879,8 +879,6 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
           error: `Generated artwork could not be prepared for customer review: ${error instanceof Error ? error.message : String(error)}`,
         };
       }
-      const dataUrl = `data:image/png;base64,${reviewedBytes.toString("base64")}`;
-
       let tier1: Tier1Result;
       let vision: VisionVerdict | undefined;
       try {
@@ -894,7 +892,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
         });
         if (tier1.passed) {
           vision = await runVision({
-            bytes: reviewedBytes,
+            bytes: generated.bytes,
             concept,
             brief,
             reviewMode: "teaser",
@@ -957,7 +955,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
         }
       }
 
-      return { candidate, model, passed, dataUrl, review };
+      return { candidate, model, passed, sourceBytes: generated.bytes, review };
     };
 
     const outcomes = await Promise.all([
@@ -967,8 +965,8 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
     reviews.push(...outcomes.flatMap((outcome) => outcome.review ? [outcome.review] : []));
 
     const approved = outcomes
-      .filter((outcome): outcome is ParallelOutcome & { dataUrl: string; review: PreviewQualityReview } =>
-        outcome.passed && Boolean(outcome.dataUrl) && Boolean(outcome.review?.vision),
+      .filter((outcome): outcome is ParallelOutcome & { sourceBytes: Buffer; review: PreviewQualityReview } =>
+        outcome.passed && Boolean(outcome.sourceBytes) && Boolean(outcome.review?.vision),
       )
       .sort((a, b) => {
         const av = a.review.vision!.scores;
@@ -986,8 +984,10 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
     if (approved) {
       return {
         kind: "approved-image",
-        dataUrl: approved.dataUrl,
-        attempts: outcomes.filter((outcome) => outcome.dataUrl || outcome.review).length,
+        // The gate inspected the exact 560px teaser transform, but paid reuse
+        // and protected evidence retain the original provider resolution.
+        dataUrl: `data:image/png;base64,${approved.sourceBytes.toString("base64")}`,
+        attempts: outcomes.filter((outcome) => outcome.sourceBytes || outcome.review).length,
         model: approved.model,
         reviews,
       };
@@ -1063,8 +1063,6 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
         error: `Generated artwork could not be prepared for customer review: ${error instanceof Error ? error.message : String(error)}`,
       };
     }
-    const reviewedDataUrl = `data:image/png;base64,${reviewedBytes.toString("base64")}`;
-
     let tier1: Tier1Result;
     let vision: VisionVerdict | undefined;
     try {
@@ -1109,8 +1107,11 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
     ].filter(Boolean).join(" ").slice(0, 1200);
     reviews.push({ tier1, vision, failureCodes: passed ? [] : failureCodes, notes: concreteNotes });
 
-    // Every billed candidate is retained for protected owner-scoped review,
-    // accepted and rejected alike — mirroring aiFirst/artworkAttemptStore.ts.
+    // Every billed candidate is retained at its original resolution for
+    // protected owner-scoped review and paid reuse, accepted and rejected
+    // alike — mirroring aiFirst/artworkAttemptStore.ts. The gate evidence was
+    // still computed from `reviewedBytes`, the exact deterministic 560px
+    // transform served to an unpaid customer.
     // Best-effort and fail-open: a retention failure must never change the
     // customer-visible result or mask the real approve/reject outcome.
     if (dependencies.attemptRetention) {
@@ -1125,7 +1126,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
           directionIndex: 0,
           attempt: candidate,
           status: passed ? "accepted" : "rejected",
-          bytes: reviewedBytes,
+          bytes: generated.bytes,
           previewId: null,
           concept,
           failureCodes: passed ? [] : failureCodes,
@@ -1144,7 +1145,10 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
     if (passed) {
       return {
         kind: "approved-image",
-        dataUrl: reviewedDataUrl,
+        // Persist the full provider result. The private unpaid asset route
+        // derives the exact reviewed 560px pixels from these bytes; after an
+        // unlock the same approved artwork remains available at full quality.
+        dataUrl: `data:image/png;base64,${generated.bytes.toString("base64")}`,
         attempts: candidate,
         model,
         reviews,

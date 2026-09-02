@@ -100,6 +100,10 @@ describe("prepayment preview quality lock", () => {
     expect(concept.art.prompt).toContain("DEPTH/MATERIAL");
     expect(concept.art.prompt).toContain("MILESTONE:");
     expect(concept.art.prompt).toContain("NATIVE STYLE");
+    expect(concept.art.prompt).toContain("correct hands, joints, scale, gravity and perspective");
+    expect(concept.art.prompt).toContain("contact/cast shadows");
+    expect(concept.art.prompt).toContain("controlled saturation");
+    expect(concept.art.prompt).toContain("repeated object clusters");
     expect(concept.art.prompt.length).toBeLessThanOrEqual(1200);
     expect(concept.art.prompt).not.toContain("invitation artwork");
     expect(concept.art.prompt).not.toContain("stationery artwork");
@@ -365,7 +369,9 @@ describe("prepayment preview quality lock", () => {
     expect(result.reviews).toHaveLength(2);
     expect(generateImage.mock.calls[1][0].prompt).toContain("PRIVATE ALTERNATE TAKE");
     if (result.kind !== "approved-image") throw new Error("expected approved image");
-    expect(decodePng(Buffer.from(result.dataUrl.split(",")[1], "base64")).rgb[0]).toBe(2);
+    const approvedBytes = Buffer.from(result.dataUrl.split(",")[1], "base64");
+    expect(decodePng(approvedBytes).rgb[0]).toBe(2);
+    expect(readPngSize(approvedBytes)).toEqual({ width: 630, height: 1120 });
   });
 
   it("keeps a rejected first candidate private and returns only the approved correction", async () => {
@@ -395,7 +401,7 @@ describe("prepayment preview quality lock", () => {
     expect(result.kind).toBe("approved-image");
     if (result.kind !== "approved-image") throw new Error("expected approved image");
     expect(result.dataUrl).toMatch(/^data:image\/png;base64,/);
-    expect(readPngSize(Buffer.from(result.dataUrl.split(",")[1], "base64"))).toEqual({ width: 315, height: 560 });
+    expect(readPngSize(Buffer.from(result.dataUrl.split(",")[1], "base64"))).toEqual({ width: 630, height: 1120 });
     expect(result.attempts).toBe(2);
     expect(generateImage).toHaveBeenCalledTimes(2);
     expect(generateImage.mock.calls[0][0]).toEqual(expect.objectContaining({
@@ -417,7 +423,7 @@ describe("prepayment preview quality lock", () => {
     expect(JSON.stringify(result)).not.toContain("FIRST");
   });
 
-  it("reviews and returns the exact 560px customer-visible teaser pixels", async () => {
+  it("reviews the exact 560px teaser pixels while preserving the full approved source", async () => {
     const sourceBytes = generatedPng(9);
     const runTier1 = vi.fn(() => tier1(true));
     const runVision = vi.fn(async () => vision(true));
@@ -435,9 +441,11 @@ describe("prepayment preview quality lock", () => {
     expect(result.kind).toBe("approved-image");
     if (result.kind !== "approved-image") throw new Error("expected approved image");
     const returnedBytes = Buffer.from(result.dataUrl.split(",")[1], "base64");
-    expect(readPngSize(returnedBytes)).toEqual({ width: 315, height: 560 });
-    expect(Buffer.compare(runTier1.mock.calls[0][0].bytes, returnedBytes)).toBe(0);
-    expect(Buffer.compare(runVision.mock.calls[0][0].bytes, returnedBytes)).toBe(0);
+    const customerBytes = runTier1.mock.calls[0][0].bytes as Buffer;
+    expect(readPngSize(returnedBytes)).toEqual({ width: 630, height: 1120 });
+    expect(Buffer.compare(returnedBytes, sourceBytes)).toBe(0);
+    expect(readPngSize(customerBytes)).toEqual({ width: 315, height: 560 });
+    expect(Buffer.compare(runVision.mock.calls[0][0].bytes, customerBytes)).toBe(0);
     expect(runTier1.mock.calls[0][0].layoutApplied).toBe(false);
     expect(runVision.mock.calls[0][0].reviewMode).toBe("teaser");
   });
@@ -547,6 +555,7 @@ describe("prepayment preview quality lock", () => {
         // The raw bytes must be retained too — a reviewer needs to see the
         // actual rejected image, not only the codes that rejected it.
         expect(Buffer.isBuffer(record.bytes)).toBe(true);
+        expect(readPngSize(record.bytes as Buffer)).toEqual({ width: 630, height: 1120 });
       }
     });
 
@@ -570,6 +579,7 @@ describe("prepayment preview quality lock", () => {
       expect(store.record).toHaveBeenCalledTimes(1);
       expect(records[0].status).toBe("accepted");
       expect(records[0].failureCodes).toEqual([]);
+      expect(readPngSize(records[0].bytes as Buffer)).toEqual({ width: 630, height: 1120 });
     });
 
     it("stays fail-open: a retention error never changes the customer-visible result", async () => {
@@ -597,7 +607,7 @@ describe("prepayment preview quality lock", () => {
       expect(result.kind).toBe("approved-image");
       if (result.kind !== "approved-image") throw new Error("expected approved image");
       expect(result.dataUrl).toMatch(/^data:image\/png;base64,/);
-      expect(readPngSize(Buffer.from(result.dataUrl.split(",")[1], "base64"))).toEqual({ width: 315, height: 560 });
+      expect(readPngSize(Buffer.from(result.dataUrl.split(",")[1], "base64"))).toEqual({ width: 630, height: 1120 });
     });
 
     it("omits retention entirely when no store is supplied, exactly as before", async () => {

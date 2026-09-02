@@ -86,7 +86,7 @@ describe("reference-led preview quality", () => {
     expect(result.kind).toBe("approved-image");
     if (result.kind !== "approved-image") throw new Error("expected approved image");
     expect(result.dataUrl).toMatch(/^data:image\/png;base64,/);
-    expect(readPngSize(Buffer.from(result.dataUrl.split(",")[1], "base64"))).toEqual({ width: 315, height: 560 });
+    expect(readPngSize(Buffer.from(result.dataUrl.split(",")[1], "base64"))).toEqual({ width: 630, height: 1120 });
     expect(result.model).toBe("gpt-image-1.5");
     expect(generateImage).toHaveBeenCalledTimes(2);
     expect(generateImage.mock.calls[0][0]).toEqual(expect.objectContaining({

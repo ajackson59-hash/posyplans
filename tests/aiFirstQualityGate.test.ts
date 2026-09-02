@@ -362,6 +362,12 @@ const allFive = {
   ageAppropriate: 5,
 };
 
+const passingTeaserChecks = {
+  milestone: { evidence: "No exact count is required.", correct: true },
+  identity: { evidence: "The requested event world is specific and accurate.", accurate: true },
+  purchase: { evidence: "The finish is distinctive and premium.", wouldCreatePurchaseDesire: true },
+};
+
 const runVision = (body: Record<string, unknown>, over: Partial<EventBrief> = {}) =>
   runVisionGate({
     bytes: artworkPng(),
@@ -547,7 +553,16 @@ describe("tier 2 — acceptance", () => {
           systemText = request.system;
           reviewText = request.messages[0].content.find((part: any) => part.type === "text")?.text ?? "";
           return {
-            content: [{ type: "text", text: JSON.stringify({ ...allFive, requiredPresent: [], excludedFound: [], notes: "" }) }],
+            content: [{
+              type: "text",
+              text: JSON.stringify({
+                ...allFive,
+                requiredPresent: [],
+                excludedFound: [],
+                teaserChecks: passingTeaserChecks,
+                notes: "",
+              }),
+            }],
             usage: { input_tokens: 1200, output_tokens: 180 },
           };
         },
@@ -567,9 +582,101 @@ describe("tier 2 — acceptance", () => {
     expect(systemText).toContain("no browser crop");
     expect(systemText).toContain("exact count must match the stated number exactly");
     expect(systemText).toContain("weak named identity");
+    expect(systemText).toContain("requires 5 in every dimension");
+    expect(systemText).toContain("count each visible item one by one");
     expect(reviewText).toContain("FINAL CUSTOMER SURFACE");
+    expect(reviewText).toContain("TEASER PASS/FAIL CHECKS");
+    expect(reviewText).toContain("would these exact pixels");
     expect(reviewText).not.toContain("LIVE TYPOGRAPHY BOX");
     expect(reviewText).not.toContain("FINAL TYPE PROTECTION");
+  });
+
+  it("holds a merely professional 4/5 teaser private even though invitation review accepts 4/5", async () => {
+    const teaser = await runVisionGate({
+      bytes: artworkPng(),
+      concept: concept({ minOverlay: "none" }),
+      brief: brief(),
+      client: critic({
+        ...allFive,
+        premiumFinish: 4,
+        requiredPresent: [],
+        excludedFound: [],
+        teaserChecks: passingTeaserChecks,
+        notes: "Professional, but not exceptional.",
+      }),
+      reviewMode: "teaser",
+    });
+    const invitation = await runVision({ premiumFinish: 4 });
+
+    expect(teaser.passed).toBe(false);
+    expect(teaser.failureCodes).toContain("premium-feel");
+    expect(invitation.passed).toBe(true);
+  });
+
+  it("rejects a wrong physical milestone count even when the critic scores every dimension 5", async () => {
+    const milestoneBrief = brief({
+      milestone: "4th",
+      themeName: "Blippi + Meekah",
+      requirements: {
+        required: [
+          "a clear non-text 4th birthday cue using four separate unnumbered birthday candles or an equally explicit physical count",
+        ],
+        preferred: [],
+        excluded: [],
+      },
+    });
+    const verdict = await runVisionGate({
+      bytes: artworkPng(),
+      concept: concept({ minOverlay: "none" }),
+      brief: milestoneBrief,
+      client: critic({
+        ...allFive,
+        requiredPresent: [],
+        excludedFound: [],
+        teaserChecks: {
+          ...passingTeaserChecks,
+          milestone: { evidence: "Six candles are visible.", correct: false },
+        },
+        notes: "The candle count contradicts the fourth-birthday brief.",
+      }),
+      reviewMode: "teaser",
+    });
+
+    expect(verdict.passed).toBe(false);
+    expect(verdict.failureCodes).toEqual(expect.arrayContaining(["brief-fidelity", "age-appropriate"]));
+    expect(verdict.teaserChecks?.milestone).toEqual(expect.objectContaining({
+      required: true,
+      evidence: "Six candles are visible.",
+      correct: false,
+    }));
+  });
+
+  it("rejects palette-only named characters and stock-promo purchase desire", async () => {
+    const namedBrief = brief({
+      themeName: "Blippi + Meekah",
+      requirements: { required: [], preferred: [], excluded: [] },
+    });
+    const verdict = await runVisionGate({
+      bytes: artworkPng(),
+      concept: concept({ minOverlay: "none" }),
+      brief: namedBrief,
+      client: critic({
+        ...allFive,
+        requiredPresent: [],
+        excludedFound: [],
+        teaserChecks: {
+          milestone: { evidence: "No exact count required.", correct: true },
+          identity: { evidence: "Meekah is only suggested by purple clothing.", accurate: false },
+          purchase: { evidence: "The scene feels like a stock promo.", wouldCreatePurchaseDesire: false },
+        },
+        notes: "Generic adjacent identity and synthetic promo finish.",
+      }),
+      reviewMode: "teaser",
+    });
+
+    expect(verdict.passed).toBe(false);
+    expect(verdict.failureCodes).toEqual(expect.arrayContaining(["brief-fidelity", "premium-feel"]));
+    expect(verdict.teaserChecks?.identity.required).toBe(true);
   });
 
   it("reviews a paper-panel concept as the final protected card without hiding required subjects", async () => {

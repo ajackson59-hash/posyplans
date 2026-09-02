@@ -103,7 +103,11 @@ type PreviewGenerationState = "idle" | "generating" | "ready" | "fallback";
 
 const QUALITY_APPROVED_PNG_PREFIX = "data:image/png;posy-quality-approved;base64,";
 const STANDARD_PNG_PREFIX = "data:image/png;base64,";
-export const PREPAYMENT_PREVIEW_JOB_TIMEOUT_MS = 60_000;
+// The direction card is returned immediately, so this is a background quality
+// budget rather than customer-blocking latency. Live medium renders took about
+// 55 seconds and a high render exceeded 115; preserve enough of Vercel's
+// 300-second function window for exact-pixel review and one private correction.
+export const PREPAYMENT_PREVIEW_JOB_TIMEOUT_MS = 240_000;
 const GENERAL_CLASSIFIER_TIMEOUT_MS = 7_500;
 const REFERENCE_RESOLUTION_TIMEOUT_MS = 12_000;
 const BACKGROUND_STALE_MS = PREPAYMENT_PREVIEW_JOB_TIMEOUT_MS + 15_000;
