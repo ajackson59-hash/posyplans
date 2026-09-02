@@ -18,8 +18,8 @@ replace_once(
 )
 replace_once(
     quality,
-    '''      prompt,''',
-    '''      prompt: prompt.slice(0, 1200),''',
+    '''      composition: "portrait scene-led full-bleed teaser using the full canvas; all required subjects, faces and defining objects remain fully visible, with no panel, blank rectangle, cropped head or edge-clipped hero subject",\n      prompt,\n    },''',
+    '''      composition: "portrait scene-led full-bleed teaser using the full canvas; all required subjects, faces and defining objects remain fully visible, with no panel, blank rectangle, cropped head or edge-clipped hero subject",\n      prompt: prompt.slice(0, 1200),\n    },''',
 )
 
 # Tests prove the final clause survives and the schema cap remains respected.
