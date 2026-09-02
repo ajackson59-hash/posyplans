@@ -172,12 +172,13 @@ describe("quality-locked prepayment preview routes", () => {
     expect(generate).toHaveBeenCalledTimes(1);
     expect(generate.mock.calls[0][1]).toEqual(expect.objectContaining({
       inspirationNotes: "Official Blippi and Meekah identity references",
-      quality: "high",
+      quality: "medium",
       maxCandidates: 2,
+      parallelCandidates: true,
       namedReference: expect.objectContaining({ id: "blippi-meekah" }),
       signal: expect.any(AbortSignal),
     }));
-    expect(generate.mock.calls[0][1].referenceImages).toHaveLength(1);
+    expect(generate.mock.calls[0][1].referenceImages).toBeUndefined();
     expect(stored.prePaymentPreviewUrl).toBe(`${QUALITY_PREFIX}${APPROVED_BYTES.toString("base64")}`);
 
     const ready = await request(makeApp())

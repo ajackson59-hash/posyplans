@@ -434,10 +434,16 @@ async function runAutomaticNamedPreviewJob({
     const generationTimeoutMs = remainingMs();
     const result = await withPreviewDeadline(
       generate(event, {
+        // Automatic research supplies the identity facts, but raw official
+        // pixels are deliberately NOT passed into the edit/compositing path.
+        // Live QA showed that path was slower and repeatedly collapsed into
+        // synthetic licensed-character promo art. Text-first GPT Image 2
+        // preserves the researched identity while building one cohesive event
+        // scene from scratch.
         inspirationNotes: resolved.notes,
-        referenceImages: resolved.images,
-        quality: "high",
+        quality: "medium",
         maxCandidates: 2,
+        parallelCandidates: true,
         namedReference,
         attemptRetention: { store: artworkAttemptStore, eventId: event.id, ownerToken: event.ownerToken },
         signal: abortController.signal,
