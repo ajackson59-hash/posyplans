@@ -25,7 +25,7 @@ jobs:
         with:
           ref: codex/launch-blockers
 
-      # Re-run after aligning the patch to the current compact teaser prompt.
+      # Re-run with every existing physical-quality guard preserved.
       - name: Apply physical-quality prompt repair
         run: python script/patch_teaser_physical_quality.py
 
