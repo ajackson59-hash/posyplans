@@ -110,6 +110,10 @@ describe("prepayment preview quality lock", () => {
     expect(brief.requirements.excluded).toContain(
       "a lead character's face or head cropped off by the canvas edge",
     );
+    expect(brief.requirements.excluded).toContain(
+      "an invented portrait, gender or physical appearance for the celebrant when the host did not supply a personal visual reference",
+    );
+    expect(`${concept.art.medium}.`).not.toContain("illustration illustration");
   });
   it("fails closed to the deterministic direction-card mode", () => {
     expect(readPrePaymentPreviewMode({})).toBe("direction-card");

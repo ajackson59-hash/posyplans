@@ -53,7 +53,7 @@ export function customerVisiblePreviewBytes(source: Buffer): Buffer {
 /** The first-look image is standalone artwork, not the later invitation card. */
 function buildTeaserArtworkPrompt(concept: AiFirstConcept): string {
   return [
-    `${concept.art.medium} illustration.`,
+    `${concept.art.medium}.`,
     `${concept.art.composition}.`,
     concept.art.prompt.trim().replace(/\s+$/, ""),
     ARTWORK_EDGE_REQUIREMENT,
@@ -94,7 +94,7 @@ const NAMED_REFERENCES: readonly NamedCreativeReference[] = [
     palette: ["#17315C", "#FF7A00", "#F8F3E8", "#B79DE2"],
     requirements: [
       "Blippi is visibly identifiable as a full lead character through his blue-and-orange play-and-learn outfit, orange glasses and orange bow tie—not merely an isolated accessory or color palette",
-      "Meekah is visibly identifiable as a distinct full co-host through her recognizable purple-and-orange visual identity—not a generic second adult",
+      "Meekah is visibly identifiable as a distinct full co-host through her natural curly hair and recognizable purple play-and-learn wardrobe with warm orange/yellow accents—not a generic second adult",
       "Blippi and Meekah are both central to the same joyful event scene and visibly interact with the requested setting or activities",
     ],
   },
@@ -599,6 +599,7 @@ function enrichBriefForNamedReference(brief: EventBrief, named: NamedCreativeRef
           ? [
               `a generic adjacent aesthetic standing in for ${named.label}`,
               "isolated accessories or palette-only shorthand standing in for the requested characters or world",
+              "an invented portrait, gender or physical appearance for the celebrant when the host did not supply a personal visual reference",
             ]
           : []),
         "a visible blank card, white rectangle, paper panel, placard, sign, frame or placeholder box inside the artwork",
@@ -673,7 +674,7 @@ export async function buildQualityLockedPreviewBrief(
       accentColor: card.palette[0],
     },
     art: {
-      medium: namedReference ? "polished cinematic character illustration" : "polished cinematic event illustration",
+      medium: namedReference ? "premium native-medium cinematic event image" : "premium cinematic event illustration",
       composition: "portrait scene-led full-bleed teaser using the full canvas; all required subjects, faces and defining objects remain fully visible, with no panel, blank rectangle, cropped head or edge-clipped hero subject",
       prompt: prompt.slice(0, 1200),
     },
@@ -768,7 +769,7 @@ export async function generateQualityLockedPreview(
   const referenceLed = Boolean(dependencies.referenceImages?.length);
   const quality = dependencies.quality ?? (referenceLed ? "high" : "medium");
   const modelForCandidate = (candidate: number): ArtworkModel =>
-    referenceLed && candidate > 1 ? REFERENCE_ARTWORK_MODEL : DEFAULT_ARTWORK_MODEL;
+    referenceLed && candidate === 1 ? REFERENCE_ARTWORK_MODEL : DEFAULT_ARTWORK_MODEL;
   let lastModel: ArtworkModel = modelForCandidate(1);
   const { brief, concept } = await buildQualityLockedPreviewBrief(
     event,
