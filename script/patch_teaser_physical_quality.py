@@ -31,19 +31,19 @@ replace_once(
   ].join(" ");''',
     '''  const milestoneDirection = teaserAge !== null && teaserAge >= 1 && teaserAge <= 9 && CHILD_AGE_WORDS[teaserAge]
     ? hostExplicitlyRequestedCandles
-      ? `MILESTONE: show exactly ${CHILD_AGE_WORDS[teaserAge]} separate unnumbered birthday candles; no extras or written numerals.`
-      : "MILESTONE: age-appropriate energy only. Do not show birthday candles, numeral props or other countable age markers."
+      ? `MILESTONE: exactly ${CHILD_AGE_WORDS[teaserAge]} unnumbered birthday candles; no extras or written numerals.`
+      : "MILESTONE: age-appropriate energy only; no candles, numeral props or countable age markers."
     : "MILESTONE: age-appropriate tone only; no invented names, dates or logos.";
   const prompt = [
     "Premium cinematic event-world image, full portrait canvas, one believable environment.",
     `IDENTITY: ${identity}; venue, activities and party details share the scene.`,
-    "NATIVE STYLE: live action uses natural skin, hair, fabric and light; animation keeps polished native style; no generic mascot art.",
+    "NATIVE STYLE: natural live-action skin, hair, fabric and light or polished native animation; no generic mascot art.",
     namedReference
-      ? "STORY: asymmetric candid interaction; named characters are heroes; do not invent any child in the foreground or central hero plane without a personal reference."
+      ? "STORY: asymmetric candid interaction; named characters are heroes; no invented child in the foreground or central hero plane without a personal reference."
       : "STORY: asymmetric candid interaction, not a front-facing catalog or character-promo pose.",
-    "DEPTH/MATERIAL: directional key + subtle rim light; crisp hero plane, natural depth falloff; coherent contact/cast shadows and color bounce. No waxy skin, plastic food, stamped bubbles, tiled clusters or cutout halos.",
-    "HANDS/PROPS: simple natural hands; unless explicitly required, no food or small props in hands—put treats on a stable surface at believable scale.",
-    "COMPOSITION: fully frame faces, hands and required objects; avoid dense repeated micro-objects as the foreground hero; control saturation and clutter.",
+    "DEPTH/MATERIAL: directional key + subtle rim light; crisp hero plane, natural depth falloff, contact/cast shadows, controlled saturation and color bounce; correct hands, joints, scale, gravity and perspective. No waxy skin, plastic food, repeated object clusters, stamped bubbles or cutout halos.",
+    "HANDS/PROPS: simple natural hands; unless explicitly required, no food or small props in hands—put treats on stable surfaces at believable scale.",
+    "COMPOSITION: fully frame faces, hands and required objects; avoid dense repeated micro-objects as foreground hero.",
     milestoneDirection,
     "NO DESIGN SURFACES: no card, panel, sign, frame, collage, poster, mockup, screen or text box.",
   ].join(" ");''',
@@ -52,13 +52,13 @@ replace_once(
 test = "tests/prePaymentPreviewQuality.test.ts"
 replace_once(
     test,
-    '''    expect(concept.art.prompt).toContain("DEPTH/MATERIAL");
-    expect(concept.art.prompt).toContain("MILESTONE:");''',
-    '''    expect(concept.art.prompt).toContain("DEPTH/MATERIAL");
+    '''    expect(concept.art.prompt).toContain("repeated object clusters");
+    expect(concept.art.prompt.length).toBeLessThanOrEqual(1200);''',
+    '''    expect(concept.art.prompt).toContain("repeated object clusters");
     expect(concept.art.prompt).toContain("HANDS/PROPS");
     expect(concept.art.prompt).toContain("directional key + subtle rim light");
     expect(concept.art.prompt).toContain("no food or small props in hands");
-    expect(concept.art.prompt).toContain("MILESTONE:");''',
+    expect(concept.art.prompt.length).toBeLessThanOrEqual(1200);''',
 )
 
 print("physical-quality teaser prompt repair applied")
