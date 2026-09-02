@@ -765,6 +765,42 @@ describe("prepayment preview quality lock", () => {
       expect(readPngSize(records[0].bytes as Buffer)).toEqual({ width: 630, height: 1120 });
     });
 
+    it("labels retained candidates when the critic verdict is unavailable", async () => {
+      const { store, records } = fakeAttemptStore();
+      const unavailable: VisionVerdict = {
+        ...vision(false),
+        scores: {
+          textLogoWatermarkFree: 0,
+          artifactFree: 0,
+          premiumFinish: 0,
+          briefFidelity: 0,
+          compositionQuality: 0,
+          ageAppropriate: 0,
+        },
+        requiredPresent: [],
+        failureCodes: [],
+        unavailable: true,
+        notes: "vision response was not parseable JSON",
+      };
+
+      const result = await generateQualityLockedPreview(event, {
+        generateImage: async () => ({
+          bytes: generatedPng(7),
+          dataUrl: "data:image/png;base64,RETAINED",
+          durationMs: 100,
+        }),
+        runTier1: () => tier1(true),
+        runVision: async () => unavailable,
+        maxCandidates: 2,
+        parallelCandidates: true,
+        attemptRetention: { store: store as never, eventId: event.id, ownerToken: "owner-token-abc" },
+      });
+
+      expect(result.kind).toBe("rejected");
+      expect(records).toHaveLength(2);
+      expect(records.every((record) => record.failureCodes[0] === "vision-unavailable")).toBe(true);
+    });
+
     it("retains full source pixels for both parallel candidates", async () => {
       const { store, records } = fakeAttemptStore();
       let call = 0;

@@ -1068,7 +1068,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
 
       const passed = tier1.passed && vision?.passed === true;
       const candidateFailureCodes = tier1.passed
-        ? (vision?.failureCodes ?? ["vision-unavailable"])
+        ? (vision?.unavailable ? ["vision-unavailable"] : (vision?.failureCodes ?? ["vision-unavailable"]))
         : retryCodesFor(tier1.findings);
       const notes = [
         ...tier1.findings.filter((finding) => finding.critical).map((finding) => finding.message),
@@ -1201,7 +1201,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
             : undefined;
           const passed = tier1.passed && vision?.passed === true;
           const repairFailureCodes = tier1.passed
-            ? (vision?.failureCodes ?? ["vision-unavailable"])
+            ? (vision?.unavailable ? ["vision-unavailable"] : (vision?.failureCodes ?? ["vision-unavailable"]))
             : retryCodesFor(tier1.findings);
           const notes = [
             ...tier1.findings.filter((finding) => finding.critical).map((finding) => finding.message),
@@ -1373,7 +1373,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
 
     const passed = tier1.passed && vision?.passed === true;
     failureCodes = tier1.passed
-      ? (vision?.failureCodes ?? ["vision-unavailable"])
+      ? (vision?.unavailable ? ["vision-unavailable"] : (vision?.failureCodes ?? ["vision-unavailable"]))
       : retryCodesFor(tier1.findings);
     concreteNotes = [
       ...tier1.findings.filter((finding) => finding.critical).map((finding) => finding.message),

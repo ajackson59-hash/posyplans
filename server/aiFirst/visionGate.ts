@@ -78,6 +78,83 @@ Then make three explicit teaser checks. For milestone, describe and count the vi
 Reply with JSON only:
 {"textLogoWatermarkFree":0,"artifactFree":0,"premiumFinish":0,"briefFidelity":0,"compositionQuality":0,"ageAppropriate":0,"requiredPresent":[{"requirement":"","present":true}],"excludedFound":[],"teaserChecks":{"milestone":{"evidence":"","correct":true},"identity":{"evidence":"","accurate":true},"purchase":{"evidence":"","wouldCreatePurchaseDesire":true}},"notes":""}`;
 
+const SCORE_PROPERTIES = {
+  textLogoWatermarkFree: { type: "integer" },
+  artifactFree: { type: "integer" },
+  premiumFinish: { type: "integer" },
+  briefFidelity: { type: "integer" },
+  compositionQuality: { type: "integer" },
+  ageAppropriate: { type: "integer" },
+} as const;
+
+const REQUIRED_PRESENT_SCHEMA = {
+  type: "array",
+  items: {
+    type: "object",
+    properties: {
+      requirement: { type: "string" },
+      present: { type: "boolean" },
+    },
+    required: ["requirement", "present"],
+    additionalProperties: false,
+  },
+} as const;
+
+const visionOutputSchema = (reviewMode: "invitation" | "teaser") => ({
+  type: "object",
+  properties: {
+    ...SCORE_PROPERTIES,
+    requiredPresent: REQUIRED_PRESENT_SCHEMA,
+    excludedFound: { type: "array", items: { type: "string" } },
+    ...(reviewMode === "teaser"
+      ? {
+          teaserChecks: {
+            type: "object",
+            properties: {
+              milestone: {
+                type: "object",
+                properties: { evidence: { type: "string" }, correct: { type: "boolean" } },
+                required: ["evidence", "correct"],
+                additionalProperties: false,
+              },
+              identity: {
+                type: "object",
+                properties: { evidence: { type: "string" }, accurate: { type: "boolean" } },
+                required: ["evidence", "accurate"],
+                additionalProperties: false,
+              },
+              purchase: {
+                type: "object",
+                properties: {
+                  evidence: { type: "string" },
+                  wouldCreatePurchaseDesire: { type: "boolean" },
+                },
+                required: ["evidence", "wouldCreatePurchaseDesire"],
+                additionalProperties: false,
+              },
+            },
+            required: ["milestone", "identity", "purchase"],
+            additionalProperties: false,
+          },
+        }
+      : {}),
+    notes: { type: "string" },
+  },
+  required: [
+    "textLogoWatermarkFree",
+    "artifactFree",
+    "premiumFinish",
+    "briefFidelity",
+    "compositionQuality",
+    "ageAppropriate",
+    "requiredPresent",
+    "excludedFound",
+    ...(reviewMode === "teaser" ? ["teaserChecks"] : []),
+    "notes",
+  ],
+  additionalProperties: false,
+});
+
 /** Which retry remedy each failed dimension maps onto. */
 const CODE_FOR_DIMENSION: Record<keyof VisionScores, string> = {
   textLogoWatermarkFree: "text-detected",
@@ -241,6 +318,16 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
         ? `${reviewSystem}\n\nOUTPUT REPAIR: Return one complete valid JSON object matching the required schema. No prose, markdown fence or trailing commentary. Do not omit any field.`
         : reviewSystem,
       messages: [{ role: "user", content: reviewContent }],
+      // Prompting for JSON is not a contract: a live canary returned malformed
+      // prose twice and forced two otherwise-reviewable paid images into the
+      // safe fallback. Anthropic's structured-output grammar guarantees a
+      // parseable response matching this exact verdict shape.
+      output_config: {
+        format: {
+          type: "json_schema",
+          schema: visionOutputSchema(reviewMode),
+        },
+      },
     }, { signal: input.signal });
     usage = {
       inputTokens: usage.inputTokens + (response.usage?.input_tokens ?? 0),

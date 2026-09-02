@@ -547,10 +547,12 @@ describe("tier 2 — acceptance", () => {
   it("reviews a teaser as exact standalone pixels without inventing a live type box", async () => {
     let reviewText = "";
     let systemText = "";
+    let outputConfig: any;
     const capturingCritic = {
       messages: {
         create: async (request: any) => {
           systemText = request.system;
+          outputConfig = request.output_config;
           reviewText = request.messages[0].content.find((part: any) => part.type === "text")?.text ?? "";
           return {
             content: [{
@@ -589,6 +591,9 @@ describe("tier 2 — acceptance", () => {
     expect(reviewText).toContain("would these exact pixels");
     expect(reviewText).not.toContain("LIVE TYPOGRAPHY BOX");
     expect(reviewText).not.toContain("FINAL TYPE PROTECTION");
+    expect(outputConfig?.format?.type).toBe("json_schema");
+    expect(outputConfig?.format?.schema?.required).toContain("teaserChecks");
+    expect(outputConfig?.format?.schema?.additionalProperties).toBe(false);
   });
 
   it("holds a merely professional 4/5 teaser private even though invitation review accepts 4/5", async () => {
