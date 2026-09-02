@@ -161,6 +161,10 @@ describe("automatic named-reference resolver", () => {
       VERCEL_GIT_COMMIT_REF: "fix/launch-qa-find-my-event-label",
     })).toBe(true);
     expect(namedReferenceAutoResolutionEnabled({
+      VERCEL_ENV: "preview",
+      VERCEL_GIT_COMMIT_REF: "codex/launch-blockers",
+    })).toBe(true);
+    expect(namedReferenceAutoResolutionEnabled({
       VERCEL_ENV: "production",
       VERCEL_GIT_COMMIT_REF: "main",
     })).toBe(false);
