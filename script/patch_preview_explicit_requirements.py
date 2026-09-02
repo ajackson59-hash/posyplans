@@ -94,8 +94,8 @@ replace_once(
 )
 
 # Add a richer regression proving an explicit list becomes binding rather than
-# merely preferred. Insert just before the named-reference preservation test.
-needle = '''  it("preserves the complete named reference rather than reducing it to a generic category", async () => {'''
+# merely preferred. Insert before the curated named-reference detector tests.
+needle = '''  it("detects exact entertainment references instead of collapsing them to a generic category via the curated fast path", async () => {'''
 insert = r'''  it("makes an explicit host scene list binding for the final teaser pixels", async () => {
     const detailed = {
       ...event,
