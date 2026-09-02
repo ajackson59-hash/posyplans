@@ -101,11 +101,12 @@ describe("prepayment preview quality lock", () => {
     expect(concept.art.prompt).toContain("HANDS/PROPS");
     expect(concept.art.prompt).toContain("MILESTONE:");
     expect(concept.art.prompt).toContain("NATIVE STYLE");
-    expect(concept.art.prompt).toContain("correct hands, scale, gravity/perspective");
+    expect(concept.art.prompt).toContain("correct hands, joints, scale, gravity/perspective");
     expect(concept.art.prompt).toContain("contact/cast shadows");
     expect(concept.art.prompt).toContain("controlled saturation");
-    expect(concept.art.prompt).toContain("tiled/repeated object clusters");
-    expect(concept.art.prompt).toContain("put food/small props on stable surfaces");
+    expect(concept.art.prompt).toContain("repeated object clusters");
+    expect(concept.art.prompt).toContain("directional key + subtle rim light");
+    expect(concept.art.prompt).toContain("no food or small props in hands");
     expect(concept.art.prompt.length).toBeLessThanOrEqual(1200);
     expect(concept.art.prompt).not.toContain("invitation artwork");
     expect(concept.art.prompt).not.toContain("stationery artwork");

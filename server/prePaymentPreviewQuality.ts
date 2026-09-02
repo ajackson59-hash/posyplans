@@ -664,8 +664,8 @@ export async function buildQualityLockedPreviewBrief(
     namedReference
       ? "STORY: candid named-character interaction; do not invent any child in the foreground or central hero plane without a supplied celebrant reference."
       : "STORY: asymmetric candid interaction and varied poses, not a front-facing catalog or character-promo pose.",
-    "DEPTH/MATERIAL: natural depth falloff; directional key/fill/rim, contact/cast shadows, controlled saturation/color bounce; correct hands, scale, gravity/perspective. No waxy skin, plastic food, tiled/repeated object clusters, stamped bubbles or composite seams.",
-    "HANDS/PROPS: natural hands/clean grips; unless required, put food/small props on stable surfaces at believable scale, not in hands.",
+    "DEPTH/MATERIAL: directional key + subtle rim light, natural depth falloff, contact/cast shadows, controlled saturation/color bounce; correct hands, joints, scale, gravity/perspective. No waxy skin, plastic food, repeated object clusters, stamped bubbles or composite seams.",
+    "HANDS/PROPS: unless explicitly required, no food or small props in hands; use simple natural hands and stable surfaces at believable scale.",
     milestoneDirection,
     "COMPOSITION: fully frame faces, hands and required objects; add breathing room; avoid dense repeated foreground clutter.",
     "NO DESIGN SURFACES: no card, panel, sign, frame, collage, poster, mockup or text box.",
