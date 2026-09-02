@@ -19,8 +19,8 @@ const attempts = new Map<string, { count: number; resetsAt: number }>();
 // is committed; the bearer value never enters source control. This route is
 // removed immediately after the canary evidence is collected.
 const INTERNAL_PREVIEW_CANARY_TOKEN_SHA256 =
-  "295575dc9b368c7e2af84a57a9fb9edc57c963e463eb945f2c0cb0209d656f83";
-const INTERNAL_PREVIEW_CANARY_OWNER_TOKEN = "qa-preview-blippi-20260901-a7f3c9";
+  "9d8fffe0244c2716a1704b00b3ffb661a615635369818afa28af15cb8de5892b";
+const INTERNAL_PREVIEW_CANARY_OWNER_TOKEN = "qa-preview-brian-visual-lock-20260901-c1";
 const QUALITY_APPROVED_PNG_PREFIX = "data:image/png;posy-quality-approved;base64,";
 const STANDARD_PNG_PREFIX = "data:image/png;base64,";
 const INTERNAL_CANARY_DEADLINE_MS = 115_000;
@@ -135,7 +135,7 @@ export async function runInternalPreviewCanary() {
         generateQualityLockedPreview(event, {
           inspirationNotes: resolved.notes,
           referenceImages: resolved.images,
-          quality: "medium",
+          quality: "high",
           maxCandidates: 1,
           namedReference,
           attemptRetention: {
