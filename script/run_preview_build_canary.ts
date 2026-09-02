@@ -1,3 +1,5 @@
+import { runInternalPreviewCanary } from "../server/emailDiagnosticRoutes";
+
 const environment = process.env.VERCEL_ENV || "local";
 const branch = process.env.VERCEL_GIT_COMMIT_REF || "unknown";
 
@@ -26,7 +28,21 @@ console.log(`[build-preview-database] ${JSON.stringify({
   environment,
   branch,
   database: databaseIdentity(process.env.DATABASE_URL),
-  canaryPaused: true,
 })}`);
 
-process.exit(0);
+if (environment !== "preview" || branch !== "codex/launch-blockers") {
+  console.log(`[build-preview-visual-canary] ${JSON.stringify({ skipped: true, environment, branch })}`);
+  process.exit(0);
+}
+
+try {
+  const result = await runInternalPreviewCanary();
+  console.log(`[build-preview-visual-canary] ${JSON.stringify(result)}`);
+} catch (error) {
+  console.error(`[build-preview-visual-canary] ${JSON.stringify({
+    status: 500,
+    error: error instanceof Error ? error.message : String(error),
+  })}`);
+} finally {
+  process.exit(0);
+}
