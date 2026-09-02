@@ -1,0 +1,49 @@
+name: Apply Teaser Premium Finish Repair
+
+on:
+  push:
+    branches:
+      - codex/launch-blockers
+    paths:
+      - .github/workflows/apply-teaser-premium-finish.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      DATABASE_URL: postgres://test:test@127.0.0.1:5432/test
+      ANTHROPIC_API_KEY: test
+      OPENAI_API_KEY: test
+      VERCEL_ENV: local
+      VERCEL_GIT_COMMIT_REF: ci-validation
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/launch-blockers
+
+      - name: Apply premium art-direction contract
+        run: python script/patch_teaser_premium_finish.py
+
+      - name: Verify exact premium repair
+        run: |
+          set -euo pipefail
+          git diff --check
+          npm ci
+          npm run check
+          npm test
+          npm run vercel-build
+
+      - name: Commit verified repair and retire patch runner
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/apply-teaser-premium-finish.yml script/patch_teaser_premium_finish.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add server/prePaymentPreviewQuality.ts server/aiFirst/visionGate.ts tests/prePaymentPreviewQuality.test.ts
+          git diff --cached --check
+          git commit -m 'Raise first-look premium art-direction standard'
+          git push origin HEAD:codex/launch-blockers
