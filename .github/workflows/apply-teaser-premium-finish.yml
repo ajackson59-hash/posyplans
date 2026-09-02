@@ -25,7 +25,7 @@ jobs:
         with:
           ref: codex/launch-blockers
 
-      # Retry after aligning the teaser-critic anchor with the current source.
+      # Preserve the prioritized teaser contract instead of truncating it at 1,200 characters.
       - name: Apply premium art-direction contract
         run: python script/patch_teaser_premium_finish.py
 
