@@ -769,7 +769,7 @@ export async function generateQualityLockedPreview(
   const referenceLed = Boolean(dependencies.referenceImages?.length);
   const quality = dependencies.quality ?? (referenceLed ? "high" : "medium");
   const modelForCandidate = (candidate: number): ArtworkModel =>
-    referenceLed && candidate === 1 ? REFERENCE_ARTWORK_MODEL : DEFAULT_ARTWORK_MODEL;
+    referenceLed && candidate > 1 ? REFERENCE_ARTWORK_MODEL : DEFAULT_ARTWORK_MODEL;
   let lastModel: ArtworkModel = modelForCandidate(1);
   const { brief, concept } = await buildQualityLockedPreviewBrief(
     event,

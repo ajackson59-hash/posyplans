@@ -134,7 +134,6 @@ export async function runInternalPreviewCanary() {
       const result = await withDeadline(
         generateQualityLockedPreview(event, {
           inspirationNotes: resolved.notes,
-          referenceImages: resolved.images,
           quality: "medium",
           maxCandidates: 1,
           namedReference,

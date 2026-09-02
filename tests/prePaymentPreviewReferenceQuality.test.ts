@@ -54,7 +54,7 @@ function vision(passed: boolean, notes = "approved"): VisionVerdict {
 }
 
 describe("reference-led preview quality", () => {
-  it("uses high-fidelity reference generation first, then GPT Image 2 only as a private correction", async () => {
+  it("tries GPT Image 2 first, then one high-fidelity reference correction when needed", async () => {
     const referenceImages = [{
       bytes: Buffer.from("official-reference-pixels"),
       mimeType: "image/png" as const,
@@ -87,19 +87,19 @@ describe("reference-led preview quality", () => {
     if (result.kind !== "approved-image") throw new Error("expected approved image");
     expect(result.dataUrl).toMatch(/^data:image\/png;base64,/);
     expect(readPngSize(Buffer.from(result.dataUrl.split(",")[1], "base64"))).toEqual({ width: 315, height: 560 });
-    expect(result.model).toBe("gpt-image-2");
+    expect(result.model).toBe("gpt-image-1.5");
     expect(generateImage).toHaveBeenCalledTimes(2);
     expect(generateImage.mock.calls[0][0]).toEqual(expect.objectContaining({
-      model: "gpt-image-1.5",
+      model: "gpt-image-2",
       quality: "high",
-      inputFidelity: "high",
+      inputFidelity: undefined,
       aspectRatio: "9:16",
       referenceImages,
     }));
     expect(generateImage.mock.calls[1][0]).toEqual(expect.objectContaining({
-      model: "gpt-image-2",
+      model: "gpt-image-1.5",
       quality: "high",
-      inputFidelity: undefined,
+      inputFidelity: "high",
       aspectRatio: "9:16",
       referenceImages,
     }));
