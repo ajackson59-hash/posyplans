@@ -62,6 +62,33 @@ function buildTeaserArtworkPrompt(concept: AiFirstConcept): string {
 }
 
 /**
+ * Scene-specific physics that must survive the concept prompt's 1,200-character
+ * schema cap. These rules address common image-model shortcuts without making
+ * unrelated event worlds carry soft-play or catering instructions.
+ */
+function buildPhysicalStagingConstraints(brief: EventBrief): string {
+  const scene = [
+    brief.vibe,
+    ...brief.requirements.required,
+    ...brief.requirements.preferred,
+  ].join(" ");
+  const lines: string[] = [];
+
+  if (/\bsoft[- ]play|foam blocks?|ball pit|climbing (?:blocks?|structures?|equipment)|play mats?\b/i.test(scene)) {
+    lines.push(
+      "BINDING SOFT-PLAY MATERIAL PHYSICS — Render foam and padded structures as tactile matte textile or vinyl with varied seams, subtle wear, compression and coherent light response; never glossy toy plastic, repeated modular geometry or synthetic pasted scenery.",
+    );
+  }
+  if (/\bice[ -]?cream|frozen treats?|cake|cupcakes?|desserts?|food|treats?\b/i.test(scene)) {
+    lines.push(
+      "BINDING FOOD STAGING — Put edible props only at one restrained midground serving station on a real level table or counter, with coherent contact shadows. Never place food on ball-pit flooring, play mats, foam blocks or climbing equipment; no lower-corner product shot, floating treats or pasted foreground props.",
+    );
+  }
+
+  return lines.join("\n");
+}
+
+/**
  * Fail closed. Until a benchmark explicitly enables quality-image, every
  * customer receives a deterministic proof-of-understanding card rather than
  * unreviewed generated artwork.
@@ -813,6 +840,7 @@ export async function generateQualityLockedPreview(
   const basePrompt = [
     buildTeaserArtworkPrompt(concept),
     buildArtworkConstraints(brief),
+    buildPhysicalStagingConstraints(brief),
     referenceIdentityNotes,
     referenceImageRule,
   ].filter(Boolean).join("\n\n");

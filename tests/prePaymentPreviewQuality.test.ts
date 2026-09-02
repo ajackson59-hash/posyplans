@@ -416,6 +416,13 @@ describe("prepayment preview quality lock", () => {
     expect(generateImage.mock.calls[0][0].prompt).toContain("NO DESIGN SURFACES");
     expect(generateImage.mock.calls[0][0].prompt).toContain("STORY:");
     expect(generateImage.mock.calls[0][0].prompt).toContain("DEPTH/MATERIAL");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("BINDING SOFT-PLAY MATERIAL PHYSICS");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("tactile matte textile or vinyl");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("never glossy toy plastic");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("BINDING FOOD STAGING");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("one restrained midground serving station");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("Never place food on ball-pit flooring");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("no lower-corner product shot");
     expect(generateImage.mock.calls[0][0].prompt).toContain("MILESTONE:");
     expect(generateImage.mock.calls[0][0].prompt).toContain("full portrait canvas");
     expect(generateImage.mock.calls[0][0].prompt).not.toContain("stationery artwork");
