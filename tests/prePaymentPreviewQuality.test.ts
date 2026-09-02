@@ -92,6 +92,10 @@ describe("prepayment preview quality lock", () => {
     expect(concept.art.prompt).toContain("use the full portrait canvas");
     expect(concept.art.prompt).toContain("Do not draw a blank card");
     expect(concept.art.prompt).toContain("NO DESIGN SURFACES");
+    expect(concept.art.prompt).toContain("STORY MOMENT");
+    expect(concept.art.prompt).toContain("DEPTH AND MATERIAL CONTRACT");
+    expect(concept.art.prompt).toContain("MILESTONE PROOF");
+    expect(concept.art.prompt).toContain("NATIVE VISUAL LANGUAGE");
     expect(concept.art.prompt).not.toContain("invitation artwork");
     expect(concept.art.prompt).not.toContain("stationery artwork");
     expect(concept.borderStyle).toBe("none");
@@ -311,6 +315,9 @@ describe("prepayment preview quality lock", () => {
     expect(generateImage.mock.calls[1][0].prompt).toContain("Meekah is missing");
     expect(generateImage.mock.calls[0][0].prompt).toContain("FINISH CONTRACT");
     expect(generateImage.mock.calls[0][0].prompt).toContain("NO DESIGN SURFACES");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("STORY MOMENT");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("DEPTH AND MATERIAL CONTRACT");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("MILESTONE PROOF");
     expect(generateImage.mock.calls[0][0].prompt).toContain("use the full portrait canvas");
     expect(generateImage.mock.calls[0][0].prompt).not.toContain("stationery artwork");
     expect(generateImage.mock.calls[0][0].prompt).not.toContain("garden-editorial");

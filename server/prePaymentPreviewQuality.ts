@@ -578,8 +578,15 @@ export async function buildQualityLockedPreviewBrief(
     namedReference
       ? `IDENTITY HIERARCHY: ${namedReference.label} must be immediately recognizable and central; the requested venue, activities and party details must visibly belong to the same scene.`
       : "STORY HIERARCHY: the requested setting, activities and defining event details must be materially visible in the same cohesive scene.",
+    namedReference
+      ? "NATIVE VISUAL LANGUAGE: follow the visual medium established by the identity references. Live-action human hosts should retain natural photographic skin, hair, fabric and lighting; animated worlds should retain their own polished animation language. Never convert either into generic mascot art or an unrelated visual style."
+      : "NATIVE VISUAL LANGUAGE: choose one coherent premium visual medium and render every subject, prop and environment consistently within it.",
+    "STORY MOMENT: stage an asymmetric, emotionally alive celebration moment rather than two subjects posing frontally like a catalog or licensed-character promo. Use natural interaction, varied body positions and an intentional eye path through the scene.",
+    "DEPTH AND MATERIAL CONTRACT: create a crisp focal plane on the hero subjects and defining party moment, with believable foreground-to-background depth and restrained selective focus. Surfaces must have physically coherent light, shadow, color bounce and material micro-detail; bubbles, frosting, fabric, hair, metallic pieces, balloons and play equipment must not look copy-stamped, waxy, plasticky or uniformly glossy.",
+    "MILESTONE PROOF: when the host brief includes an age or milestone, communicate it through elegant physical celebration details such as the correct number of candles or another natural in-world cue. Do not invent names, dates, logos or written event copy inside the artwork.",
+    "COMPOSITION FINISH: keep the primary celebration object or activity fully inside the frame, avoid edge-clipped hands and props, control foreground clutter, and use depth/lighting to separate the hero moment from the venue instead of flattening everything into equal saturation.",
     "NO DESIGN SURFACES: no collage, split panel, sticker sheet, poster, merchandise mockup, stage backdrop, photo-booth frame, sign, screen, invitation card, blank rectangle or text-reserved area.",
-    "FINISH CONTRACT: polished high-end cinematic illustration with dimensional light, believable material texture, clean silhouettes, natural expressions and anatomically coherent hands and limbs. Avoid flat-vector mascot art, clipart, stock-template sheen, merchandising-ad composition, generic AI clutter and oversaturated plastic rendering.",
+    "FINISH CONTRACT: polished high-end cinematic art direction with dimensional light, believable material texture, clean silhouettes, natural expressions and anatomically coherent hands and limbs. Avoid flat-vector mascot art, clipart, stock-template sheen, merchandising-ad composition, generic AI clutter, subject cutout halos and oversaturated plastic rendering.",
     inspirationNotes ? `IDENTITY REFERENCE NOTES — authoritative: ${inspirationNotes.slice(0, 320)}` : "",
   ].filter(Boolean).join(" ");
 
@@ -609,7 +616,7 @@ export async function buildQualityLockedPreviewBrief(
     art: {
       medium: namedReference ? "polished cinematic character illustration" : "polished cinematic event illustration",
       composition: "portrait scene-led full-bleed teaser using the full canvas; all required subjects, faces and defining objects remain fully visible, with no panel, blank rectangle, cropped head or edge-clipped hero subject",
-      prompt: prompt.slice(0, 1200),
+      prompt,
     },
     safeTypographyRegion: "center",
     minOverlay: "none",
