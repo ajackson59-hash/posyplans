@@ -64,7 +64,7 @@ Score each 1-5. 4 means "a professional stationery studio would confidently show
 - compositionQuality: 5 = one clear, balanced, intentional full-bleed scene in the exact supplied pixels. Any collage/split-panel treatment, pasted cutout look, poster/sign/card surface, cropped face or head, edge-clipped lead subject, awkward empty panel, or required hero subject pushed partly outside the canvas forces 3 or lower.
 - ageAppropriate: 5 = correctly pitched for the celebrant's age. When the host explicitly requests an all-ages action or fantasy identity, do not fail merely because faithful imagery includes stylized fantasy weapons, non-graphic supernatural creatures, performance costumes or dramatic poses.
 
-Judge BRIEF REQUIREMENTS holistically through briefFidelity and ageAppropriate. For each VISIBLE MUST-HAVE, report whether that concrete subject is visibly present. List any EXCLUDED item you can actually see.
+Judge BRIEF REQUIREMENTS holistically through briefFidelity and ageAppropriate. VISIBLE MUST-HAVES are stricter binary facts: an exact count must match the stated number exactly, and a named lead/co-host identity is false when it is generic, colour-only, or only ambiguously recognizable. Never average a wrong count or weak named identity into an overall 4/5 score. For each VISIBLE MUST-HAVE, report whether that concrete subject is visibly present. List any EXCLUDED item you can actually see.
 
 Reply with JSON only:
 {"textLogoWatermarkFree":0,"artifactFree":0,"premiumFinish":0,"briefFidelity":0,"compositionQuality":0,"ageAppropriate":0,"requiredPresent":[{"requirement":"","present":true}],"excludedFound":[],"notes":""}`;
@@ -83,6 +83,22 @@ function clampScore(value: unknown): number {
   const n = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(n)) return 0;
   return Math.max(0, Math.min(5, n));
+}
+
+const VISIBLE_REQUIREMENT_PREFIX = /^\[VISIBLE (?:HOST DETAIL|MILESTONE|NAMED IDENTITY)\]\s*/i;
+
+/**
+ * Teaser-specific briefs deliberately tag host-explicit scene facts, exact
+ * milestones and named identities as binary pixel facts. They must not be
+ * allowed to disappear inside an otherwise-good holistic fidelity score.
+ */
+export function visibleReviewRequirementsForBrief(brief: EventBrief): string[] {
+  return Array.from(new Set(
+    brief.requirements.required
+      .filter((requirement) => VISIBLE_REQUIREMENT_PREFIX.test(requirement))
+      .map((requirement) => requirement.replace(VISIBLE_REQUIREMENT_PREFIX, "").trim())
+      .filter(Boolean),
+  ));
 }
 
 export interface VisionGateInput {
@@ -139,7 +155,10 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
   const client = input.client ?? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const { brief, concept } = input;
   const reviewMode = input.reviewMode ?? "invitation";
-  const reviewRequirements = concreteSubjectReviewRequirementsForBrief(brief);
+  const reviewRequirements = Array.from(new Set([
+    ...concreteSubjectReviewRequirementsForBrief(brief),
+    ...visibleReviewRequirementsForBrief(brief),
+  ]));
   const typeBox = typePlacementFrame(concept);
   const protectionAlpha = LOCAL_TYPE_SURFACE_ALPHA[concept.minOverlay];
   const protectionInstruction = reviewMode === "teaser"

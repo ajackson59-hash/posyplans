@@ -90,7 +90,9 @@ describe("prepayment preview quality lock", () => {
     expect(concept.minOverlay).toBe("none");
     const binding = brief.requirements.required.join(" ");
     expect(binding).toContain("indoor soft play with bubbles and ice cream treats");
-    expect(binding).toContain("four separate unnumbered birthday candles");
+    expect(binding).toContain("[VISIBLE MILESTONE] exactly four separate unnumbered birthday candles");
+    expect(binding).toContain("[VISIBLE NAMED IDENTITY] Blippi is visibly identifiable");
+    expect(binding).toContain("[VISIBLE NAMED IDENTITY] Meekah is visibly identifiable");
     expect(concept.art.composition).toContain("no panel");
     expect(concept.art.prompt).toContain("full portrait canvas");
     expect(concept.art.prompt).toContain("NO DESIGN SURFACES");
@@ -113,6 +115,11 @@ describe("prepayment preview quality lock", () => {
     expect(brief.requirements.excluded).toContain(
       "an invented portrait, gender or physical appearance for the celebrant when the host did not supply a personal visual reference",
     );
+    expect(brief.requirements.excluded).toContain(
+      "a central unidentified child posed as the implied celebrant in place of the requested named-theme subjects",
+    );
+    expect(brief.requirements.preferred.join(" ")).not.toMatch(/stationery/i);
+    expect(concept.art.prompt).toContain("exactly four separate unnumbered birthday candles");
     expect(`${concept.art.medium}.`).not.toContain("illustration illustration");
   });
   it("fails closed to the deterministic direction-card mode", () => {
@@ -132,9 +139,9 @@ describe("prepayment preview quality lock", () => {
 
     const { brief } = await buildQualityLockedPreviewBrief(detailed);
     const required = brief.requirements.required.join(" \n ");
-    expect(required).toContain("host-explicit scene detail: bright foam climbing structures, a ball pit, floating bubbles, and colorful ice-cream treats");
-    expect(required).toContain("host-explicit scene detail: an upscale indoor soft-play center");
-    expect(required).toContain("four separate unnumbered birthday candles");
+    expect(required).toContain("[VISIBLE HOST DETAIL] bright foam climbing structures, a ball pit, floating bubbles, and colorful ice-cream treats");
+    expect(required).toContain("[VISIBLE HOST DETAIL] an upscale indoor soft-play center");
+    expect(required).toContain("[VISIBLE MILESTONE] exactly four separate unnumbered birthday candles");
     expect(brief.requirements.preferred.join(" ")).not.toContain("ball pit");
   });
 

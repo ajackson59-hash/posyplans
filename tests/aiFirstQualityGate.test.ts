@@ -17,7 +17,7 @@ import {
   runTier1Checks,
   uniformBorderRingFraction,
 } from "../server/aiFirst/tier1";
-import { MIN_DIMENSION_SCORE, runVisionGate, visionCostUsd } from "../server/aiFirst/visionGate";
+import { MIN_DIMENSION_SCORE, runVisionGate, visibleReviewRequirementsForBrief, visionCostUsd } from "../server/aiFirst/visionGate";
 import {
   ARTWORK_EDGE_REQUIREMENT,
   ARTWORK_TEXT_REQUIREMENT,
@@ -430,6 +430,34 @@ describe("tier 2 — acceptance", () => {
     expect(verdict.failureCodes).toContain("brief-fidelity");
   });
 
+  it("turns teaser milestone, named-identity and host-detail contracts into binary must-haves", async () => {
+    const teaser = brief({
+      requirements: {
+        required: [
+          "[VISIBLE MILESTONE] exactly four separate unnumbered birthday candles",
+          "[VISIBLE NAMED IDENTITY] Meekah is unmistakably recognizable as the requested co-host",
+          "[VISIBLE HOST DETAIL] floating bubbles and colorful ice-cream treats",
+        ],
+        preferred: [],
+        excluded: [],
+      },
+    });
+    const visible = visibleReviewRequirementsForBrief(teaser);
+    expect(visible).toEqual([
+      "exactly four separate unnumbered birthday candles",
+      "Meekah is unmistakably recognizable as the requested co-host",
+      "floating bubbles and colorful ice-cream treats",
+    ]);
+    const verdict = await runVision(
+      {
+        requiredPresent: visible.map((requirement, index) => ({ requirement, present: index !== 0 })),
+      },
+      teaser,
+    );
+    expect(verdict.passed).toBe(false);
+    expect(verdict.failureCodes).toContain("brief-fidelity");
+  });
+
   it("fails when an EXCLUDED item is visible even though every score is 5", async () => {
     const verdict = await runVision({ excludedFound: ["photographic realism"] });
     expect(verdict.passed).toBe(false);
@@ -537,6 +565,8 @@ describe("tier 2 — acceptance", () => {
     expect(verdict.passed).toBe(true);
     expect(systemText).toContain("exact final pixels");
     expect(systemText).toContain("no browser crop");
+    expect(systemText).toContain("exact count must match the stated number exactly");
+    expect(systemText).toContain("weak named identity");
     expect(reviewText).toContain("FINAL CUSTOMER SURFACE");
     expect(reviewText).not.toContain("LIVE TYPOGRAPHY BOX");
     expect(reviewText).not.toContain("FINAL TYPE PROTECTION");

@@ -572,11 +572,11 @@ function explicitPreviewSceneRequirements(brief: EventBrief): string[] {
     if (clauses.length >= 4) break;
   }
 
-  const required = clauses.map((clause) => `host-explicit scene detail: ${clause}`);
+  const required = clauses.map((clause) => `[VISIBLE HOST DETAIL] ${clause}`);
   const age = ageFromMilestone(brief.milestone);
   if (age !== null && age >= 1 && age <= 9 && CHILD_AGE_WORDS[age]) {
     required.push(
-      `a clear non-text ${brief.milestone} birthday cue using ${CHILD_AGE_WORDS[age]} separate unnumbered birthday candles or an equally explicit physical count`,
+      `[VISIBLE MILESTONE] exactly ${CHILD_AGE_WORDS[age]} separate unnumbered birthday candles or another unmistakable physical count of exactly ${CHILD_AGE_WORDS[age]}`,
     );
   }
   return unique(required);
@@ -590,9 +590,13 @@ function enrichBriefForNamedReference(brief: EventBrief, named: NamedCreativeRef
       required: unique([
         ...brief.requirements.required,
         ...explicitPreviewSceneRequirements(brief),
-        ...(named?.requirements ?? []),
+        ...(named?.requirements.map((requirement) => `[VISIBLE NAMED IDENTITY] ${requirement}`) ?? []),
       ]),
-      preferred: brief.requirements.preferred,
+      // Standalone teaser pixels are not stationery. Carry event mood but
+      // remove shared invitation-furniture preferences that otherwise pull the
+      // image model back toward a template/card treatment after the teaser
+      // prompt explicitly forbids one.
+      preferred: brief.requirements.preferred.filter((item) => !/stationery/i.test(item)),
       excluded: unique([
         ...brief.requirements.excluded,
         ...(named
@@ -600,6 +604,7 @@ function enrichBriefForNamedReference(brief: EventBrief, named: NamedCreativeRef
               `a generic adjacent aesthetic standing in for ${named.label}`,
               "isolated accessories or palette-only shorthand standing in for the requested characters or world",
               "an invented portrait, gender or physical appearance for the celebrant when the host did not supply a personal visual reference",
+              "a central unidentified child posed as the implied celebrant in place of the requested named-theme subjects",
             ]
           : []),
         "a visible blank card, white rectangle, paper panel, placard, sign, frame or placeholder box inside the artwork",
@@ -639,13 +644,17 @@ export async function buildQualityLockedPreviewBrief(
   const identity = namedReference
     ? `${namedReference.label.slice(0, 80)} recognizable and central`
     : "the requested event world recognizable and central";
+  const teaserAge = ageFromMilestone(brief.milestone);
+  const milestoneDirection = teaserAge !== null && teaserAge >= 1 && teaserAge <= 9 && CHILD_AGE_WORDS[teaserAge]
+    ? `MILESTONE: show exactly ${CHILD_AGE_WORDS[teaserAge]} separate unnumbered birthday candles or another unmistakable physical count of exactly ${CHILD_AGE_WORDS[teaserAge]}; no extra candle-like decorations and no written numerals.`
+    : "MILESTONE: communicate any stated milestone through a natural physical event cue, never written names, dates or logos.";
   const prompt = [
     "Create one premium cinematic event-world illustration: full portrait canvas, one continuous believable environment.",
     `IDENTITY: ${identity}; venue, activities and party details in the same scene.`,
     "NATIVE STYLE: live-action references need natural skin, hair, fabric and light; animation keeps its polished native style. No generic mascot art.",
     "STORY: asymmetric candid interaction and varied poses, not a front-facing catalog or character-promo pose.",
     "DEPTH/MATERIAL: crisp hero focus, believable venue depth, coherent light/shadow/color bounce and micro-detail. No waxy skin, plastic food, uniform gloss, stamped bubbles or cutout halos.",
-    "MILESTONE: if age is known, use a natural cue such as correct candle count; never invent written names, dates or logos.",
+    milestoneDirection,
     "COMPOSITION: fully frame required faces, primary celebration object, hands and props; leave breathing room and control foreground clutter.",
     "NO DESIGN SURFACES: no blank card, panel, sign, frame, collage, sticker sheet, poster, merchandise mockup, screen, invitation card or text-reserved rectangle.",
   ].join(" ");
