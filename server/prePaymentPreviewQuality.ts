@@ -89,6 +89,11 @@ function buildPhysicalStagingConstraints(brief: EventBrief): string {
       "BINDING BUBBLE OPTICS — Use only a sparse, irregular handful at genuinely varied sizes, depths and spacing. Give each a unique silhouette with reflection and refraction aligned to the same room and key light; no repeated circles, grid spacing, identical highlights, stamped pattern or floating decoration layer.",
     );
   }
+  if (/\bblippi|meekah|mika\b/i.test(scene)) {
+    lines.push(
+      "BINDING CHARACTER INTEGRATION — Render characters and room in one unified pass: clean hair and fabric edges with shared color spill and matching focus, plus natural varied skin texture and subsurface warmth—never waxy. The serving counter must share the room's perspective, dynamic range, grain, bounce light and atmospheric depth.",
+    );
+  }
 
   return lines.join("\n");
 }
@@ -640,6 +645,9 @@ function enrichBriefForNamedReference(brief: EventBrief, named: NamedCreativeRef
               "isolated accessories or palette-only shorthand standing in for the requested characters or world",
               "an invented portrait, gender or physical appearance for the celebrant when the host did not supply a personal visual reference",
               "any child in the foreground or central hero plane when the host did not supply a personal visual reference for the celebrant",
+              ...(named.id === "blippi-meekah"
+                ? ["the letter M, initials, monograms, wordmarks, badges, logos or any glyph-bearing patch on either character's clothing; keep Meekah's chest fabric plain or abstractly color-blocked"]
+                : []),
             ]
           : []),
         "a visible blank card, white rectangle, paper panel, placard, sign, frame or placeholder box inside the artwork",

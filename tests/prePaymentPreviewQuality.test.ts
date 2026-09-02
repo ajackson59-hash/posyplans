@@ -125,6 +125,9 @@ describe("prepayment preview quality lock", () => {
     expect(brief.requirements.excluded).toContain(
       "any child in the foreground or central hero plane when the host did not supply a personal visual reference for the celebrant",
     );
+    expect(brief.requirements.excluded).toContain(
+      "the letter M, initials, monograms, wordmarks, badges, logos or any glyph-bearing patch on either character's clothing; keep Meekah's chest fabric plain or abstractly color-blocked",
+    );
     expect(concept.art.prompt).toContain("do not invent any child in the foreground or central hero plane");
     expect(brief.requirements.excluded).toContain(
       "birthday candles, numeral-shaped props or other countable age markers when the host did not explicitly request a count",
@@ -428,6 +431,10 @@ describe("prepayment preview quality lock", () => {
     expect(generateImage.mock.calls[0][0].prompt).toContain("BINDING BUBBLE OPTICS");
     expect(generateImage.mock.calls[0][0].prompt).toContain("reflection and refraction aligned to the same room and key light");
     expect(generateImage.mock.calls[0][0].prompt).toContain("no repeated circles");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("BINDING CHARACTER INTEGRATION");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("natural varied skin texture");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("shared color spill and matching focus");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("the letter M, initials, monograms");
     expect(generateImage.mock.calls[0][0].prompt).toContain("MILESTONE:");
     expect(generateImage.mock.calls[0][0].prompt).toContain("full portrait canvas");
     expect(generateImage.mock.calls[0][0].prompt).not.toContain("stationery artwork");
