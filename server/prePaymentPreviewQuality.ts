@@ -81,7 +81,12 @@ function buildPhysicalStagingConstraints(brief: EventBrief): string {
   }
   if (/\bice[ -]?cream|frozen treats?|cake|cupcakes?|desserts?|food|treats?\b/i.test(scene)) {
     lines.push(
-      "BINDING FOOD STAGING — Put edible props only at one restrained midground serving station on a real level table or counter, with coherent contact shadows. Never place food on ball-pit flooring, play mats, foam blocks or climbing equipment; no lower-corner product shot, floating treats or pasted foreground props.",
+      "BINDING FOOD STAGING — Integrate edible props into one built-in rear or midground serving counter behind the main action, never the foreground or lower third. Keep its base, floor edge, focus falloff and contact shadows continuous with the room through one camera and lens; no shallow-focus product insert, cutout edge or composite seam. Never place food on ball-pit flooring, play mats, foam blocks or climbing equipment.",
+    );
+  }
+  if (/\bbubbles?|bubble wands?\b/i.test(scene)) {
+    lines.push(
+      "BINDING BUBBLE OPTICS — Use only a sparse, irregular handful at genuinely varied sizes, depths and spacing. Give each a unique silhouette with reflection and refraction aligned to the same room and key light; no repeated circles, grid spacing, identical highlights, stamped pattern or floating decoration layer.",
     );
   }
 

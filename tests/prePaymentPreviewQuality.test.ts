@@ -420,9 +420,14 @@ describe("prepayment preview quality lock", () => {
     expect(generateImage.mock.calls[0][0].prompt).toContain("tactile matte textile or vinyl");
     expect(generateImage.mock.calls[0][0].prompt).toContain("never glossy toy plastic");
     expect(generateImage.mock.calls[0][0].prompt).toContain("BINDING FOOD STAGING");
-    expect(generateImage.mock.calls[0][0].prompt).toContain("one restrained midground serving station");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("one built-in rear or midground serving counter");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("never the foreground or lower third");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("one camera and lens");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("no shallow-focus product insert");
     expect(generateImage.mock.calls[0][0].prompt).toContain("Never place food on ball-pit flooring");
-    expect(generateImage.mock.calls[0][0].prompt).toContain("no lower-corner product shot");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("BINDING BUBBLE OPTICS");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("reflection and refraction aligned to the same room and key light");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("no repeated circles");
     expect(generateImage.mock.calls[0][0].prompt).toContain("MILESTONE:");
     expect(generateImage.mock.calls[0][0].prompt).toContain("full portrait canvas");
     expect(generateImage.mock.calls[0][0].prompt).not.toContain("stationery artwork");
