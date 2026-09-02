@@ -91,7 +91,48 @@ function buildPhysicalStagingConstraints(brief: EventBrief): string {
   }
   if (/\bblippi|meekah|mika\b/i.test(scene)) {
     lines.push(
-      "BINDING CHARACTER INTEGRATION — Render characters and room in one unified pass: clean hair and fabric edges with shared color spill and matching focus, plus natural varied skin texture and subsurface warmth—never waxy. The serving counter must share the room's perspective, dynamic range, grain, bounce light and atmospheric depth.",
+      "BINDING CHARACTER INTEGRATION — Render characters and room in one unified illustrated pass: clean hair and fabric edges with shared color spill and matching focus, plus nuanced facial shading and warm skin-tone variation appropriate to the illustrated medium—never waxy. The serving counter must share the room's perspective, dynamic range, brush texture, bounce light and atmospheric depth.",
+    );
+  }
+
+  return lines.join("\n");
+}
+
+/**
+ * Named entertainment previews must read as original event artwork, never a
+ * promotional still or a photograph of costumed performers. This also turns
+ * the host's required list into a first-glance composition contract instead
+ * of allowing required objects to survive only as tiny background details.
+ */
+function buildNamedWorldArtConstraints(
+  brief: EventBrief,
+  namedReference: NamedCreativeReference | null,
+): string {
+  if (!namedReference) return "";
+
+  const scene = [
+    brief.vibe,
+    ...brief.requirements.required,
+    ...brief.requirements.preferred,
+  ].join(" ");
+  const lines = [
+    `BINDING ORIGINAL-ILLUSTRATION MEDIUM — Render ${namedReference.label} as entirely original commissioned editorial illustration with deliberate hand-painted texture and crisp character design. Absolutely no photograph, photoreal live-action frame, licensed/promotional still, cosplay, mascot suit, lookalike actor or stock-photo visual language.`,
+    "BINDING FIRST-GLANCE SCENE HIERARCHY — Every REQUIRED line must have independently identifiable pixels at the 560-pixel customer teaser size. Named subjects lead the action; the requested venue and activities are substantial co-heroes; supporting required props remain clearly readable. No required element may be a tiny, blurred, cropped or incidental background afterthought.",
+  ];
+
+  if (/\bsoft[- ]play|foam blocks?|ball pit|climbing (?:blocks?|structures?|equipment)|play mats?\b/i.test(scene)) {
+    lines.push(
+      "BINDING SOFT-PLAY SCENE MAP — Make the ball pit a large lower-to-middle scene anchor and the foam climbing structures substantial side and rear architecture. Stage the named characters dancing or interacting inside this environment; do not reduce the ball pit or climbing structures to distant décor.",
+    );
+  }
+  if (/\bbubbles?|bubble wands?\b/i.test(scene)) {
+    lines.push(
+      "BINDING VISIBLE BUBBLES — Show a clearly visible sparse handful of floating bubbles across foreground and midground depth planes without covering faces. They must read immediately as bubbles at teaser size, not disappear into bokeh or background lighting.",
+    );
+  }
+  if (/\bice[ -]?cream|frozen treats?|cake|cupcakes?|desserts?|food|treats?\b/i.test(scene)) {
+    lines.push(
+      "BINDING VISIBLE SERVING STATION — Give the built-in serving counter a clear side or midground zone with several colorful treats visibly identifiable at teaser size. It remains integrated behind the main action, but may not shrink into a distant sliver or generic blur.",
     );
   }
 
@@ -643,6 +684,7 @@ function enrichBriefForNamedReference(brief: EventBrief, named: NamedCreativeRef
           ? [
               `a generic adjacent aesthetic standing in for ${named.label}`,
               "isolated accessories or palette-only shorthand standing in for the requested characters or world",
+              "photographs, photoreal live-action frames, promotional stills, cosplay, mascot suits, lookalike actors or stock-photo depictions of the named characters",
               "an invented portrait, gender or physical appearance for the celebrant when the host did not supply a personal visual reference",
               "any child in the foreground or central hero plane when the host did not supply a personal visual reference for the celebrant",
               ...(named.id === "blippi-meekah"
@@ -698,17 +740,19 @@ export async function buildQualityLockedPreviewBrief(
       : "MILESTONE: age-appropriate energy only. Do not show birthday candles, numeral props or countable age markers; Posy UI carries the exact age."
     : "MILESTONE: age-appropriate tone only; no invented names, dates or logos.";
   const prompt = [
-    "Premium event-world, full portrait canvas, one cinematic environment.",
-    `IDENTITY: ${identity}; venue, activities and party details share the scene.`,
-    "NATIVE STYLE: natural live-action materials/light; polished native animation; no generic mascots.",
+    "full portrait canvas; one cinematic environment.",
+    `IDENTITY: ${identity}; host details share one scene.`,
+    namedReference
+      ? "ORIGINAL ILLUSTRATION: commissioned hand-painted editorial art; exact named identity; no photography, live-action performers, promotional stills or generic mascots."
+      : "NATIVE STYLE: premium commissioned illustration with believable material physics, cinematic light and no stock-photo or generic-template visual language.",
+    "NO DESIGN SURFACES: no card, panel, sign, frame, collage, poster, mockup or text box.",
     namedReference
       ? "STORY: candid named-character interaction; do not invent any child in the foreground or central hero plane without a supplied celebrant reference."
       : "STORY: asymmetric candid interaction and varied poses, not a front-facing catalog or character-promo pose.",
     "DEPTH/MATERIAL: directional key + subtle rim light, natural depth falloff, contact/cast shadows, controlled saturation/color bounce; correct hands, joints, scale, gravity/perspective. No waxy skin, plastic food, repeated object clusters, stamped bubbles or composite seams.",
-    "HANDS/PROPS: unless explicitly required, no food or small props in hands; use simple natural hands and stable surfaces at believable scale.",
+    "HANDS/PROPS: unless required, no food or small props in hands; use natural hands and stable surfaces at believable scale.",
     milestoneDirection,
-    "COMPOSITION: fully frame faces, hands and required objects; add breathing room; avoid dense repeated foreground clutter.",
-    "NO DESIGN SURFACES: no card, panel, sign, frame, collage, poster, mockup or text box.",
+    "COMPOSITION: fully frame faces, hands and required objects with breathing room; avoid dense repeated foreground clutter.",
   ].join(" ");
 
   const concept: AiFirstConcept = {
@@ -735,7 +779,7 @@ export async function buildQualityLockedPreviewBrief(
       accentColor: card.palette[0],
     },
     art: {
-      medium: namedReference ? "premium native-medium cinematic event image" : "premium cinematic event illustration",
+      medium: namedReference ? "premium commissioned hand-painted editorial illustration" : "premium cinematic event illustration",
       composition: "portrait scene-led full-bleed teaser using the full canvas; all required subjects, faces and defining objects remain fully visible, with no panel, blank rectangle, cropped head or edge-clipped hero subject",
       prompt: prompt.slice(0, 1200),
     },
@@ -858,6 +902,7 @@ export async function generateQualityLockedPreview(
     buildTeaserArtworkPrompt(concept),
     buildArtworkConstraints(brief),
     buildPhysicalStagingConstraints(brief),
+    buildNamedWorldArtConstraints(brief, namedReference),
     referenceIdentityNotes,
     referenceImageRule,
   ].filter(Boolean).join("\n\n");
@@ -875,12 +920,21 @@ export async function generateQualityLockedPreview(
       error?: string;
     };
 
-    const prompts = [
-      basePrompt,
-      `${basePrompt}
+    const prompts = namedReference
+      ? [
+          `${basePrompt}
+
+PRIVATE CANDIDATE ONE — CINEMATIC CEL-PAINTED EDITORIAL: Create a polished 2D/2.5D feature-illustration scene with confident illustrative contours, nuanced dry-brush texture, natural fabric folds and cinematic room depth. Use a dynamic eye-level three-quarter view. This is commissioned artwork, never photography or a live-action promotional frame.`,
+          `${basePrompt}
+
+PRIVATE CANDIDATE TWO — GOUACHE STORYBOOK EDITORIAL: Independently rebuild the complete event as a visibly different hand-painted gouache scene with layered matte brushwork, elegant shape language and a slightly elevated wide-room view. Preserve exact character identity and every binding detail, but do not echo candidate one's camera, contour treatment or staging. Never use photography, live-action performers, glossy 3D plastic or promotional-poster composition.`,
+        ]
+      : [
+          basePrompt,
+          `${basePrompt}
 
 PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuinely different camera position and staging while preserving every binding requirement and exclusion. Prioritize anatomically clean hands, coherent shadows, believable prop scale, natural foreground-to-background depth, controlled saturation and non-repeating physical detail. Do not make a cosmetic variation of the first take.`,
-    ];
+        ];
 
     const evaluateParallelCandidate = async (candidate: number): Promise<ParallelOutcome> => {
       const model = DEFAULT_ARTWORK_MODEL;

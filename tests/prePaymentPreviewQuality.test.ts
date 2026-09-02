@@ -96,11 +96,14 @@ describe("prepayment preview quality lock", () => {
     expect(concept.art.composition).toContain("no panel");
     expect(concept.art.prompt).toContain("full portrait canvas");
     expect(concept.art.prompt).toContain("NO DESIGN SURFACES");
+    expect(concept.art.medium).toBe("premium commissioned hand-painted editorial illustration");
+    expect(concept.art.prompt).toContain("ORIGINAL ILLUSTRATION:");
+    expect(concept.art.prompt).toContain("no photography, live-action performers, promotional stills");
+    expect(concept.art.prompt).not.toContain("natural live-action materials/light");
     expect(concept.art.prompt).toContain("STORY:");
     expect(concept.art.prompt).toContain("DEPTH/MATERIAL");
     expect(concept.art.prompt).toContain("HANDS/PROPS");
     expect(concept.art.prompt).toContain("MILESTONE:");
-    expect(concept.art.prompt).toContain("NATIVE STYLE");
     expect(concept.art.prompt).toContain("correct hands, joints, scale, gravity/perspective");
     expect(concept.art.prompt).toContain("contact/cast shadows");
     expect(concept.art.prompt).toContain("controlled saturation");
@@ -127,6 +130,9 @@ describe("prepayment preview quality lock", () => {
     );
     expect(brief.requirements.excluded).toContain(
       "the letter M, initials, monograms, wordmarks, badges, logos or any glyph-bearing patch on either character's clothing; keep Meekah's chest fabric plain or abstractly color-blocked",
+    );
+    expect(brief.requirements.excluded).toContain(
+      "photographs, photoreal live-action frames, promotional stills, cosplay, mascot suits, lookalike actors or stock-photo depictions of the named characters",
     );
     expect(concept.art.prompt).toContain("do not invent any child in the foreground or central hero plane");
     expect(brief.requirements.excluded).toContain(
@@ -374,7 +380,18 @@ describe("prepayment preview quality lock", () => {
     expect(runVision).toHaveBeenCalledTimes(2);
     expect(result.attempts).toBe(2);
     expect(result.reviews).toHaveLength(2);
-    expect(generateImage.mock.calls[1][0].prompt).toContain("PRIVATE ALTERNATE TAKE");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("PRIVATE CANDIDATE ONE — CINEMATIC CEL-PAINTED EDITORIAL");
+    expect(generateImage.mock.calls[1][0].prompt).toContain("PRIVATE CANDIDATE TWO — GOUACHE STORYBOOK EDITORIAL");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("BINDING ORIGINAL-ILLUSTRATION MEDIUM");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("Absolutely no photograph");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("BINDING FIRST-GLANCE SCENE HIERARCHY");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("560-pixel customer teaser size");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("BINDING SOFT-PLAY SCENE MAP");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("ball pit a large lower-to-middle scene anchor");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("BINDING VISIBLE BUBBLES");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("BINDING VISIBLE SERVING STATION");
+    expect(generateImage.mock.calls[0][0].prompt).not.toContain("PRIVATE CANDIDATE TWO");
+    expect(generateImage.mock.calls[1][0].prompt).not.toContain("PRIVATE CANDIDATE ONE");
     if (result.kind !== "approved-image") throw new Error("expected approved image");
     const approvedBytes = Buffer.from(result.dataUrl.split(",")[1], "base64");
     expect(decodePng(approvedBytes).rgb[0]).toBe(2);
@@ -433,7 +450,7 @@ describe("prepayment preview quality lock", () => {
     expect(generateImage.mock.calls[0][0].prompt).toContain("reflection and refraction aligned to the same room and key light");
     expect(generateImage.mock.calls[0][0].prompt).toContain("no repeated circles");
     expect(generateImage.mock.calls[0][0].prompt).toContain("BINDING CHARACTER INTEGRATION");
-    expect(generateImage.mock.calls[0][0].prompt).toContain("natural varied skin texture");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("nuanced facial shading");
     expect(generateImage.mock.calls[0][0].prompt).toContain("shared color spill and matching focus");
     expect(generateImage.mock.calls[0][0].prompt).toContain("the letter M, initials, monograms");
     expect(generateImage.mock.calls[0][0].prompt).toContain("MILESTONE:");

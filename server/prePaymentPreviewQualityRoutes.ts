@@ -441,7 +441,10 @@ async function runAutomaticNamedPreviewJob({
         // preserves the researched identity while building one cohesive event
         // scene from scratch.
         inspirationNotes: resolved.notes,
-        quality: "medium",
+        // Named entertainment worlds carry the hardest identity + scene +
+        // finish contract. Do not override generateQualityLockedPreview's
+        // named-theme high-quality default back down to medium here.
+        quality: "high",
         maxCandidates: 2,
         parallelCandidates: true,
         namedReference,
