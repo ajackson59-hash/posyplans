@@ -55,6 +55,7 @@ import {
   type ConceptOnlyProofResult,
 } from "./conceptOnlyProof";
 import { extractInspirationNotes } from "../inviteDesignAi";
+import { customerVisiblePreviewBytes } from "../prePaymentPreviewQuality";
 import { runTier1Checks } from "./tier1";
 import { runVisionGate, type VisionGateInput, type VisionVerdict } from "./visionGate";
 import { briefForHostDirection } from "./conceptPreflight";
@@ -1023,12 +1024,27 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
         return;
       }
 
-      const repair = validateLayoutBeforeGeneration(row.concept);
+      let reviewedBytes: Buffer;
+      try {
+        reviewedBytes = customerVisiblePreviewBytes(bytes);
+      } catch (error) {
+        res.status(422).json({
+          error: `The retained artwork could not be prepared for customer review: ${error instanceof Error ? error.message : String(error)}`,
+          denial: "retained-artwork-preview-unavailable",
+          imageProviderCalls: 0,
+          billedArtworkAttempts: 0,
+        });
+        return;
+      }
+
       const tier1 = runTier1Checks({
-        bytes,
+        // Match the pre-payment path exactly: judge the standalone 560px
+        // teaser customers receive, without invitation text-placement rules.
+        bytes: reviewedBytes,
         concept: row.concept,
-        overlayCoverage: OVERLAY_COVERAGE[repair.overlay],
-        artworkOpacity: repair.artworkOpacity ?? 1,
+        overlayCoverage: OVERLAY_COVERAGE[row.concept.minOverlay],
+        artworkOpacity: 1,
+        layoutApplied: false,
         ocr: env().NODE_ENV === "production",
       });
       if (!tier1.passed) {
@@ -1058,9 +1074,10 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
       const direction = [row.concept.conceptName, row.concept.description, row.concept.art.prompt].join(" ");
       const effectiveBrief = briefForHostDirection(baseBrief, direction);
       const vision = await (deps.reviewRetainedArtwork ?? runVisionGate)({
-        bytes,
+        bytes: reviewedBytes,
         concept: row.concept,
         brief: effectiveBrief,
+        reviewMode: "teaser",
       });
       if (vision.unavailable) {
         res.status(503).json({
