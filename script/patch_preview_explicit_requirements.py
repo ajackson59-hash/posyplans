@@ -47,8 +47,8 @@ function explicitPreviewSceneRequirements(brief: EventBrief): string[] {
   ];
 
   for (const pattern of patterns) {
-    for (const match of source.matchAll(pattern)) {
-      let clause = (match[1] || "")
+    for (const match of Array.from(source.matchAll(pattern))) {
+      const clause = (match[1] || "")
         .replace(/\s+/g, " ")
         .replace(/^[,;:\-–—\s]+|[,;:\-–—\s]+$/g, "")
         .trim();
