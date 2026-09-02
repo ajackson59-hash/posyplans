@@ -20,7 +20,7 @@ const attempts = new Map<string, { count: number; resetsAt: number }>();
 // removed immediately after the canary evidence is collected.
 const INTERNAL_PREVIEW_CANARY_TOKEN_SHA256 =
   "9d8fffe0244c2716a1704b00b3ffb661a615635369818afa28af15cb8de5892b";
-const INTERNAL_PREVIEW_CANARY_OWNER_TOKEN = "qa-preview-brian-medium-lock-20260901-c2";
+const INTERNAL_PREVIEW_CANARY_OWNER_TOKEN = "qa-preview-brian-premium-lock-20260901-c3";
 const QUALITY_APPROVED_PNG_PREFIX = "data:image/png;posy-quality-approved;base64,";
 const STANDARD_PNG_PREFIX = "data:image/png;base64,";
 const INTERNAL_CANARY_DEADLINE_MS = 115_000;
@@ -100,7 +100,7 @@ export async function runInternalPreviewCanary() {
     .join(" ");
   const namedReference = detectNamedCreativeReferenceSync(source);
   if (!namedReference) {
-    return { status: 500, body: { error: "Curated Blippi + Meekah reference was not detected" } };
+    return { status: 500, body: { error: "Curated named reference was not detected" } };
   }
 
   const startedAt = Date.now();
