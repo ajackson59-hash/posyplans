@@ -574,7 +574,8 @@ function explicitPreviewSceneRequirements(brief: EventBrief): string[] {
 
   const required = clauses.map((clause) => `[VISIBLE HOST DETAIL] ${clause}`);
   const age = ageFromMilestone(brief.milestone);
-  if (age !== null && age >= 1 && age <= 9 && CHILD_AGE_WORDS[age]) {
+  const hostExplicitlyRequestedCandles = /\bcandles?\b/i.test(source);
+  if (hostExplicitlyRequestedCandles && age !== null && age >= 1 && age <= 9 && CHILD_AGE_WORDS[age]) {
     required.push(
       `[VISIBLE MILESTONE] exactly ${CHILD_AGE_WORDS[age]} separate unnumbered birthday candles or another unmistakable physical count of exactly ${CHILD_AGE_WORDS[age]}`,
     );
@@ -583,6 +584,8 @@ function explicitPreviewSceneRequirements(brief: EventBrief): string[] {
 }
 
 function enrichBriefForNamedReference(brief: EventBrief, named: NamedCreativeReference | null): EventBrief {
+  const age = ageFromMilestone(brief.milestone);
+  const hostExplicitlyRequestedCandles = /\bcandles?\b/i.test(brief.vibe);
   return {
     ...brief,
     themeName: named?.label ?? brief.themeName,
@@ -611,6 +614,9 @@ function enrichBriefForNamedReference(brief: EventBrief, named: NamedCreativeRef
         "a collage, split panel, sticker sheet, merchandise mockup, pasted character cutout or television-promo layout",
         "a freestanding poster, banner, easel, title card, invitation card, menu board, screen or other rectangular surface reserved for text",
         "a lead character's face or head cropped off by the canvas edge",
+        ...(age !== null && !hostExplicitlyRequestedCandles
+          ? ["birthday candles, numeral-shaped props or other countable age markers when the host did not explicitly request a count"]
+          : []),
       ]),
     },
   };
@@ -645,9 +651,12 @@ export async function buildQualityLockedPreviewBrief(
     ? `${namedReference.label.slice(0, 80)} recognizable and central`
     : "the requested event world recognizable and central";
   const teaserAge = ageFromMilestone(brief.milestone);
+  const hostExplicitlyRequestedCandles = /\bcandles?\b/i.test(brief.vibe);
   const milestoneDirection = teaserAge !== null && teaserAge >= 1 && teaserAge <= 9 && CHILD_AGE_WORDS[teaserAge]
-    ? `MILESTONE: show exactly ${CHILD_AGE_WORDS[teaserAge]} separate unnumbered birthday candles or another unmistakable physical count of exactly ${CHILD_AGE_WORDS[teaserAge]}; no extra candle-like decorations and no written numerals.`
-    : "MILESTONE: communicate any stated milestone through a natural physical event cue, never written names, dates or logos.";
+    ? hostExplicitlyRequestedCandles
+      ? `MILESTONE: show exactly ${CHILD_AGE_WORDS[teaserAge]} separate unnumbered birthday candles; no extra candle-like decorations and no written numerals.`
+      : "MILESTONE: match the child's age through age-appropriate energy only. Do not show birthday candles, numeral-shaped props or other countable age markers; the surrounding Posy UI carries the exact age."
+    : "MILESTONE: communicate any stated milestone through age-appropriate tone, never invented written names, dates or logos.";
   const prompt = [
     "Create one premium cinematic event-world illustration: full portrait canvas, one continuous believable environment.",
     `IDENTITY: ${identity}; venue, activities and party details in the same scene.`,

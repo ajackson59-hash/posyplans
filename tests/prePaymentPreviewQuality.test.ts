@@ -90,7 +90,7 @@ describe("prepayment preview quality lock", () => {
     expect(concept.minOverlay).toBe("none");
     const binding = brief.requirements.required.join(" ");
     expect(binding).toContain("indoor soft play with bubbles and ice cream treats");
-    expect(binding).toContain("[VISIBLE MILESTONE] exactly four separate unnumbered birthday candles");
+    expect(binding).not.toContain("[VISIBLE MILESTONE]");
     expect(binding).toContain("[VISIBLE NAMED IDENTITY] Blippi is visibly identifiable");
     expect(binding).toContain("[VISIBLE NAMED IDENTITY] Meekah is visibly identifiable");
     expect(concept.art.composition).toContain("no panel");
@@ -118,8 +118,11 @@ describe("prepayment preview quality lock", () => {
     expect(brief.requirements.excluded).toContain(
       "a central unidentified child posed as the implied celebrant in place of the requested named-theme subjects",
     );
+    expect(brief.requirements.excluded).toContain(
+      "birthday candles, numeral-shaped props or other countable age markers when the host did not explicitly request a count",
+    );
     expect(brief.requirements.preferred.join(" ")).not.toMatch(/stationery/i);
-    expect(concept.art.prompt).toContain("exactly four separate unnumbered birthday candles");
+    expect(concept.art.prompt).toContain("Do not show birthday candles");
     expect(`${concept.art.medium}.`).not.toContain("illustration illustration");
   });
   it("fails closed to the deterministic direction-card mode", () => {
@@ -141,8 +144,26 @@ describe("prepayment preview quality lock", () => {
     const required = brief.requirements.required.join(" \n ");
     expect(required).toContain("[VISIBLE HOST DETAIL] bright foam climbing structures, a ball pit, floating bubbles, and colorful ice-cream treats");
     expect(required).toContain("[VISIBLE HOST DETAIL] an upscale indoor soft-play center");
-    expect(required).toContain("[VISIBLE MILESTONE] exactly four separate unnumbered birthday candles");
+    expect(required).not.toContain("[VISIBLE MILESTONE]");
+    expect(brief.requirements.excluded.join(" ")).toContain("countable age markers");
     expect(brief.requirements.preferred.join(" ")).not.toContain("ball pit");
+  });
+
+  it("keeps an exact milestone count binary when the host explicitly asks for candles", async () => {
+    const candleEvent = {
+      ...event,
+      eventName: "Brian's 4th Birthday",
+      themeName: "Blippi + Meekah",
+      vibeDescription:
+        "Blippi and Meekah at indoor soft play with bubbles and ice cream. Include four birthday candles on the cake.",
+    } as unknown as Event;
+
+    const { brief, concept } = await buildQualityLockedPreviewBrief(candleEvent);
+    expect(brief.requirements.required.join(" ")).toContain(
+      "[VISIBLE MILESTONE] exactly four separate unnumbered birthday candles",
+    );
+    expect(brief.requirements.excluded.join(" ")).not.toContain("countable age markers when the host did not explicitly request a count");
+    expect(concept.art.prompt).toContain("show exactly four separate unnumbered birthday candles");
   });
 
   it("detects exact entertainment references instead of collapsing them to a generic category via the curated fast path", async () => {
