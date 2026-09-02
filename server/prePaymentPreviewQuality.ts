@@ -938,7 +938,11 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
         });
         if (tier1.passed) {
           vision = await runVision({
-            bytes: generated.bytes,
+            // Review exactly the deterministic pixels an unpaid customer can
+            // receive. The full source is retained privately for paid reuse,
+            // but source-only micro-detail must not contradict the delivered
+            // teaser's quality verdict.
+            bytes: reviewedBytes,
             concept,
             brief,
             reviewMode: "teaser",

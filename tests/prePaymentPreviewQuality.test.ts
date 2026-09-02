@@ -348,7 +348,7 @@ describe("prepayment preview quality lock", () => {
       const candidate = ++started;
       if (started === 2) release();
       await bothStarted;
-      const bytes = generatedPng(candidate);
+      const bytes = generatedPng(candidate, 1260, 2240);
       return {
         bytes,
         dataUrl: `data:image/png;base64,${bytes.toString("base64")}`,
@@ -356,6 +356,7 @@ describe("prepayment preview quality lock", () => {
       };
     });
     const runVision = vi.fn(async (input: { bytes: Buffer }) => {
+      expect(readPngSize(input.bytes)).toEqual({ width: 315, height: 560 });
       const fill = decodePng(input.bytes).rgb[0];
       return vision(fill === 2, fill === 2 ? "strong alternate" : "first take rejected");
     });
@@ -377,7 +378,7 @@ describe("prepayment preview quality lock", () => {
     if (result.kind !== "approved-image") throw new Error("expected approved image");
     const approvedBytes = Buffer.from(result.dataUrl.split(",")[1], "base64");
     expect(decodePng(approvedBytes).rgb[0]).toBe(2);
-    expect(readPngSize(approvedBytes)).toEqual({ width: 630, height: 1120 });
+    expect(readPngSize(approvedBytes)).toEqual({ width: 1260, height: 2240 });
   });
 
   it("keeps a rejected first candidate private and returns only the approved correction", async () => {
