@@ -844,13 +844,13 @@ export interface PreviewQualityDependencies {
    * budget. Omitted means the zero-I/O curated detector is used.
    */
   namedReference?: NamedCreativeReference | null;
-  /** Two internal candidates maximum; neither is customer-visible before approval. */
+  /** Two initial internal candidates maximum; neither is customer-visible before approval. */
   maxCandidates?: 1 | 2;
   /**
    * Text-first named previews may privately render both candidates at once,
-   * then quality-review both and choose the stronger approved result. This
-   * spends two bounded image calls but avoids making conversion depend on one
-   * stochastic draw or doubling customer latency with a sequential retry.
+   * then quality-review both and choose the stronger approved result. When
+   * neither passes but one is a verified near-pass, one high-fidelity targeted
+   * correction may follow. Broad failures stop after the original pair.
    */
   parallelCandidates?: boolean;
   /**
@@ -863,6 +863,60 @@ export interface PreviewQualityDependencies {
   attemptRetention?: PreviewQualityAttemptRetention;
   /** Aborts active image generation and vision review at the route deadline. */
   signal?: AbortSignal;
+}
+
+const weightedVisionScore = (scores: VisionVerdict["scores"]): number =>
+  scores.premiumFinish * 4
+  + scores.briefFidelity * 4
+  + scores.artifactFree * 3
+  + scores.compositionQuality * 3
+  + scores.textLogoWatermarkFree
+  + scores.ageAppropriate;
+
+/**
+ * A third paid call is justified only for a professional near-pass whose
+ * identity, required content and customer-safety facts are already correct.
+ * Missing facts, forbidden content, weak scores and unavailable critics fall
+ * back instead of gambling on another stochastic generation.
+ */
+function isTargetedCorrectionCandidate(review: PreviewQualityReview): boolean {
+  const { tier1, vision } = review;
+  if (!tier1.passed || !vision || vision.unavailable || vision.passed) return false;
+  if (vision.requiredPresent.some((item) => !item.present)) return false;
+  if (vision.excludedFound.length > 0) return false;
+
+  const checks = vision.teaserChecks;
+  if (!checks) return false;
+  if (checks.milestone.required && !checks.milestone.correct) return false;
+  if (checks.identity.required && !checks.identity.accurate) return false;
+  if (!checks.purchase.wouldCreatePurchaseDesire) return false;
+
+  const scores = vision.scores;
+  if (scores.textLogoWatermarkFree !== 5 || scores.ageAppropriate !== 5) return false;
+  const repairableScores = [
+    scores.artifactFree,
+    scores.premiumFinish,
+    scores.briefFidelity,
+    scores.compositionQuality,
+  ];
+  return repairableScores.every((score) => score >= 4)
+    && repairableScores.some((score) => score < 5);
+}
+
+function buildTargetedCorrectionPrompt(
+  basePrompt: string,
+  review: PreviewQualityReview,
+): string {
+  const findings = review.failureCodes.length > 0
+    ? Array.from(new Set(review.failureCodes)).join(", ")
+    : "minor finish defects";
+  return `${basePrompt}
+
+PRIVATE TARGETED CORRECTION — SOURCE-LOCKED NEAR-PASS:
+The attached image is already a professional near-pass. Preserve its exact canvas, camera, crop, character identities, poses, wardrobe, palette, event setting, required details and overall composition. Do not restyle, rebuild or make a new interpretation.
+Repair only these measured failure classes: ${findings}.
+STRICT CRITIC EVIDENCE: ${review.notes || "Resolve only the local defects that kept one or more finish dimensions at 4/5."}
+Make the smallest localized corrections needed for clean anatomy, seamless edges, coherent material texture, shared lighting, contact shadows and dimensional depth. Keep every already-correct feature unchanged. Add no text, letters, numbers, logos, watermarks, children, milestone props, characters, activities or decorative objects.`;
 }
 
 /**
@@ -1043,7 +1097,9 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
             directionIndex: 0,
             attempt: candidate,
             status: passed ? "accepted" : "rejected",
-            bytes: reviewedBytes,
+            // Retain the original provider pixels. Quality is still judged on
+            // reviewedBytes, the exact 560px teaser transform.
+            bytes: generated.bytes,
             previewId: null,
             concept,
             failureCodes: passed ? [] : candidateFailureCodes,
@@ -1075,14 +1131,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
       .sort((a, b) => {
         const av = a.review.vision!.scores;
         const bv = b.review.vision!.scores;
-        const weighted = (scores: VisionVerdict["scores"]) =>
-          scores.premiumFinish * 4
-          + scores.briefFidelity * 4
-          + scores.artifactFree * 3
-          + scores.compositionQuality * 3
-          + scores.textLogoWatermarkFree
-          + scores.ageAppropriate;
-        return weighted(bv) - weighted(av);
+        return weightedVisionScore(bv) - weightedVisionScore(av);
       })[0];
 
     if (approved) {
@@ -1095,6 +1144,131 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
         model: approved.model,
         reviews,
       };
+    }
+
+    const strongestNearPass = outcomes
+      .filter((outcome): outcome is ParallelOutcome & { sourceBytes: Buffer; review: PreviewQualityReview } =>
+        outcome.sourceBytes !== undefined
+          && outcome.review !== undefined
+          && isTargetedCorrectionCandidate(outcome.review),
+      )
+      .sort((a, b) =>
+        weightedVisionScore(b.review.vision!.scores) - weightedVisionScore(a.review.vision!.scores),
+      )[0];
+
+    if (strongestNearPass && !dependencies.signal?.aborted) {
+      const repairModel = REFERENCE_ARTWORK_MODEL;
+      const repairQuality: ArtworkQuality = "high";
+      let repaired: Awaited<ReturnType<ArtworkGenerator>> | undefined;
+      try {
+        repaired = await generateImage({
+          prompt: buildTargetedCorrectionPrompt(basePrompt, strongestNearPass.review),
+          aspectRatio: aspectRatioForLayout(concept.layoutStyle),
+          model: repairModel,
+          quality: repairQuality,
+          inputFidelity: "high",
+          referenceImages: [{
+            bytes: strongestNearPass.sourceBytes,
+            mimeType: "image/png",
+            filename: "strongest-near-pass.png",
+          }],
+          signal: dependencies.signal,
+        });
+      } catch (error) {
+        console.warn("[prepayment-preview] targeted near-pass correction unavailable; using safe fallback:", error);
+      }
+
+      if (repaired) {
+        let repairReview: PreviewQualityReview | undefined;
+        try {
+          const reviewedBytes = customerVisiblePreviewBytes(repaired.bytes);
+          const tier1 = runTier1({
+            bytes: reviewedBytes,
+            concept,
+            overlayCoverage: OVERLAY_COVERAGE[concept.minOverlay],
+            artworkOpacity: 1,
+            layoutApplied: false,
+            ocr: true,
+          });
+          const vision = tier1.passed
+            ? await runVision({
+                bytes: reviewedBytes,
+                concept,
+                brief,
+                reviewMode: "teaser",
+                signal: dependencies.signal,
+              })
+            : undefined;
+          const passed = tier1.passed && vision?.passed === true;
+          const repairFailureCodes = tier1.passed
+            ? (vision?.failureCodes ?? ["vision-unavailable"])
+            : retryCodesFor(tier1.findings);
+          const notes = [
+            ...tier1.findings.filter((finding) => finding.critical).map((finding) => finding.message),
+            vision?.notes ?? "",
+            ...(vision?.requiredPresent ?? [])
+              .filter((item) => !item.present)
+              .map((item) => `Missing required visual: ${item.requirement}`),
+            ...(vision?.excludedFound ?? []).map((item) => `Remove excluded visual: ${item}`),
+          ].filter(Boolean).join(" ").slice(0, 1200);
+          repairReview = {
+            tier1,
+            vision,
+            failureCodes: passed ? [] : repairFailureCodes,
+            notes,
+          };
+          reviews.push(repairReview);
+
+          if (dependencies.attemptRetention) {
+            const { store: attemptStore, eventId, ownerToken, runId } = dependencies.attemptRetention;
+            const size: ArtworkSize = sizeForAspect(aspectRatioForLayout(concept.layoutStyle));
+            try {
+              await attemptStore.record({
+                eventId,
+                ownerToken,
+                runId: runId ?? null,
+                idempotencyKey: null,
+                directionIndex: 0,
+                attempt: 3,
+                status: passed ? "accepted" : "rejected",
+                bytes: repaired.bytes,
+                previewId: null,
+                concept,
+                failureCodes: passed ? [] : repairFailureCodes,
+                tier1Findings: tier1.findings,
+                visionScores: vision?.scores ?? null,
+                model: repairModel,
+                quality: repairQuality,
+                size,
+                costUsdMicros: estimateImageCostUsdMicros(repairModel, repairQuality, size),
+              });
+            } catch (error) {
+              console.error("[prepayment-preview] failed to persist targeted correction evidence (non-fatal):", error);
+            }
+          }
+
+          if (passed) {
+            return {
+              kind: "approved-image",
+              dataUrl: `data:image/png;base64,${repaired.bytes.toString("base64")}`,
+              attempts: reviews.length,
+              model: repairModel,
+              reviews,
+            };
+          }
+        } catch (error) {
+          console.warn("[prepayment-preview] targeted correction review unavailable; using safe fallback:", error);
+        }
+
+        if (repairReview) {
+          return {
+            kind: "rejected",
+            attempts: reviews.length,
+            model: repairModel,
+            reviews,
+          };
+        }
+      }
     }
 
     const reviewedCount = outcomes.filter((outcome) => outcome.review).length;

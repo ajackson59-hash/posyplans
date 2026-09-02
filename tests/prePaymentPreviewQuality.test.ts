@@ -80,6 +80,29 @@ function vision(passed: boolean, notes = "none"): VisionVerdict {
   };
 }
 
+function nearPassVision(
+  notes: string,
+  overrides: Partial<VisionVerdict["scores"]> = {},
+  failureCodes = ["artifact"],
+): VisionVerdict {
+  const approved = vision(true, notes);
+  return {
+    ...approved,
+    scores: {
+      ...approved.scores,
+      artifactFree: 4,
+      ...overrides,
+    },
+    passed: false,
+    failureCodes,
+    teaserChecks: {
+      milestone: { required: false, evidence: "No milestone prop requested or shown.", correct: true },
+      identity: { required: true, evidence: "Both named subjects are independently recognizable.", accurate: true },
+      purchase: { evidence: "Professional and desirable, with one local defect.", wouldCreatePurchaseDesire: true },
+    },
+  };
+}
+
 describe("prepayment preview quality lock", () => {
   afterEach(() => {
     clearNamedThemeDetectionCache();
@@ -398,6 +421,126 @@ describe("prepayment preview quality lock", () => {
     expect(readPngSize(approvedBytes)).toEqual({ width: 1260, height: 2240 });
   });
 
+  it("repairs only the strongest professional near-pass and rechecks the exact teaser pixels", async () => {
+    let call = 0;
+    const generateImage = vi.fn(async () => {
+      call += 1;
+      const bytes = generatedPng(call, 1260, 2240);
+      return {
+        bytes,
+        dataUrl: `data:image/png;base64,${bytes.toString("base64")}`,
+        durationMs: 100,
+      };
+    });
+    const runVision = vi.fn(async (input: { bytes: Buffer }) => {
+      expect(readPngSize(input.bytes)).toEqual({ width: 315, height: 560 });
+      const fill = decodePng(input.bytes).rgb[0];
+      if (fill === 1) {
+        return nearPassVision(
+          "Several material and depth details need local cleanup.",
+          { premiumFinish: 4, compositionQuality: 4 },
+          ["artifact", "premium-feel", "crop-unsafe"],
+        );
+      }
+      if (fill === 2) {
+        return nearPassVision(
+          "Repair one compressed hand and align its contact shadow.",
+          { premiumFinish: 5, compositionQuality: 5 },
+          ["artifact"],
+        );
+      }
+      return vision(true, "The localized correction passes every dimension.");
+    });
+
+    const result = await generateQualityLockedPreview(event, {
+      generateImage,
+      runTier1: () => tier1(true),
+      runVision: runVision as never,
+      maxCandidates: 2,
+      parallelCandidates: true,
+    });
+
+    expect(result.kind).toBe("approved-image");
+    expect(result.attempts).toBe(3);
+    expect(result.reviews).toHaveLength(3);
+    expect(generateImage).toHaveBeenCalledTimes(3);
+    expect(runVision).toHaveBeenCalledTimes(3);
+
+    const correction = generateImage.mock.calls[2][0];
+    expect(correction).toEqual(expect.objectContaining({
+      model: "gpt-image-1.5",
+      quality: "high",
+      inputFidelity: "high",
+    }));
+    expect(correction.prompt).toContain("SOURCE-LOCKED NEAR-PASS");
+    expect(correction.prompt).toContain("Repair only these measured failure classes: artifact");
+    expect(correction.prompt).toContain("Repair one compressed hand and align its contact shadow");
+    expect(correction.prompt).toContain("Do not restyle, rebuild or make a new interpretation");
+    expect(correction.referenceImages).toHaveLength(1);
+    expect(readPngSize(correction.referenceImages![0].bytes)).toEqual({ width: 1260, height: 2240 });
+    expect(decodePng(correction.referenceImages![0].bytes).rgb[0]).toBe(2);
+
+    if (result.kind !== "approved-image") throw new Error("expected approved image");
+    expect(result.model).toBe("gpt-image-1.5");
+    const approvedBytes = Buffer.from(result.dataUrl.split(",")[1], "base64");
+    expect(readPngSize(approvedBytes)).toEqual({ width: 1260, height: 2240 });
+    expect(decodePng(approvedBytes).rgb[0]).toBe(3);
+  });
+
+  it("keeps a failed targeted correction private and returns the safe fallback", async () => {
+    let call = 0;
+    const generateImage = vi.fn(async () => {
+      call += 1;
+      const bytes = generatedPng(call);
+      return { bytes, dataUrl: `data:image/png;base64,${bytes.toString("base64")}`, durationMs: 100 };
+    });
+    const runVision = vi.fn(async (input: { bytes: Buffer }) => {
+      const fill = decodePng(input.bytes).rgb[0];
+      return nearPassVision(
+        fill === 3 ? "The correction still has a local seam." : `Near-pass ${fill}.`,
+      );
+    });
+
+    const result = await generateQualityLockedPreview(event, {
+      generateImage,
+      runTier1: () => tier1(true),
+      runVision: runVision as never,
+      maxCandidates: 2,
+      parallelCandidates: true,
+    });
+
+    expect(result.kind).toBe("rejected");
+    expect(result.attempts).toBe(3);
+    expect(result.reviews).toHaveLength(3);
+    expect(generateImage).toHaveBeenCalledTimes(3);
+    expect(JSON.stringify(result)).not.toContain("data:image");
+  });
+
+  it("does not spend a correction call when a named identity is inaccurate", async () => {
+    const generateImage = vi.fn(async () => {
+      const bytes = generatedPng(7);
+      return { bytes, dataUrl: `data:image/png;base64,${bytes.toString("base64")}`, durationMs: 100 };
+    });
+    const inaccurateIdentity = nearPassVision("One named subject is only color-adjacent.");
+    inaccurateIdentity.teaserChecks!.identity = {
+      required: true,
+      evidence: "The second subject is generic rather than independently recognizable.",
+      accurate: false,
+    };
+
+    const result = await generateQualityLockedPreview(event, {
+      generateImage,
+      runTier1: () => tier1(true),
+      runVision: async () => inaccurateIdentity,
+      maxCandidates: 2,
+      parallelCandidates: true,
+    });
+
+    expect(result.kind).toBe("rejected");
+    expect(generateImage).toHaveBeenCalledTimes(2);
+    expect(result.reviews).toHaveLength(2);
+  });
+
   it("keeps a rejected first candidate private and returns only the approved correction", async () => {
     const generateImage = vi.fn()
       .mockResolvedValueOnce({
@@ -620,6 +763,33 @@ describe("prepayment preview quality lock", () => {
       expect(records[0].status).toBe("accepted");
       expect(records[0].failureCodes).toEqual([]);
       expect(readPngSize(records[0].bytes as Buffer)).toEqual({ width: 630, height: 1120 });
+    });
+
+    it("retains full source pixels for both parallel candidates", async () => {
+      const { store, records } = fakeAttemptStore();
+      let call = 0;
+      const generateImage = vi.fn(async () => {
+        call += 1;
+        const bytes = generatedPng(call, 1260, 2240);
+        return { bytes, dataUrl: `data:image/png;base64,${bytes.toString("base64")}`, durationMs: 100 };
+      });
+      const runVision = vi.fn(async (input: { bytes: Buffer }) =>
+        vision(decodePng(input.bytes).rgb[0] === 2));
+
+      const result = await generateQualityLockedPreview(event, {
+        generateImage,
+        runTier1: () => tier1(true),
+        runVision: runVision as never,
+        maxCandidates: 2,
+        parallelCandidates: true,
+        attemptRetention: { store: store as never, eventId: event.id, ownerToken: "owner-token-abc" },
+      });
+
+      expect(result.kind).toBe("approved-image");
+      expect(records).toHaveLength(2);
+      for (const record of records) {
+        expect(readPngSize(record.bytes as Buffer)).toEqual({ width: 1260, height: 2240 });
+      }
     });
 
     it("stays fail-open: a retention error never changes the customer-visible result", async () => {
