@@ -607,7 +607,7 @@ function enrichBriefForNamedReference(brief: EventBrief, named: NamedCreativeRef
               `a generic adjacent aesthetic standing in for ${named.label}`,
               "isolated accessories or palette-only shorthand standing in for the requested characters or world",
               "an invented portrait, gender or physical appearance for the celebrant when the host did not supply a personal visual reference",
-              "a central unidentified child posed as the implied celebrant in place of the requested named-theme subjects",
+              "any child in the foreground or central hero plane when the host did not supply a personal visual reference for the celebrant",
             ]
           : []),
         "a visible blank card, white rectangle, paper panel, placard, sign, frame or placeholder box inside the artwork",
@@ -661,7 +661,9 @@ export async function buildQualityLockedPreviewBrief(
     "Create one premium cinematic event-world illustration: full portrait canvas, one continuous believable environment.",
     `IDENTITY: ${identity}; venue, activities and party details in the same scene.`,
     "NATIVE STYLE: live-action references need natural skin, hair, fabric and light; animation keeps its polished native style. No generic mascot art.",
-    "STORY: asymmetric candid interaction and varied poses, not a front-facing catalog or character-promo pose.",
+    namedReference
+      ? "STORY: named characters and event details are the hero. Use asymmetric candid interaction and varied poses; do not invent any child in the foreground or central hero plane when no personal celebrant reference was supplied."
+      : "STORY: asymmetric candid interaction and varied poses, not a front-facing catalog or character-promo pose.",
     "DEPTH/MATERIAL: crisp hero focus, believable venue depth, coherent light/shadow/color bounce and micro-detail. No waxy skin, plastic food, uniform gloss, stamped bubbles or cutout halos.",
     milestoneDirection,
     "COMPOSITION: fully frame required faces, primary celebration object, hands and props; leave breathing room and control foreground clutter.",

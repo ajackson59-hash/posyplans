@@ -116,8 +116,9 @@ describe("prepayment preview quality lock", () => {
       "an invented portrait, gender or physical appearance for the celebrant when the host did not supply a personal visual reference",
     );
     expect(brief.requirements.excluded).toContain(
-      "a central unidentified child posed as the implied celebrant in place of the requested named-theme subjects",
+      "any child in the foreground or central hero plane when the host did not supply a personal visual reference for the celebrant",
     );
+    expect(concept.art.prompt).toContain("do not invent any child in the foreground or central hero plane");
     expect(brief.requirements.excluded).toContain(
       "birthday candles, numeral-shaped props or other countable age markers when the host did not explicitly request a count",
     );
