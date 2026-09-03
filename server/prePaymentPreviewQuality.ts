@@ -972,16 +972,34 @@ function buildTargetedCorrectionPrompt(
   basePrompt: string,
   review: PreviewQualityReview,
 ): string {
-  const findings = review.failureCodes.length > 0
-    ? Array.from(new Set(review.failureCodes)).join(", ")
-    : "minor finish defects";
+  const failureCodes = review.failureCodes.length > 0
+    ? Array.from(new Set(review.failureCodes))
+    : ["minor finish defects"];
+  const findings = failureCodes.join(", ");
+  const repairDirectives = failureCodes.map((code) => {
+    switch (code) {
+      case "artifact":
+        return "ARTIFACT REBUILD: Redraw every affected region from clean underlying forms; do not blur, clone, patch over or cosmetically retouch the source defect. Reconstruct malformed anatomy, joins, seams, halos, contact shadows and repeated forms. Give repeated objects organic variation in scale, occlusion, edge shape, highlights, texture and depth spacing—never copied or stamped patterns.";
+      case "premium-feel":
+        return "MATERIAL AND FINISH REBUILD: Replace waxy, plastic, rubbery, airbrushed or synthetic-looking surfaces with intentional hand-painted material variation, coherent shared lighting and dimensional depth. Skin and faces need restrained specular highlights, natural color and shadow variation, and a matte living finish; fabrics, foam, food and props must each read as their own believable material.";
+      case "brief-fidelity":
+        return "BRIEF AND PROMINENCE REBUILD: Restore the requested visual hierarchy. You may adjust the scale, placement, separation and visibility of existing required subjects or scene elements so each reads clearly at 560-pixel teaser size, without adding unrequested content.";
+      case "crop-unsafe":
+        return "COMPOSITION SAFETY REBUILD: Reposition or resize existing subjects and extend surrounding scene detail as needed so faces, bodies and required elements have safe breathing room in the portrait crop. Keep the same event and visual story, but do not preserve unsafe framing.";
+      default:
+        return `MEASURED DEFECT REBUILD (${code}): Visibly reconstruct the affected local region until the cited defect is absent at customer teaser size.`;
+    }
+  }).join("\n");
+
   return `${basePrompt}
 
-PRIVATE TARGETED CORRECTION — SOURCE-LOCKED NEAR-PASS:
-The attached image is already a professional near-pass. Preserve its exact canvas, camera, crop, character identities, poses, wardrobe, palette, event setting, required details and overall composition. Do not restyle, rebuild or make a new interpretation.
-Repair only these measured failure classes: ${findings}.
-STRICT CRITIC EVIDENCE: ${review.notes || "Resolve only the local defects that kept one or more finish dimensions at 4/5."}
-Make the smallest localized corrections needed for clean anatomy, seamless edges, coherent material texture, shared lighting, contact shadows and dimensional depth. Keep every already-correct feature unchanged. Add no text, letters, numbers, logos, watermarks, children, milestone props, characters, activities or decorative objects.`;
+PRIVATE TARGETED CORRECTION — SOURCE-GUIDED NEAR-PASS REBUILD:
+The attached image is a strong composition reference, not a pixel-locked master. Preserve the canvas size and aspect ratio, recognizable character identities, wardrobe, palette, event setting, already-correct requested details, exclusions and overall visual story. Preserve the camera and broad composition unless a measured composition, crop or brief-prominence failure requires changing them.
+The flagged regions are NOT protected. Do not preserve defective pixels, surfaces, object repetition, local geometry, highlights, edges, shadows or spacing. Visibly redraw every measured defect from scratch; a change too subtle to remove the critic evidence is a failed correction.
+Measured failure classes: ${findings}.
+STRICT CRITIC EVIDENCE: ${review.notes || "Resolve the local defects that kept one or more finish dimensions at 4/5."}
+${repairDirectives}
+Keep every unflagged, already-correct feature stable. Add no text, letters, numbers, logos, watermarks, children, milestone props, characters, activities or decorative objects.`;
 }
 
 /**

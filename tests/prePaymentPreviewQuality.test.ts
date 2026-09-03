@@ -493,9 +493,9 @@ describe("prepayment preview quality lock", () => {
       }
       if (fill === 2) {
         return nearPassVision(
-          "Repair one compressed hand and align its contact shadow.",
-          { premiumFinish: 5, compositionQuality: 5 },
-          ["artifact"],
+          "Some repeated spheres show copy-stamp uniformity and the subject's skin has a mild waxy specular finish.",
+          { premiumFinish: 4, compositionQuality: 5 },
+          ["artifact", "premium-feel"],
         );
       }
       return vision(true, "The localized correction passes every dimension.");
@@ -521,10 +521,16 @@ describe("prepayment preview quality lock", () => {
       quality: "high",
       inputFidelity: "high",
     }));
-    expect(correction.prompt).toContain("SOURCE-LOCKED NEAR-PASS");
-    expect(correction.prompt).toContain("Repair only these measured failure classes: artifact");
-    expect(correction.prompt).toContain("Repair one compressed hand and align its contact shadow");
-    expect(correction.prompt).toContain("Do not restyle, rebuild or make a new interpretation");
+    expect(correction.prompt).toContain("SOURCE-GUIDED NEAR-PASS REBUILD");
+    expect(correction.prompt).toContain("Measured failure classes: artifact, premium-feel");
+    expect(correction.prompt).toContain("Some repeated spheres show copy-stamp uniformity");
+    expect(correction.prompt).toContain("The flagged regions are NOT protected");
+    expect(correction.prompt).toContain("Visibly redraw every measured defect from scratch");
+    expect(correction.prompt).toContain("organic variation in scale, occlusion, edge shape, highlights, texture and depth spacing");
+    expect(correction.prompt).toContain("Skin and faces need restrained specular highlights");
+    expect(correction.prompt).toContain("Keep every unflagged, already-correct feature stable");
+    expect(correction.prompt).not.toContain("SOURCE-LOCKED NEAR-PASS");
+    expect(correction.prompt).not.toContain("Make the smallest localized corrections");
     expect(correction.referenceImages).toHaveLength(1);
     expect(readPngSize(correction.referenceImages![0].bytes)).toEqual({ width: 1260, height: 2240 });
     expect(decodePng(correction.referenceImages![0].bytes).rgb[0]).toBe(2);
