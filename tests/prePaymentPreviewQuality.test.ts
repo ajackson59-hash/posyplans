@@ -189,6 +189,55 @@ describe("prepayment preview quality lock", () => {
     expect(brief.requirements.preferred.join(" ")).not.toContain("ball pit");
   });
 
+  it("keeps the fresh canary's prohibited objects out of required teaser details", async () => {
+    const negated = {
+      ...event,
+      eventName: "Brian's 4th Birthday",
+      themeName: "Blippi + Meekah",
+      vibeDescription:
+        "Show Blippi and Meekah dancing together as the central heroes, with a large ball pit, bright foam climbing structures, clearly visible bubbles, and a built-in ice-cream station with colorful treats. Do not include a child portrait or any candles, numerals, words, logos, signs, or posters.",
+    } as unknown as Event;
+
+    const { brief, concept } = await buildQualityLockedPreviewBrief(negated);
+    const required = brief.requirements.required.join(" \n ");
+    const excluded = brief.requirements.excluded.join(" \n ");
+    expect(required).toContain("[VISIBLE HOST DETAIL] Blippi and Meekah dancing together");
+    expect(required).not.toContain("[VISIBLE HOST DETAIL] a child portrait or any candles");
+    expect(required).not.toContain("[VISIBLE MILESTONE]");
+    expect(excluded).toContain(
+      "[HOST EXCLUSION] a child portrait or any candles, numerals, words, logos, signs, or posters",
+    );
+    expect(excluded).toContain("countable age markers when the host did not explicitly request a count");
+    expect(concept.art.prompt).toContain("Do not show birthday candles");
+  });
+
+  it("treats equivalent negative phrasing as a hard exclusion for future previews", async () => {
+    const variants = [
+      "Please avoid showing candles or numeral props. Include a large ball pit.",
+      "Create the celebration without candles or numeral props. Feature a large ball pit.",
+      "No candles or numeral props. Show a large ball pit.",
+      "Never depict candles or numeral props. Include a large ball pit.",
+      "The scene must not feature candles or numeral props. Show a large ball pit.",
+    ];
+
+    for (const vibeDescription of variants) {
+      const { brief, concept } = await buildQualityLockedPreviewBrief({
+        ...event,
+        eventName: "Brian's 4th Birthday",
+        themeName: "Playful soft play",
+        vibeDescription,
+      } as unknown as Event);
+      const visibleRequirements = brief.requirements.required.filter((item) =>
+        item.startsWith("[VISIBLE HOST DETAIL]"),
+      ).join(" ");
+      expect(visibleRequirements).toContain("large ball pit");
+      expect(visibleRequirements).not.toMatch(/candles|numeral props/i);
+      expect(brief.requirements.required.join(" ")).not.toContain("[VISIBLE MILESTONE]");
+      expect(brief.requirements.excluded.join(" ")).toContain("[HOST EXCLUSION]");
+      expect(concept.art.prompt).toContain("Do not show birthday candles");
+    }
+  });
+
   it("keeps an exact milestone count binary when the host explicitly asks for candles", async () => {
     const candleEvent = {
       ...event,
