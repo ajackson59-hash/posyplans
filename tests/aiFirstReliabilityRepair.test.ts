@@ -19,8 +19,15 @@ import { InMemoryUsageStore } from "../server/aiFirst/usage";
 import { InMemoryRunStore } from "../server/aiFirst/runStore";
 import { InMemoryArtworkAttemptStore } from "../server/aiFirst/artworkAttemptStore";
 import type { EventBrief } from "../server/aiFirst/brief";
+import { readPngSize } from "../server/aiFirst/png";
 import type { VisionGateInput, VisionVerdict } from "../server/aiFirst/visionGate";
-import { concept, conceptQuartet, framedArtworkForAspect, artworkForAspect } from "./aiFirstFixtures";
+import {
+  artworkForAspect,
+  busyTypeRegionPng,
+  concept,
+  conceptQuartet,
+  framedArtworkForAspect,
+} from "./aiFirstFixtures";
 
 const OWNER = "owner-token";
 const EVENT_ID = 1;
@@ -1179,12 +1186,11 @@ describe("every billed artwork result is retained for protected review; rejected
 });
 
 describe("retained rejected artwork can be re-reviewed without another image generation", () => {
-  async function seedRetainedAttempt() {
+  async function seedRetainedAttempt(bytes = artworkForAspect("9:16")) {
     const previewStore = new InMemoryPreviewStore();
     const usageStore = new InMemoryUsageStore();
     const runStore = new InMemoryRunStore();
     const artworkAttemptStore = new InMemoryArtworkAttemptStore();
-    const bytes = artworkForAspect("9:16");
     const retainedConcept = concept({
       conceptName: "Demon Stage Trio",
       description: "Rumi, Mira and Zoey command a supernatural K-pop stage.",
@@ -1288,6 +1294,30 @@ describe("retained rejected artwork can be re-reviewed without another image gen
     expect(replay.body.reused).toBe(true);
     expect(visionCalls).toBe(1);
     expect(await stores.previewStore.listForEvent(EVENT_ID)).toHaveLength(1);
+  });
+
+  it("rechecks the exact standalone teaser pixels without invitation text-region rules", async () => {
+    const sourceBytes = busyTypeRegionPng(512, 768);
+    const stores = await seedRetainedAttempt(sourceBytes);
+    let reviewedInput: VisionGateInput | undefined;
+    const app = appFor({
+      ...stores,
+      reviewRetainedArtwork: async (input) => {
+        reviewedInput = input;
+        return passingReview;
+      },
+    });
+
+    const response = await request(app)
+      .post(`/api/events/owner/${OWNER}/ai-first/review/attempts/${stores.attempt.id}/recheck`)
+      .send({ confirmRetainedReview: true, expectedAssetHash: stores.attempt.assetHash });
+
+    expect(response.status).toBe(200);
+    expect(reviewedInput?.reviewMode).toBe("teaser");
+    expect(readPngSize(reviewedInput!.bytes)).toEqual({ width: 373, height: 560 });
+    expect(reviewedInput!.bytes.equals(sourceBytes)).toBe(false);
+    expect(response.body.imageProviderCalls).toBe(0);
+    expect(response.body.billedArtworkAttempts).toBe(0);
   });
 });
 

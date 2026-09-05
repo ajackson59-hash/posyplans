@@ -517,7 +517,9 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
     }
 
     const passed = tier1.passed && vision?.passed === true;
-    failureCodes = tier1.passed ? (vision?.failureCodes ?? ["vision-unavailable"]) : retryCodesFor(tier1.findings);
+    failureCodes = tier1.passed
+      ? (vision?.unavailable ? ["vision-unavailable"] : (vision?.failureCodes ?? ["vision-unavailable"]))
+      : retryCodesFor(tier1.findings);
 
     attempts.push({
       attempt,

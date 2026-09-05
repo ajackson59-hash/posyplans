@@ -10,7 +10,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { parseAiFirstConcept, type AiFirstConcept } from "@shared/aiFirstInvite";
 import type { EventBrief } from "../server/aiFirst/brief";
 import { allErrorsAreSingleConcept, preflightConceptQuartet } from "../server/aiFirst/conceptQuartet";
-import { subjectFamiliesForBrief } from "../server/aiFirst/conceptPreflight";
+import { subjectFamiliesForBrief, concreteSubjectReviewRequirementsForBrief } from "../server/aiFirst/conceptPreflight";
 import { runConceptOnlyProof } from "../server/aiFirst/conceptOnlyProof";
 import { runAiFirstPipeline } from "../server/aiFirst/pipeline";
 import { InMemoryPreviewStore } from "../server/aiFirst/previewStore";
@@ -127,7 +127,8 @@ const passingVision = {
   briefFidelity: 5,
   compositionQuality: 5,
   ageAppropriate: 5,
-  requiredPresent: [{ requirement: "construction identity", present: true }],
+  requiredPresent: concreteSubjectReviewRequirementsForBrief(CONSTRUCTION_REVIEW_BRIEF)
+    .map((requirement) => ({ requirement, present: true })),
   excludedFound: [],
   notes: "fixture pass",
 };

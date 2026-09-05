@@ -1,8 +1,10 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { createHash } from "node:crypto";
 import type { Event } from "@shared/schema";
 import {
+  ARTWORK_EDGE_REQUIREMENT,
+  ARTWORK_TEXT_REQUIREMENT,
   aspectRatioForLayout,
-  buildArtworkPrompt,
   type AiFirstConcept,
 } from "@shared/aiFirstInvite";
 import { OVERLAY_COVERAGE } from "@shared/aiFirstLayout";
@@ -19,7 +21,8 @@ import {
   type ArtworkSize,
 } from "./aiFirst/artwork";
 import type { AiFirstArtworkAttemptStore } from "./aiFirst/artworkAttemptStore";
-import { buildEventBrief, type EventBrief } from "./aiFirst/brief";
+import { boxDownsampleRgb, decodePng, encodePng } from "./aiFirst/png";
+import { ageFromMilestone, buildEventBrief, type EventBrief } from "./aiFirst/brief";
 import { buildArtworkConstraints, buildRetryPrompt } from "./aiFirst/prompt";
 import {
   retryCodesFor,
@@ -30,12 +33,112 @@ import {
   runVisionGate,
   type VisionVerdict,
 } from "./aiFirst/visionGate";
+import { PRE_PAYMENT_PREVIEW_LONG_EDGE } from "./prePaymentPreview";
 import { prePaymentPreviewSourceBrief } from "./prePaymentPreviewConcept";
 
 export const PREPAYMENT_PREVIEW_MODE_ENV = "POSY_PREPAYMENT_PREVIEW_MODE";
 export const PREPAYMENT_PREVIEW_QUALITY_LOCK_CUTOFF_MS = Date.UTC(2026, 7, 31, 2, 0, 0);
 
 export type PrePaymentPreviewMode = "off" | "direction-card" | "quality-image";
+
+/**
+ * Produces the exact low-resolution PNG bytes an unpaid customer receives.
+ * Quality review runs on these bytes—not a larger source that the browser later
+ * transforms—so the approved pixels and the served pixels are equivalent.
+ */
+export function customerVisiblePreviewBytes(source: Buffer): Buffer {
+  const decoded = decodePng(source);
+  return encodePng(boxDownsampleRgb(decoded, PRE_PAYMENT_PREVIEW_LONG_EDGE));
+}
+
+/** The first-look image is standalone artwork, not the later invitation card. */
+function buildTeaserArtworkPrompt(concept: AiFirstConcept): string {
+  return [
+    `${concept.art.medium}.`,
+    `${concept.art.composition}.`,
+    concept.art.prompt.trim().replace(/\s+$/, ""),
+    ARTWORK_EDGE_REQUIREMENT,
+    ARTWORK_TEXT_REQUIREMENT,
+  ].filter(Boolean).join(" ");
+}
+
+/**
+ * Scene-specific physics that must survive the concept prompt's 1,200-character
+ * schema cap. These rules address common image-model shortcuts without making
+ * unrelated event worlds carry soft-play or catering instructions.
+ */
+function buildPhysicalStagingConstraints(brief: EventBrief): string {
+  const scene = [
+    brief.vibe,
+    ...brief.requirements.required,
+    ...brief.requirements.preferred,
+  ].join(" ");
+  const lines: string[] = [];
+
+  if (/\bsoft[- ]play|foam blocks?|ball pit|climbing (?:blocks?|structures?|equipment)|play mats?\b/i.test(scene)) {
+    lines.push(
+      "BINDING SOFT-PLAY MATERIAL PHYSICS — Render foam and padded structures as tactile matte textile or vinyl with varied seams, subtle wear, compression and coherent light response; never glossy toy plastic, repeated modular geometry or synthetic pasted scenery.",
+    );
+  }
+  if (/\bice[ -]?cream|frozen treats?|cake|cupcakes?|desserts?|food|treats?\b/i.test(scene)) {
+    lines.push(
+      "BINDING FOOD STAGING — Integrate edible props into one built-in rear or midground serving counter behind the main action, never the foreground or lower third. Keep its base, floor edge, focus falloff and contact shadows continuous with the room through one camera and lens; no shallow-focus product insert, cutout edge or composite seam. Never place food on ball-pit flooring, play mats, foam blocks or climbing equipment.",
+    );
+  }
+  if (/\bbubbles?|bubble wands?\b/i.test(scene)) {
+    lines.push(
+      "BINDING BUBBLE OPTICS — Use only a sparse, irregular handful at genuinely varied sizes, depths and spacing. Give each a unique silhouette with reflection and refraction aligned to the same room and key light; no repeated circles, grid spacing, identical highlights, stamped pattern or floating decoration layer.",
+    );
+  }
+  if (/\bblippi|meekah|mika\b/i.test(scene)) {
+    lines.push(
+      "BINDING CHARACTER INTEGRATION — Render characters and room in one unified illustrated pass: clean hair and fabric edges with shared color spill and matching focus, plus nuanced facial shading and warm skin-tone variation appropriate to the illustrated medium—never waxy. The serving counter must share the room's perspective, dynamic range, brush texture, bounce light and atmospheric depth.",
+    );
+  }
+
+  return lines.join("\n");
+}
+
+/**
+ * Named entertainment previews must read as original event artwork, never a
+ * promotional still or a photograph of costumed performers. This also turns
+ * the host's required list into a first-glance composition contract instead
+ * of allowing required objects to survive only as tiny background details.
+ */
+function buildNamedWorldArtConstraints(
+  brief: EventBrief,
+  namedReference: NamedCreativeReference | null,
+): string {
+  if (!namedReference) return "";
+
+  const scene = [
+    brief.vibe,
+    ...brief.requirements.required,
+    ...brief.requirements.preferred,
+  ].join(" ");
+  const lines = [
+    `BINDING ORIGINAL-ILLUSTRATION MEDIUM — Render ${namedReference.label} as entirely original commissioned editorial illustration with deliberate hand-painted texture and crisp character design. Absolutely no photograph, photoreal live-action frame, licensed/promotional still, cosplay, mascot suit, lookalike actor or stock-photo visual language.`,
+    "BINDING FIRST-GLANCE SCENE HIERARCHY — Every REQUIRED line must have independently identifiable pixels at the 560-pixel customer teaser size. Named subjects lead the action; the requested venue and activities are substantial co-heroes; supporting required props remain clearly readable. No required element may be a tiny, blurred, cropped or incidental background afterthought.",
+  ];
+
+  if (/\bsoft[- ]play|foam blocks?|ball pit|climbing (?:blocks?|structures?|equipment)|play mats?\b/i.test(scene)) {
+    lines.push(
+      "BINDING SOFT-PLAY SCENE MAP — Make the ball pit a large lower-to-middle scene anchor and the foam climbing structures substantial side and rear architecture. Stage the named characters dancing or interacting inside this environment; do not reduce the ball pit or climbing structures to distant décor.",
+    );
+  }
+  if (/\bbubbles?|bubble wands?\b/i.test(scene)) {
+    lines.push(
+      "BINDING VISIBLE BUBBLES — Show a clearly visible sparse handful of floating bubbles across foreground and midground depth planes without covering faces. They must read immediately as bubbles at teaser size, not disappear into bokeh or background lighting.",
+    );
+  }
+  if (/\bice[ -]?cream|frozen treats?|cake|cupcakes?|desserts?|food|treats?\b/i.test(scene)) {
+    lines.push(
+      "BINDING VISIBLE SERVING STATION — Give the built-in serving counter a clear side or midground zone with several colorful treats visibly identifiable at teaser size. It remains integrated behind the main action, but may not shrink into a distant sliver or generic blur.",
+    );
+  }
+
+  return lines.join("\n");
+}
 
 /**
  * Fail closed. Until a benchmark explicitly enables quality-image, every
@@ -70,7 +173,7 @@ const NAMED_REFERENCES: readonly NamedCreativeReference[] = [
     palette: ["#17315C", "#FF7A00", "#F8F3E8", "#B79DE2"],
     requirements: [
       "Blippi is visibly identifiable as a full lead character through his blue-and-orange play-and-learn outfit, orange glasses and orange bow tie—not merely an isolated accessory or color palette",
-      "Meekah is visibly identifiable as a distinct full co-host through her recognizable purple-and-orange visual identity—not a generic second adult",
+      "Meekah is visibly identifiable as a distinct full co-host through her natural curly hair and recognizable purple play-and-learn wardrobe with warm orange/yellow accents—not a generic second adult",
       "Blippi and Meekah are both central to the same joyful event scene and visibly interact with the requested setting or activities",
     ],
   },
@@ -133,12 +236,10 @@ function detectCuratedNamedCreativeReference(text: string): NamedCreativeReferen
 /**
  * Synchronous, network-free detection for read/poll-only call sites
  * (readiness, direction-card rendering, asset delivery). Deliberately does
- * NOT consult the general LLM classifier — those routes run on every page
- * load and every 2.5s poll, and must stay deterministic, zero-cost and
- * zero-latency. Only the explicit customer action that starts generation
- * (the POST route) is allowed to pay for and await the general classifier;
- * its resolved result is threaded back into the direction card afterward
- * rather than being re-derived here.
+ * NOT consult the general LLM classifier — customer routes must stay
+ * deterministic, zero-cost and zero-latency. A future explicitly budgeted
+ * workflow may call the asynchronous detector and pass its resolved result
+ * back into the card/generator; the launch request path does not.
  */
 export function detectNamedCreativeReferenceSync(text: string): NamedCreativeReference | null {
   if (!text.trim()) return null;
@@ -292,13 +393,11 @@ async function detectGeneralNamedCreativeReference(
 }
 
 /**
- * Recognizes ANY named entertainment property the host types, not just a
- * hardcoded shortlist. The five curated entries below stay a synchronous,
- * zero-latency fast path with hand-authored quality-gate requirements and
- * known-good reference images; everything else — Sesame Street, Cocomelon,
- * Frozen, Spider-Man, Pokemon, or any future franchise — is classified by an
- * LLM call whose (memoized) result feeds the same downstream direction card,
- * brief enrichment and reference-resolution pipeline.
+ * General detector retained for a future explicitly budgeted workflow. The
+ * five curated entries stay a synchronous, zero-latency fast path; other
+ * properties can be classified here only when a caller deliberately invokes
+ * this asynchronous function. The customer POST schedules it once in the
+ * background; pure GET/read paths never call it.
  */
 export async function detectNamedCreativeReference(
   text: string,
@@ -378,8 +477,9 @@ export function buildDirectionCard(
   const detectedCues = CUE_RULES
     .filter((rule) => rule.trigger.test(brief))
     .map((rule) => rule.label);
+  const themeCue = event.themeName?.trim() || "";
   const fallbackCue = event.eventType?.trim() || "Personal celebration";
-  const cues = unique([...(named?.cues ?? []), ...detectedCues, fallbackCue]).slice(0, 4);
+  const cues = unique([...(named?.cues ?? []), themeCue, ...detectedCues, fallbackCue]).slice(0, 4);
   while (cues.length < 4) {
     const fallback = ["Made from your details", "Invitation-ready direction", "Event-specific styling", "Editable after unlock"][cues.length];
     cues.push(fallback);
@@ -397,7 +497,7 @@ export function buildDirectionCard(
   return {
     eventName: event.eventName?.trim() || "Your celebration",
     eyebrow: named ? "THEME RECOGNIZED" : "POSY CREATIVE DIRECTION",
-    headline: named?.label || cues[0],
+    headline: named?.label || themeCue || cues[0],
     supportingCopy: named
       ? "Posy captured the named visual world and every defining detail. Weak or generic artwork is never shown."
       : "A reliable first direction assembled from the details you shared. Weak or off-brief artwork is never shown.",
@@ -502,26 +602,169 @@ export function directionCardDataUrl(
   return `data:image/svg+xml;base64,${Buffer.from(svg, "utf8").toString("base64")}`;
 }
 
+const CHILD_AGE_WORDS: Readonly<Record<number, string>> = {
+  1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six",
+  7: "seven", 8: "eight", 9: "nine",
+};
+
+const VISUAL_DIRECTIVE_PATTERN =
+  /\b(do\s+not(?:\s+ever)?(?:\s+(?:include|show|depict|feature|add|use|have))?|don't(?:\s+ever)?(?:\s+(?:include|show|depict|feature|add|use|have))?|must\s+not(?:\s+(?:include|show|depict|feature|add|use|have))?|should\s+not(?:\s+(?:include|show|depict|feature|add|use|have))?|never(?:\s+(?:include|show|depict|feature|add|use|have))?|without(?:\s+(?:including|showing|depicting|featuring|adding|using|having))?|avoid(?:ing)?(?:\s+(?:including|showing|depicting|featuring|adding|using))?|exclude|excluding|omit(?:ting)?|skip(?:ping)?|no|free\s+of|include|including|show|showing|depict|depicting|feature|features|featuring|add|adding|use|using|with|have|having)\b/gi;
+
+const NEGATIVE_VISUAL_DIRECTIVE_PATTERN =
+  /^(?:do\s+not|don't|must\s+not|should\s+not|never|without|avoid(?:ing)?|exclude|excluding|omit(?:ting)?|skip(?:ping)?|no|free\s+of)\b/i;
+
+function cleanVisualClause(value: string): string {
+  return value
+    .replace(/\s+/g, " ")
+    .replace(/^[,;:\-–—\s]+|[,;:\-–—\s]+$/g, "")
+    .trim();
+}
+
+/**
+ * Resolve the closest host directive in the current sentence. A negative
+ * directive owns the following target until the host explicitly changes
+ * direction (for example, "avoid fake candles but include four real ones").
+ */
+function targetIsNegated(source: string, targetIndex: number): boolean {
+  const boundary = Math.max(
+    source.lastIndexOf(".", targetIndex - 1),
+    source.lastIndexOf("!", targetIndex - 1),
+    source.lastIndexOf("?", targetIndex - 1),
+    source.lastIndexOf(";", targetIndex - 1),
+    source.lastIndexOf("\n", targetIndex - 1),
+  );
+  const prefix = source.slice(boundary + 1, targetIndex);
+  const directives = Array.from(prefix.matchAll(VISUAL_DIRECTIVE_PATTERN));
+  const closest = directives.at(-1)?.[1] ?? "";
+  return NEGATIVE_VISUAL_DIRECTIVE_PATTERN.test(closest);
+}
+
+function explicitPreviewSceneExclusions(brief: EventBrief): string[] {
+  const source = brief.vibe.trim();
+  if (!source) return [];
+
+  const clauses: string[] = [];
+  const patterns = [
+    /\b(?:do\s+not(?:\s+ever)?|don't(?:\s+ever)?|must\s+not|should\s+not|never)\s+(?:(?:include|including|show|showing|depict|depicting|feature|featuring|add|adding|use|using|have|having)\s+)?([^.!?]{2,220})/gi,
+    /\b(?:avoid(?:ing)?|exclude|excluding|omit(?:ting)?|skip(?:ping)?)\s+(?:(?:include|including|show|showing|depict|depicting|feature|featuring|add|adding|use|using)\s+)?([^.!?]{2,220})/gi,
+    /\b(?:without|free\s+of)\s+([^.!?]{2,220})/gi,
+    /\bno\s+([^.!?]{2,220})/gi,
+  ];
+
+  for (const pattern of patterns) {
+    for (const match of Array.from(source.matchAll(pattern))) {
+      const clause = cleanVisualClause(match[1] || "");
+      if (!clause) continue;
+      if (clauses.some((existing) => existing.toLowerCase().includes(clause.toLowerCase()))) continue;
+      const contained = clauses.findIndex((existing) => clause.toLowerCase().includes(existing.toLowerCase()));
+      if (contained >= 0) clauses.splice(contained, 1);
+      clauses.push(clause.slice(0, 220));
+      if (clauses.length >= 4) break;
+    }
+    if (clauses.length >= 4) break;
+  }
+
+  return unique(clauses.map((clause) => `[HOST EXCLUSION] ${clause}`));
+}
+
+function hostExplicitlyRequestsCandles(source: string): boolean {
+  return Array.from(source.matchAll(/\bcandles?\b/gi)).some((match) =>
+    !targetIsNegated(source, match.index ?? 0),
+  );
+}
+
+/**
+ * The general event brief deliberately keeps ambiguous vibe words soft. A
+ * pre-purchase image has a stricter job: prove Posy heard the host. Clauses the
+ * host explicitly framed as scene contents or setting are therefore binding
+ * for this quality-locked preview and are audited against the final pixels.
+ *
+ * This stays deterministic/network-free and intentionally conservative. It
+ * captures strong visual constructions ("include…", "featuring…", "set inside…",
+ * and concrete "at …" setting clauses) rather than turning every adjective in
+ * a vibe sentence into a must-have object.
+ */
+function explicitPreviewSceneRequirements(brief: EventBrief): string[] {
+  const source = brief.vibe.trim();
+  if (!source) return [];
+
+  const clauses: string[] = [];
+  const patterns = [
+    /\b(?:include|including|features?|featuring|show|showing|depict|depicting)\s+([^.!?]{4,220})/gi,
+    /\b(?:set|stage|staged|held)\s+(?:the\s+(?:celebration|party|scene)\s+)?(?:inside|within|in|at)\s+([^.!?]{4,220})/gi,
+    /\b(?:inside|within)\s+([^.!?]{4,180})/gi,
+    /\bat\s+([^.!?]{4,180})/gi,
+  ];
+
+  for (const pattern of patterns) {
+    for (const match of Array.from(source.matchAll(pattern))) {
+      if (targetIsNegated(source, match.index ?? 0)) continue;
+      const clause = cleanVisualClause(match[1] || "");
+      if (!clause) continue;
+      // Do not turn clock times or meta/style instructions into visual objects.
+      if (/^(?:\d{1,2}(?::\d{2})?\s*(?:a\.?m\.?|p\.?m\.?)|noon|midnight)\b/i.test(clause)) continue;
+      if (/^(?:make|keep|feel|should|please|try)\b/i.test(clause)) continue;
+      // A broader match can contain a narrower one; keep the most specific
+      // useful clause once rather than multiplying near-duplicate requirements.
+      if (clauses.some((existing) => existing.toLowerCase().includes(clause.toLowerCase()))) continue;
+      const contained = clauses.findIndex((existing) => clause.toLowerCase().includes(existing.toLowerCase()));
+      if (contained >= 0) clauses.splice(contained, 1);
+      clauses.push(clause.slice(0, 220));
+      if (clauses.length >= 4) break;
+    }
+    if (clauses.length >= 4) break;
+  }
+
+  const required = clauses.map((clause) => `[VISIBLE HOST DETAIL] ${clause}`);
+  const age = ageFromMilestone(brief.milestone);
+  const hostExplicitlyRequestedCandles = hostExplicitlyRequestsCandles(source);
+  if (hostExplicitlyRequestedCandles && age !== null && age >= 1 && age <= 9 && CHILD_AGE_WORDS[age]) {
+    required.push(
+      `[VISIBLE MILESTONE] exactly ${CHILD_AGE_WORDS[age]} separate unnumbered birthday candles or another unmistakable physical count of exactly ${CHILD_AGE_WORDS[age]}`,
+    );
+  }
+  return unique(required);
+}
+
 function enrichBriefForNamedReference(brief: EventBrief, named: NamedCreativeReference | null): EventBrief {
+  const age = ageFromMilestone(brief.milestone);
+  const hostExplicitlyRequestedCandles = hostExplicitlyRequestsCandles(brief.vibe);
   return {
     ...brief,
     themeName: named?.label ?? brief.themeName,
     requirements: {
       required: unique([
         ...brief.requirements.required,
-        ...(named?.requirements ?? []),
+        ...explicitPreviewSceneRequirements(brief),
+        ...(named?.requirements.map((requirement) => `[VISIBLE NAMED IDENTITY] ${requirement}`) ?? []),
       ]),
-      preferred: brief.requirements.preferred,
+      // Standalone teaser pixels are not stationery. Carry event mood but
+      // remove shared invitation-furniture preferences that otherwise pull the
+      // image model back toward a template/card treatment after the teaser
+      // prompt explicitly forbids one.
+      preferred: brief.requirements.preferred.filter((item) => !/stationery/i.test(item)),
       excluded: unique([
         ...brief.requirements.excluded,
+        ...explicitPreviewSceneExclusions(brief),
         ...(named
           ? [
               `a generic adjacent aesthetic standing in for ${named.label}`,
               "isolated accessories or palette-only shorthand standing in for the requested characters or world",
+              "photographs, photoreal live-action frames, promotional stills, cosplay, mascot suits, lookalike actors or stock-photo depictions of the named characters",
+              "an invented portrait, gender or physical appearance for the celebrant when the host did not supply a personal visual reference",
+              "any child in the foreground or central hero plane when the host did not supply a personal visual reference for the celebrant",
+              ...(named.id === "blippi-meekah"
+                ? ["the letter M, initials, monograms, wordmarks, badges, logos or any glyph-bearing patch on either character's clothing; keep Meekah's chest fabric plain or abstractly color-blocked"]
+                : []),
             ]
           : []),
         "a visible blank card, white rectangle, paper panel, placard, sign, frame or placeholder box inside the artwork",
+        "a collage, split panel, sticker sheet, merchandise mockup, pasted character cutout or television-promo layout",
+        "a freestanding poster, banner, easel, title card, invitation card, menu board, screen or other rectangular surface reserved for text",
         "a lead character's face or head cropped off by the canvas edge",
+        ...(age !== null && !hostExplicitlyRequestedCandles
+          ? ["birthday candles, numeral-shaped props or other countable age markers when the host did not explicitly request a count"]
+          : []),
       ]),
     },
   };
@@ -530,9 +773,16 @@ function enrichBriefForNamedReference(brief: EventBrief, named: NamedCreativeRef
 export async function buildQualityLockedPreviewBrief(
   event: Event,
   inspirationNotes = "",
+  resolvedNamedReference?: NamedCreativeReference | null,
 ): Promise<{ brief: EventBrief; concept: AiFirstConcept; namedReference: NamedCreativeReference | null }> {
   const sourceBrief = prePaymentPreviewSourceBrief(event);
-  const namedReference = await detectNamedCreativeReference(sourceBrief);
+  // Launch-safe default: generation requests use the curated, synchronous
+  // detector unless a caller explicitly supplies a reference it already
+  // resolved under its own bounded budget. This keeps a generic first-look
+  // request from silently adding an uncapped Sonnet classification call.
+  const namedReference = resolvedNamedReference !== undefined
+    ? resolvedNamedReference
+    : detectNamedCreativeReferenceSync(sourceBrief);
   const baseBrief = buildEventBrief({
     event,
     dna: {},
@@ -541,14 +791,35 @@ export async function buildQualityLockedPreviewBrief(
   });
   const brief = enrichBriefForNamedReference(baseBrief, namedReference);
   const card = buildDirectionCard(event, namedReference);
+  // AiFirstConcept intentionally caps art.prompt at 1,200 characters. The
+  // full host brief, REQUIRED/EXCLUDED constraints and identity-reference notes
+  // are appended separately to the final provider prompt, so this layer carries
+  // only the highest-leverage visual direction and is guaranteed to survive the cap.
+  const identity = namedReference
+    ? `${namedReference.label.slice(0, 80)} recognizable and central`
+    : "the requested event world recognizable and central";
+  const teaserAge = ageFromMilestone(brief.milestone);
+  const hostExplicitlyRequestedCandles = hostExplicitlyRequestsCandles(brief.vibe);
+  const milestoneDirection = teaserAge !== null && teaserAge >= 1 && teaserAge <= 9 && CHILD_AGE_WORDS[teaserAge]
+    ? hostExplicitlyRequestedCandles
+      ? `MILESTONE: show exactly ${CHILD_AGE_WORDS[teaserAge]} separate unnumbered birthday candles; no extras or written numerals.`
+      : "MILESTONE: age-appropriate energy only. Do not show birthday candles, numeral props or countable age markers; Posy UI carries the exact age."
+    : "MILESTONE: age-appropriate tone only; no invented names, dates or logos.";
   const prompt = [
-    "Premium editorial invitation artwork that proves the host's specific event was understood at a glance.",
-    `ORIGINAL HOST BRIEF — authoritative: ${sourceBrief}`,
-    "LAYOUT CONTRACT: reserve a naturally calm, low-detail typography zone at approximately left 21%, top 32%, width 58%, height 40%. Keep every required person, face, creature, signature object and defining interaction fully visible outside that zone. Do not draw a blank card, white rectangle, paper panel, placard, sign, frame or placeholder box—the quiet area must remain part of the continuous full-bleed scene.",
-    inspirationNotes ? `HOST-PROVIDED VISUAL REFERENCE NOTES — authoritative: ${inspirationNotes}` : "",
-    "Depict the actual people, characters, setting, activities and defining objects requested. The event scene—not an accessory, logo-like symbol, pattern, palette or abstract shorthand—must dominate the composition.",
-    "FINISH CONTRACT: create bespoke editorial stationery artwork with layered depth, tactile material detail, controlled lighting and refined art direction. It must not resemble generic clipart, stock illustration, a television promo still, a merchandising graphic or a flat commercial poster. Keep faces, hands, limbs and object interactions anatomically coherent.",
-  ].filter(Boolean).join(" ");
+    "full portrait canvas; one cinematic environment.",
+    `IDENTITY: ${identity}; host details share one scene.`,
+    namedReference
+      ? "ORIGINAL ILLUSTRATION: commissioned hand-painted editorial art; exact named identity; no photography, live-action performers, promotional stills or generic mascots."
+      : "NATIVE STYLE: premium commissioned illustration with believable material physics, cinematic light and no stock-photo or generic-template visual language.",
+    "NO DESIGN SURFACES: no card, panel, sign, frame, collage, poster, mockup or text box.",
+    namedReference
+      ? "STORY: candid named-character interaction; do not invent any child in the foreground or central hero plane without a supplied celebrant reference."
+      : "STORY: asymmetric candid interaction and varied poses, not a front-facing catalog or character-promo pose.",
+    "DEPTH/MATERIAL: directional key + subtle rim light, natural depth falloff, contact/cast shadows, controlled saturation/color bounce; correct hands, joints, scale, gravity/perspective. No waxy skin, plastic food, repeated object clusters, stamped bubbles or composite seams.",
+    "HANDS/PROPS: unless required, no food or small props in hands; use natural hands and stable surfaces at believable scale.",
+    milestoneDirection,
+    "COMPOSITION: fully frame faces, hands and required objects with breathing room; avoid dense repeated foreground clutter.",
+  ].join(" ");
 
   const concept: AiFirstConcept = {
     conceptName: `${(event.eventName || "Personalized event").slice(0, 42)} preview`,
@@ -557,12 +828,15 @@ export async function buildQualityLockedPreviewBrief(
     visualMood: "cinematic-narrative",
     styleLaneId: "editorial-premium",
     layoutStyle: "full-bleed",
-    borderStyle: "thin-frame",
-    fontPairingId: "editorial-serif",
+    // Teaser generation consumes only concept.art; keep schema-required invitation
+    // furniture deliberately inert so retained QA evidence cannot imply a floral
+    // frame, paper texture or typography treatment that was never requested.
+    borderStyle: "none",
+    fontPairingId: "modern-sans",
     baseThemeId: "garden-editorial",
     placementId: "centre",
-    texture: { style: "cotton", intensity: 0.45 },
-    dividerStyle: "diamond-rule",
+    texture: { style: "none", intensity: 0 },
+    dividerStyle: "none",
     motif: { id: "botanical-sprig", placement: "side-mirrored" },
     semanticPalette: {
       textSurface: card.palette[2],
@@ -571,12 +845,12 @@ export async function buildQualityLockedPreviewBrief(
       accentColor: card.palette[0],
     },
     art: {
-      medium: namedReference ? "premium character-led editorial illustration" : "premium narrative editorial illustration",
-      composition: "portrait scene-led full-bleed composition arranged around a naturally quiet central typography zone; all required subjects, faces and defining objects remain fully visible, with no visible panel, blank rectangle or cropped head",
+      medium: namedReference ? "premium commissioned hand-painted editorial illustration" : "premium cinematic event illustration",
+      composition: "portrait scene-led full-bleed teaser using the full canvas; all required subjects, faces and defining objects remain fully visible, with no panel, blank rectangle, cropped head or edge-clipped hero subject",
       prompt: prompt.slice(0, 1200),
     },
     safeTypographyRegion: "center",
-    minOverlay: "veil",
+    minOverlay: "none",
   };
 
   return { brief, concept, namedReference };
@@ -629,10 +903,22 @@ export interface PreviewQualityDependencies {
   inspirationNotes?: string;
   /** Original uploaded pixels used as high-fidelity identity anchors. */
   referenceImages?: ArtworkReferenceImage[];
-  /** Reference-led named themes use high output quality; generic previews stay medium. */
+  /** Named themes use high output quality; generic previews stay medium. */
   quality?: ArtworkQuality;
-  /** Two internal candidates maximum; neither is customer-visible before approval. */
+  /**
+   * Optional named reference already resolved by a caller with an explicit
+   * budget. Omitted means the zero-I/O curated detector is used.
+   */
+  namedReference?: NamedCreativeReference | null;
+  /** Two initial internal candidates maximum; neither is customer-visible before approval. */
   maxCandidates?: 1 | 2;
+  /**
+   * Text-first named previews may privately render both candidates at once,
+   * then quality-review both and choose the stronger approved result. When
+   * neither passes but one is a verified near-pass, one high-fidelity targeted
+   * correction may follow. Broad failures stop after the original pair.
+   */
+  parallelCandidates?: boolean;
   /**
    * When provided, every billed candidate — accepted or rejected — is
    * durably recorded for protected owner-scoped review, matching the main
@@ -641,6 +927,97 @@ export interface PreviewQualityDependencies {
    * best-effort and never blocks the customer-visible result).
    */
   attemptRetention?: PreviewQualityAttemptRetention;
+  /** Aborts active image generation and vision review at the route deadline. */
+  signal?: AbortSignal;
+}
+
+const weightedVisionScore = (scores: VisionVerdict["scores"]): number =>
+  scores.premiumFinish * 4
+  + scores.briefFidelity * 4
+  + scores.artifactFree * 3
+  + scores.compositionQuality * 3
+  + scores.textLogoWatermarkFree
+  + scores.ageAppropriate;
+
+/**
+ * A third paid call is justified only for a professional near-pass whose
+ * identity, required content and customer-safety facts are already correct.
+ * Missing facts, forbidden content, weak scores and unavailable critics fall
+ * back instead of gambling on another stochastic generation.
+ */
+function isTargetedCorrectionCandidate(review: PreviewQualityReview): boolean {
+  const { tier1, vision } = review;
+  if (!tier1.passed || !vision || vision.unavailable || vision.passed) return false;
+  if (vision.requiredPresent.some((item) => !item.present)) return false;
+  if (vision.excludedFound.length > 0) return false;
+
+  const checks = vision.teaserChecks;
+  if (!checks) return false;
+  if (checks.milestone.required && !checks.milestone.correct) return false;
+  if (checks.identity.required && !checks.identity.accurate) return false;
+  if (!checks.purchase.wouldCreatePurchaseDesire) return false;
+
+  const scores = vision.scores;
+  if (scores.textLogoWatermarkFree !== 5 || scores.ageAppropriate !== 5) return false;
+  const repairableScores = [
+    scores.artifactFree,
+    scores.premiumFinish,
+    scores.briefFidelity,
+    scores.compositionQuality,
+  ];
+  return repairableScores.every((score) => score >= 4)
+    && repairableScores.some((score) => score < 5);
+}
+
+function requiresIndependentReconstruction(review: PreviewQualityReview): boolean {
+  return review.failureCodes.some((code) => code === "artifact" || code === "premium-feel");
+}
+
+function buildTargetedCorrectionPrompt(
+  basePrompt: string,
+  review: PreviewQualityReview,
+  independentReconstruction: boolean,
+): string {
+  const failureCodes = review.failureCodes.length > 0
+    ? Array.from(new Set(review.failureCodes))
+    : ["minor finish defects"];
+  const findings = failureCodes.join(", ");
+  const repairDirectives = failureCodes.map((code) => {
+    switch (code) {
+      case "artifact":
+        return "ARTIFACT REBUILD: Draw every affected region from clean underlying forms; do not simulate a fix with blur, cloning, patching or cosmetic retouching. Reconstruct malformed anatomy, joins, seams, halos, contact shadows and repeated forms. Give repeated objects organic variation in scale, occlusion, edge shape, highlights, texture and depth spacing—never copied or stamped patterns.";
+      case "premium-feel":
+        return "MATERIAL AND FINISH REBUILD: Replace waxy, plastic, rubbery, airbrushed or synthetic-looking surfaces with intentional hand-painted material variation, coherent shared lighting and dimensional depth. Skin and faces need restrained specular highlights, natural color and shadow variation, and a matte living finish; fabrics, foam, food and props must each read as their own believable material.";
+      case "brief-fidelity":
+        return "BRIEF AND PROMINENCE REBUILD: Restore the requested visual hierarchy. You may adjust the scale, placement, separation and visibility of existing required subjects or scene elements so each reads clearly at 560-pixel teaser size, without adding unrequested content.";
+      case "crop-unsafe":
+        return "COMPOSITION SAFETY REBUILD: Reposition or resize existing subjects and extend surrounding scene detail as needed so faces, bodies and required elements have safe breathing room in the portrait crop. Keep the same event and visual story, but do not preserve unsafe framing.";
+      default:
+        return `MEASURED DEFECT REBUILD (${code}): Visibly reconstruct the affected local region until the cited defect is absent at customer teaser size.`;
+    }
+  }).join("\n");
+
+  if (independentReconstruction) {
+    return `${basePrompt}
+
+PRIVATE THIRD CANDIDATE — INDEPENDENT CRITIC-LED RECONSTRUCTION:
+Generate a completely new image from the written event brief. No prior artwork is attached and no prior pixel arrangement, camera, pose, geometry, texture, highlight, edge, shadow or object spacing may be copied. This must be a genuinely independent composition, not a retouch, trace or cosmetic variation of either earlier candidate.
+Preserve the requested identities, wardrobe, event setting, activities, required details, palette and exclusions semantically—not by reproducing defective source pixels. Use a refined matte ink-and-tempera editorial illustration treatment distinct from the earlier cel-painted and gouache candidates, with intentional material texture and physically coherent depth.
+Measured failure classes to eliminate: ${findings}.
+STRICT CRITIC EVIDENCE FROM THE STRONGEST PRIOR CANDIDATE: ${review.notes || "Eliminate every defect that kept one or more quality dimensions at 4/5."}
+${repairDirectives}
+The new image must make every requested feature unmistakable at 560-pixel customer teaser size. Add no text, letters, numbers, logos, watermarks, children, milestone props, extra characters, unrequested activities or decorative objects.`;
+  }
+
+  return `${basePrompt}
+
+PRIVATE TARGETED CORRECTION — SOURCE-GUIDED NEAR-PASS REBUILD:
+The attached image is a strong composition reference, not a pixel-locked master. Preserve the canvas size and aspect ratio, recognizable character identities, wardrobe, palette, event setting, already-correct requested details, exclusions and overall visual story. Preserve the camera and broad composition unless a measured composition, crop or brief-prominence failure requires changing them.
+The flagged regions are NOT protected. Do not preserve defective pixels, surfaces, object repetition, local geometry, highlights, edges, shadows or spacing. Visibly redraw every measured defect from scratch; a change too subtle to remove the critic evidence is a failed correction.
+Measured failure classes: ${findings}.
+STRICT CRITIC EVIDENCE: ${review.notes || "Resolve the local defects that kept one or more finish dimensions at 4/5."}
+${repairDirectives}
+Keep every unflagged, already-correct feature stable. Add no text, letters, numbers, logos, watermarks, children, milestone props, characters, activities or decorative objects.`;
 }
 
 /**
@@ -657,27 +1034,423 @@ export async function generateQualityLockedPreview(
   const runVision = dependencies.runVision ?? runVisionGate;
   const maxCandidates = dependencies.maxCandidates ?? 2;
   const referenceLed = Boolean(dependencies.referenceImages?.length);
-  const quality = dependencies.quality ?? (referenceLed ? "high" : "medium");
   const modelForCandidate = (candidate: number): ArtworkModel =>
     referenceLed && candidate > 1 ? REFERENCE_ARTWORK_MODEL : DEFAULT_ARTWORK_MODEL;
   let lastModel: ArtworkModel = modelForCandidate(1);
-  const { brief, concept } = await buildQualityLockedPreviewBrief(
+  const { brief, concept, namedReference } = await buildQualityLockedPreviewBrief(
     event,
     dependencies.inspirationNotes ?? "",
+    dependencies.namedReference,
   );
+  // Named entertainment worlds are the hardest pre-payment images: identity,
+  // scene fidelity and artifact-free character integration all have to pass at
+  // once. Spend the higher render tier only there; generic previews remain on
+  // medium. Named previews allow two candidates and one eligible correction.
+  const quality = dependencies.quality ?? (referenceLed || namedReference ? "high" : "medium");
+  const retainUnreviewable = async (
+    generated: Awaited<ReturnType<ArtworkGenerator>>, attempt: number, model: ArtworkModel,
+    renderQuality: ArtworkQuality, error: unknown, reviewedBytes?: Buffer,
+  ): Promise<void> => {
+    if (!dependencies.attemptRetention) return;
+    const { store, eventId, ownerToken, runId } = dependencies.attemptRetention;
+    const size = sizeForAspect(aspectRatioForLayout(concept.layoutStyle));
+    try {
+      await store.record({
+        eventId, ownerToken, runId, directionIndex: 0, attempt, status: "rejected",
+        bytes: generated.bytes, concept, failureCodes: ["vision-unavailable"],
+        tier1Findings: [], visionScores: null, model, quality: renderQuality, size,
+        costUsdMicros: estimateImageCostUsdMicros(model, renderQuality, size),
+        reviewEvidence: {
+          version: 1, reviewedAssetHash: reviewedBytes ? createHash("sha256").update(reviewedBytes).digest("hex") : null,
+          verdict: null, generationDurationMs: generated.durationMs,
+          reviewError: (error instanceof Error ? error.message : String(error)).slice(0, 1200),
+        },
+      });
+    } catch {
+      console.error("[prepayment-preview] failed to retain unreviewable provider result", { eventId, attempt });
+    }
+  };
+  const referenceIdentityNotes = dependencies.inspirationNotes?.trim()
+    ? `AUTHORITATIVE IDENTITY NOTES: ${dependencies.inspirationNotes.trim()}`
+    : "";
   const referenceImageRule = dependencies.referenceImages?.length
-    ? "ATTACHED REFERENCE IMAGES ARE AUTHORITATIVE IDENTITY ANCHORS. Match the defining face, hair, outfit, creature markings, proportions, silhouette and visual-world details that make the requested subjects recognizable at a glance. Create a new event-specific scene; never copy wording, logos, watermarks or an invitation layout from the references."
+    ? "ATTACHED REFERENCE IMAGES ARE IDENTITY ANCHORS ONLY. Preserve the defining face, hair, outfit, creature markings, proportions, silhouette and world details that make the requested subjects recognizable. Integrate them naturally into a new event-specific environment. Do not copy the source background, pose, crop, wording, logo, watermark, card, poster or layout; do not paste cutout characters onto an unrelated scene."
     : "";
   const basePrompt = [
-    buildArtworkPrompt(concept),
+    buildTeaserArtworkPrompt(concept),
     buildArtworkConstraints(brief),
+    buildPhysicalStagingConstraints(brief),
+    buildNamedWorldArtConstraints(brief, namedReference),
+    referenceIdentityNotes,
     referenceImageRule,
   ].filter(Boolean).join("\n\n");
   const reviews: PreviewQualityReview[] = [];
   let failureCodes: string[] = [];
   let concreteNotes = "";
 
+  if (dependencies.parallelCandidates && maxCandidates === 2 && !referenceLed) {
+    type ParallelOutcome = {
+      candidate: number;
+      model: ArtworkModel;
+      passed: boolean;
+      sourceBytes?: Buffer;
+      review?: PreviewQualityReview;
+      error?: string;
+    };
+
+    const prompts = namedReference
+      ? [
+          `${basePrompt}
+
+PRIVATE CANDIDATE ONE — CINEMATIC CEL-PAINTED EDITORIAL: Create a polished 2D/2.5D feature-illustration scene with confident illustrative contours, nuanced dry-brush texture, natural fabric folds and cinematic room depth. Use a dynamic eye-level three-quarter view. This is commissioned artwork, never photography or a live-action promotional frame.`,
+          `${basePrompt}
+
+PRIVATE CANDIDATE TWO — GOUACHE STORYBOOK EDITORIAL: Independently rebuild the complete event as a visibly different hand-painted gouache scene with layered matte brushwork, elegant shape language and a slightly elevated wide-room view. Preserve exact character identity and every binding detail, but do not echo candidate one's camera, contour treatment or staging. Never use photography, live-action performers, glossy 3D plastic or promotional-poster composition.`,
+        ]
+      : [
+          basePrompt,
+          `${basePrompt}
+
+PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuinely different camera position and staging while preserving every binding requirement and exclusion. Prioritize anatomically clean hands, coherent shadows, believable prop scale, natural foreground-to-background depth, controlled saturation and non-repeating physical detail. Do not make a cosmetic variation of the first take.`,
+        ];
+
+    const evaluateParallelCandidate = async (candidate: number): Promise<ParallelOutcome> => {
+      const model = DEFAULT_ARTWORK_MODEL;
+      if (dependencies.signal?.aborted) {
+        return {
+          candidate,
+          model,
+          passed: false,
+          error: dependencies.signal.reason instanceof Error
+            ? dependencies.signal.reason.message
+            : "Preview generation was cancelled.",
+        };
+      }
+
+      let generated: Awaited<ReturnType<ArtworkGenerator>>;
+      try {
+        generated = await generateImage({
+          prompt: prompts[candidate - 1],
+          aspectRatio: aspectRatioForLayout(concept.layoutStyle),
+          model,
+          quality,
+          referenceImages: undefined,
+          maxTransientRetries: 0,
+          signal: dependencies.signal,
+        });
+      } catch (error) {
+        return {
+          candidate,
+          model,
+          passed: false,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
+
+      let reviewedBytes: Buffer;
+      try {
+        reviewedBytes = customerVisiblePreviewBytes(generated.bytes);
+      } catch (error) {
+        await retainUnreviewable(generated, candidate, model, quality, error);
+        return {
+          candidate,
+          model,
+          passed: false,
+          error: `Generated artwork could not be prepared for customer review: ${error instanceof Error ? error.message : String(error)}`,
+        };
+      }
+      let tier1: Tier1Result;
+      let vision: VisionVerdict | undefined;
+      try {
+        tier1 = runTier1({
+          bytes: reviewedBytes,
+          concept,
+          overlayCoverage: OVERLAY_COVERAGE[concept.minOverlay],
+          artworkOpacity: 1,
+          layoutApplied: false,
+          ocr: true,
+        });
+        if (tier1.passed) {
+          vision = await runVision({
+            // Review exactly the deterministic pixels an unpaid customer can
+            // receive. The full source is retained privately for paid reuse,
+            // but source-only micro-detail must not contradict the delivered
+            // teaser's quality verdict.
+            bytes: reviewedBytes,
+            concept,
+            brief,
+            reviewMode: "teaser",
+            signal: dependencies.signal,
+          });
+        }
+      } catch (error) {
+        await retainUnreviewable(generated, candidate, model, quality, error, reviewedBytes);
+        return {
+          candidate,
+          model,
+          passed: false,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
+
+      const passed = tier1.passed && vision?.passed === true;
+      const candidateFailureCodes = tier1.passed
+        ? (vision?.unavailable ? ["vision-unavailable"] : (vision?.failureCodes ?? ["vision-unavailable"]))
+        : retryCodesFor(tier1.findings);
+      const notes = [
+        ...tier1.findings.filter((finding) => finding.critical).map((finding) => finding.message),
+        vision?.notes ?? "",
+        ...(vision?.requiredPresent ?? [])
+          .filter((item) => !item.present)
+          .map((item) => `Missing required visual: ${item.requirement}`),
+        ...(vision?.excludedFound ?? []).map((item) => `Remove excluded visual: ${item}`),
+      ].filter(Boolean).join(" ").slice(0, 1200);
+      const review: PreviewQualityReview = {
+        tier1,
+        vision,
+        failureCodes: passed ? [] : candidateFailureCodes,
+        notes,
+      };
+
+      if (dependencies.attemptRetention) {
+        const { store: attemptStore, eventId, ownerToken, runId } = dependencies.attemptRetention;
+        const size: ArtworkSize = sizeForAspect(aspectRatioForLayout(concept.layoutStyle));
+        try {
+          await attemptStore.record({
+            eventId,
+            ownerToken,
+            runId: runId ?? null,
+            idempotencyKey: null,
+            directionIndex: 0,
+            attempt: candidate,
+            status: passed ? "accepted" : "rejected",
+            // Retain the original provider pixels. Quality is still judged on
+            // reviewedBytes, the exact 560px teaser transform.
+            bytes: generated.bytes,
+            previewId: null,
+            concept,
+            failureCodes: passed ? [] : candidateFailureCodes,
+            tier1Findings: tier1.findings,
+            visionScores: vision?.scores ?? null,
+            reviewEvidence: {
+              version: 1, reviewedAssetHash: createHash("sha256").update(reviewedBytes).digest("hex"),
+              verdict: vision ?? null, generationDurationMs: generated.durationMs,
+            },
+            model,
+            quality,
+            size,
+            costUsdMicros: estimateImageCostUsdMicros(model, quality, size),
+          });
+        } catch (error) {
+          console.error("[prepayment-preview] failed to persist parallel attempt evidence (non-fatal):", error);
+        }
+      }
+
+      return { candidate, model, passed, sourceBytes: generated.bytes, review };
+    };
+
+    const outcomes = await Promise.all([
+      evaluateParallelCandidate(1),
+      evaluateParallelCandidate(2),
+    ]);
+    reviews.push(...outcomes.flatMap((outcome) => outcome.review ? [outcome.review] : []));
+
+    const approved = outcomes
+      .filter((outcome): outcome is ParallelOutcome & { sourceBytes: Buffer; review: PreviewQualityReview } =>
+        outcome.passed && Boolean(outcome.sourceBytes) && Boolean(outcome.review?.vision),
+      )
+      .sort((a, b) => {
+        const av = a.review.vision!.scores;
+        const bv = b.review.vision!.scores;
+        return weightedVisionScore(bv) - weightedVisionScore(av);
+      })[0];
+
+    if (approved) {
+      return {
+        kind: "approved-image",
+        // The gate inspected the exact 560px teaser transform, but paid reuse
+        // and protected evidence retain the original provider resolution.
+        dataUrl: `data:image/png;base64,${approved.sourceBytes.toString("base64")}`,
+        attempts: outcomes.filter((outcome) => outcome.sourceBytes || outcome.review).length,
+        model: approved.model,
+        reviews,
+      };
+    }
+
+    const strongestNearPass = outcomes
+      .filter((outcome): outcome is ParallelOutcome & { sourceBytes: Buffer; review: PreviewQualityReview } =>
+        outcome.sourceBytes !== undefined
+          && outcome.review !== undefined
+          && isTargetedCorrectionCandidate(outcome.review),
+      )
+      .sort((a, b) =>
+        weightedVisionScore(b.review.vision!.scores) - weightedVisionScore(a.review.vision!.scores),
+      )[0];
+
+    if (strongestNearPass && !dependencies.signal?.aborted) {
+      // A high-fidelity edit is useful for a clean image that only needs
+      // framing or prominence adjusted. It is the wrong tool for visible
+      // artifacts or synthetic material finish: live canaries proved that it
+      // faithfully preserved the defective pixels and returned identical
+      // scores. Those failures now get a fresh text-first GPT Image 2 render.
+      const independentReconstruction = requiresIndependentReconstruction(strongestNearPass.review);
+      const repairModel = independentReconstruction ? DEFAULT_ARTWORK_MODEL : REFERENCE_ARTWORK_MODEL;
+      const repairQuality: ArtworkQuality = "high";
+      let repaired: Awaited<ReturnType<ArtworkGenerator>> | undefined;
+      try {
+        repaired = await generateImage({
+          maxTransientRetries: 0,
+          prompt: buildTargetedCorrectionPrompt(
+            basePrompt,
+            strongestNearPass.review,
+            independentReconstruction,
+          ),
+          aspectRatio: aspectRatioForLayout(concept.layoutStyle),
+          model: repairModel,
+          quality: repairQuality,
+          inputFidelity: independentReconstruction ? undefined : "high",
+          referenceImages: independentReconstruction
+            ? undefined
+            : [{
+                bytes: strongestNearPass.sourceBytes,
+                mimeType: "image/png",
+                filename: "strongest-near-pass.png",
+              }],
+          signal: dependencies.signal,
+        });
+      } catch (error) {
+        console.warn("[prepayment-preview] targeted near-pass correction unavailable; using safe fallback:", error);
+      }
+
+      if (repaired) {
+        let repairReview: PreviewQualityReview | undefined;
+        try {
+          const reviewedBytes = customerVisiblePreviewBytes(repaired.bytes);
+          const tier1 = runTier1({
+            bytes: reviewedBytes,
+            concept,
+            overlayCoverage: OVERLAY_COVERAGE[concept.minOverlay],
+            artworkOpacity: 1,
+            layoutApplied: false,
+            ocr: true,
+          });
+          const vision = tier1.passed
+            ? await runVision({
+                bytes: reviewedBytes,
+                concept,
+                brief,
+                reviewMode: "teaser",
+                signal: dependencies.signal,
+              })
+            : undefined;
+          const passed = tier1.passed && vision?.passed === true;
+          const repairFailureCodes = tier1.passed
+            ? (vision?.unavailable ? ["vision-unavailable"] : (vision?.failureCodes ?? ["vision-unavailable"]))
+            : retryCodesFor(tier1.findings);
+          const notes = [
+            ...tier1.findings.filter((finding) => finding.critical).map((finding) => finding.message),
+            vision?.notes ?? "",
+            ...(vision?.requiredPresent ?? [])
+              .filter((item) => !item.present)
+              .map((item) => `Missing required visual: ${item.requirement}`),
+            ...(vision?.excludedFound ?? []).map((item) => `Remove excluded visual: ${item}`),
+          ].filter(Boolean).join(" ").slice(0, 1200);
+          repairReview = {
+            tier1,
+            vision,
+            failureCodes: passed ? [] : repairFailureCodes,
+            notes,
+          };
+          reviews.push(repairReview);
+
+          if (dependencies.attemptRetention) {
+            const { store: attemptStore, eventId, ownerToken, runId } = dependencies.attemptRetention;
+            const size: ArtworkSize = sizeForAspect(aspectRatioForLayout(concept.layoutStyle));
+            try {
+              await attemptStore.record({
+                eventId,
+                ownerToken,
+                runId: runId ?? null,
+                idempotencyKey: null,
+                directionIndex: 0,
+                attempt: 3,
+                status: passed ? "accepted" : "rejected",
+                bytes: repaired.bytes,
+                previewId: null,
+                concept,
+                failureCodes: passed ? [] : repairFailureCodes,
+                tier1Findings: tier1.findings,
+                visionScores: vision?.scores ?? null,
+                reviewEvidence: {
+                  version: 1, reviewedAssetHash: createHash("sha256").update(reviewedBytes).digest("hex"),
+                  verdict: vision ?? null, generationDurationMs: repaired.durationMs,
+                },
+                model: repairModel,
+                quality: repairQuality,
+                size,
+                costUsdMicros: estimateImageCostUsdMicros(repairModel, repairQuality, size),
+              });
+            } catch (error) {
+              console.error("[prepayment-preview] failed to persist targeted correction evidence (non-fatal):", error);
+            }
+          }
+
+          if (passed) {
+            return {
+              kind: "approved-image",
+              dataUrl: `data:image/png;base64,${repaired.bytes.toString("base64")}`,
+              attempts: reviews.length,
+              model: repairModel,
+              reviews,
+            };
+          }
+        } catch (error) {
+          await retainUnreviewable(repaired, 3, repairModel, repairQuality, error);
+          console.warn("[prepayment-preview] targeted correction review unavailable; using safe fallback:", error);
+        }
+
+        if (repairReview) {
+          return {
+            kind: "rejected",
+            attempts: reviews.length,
+            model: repairModel,
+            reviews,
+          };
+        }
+      }
+    }
+
+    const reviewedCount = outcomes.filter((outcome) => outcome.review).length;
+    if (reviewedCount === 0) {
+      return {
+        kind: "unavailable",
+        attempts: 0,
+        model: DEFAULT_ARTWORK_MODEL,
+        reviews,
+        error: outcomes.map((outcome) => outcome.error).filter(Boolean).join(" | ") || "Both private preview candidates were unavailable.",
+      };
+    }
+
+    return {
+      kind: "rejected",
+      attempts: reviewedCount,
+      model: DEFAULT_ARTWORK_MODEL,
+      reviews,
+    };
+  }
+
   for (let candidate = 1; candidate <= maxCandidates; candidate += 1) {
+    if (dependencies.signal?.aborted) {
+      return {
+        kind: "unavailable",
+        attempts: candidate - 1,
+        model: lastModel,
+        reviews,
+        error: dependencies.signal.reason instanceof Error
+          ? dependencies.signal.reason.message
+          : "Preview generation was cancelled.",
+      };
+    }
     const model = modelForCandidate(candidate);
     lastModel = model;
     const prompt = candidate === 1
@@ -688,11 +1461,13 @@ export async function generateQualityLockedPreview(
     try {
       generated = await generateImage({
         prompt,
+        maxTransientRetries: 0,
         aspectRatio: aspectRatioForLayout(concept.layoutStyle),
         model,
         quality,
         inputFidelity: referenceLed && model === REFERENCE_ARTWORK_MODEL ? "high" : undefined,
         referenceImages: dependencies.referenceImages,
+        signal: dependencies.signal,
       });
     } catch (error) {
       return {
@@ -704,20 +1479,41 @@ export async function generateQualityLockedPreview(
       };
     }
 
+    let reviewedBytes: Buffer;
+    try {
+      reviewedBytes = customerVisiblePreviewBytes(generated.bytes);
+    } catch (error) {
+      await retainUnreviewable(generated, candidate, model, quality, error);
+      return {
+        kind: "unavailable",
+        attempts: candidate,
+        model,
+        reviews,
+        error: `Generated artwork could not be prepared for customer review: ${error instanceof Error ? error.message : String(error)}`,
+      };
+    }
     let tier1: Tier1Result;
     let vision: VisionVerdict | undefined;
     try {
       tier1 = runTier1({
-        bytes: generated.bytes,
+        bytes: reviewedBytes,
         concept,
         overlayCoverage: OVERLAY_COVERAGE[concept.minOverlay],
         artworkOpacity: 1,
+        layoutApplied: false,
         ocr: true,
       });
       if (tier1.passed) {
-        vision = await runVision({ bytes: generated.bytes, concept, brief });
+        vision = await runVision({
+          bytes: reviewedBytes,
+          concept,
+          brief,
+          reviewMode: "teaser",
+          signal: dependencies.signal,
+        });
       }
     } catch (error) {
+      await retainUnreviewable(generated, candidate, model, quality, error, reviewedBytes);
       return {
         kind: "unavailable",
         attempts: candidate,
@@ -729,7 +1525,7 @@ export async function generateQualityLockedPreview(
 
     const passed = tier1.passed && vision?.passed === true;
     failureCodes = tier1.passed
-      ? (vision?.failureCodes ?? ["vision-unavailable"])
+      ? (vision?.unavailable ? ["vision-unavailable"] : (vision?.failureCodes ?? ["vision-unavailable"]))
       : retryCodesFor(tier1.findings);
     concreteNotes = [
       ...tier1.findings.filter((finding) => finding.critical).map((finding) => finding.message),
@@ -741,8 +1537,11 @@ export async function generateQualityLockedPreview(
     ].filter(Boolean).join(" ").slice(0, 1200);
     reviews.push({ tier1, vision, failureCodes: passed ? [] : failureCodes, notes: concreteNotes });
 
-    // Every billed candidate is retained for protected owner-scoped review,
-    // accepted and rejected alike — mirroring aiFirst/artworkAttemptStore.ts.
+    // Every billed candidate is retained at its original resolution for
+    // protected owner-scoped review and paid reuse, accepted and rejected
+    // alike — mirroring aiFirst/artworkAttemptStore.ts. The gate evidence was
+    // still computed from `reviewedBytes`, the exact deterministic 560px
+    // transform served to an unpaid customer.
     // Best-effort and fail-open: a retention failure must never change the
     // customer-visible result or mask the real approve/reject outcome.
     if (dependencies.attemptRetention) {
@@ -763,6 +1562,10 @@ export async function generateQualityLockedPreview(
           failureCodes: passed ? [] : failureCodes,
           tier1Findings: tier1.findings,
           visionScores: vision?.scores ?? null,
+          reviewEvidence: {
+            version: 1, reviewedAssetHash: createHash("sha256").update(reviewedBytes).digest("hex"),
+            verdict: vision ?? null, generationDurationMs: generated.durationMs,
+          },
           model,
           quality,
           size,
@@ -776,7 +1579,10 @@ export async function generateQualityLockedPreview(
     if (passed) {
       return {
         kind: "approved-image",
-        dataUrl: generated.dataUrl,
+        // Persist the full provider result. The private unpaid asset route
+        // derives the exact reviewed 560px pixels from these bytes; after an
+        // unlock the same approved artwork remains available at full quality.
+        dataUrl: `data:image/png;base64,${generated.bytes.toString("base64")}`,
         attempts: candidate,
         model,
         reviews,

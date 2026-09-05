@@ -15,6 +15,7 @@ import { typePlacementFrame } from "@shared/aiFirstLayout";
 import { LOCAL_TYPE_SURFACE_ALPHA } from "@shared/themeCatalog";
 
 export const VISION_MODEL = "claude-sonnet-4-6";
+export const TEASER_MIN_DIMENSION_SCORE = 5;
 
 export { MIN_DIMENSION_SCORE };
 export type { VisionScores };
@@ -22,7 +23,9 @@ export type { VisionScores };
 export interface VisionVerdict {
   scores: VisionScores;
   /** One entry per REQUIRED item, in the brief's order. */
-  requiredPresent: { requirement: string; present: boolean }[];
+  requiredPresent: { requirement: string; present: boolean; evidence?: string }[];
+  /** Located visual observations, not merely a repeated numeric verdict. */
+  dimensionEvidence?: Record<keyof VisionScores, string>;
   /** One entry per EXCLUDED item that the critic saw. */
   excludedFound: string[];
   notes: string;
@@ -32,6 +35,12 @@ export interface VisionVerdict {
   unavailable: boolean;
   durationMs: number;
   usage: { inputTokens: number; outputTokens: number };
+  /** Extra fail-closed facts required only for standalone first-look artwork. */
+  teaserChecks?: {
+    milestone: { required: boolean; evidence: string; correct: boolean };
+    identity: { required: boolean; evidence: string; accurate: boolean };
+    purchase: { evidence: string; wouldCreatePurchaseDesire: boolean };
+  };
 }
 
 const SYSTEM = `You are a strict art director reviewing AI-generated artwork for a printed invitation a host will send to real guests. You are the last check before a customer sees it.
@@ -53,6 +62,119 @@ Reply with JSON only:
 {"textLogoWatermarkFree":0,"artifactFree":0,"premiumFinish":0,"briefFidelity":0,"compositionQuality":0,"ageAppropriate":0,"requiredPresent":[{"requirement":"","present":true}],"excludedFound":[],"notes":""}`;
 
 /** Which retry remedy each failed dimension maps onto. */
+const TEASER_SYSTEM = `You are a strict art director reviewing the exact final pixels of a personalized pre-payment artwork teaser. The customer sees this artwork at its native aspect ratio with no browser crop, text box, badge, gradient, panel or other overlay.
+
+Score each 1-5. Posy's teaser gate requires 5 in every dimension: this image must be exceptional, not merely passable. A 4 may be professional but is still held private for correction.
+
+- textLogoWatermarkFree: 5 = no letters, words, numbers, logos, signatures or watermarks anywhere, including stylised or partial ones.
+- artifactFree: 5 = no melted, duplicated, malformed or anatomically broken forms, cutout/composite halos, copy-stamped effects, inconsistent light physics or other visible generation artifacts.
+- premiumFinish: 5 = art-directed, dimensional and commercially polished enough to create purchase desire on its own. Look for purposeful depth hierarchy, native-medium fidelity, believable materials, controlled saturation and an emotionally specific moment. Score 1-2 for clipart, stock-template, merchandise-ad, flat-vector mascot or generic AI look; score 3 for competent but ordinary/synthetic work such as waxy skin, plastic food, uniform specular highlights, flat painted backgrounds, copy-stamped bubbles/effects or front-facing catalog poses.
+- briefFidelity: 5 = the artwork unmistakably delivers the host's named world, requested setting, activities and defining details.
+- compositionQuality: 5 = one clear, balanced, intentional full-bleed scene in the exact supplied pixels. Any collage/split-panel treatment, pasted cutout look, poster/sign/card surface, cropped face or head, edge-clipped lead subject, awkward empty panel, or required hero subject pushed partly outside the canvas forces 3 or lower.
+- ageAppropriate: 5 = correctly pitched for the celebrant's age. If a specific physical milestone count is required, count each visible item one by one; a missing, ambiguous or wrong count forces ageAppropriate and briefFidelity to 3 or lower. When the host explicitly requests an all-ages action or fantasy identity, do not fail merely because faithful imagery includes stylized fantasy weapons, non-graphic supernatural creatures, performance costumes or dramatic poses.
+
+Judge BRIEF REQUIREMENTS holistically through briefFidelity and ageAppropriate. VISIBLE MUST-HAVES are stricter binary facts: an exact count must match the stated number exactly, and a named lead/co-host identity is false when it is generic, colour-only, or only ambiguously recognizable. Never average a wrong count or weak named identity into an overall 4/5 score. For each VISIBLE MUST-HAVE, report whether that concrete subject is visibly present. List any EXCLUDED item you can actually see.
+
+Then make three explicit teaser checks. For milestone, describe and count the visible physical cue; never infer the requested age from the prompt. For identity, every specifically named subject must be independently recognizable through canonical face, hair, costume, silhouette and world details—palette-only or adjacent generic characters are false. For purchase, false means the scene reads as a stock promo, generic AI image, synthetic render or otherwise would not create desire to continue. Missing check fields are failures.
+
+EVIDENCE BEFORE SCORING: inspect the supplied pixels, not an imagined image from the brief. First complete requiredPresent (copy each requirement verbatim and include its visible location/features as evidence), then teaserChecks, then dimensionEvidence for all six dimensions, then assign scores. Before claiming a signature accessory is missing, inspect the named subject's face and costume explicitly; describe what is visible and where. Never infer absence from small size or from a prior candidate: each image is independent. Every sub-5 score needs a concrete visible defect and location in dimensionEvidence; every 5 needs positive observable support. Judge fidelity to the requested illustrated medium: intentional gouache texture, cel shading and stylized depth are not photographic defects. This does not excuse malformed anatomy, incoherent lighting, unclear identity or synthetic stock-promo finish. Do not invent browser cropping or hidden overlays. When detail genuinely cannot be resolved, say so and keep the image private.
+
+Reply with JSON only:
+{"requiredPresent":[{"requirement":"","present":true,"evidence":""}],"excludedFound":[],"teaserChecks":{"milestone":{"evidence":"","correct":true},"identity":{"evidence":"","accurate":true},"purchase":{"evidence":"","wouldCreatePurchaseDesire":true}},"dimensionEvidence":{"textLogoWatermarkFree":"","artifactFree":"","premiumFinish":"","briefFidelity":"","compositionQuality":"","ageAppropriate":""},"textLogoWatermarkFree":0,"artifactFree":0,"premiumFinish":0,"briefFidelity":0,"compositionQuality":0,"ageAppropriate":0,"notes":""}`;
+
+const SCORE_PROPERTIES = {
+  textLogoWatermarkFree: { type: "integer" },
+  artifactFree: { type: "integer" },
+  premiumFinish: { type: "integer" },
+  briefFidelity: { type: "integer" },
+  compositionQuality: { type: "integer" },
+  ageAppropriate: { type: "integer" },
+} as const;
+
+const REQUIRED_PRESENT_SCHEMA = {
+  type: "array",
+  items: {
+    type: "object",
+    properties: {
+      requirement: { type: "string" },
+      present: { type: "boolean" },
+    },
+    required: ["requirement", "present"],
+    additionalProperties: false,
+  },
+} as const;
+
+const visionOutputSchema = (reviewMode: "invitation" | "teaser", requirements: string[]) => ({
+  type: "object",
+  properties: {
+    requiredPresent: reviewMode === "teaser" ? {
+      ...REQUIRED_PRESENT_SCHEMA,
+      items: {
+        ...REQUIRED_PRESENT_SCHEMA.items,
+        properties: { ...REQUIRED_PRESENT_SCHEMA.items.properties,
+          requirement: requirements.length ? { type: "string", enum: requirements } : { type: "string" },
+          evidence: { type: "string" } },
+        required: ["requirement", "present", "evidence"],
+      },
+    } : REQUIRED_PRESENT_SCHEMA,
+    excludedFound: { type: "array", items: { type: "string" } },
+    ...(reviewMode === "teaser"
+      ? {
+          dimensionEvidence: {
+            type: "object",
+            properties: Object.fromEntries(Object.keys(SCORE_PROPERTIES).map((key) => [key, { type: "string" }])),
+            required: Object.keys(SCORE_PROPERTIES),
+            additionalProperties: false,
+          },
+          teaserChecks: {
+            type: "object",
+            properties: {
+              milestone: {
+                type: "object",
+                properties: { evidence: { type: "string" }, correct: { type: "boolean" } },
+                required: ["evidence", "correct"],
+                additionalProperties: false,
+              },
+              identity: {
+                type: "object",
+                properties: { evidence: { type: "string" }, accurate: { type: "boolean" } },
+                required: ["evidence", "accurate"],
+                additionalProperties: false,
+              },
+              purchase: {
+                type: "object",
+                properties: {
+                  evidence: { type: "string" },
+                  wouldCreatePurchaseDesire: { type: "boolean" },
+                },
+                required: ["evidence", "wouldCreatePurchaseDesire"],
+                additionalProperties: false,
+              },
+            },
+            required: ["milestone", "identity", "purchase"],
+            additionalProperties: false,
+          },
+        }
+      : {}),
+    ...SCORE_PROPERTIES,
+    notes: { type: "string" },
+  },
+  required: [
+    "textLogoWatermarkFree",
+    "artifactFree",
+    "premiumFinish",
+    "briefFidelity",
+    "compositionQuality",
+    "ageAppropriate",
+    "requiredPresent",
+    "excludedFound",
+    ...(reviewMode === "teaser" ? ["teaserChecks", "dimensionEvidence"] : []),
+    "notes",
+  ],
+  additionalProperties: false,
+});
+
+/** Which retry remedy each failed dimension maps onto. */
 const CODE_FOR_DIMENSION: Record<keyof VisionScores, string> = {
   textLogoWatermarkFree: "text-detected",
   artifactFree: "artifact",
@@ -63,9 +185,25 @@ const CODE_FOR_DIMENSION: Record<keyof VisionScores, string> = {
 };
 
 function clampScore(value: unknown): number {
-  const n = typeof value === "number" ? value : Number(value);
-  if (!Number.isFinite(n)) return 0;
-  return Math.max(0, Math.min(5, n));
+  return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 5 ? value : 0;
+}
+
+const hasEvidence = (value: unknown): value is string => typeof value === "string" && value.trim().length > 0;
+
+const VISIBLE_REQUIREMENT_PREFIX = /^\[VISIBLE (?:HOST DETAIL|MILESTONE|NAMED IDENTITY)\]\s*/i;
+
+/**
+ * Teaser-specific briefs deliberately tag host-explicit scene facts, exact
+ * milestones and named identities as binary pixel facts. They must not be
+ * allowed to disappear inside an otherwise-good holistic fidelity score.
+ */
+export function visibleReviewRequirementsForBrief(brief: EventBrief): string[] {
+  return Array.from(new Set(
+    brief.requirements.required
+      .filter((requirement) => VISIBLE_REQUIREMENT_PREFIX.test(requirement))
+      .map((requirement) => requirement.replace(VISIBLE_REQUIREMENT_PREFIX, "").trim())
+      .filter(Boolean),
+  ));
 }
 
 export interface VisionGateInput {
@@ -73,6 +211,9 @@ export interface VisionGateInput {
   concept: AiFirstConcept;
   brief: EventBrief;
   client?: Anthropic;
+  /** Invitation is the default; teaser reviews exact standalone pixels. */
+  reviewMode?: "invitation" | "teaser";
+  signal?: AbortSignal;
 }
 
 export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdict> {
@@ -100,13 +241,43 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
     };
   }
 
+  if (input.signal?.aborted) {
+    return {
+      scores: empty,
+      requiredPresent: [],
+      excludedFound: [],
+      notes: input.signal.reason instanceof Error
+        ? input.signal.reason.message
+        : "vision review was cancelled",
+      passed: false,
+      failureCodes: [],
+      unavailable: true,
+      durationMs: Date.now() - started,
+      usage: { inputTokens: 0, outputTokens: 0 },
+    };
+  }
+
   const client = input.client ?? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const { brief, concept } = input;
-  const reviewRequirements = concreteSubjectReviewRequirementsForBrief(brief);
+  const reviewMode = input.reviewMode ?? "invitation";
+  const reviewRequirements = Array.from(new Set([
+    ...concreteSubjectReviewRequirementsForBrief(brief),
+    ...visibleReviewRequirementsForBrief(brief),
+  ]));
+  const milestoneRequirement = reviewMode === "teaser"
+    ? brief.requirements.required
+        .find((requirement) => /^\[VISIBLE MILESTONE\]/i.test(requirement) || /^a clear non-text .* birthday cue/i.test(requirement))
+        ?.replace(VISIBLE_REQUIREMENT_PREFIX, "")
+        .trim() ?? ""
+    : "";
+  const identityExpectation = reviewMode === "teaser"
+    ? (brief.visualIdentityOverride || brief.themeName || "").trim()
+    : "";
   const typeBox = typePlacementFrame(concept);
   const protectionAlpha = LOCAL_TYPE_SURFACE_ALPHA[concept.minOverlay];
-  const protectionInstruction =
-    concept.minOverlay === "plate"
+  const protectionInstruction = reviewMode === "teaser"
+    ? "FINAL CUSTOMER SURFACE: judge the supplied image exactly as shown. The browser adds no crop, type, badge, gradient, panel or overlay."
+    : concept.minOverlay === "plate"
       ? `FINAL TYPE PROTECTION: a ${(protectionAlpha * 100).toFixed(0)}%-opaque solid paper panel in ${concept.semanticPalette.textSurface} covers the LIVE TYPOGRAPHY BOX in the rendered invitation. Treat raw pixels beneath the box as covered. Required subjects must remain clearly recognizable outside the panel, and the remaining visible composition must still feel balanced.`
       : `FINAL TYPE PROTECTION: ${concept.minOverlay} (${(protectionAlpha * 100).toFixed(0)}% local surface opacity). The LIVE TYPOGRAPHY BOX must contain no face, person, hero object or required subject.`;
 
@@ -118,46 +289,84 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
         ? `Intended feeling: ${brief.vibe}`
         : "",
     `Direction: ${concept.conceptName} — ${concept.description}`,
-    `LIVE TYPOGRAPHY BOX (percentage of final card): left ${typeBox.left.toFixed(0)}%, top ${typeBox.top.toFixed(0)}%, width ${typeBox.width.toFixed(0)}%, height ${typeBox.height.toFixed(0)}%.`,
+    reviewMode === "teaser"
+      ? ""
+      : `LIVE TYPOGRAPHY BOX (percentage of final card): left ${typeBox.left.toFixed(0)}%, top ${typeBox.top.toFixed(0)}%, width ${typeBox.width.toFixed(0)}%, height ${typeBox.height.toFixed(0)}%.`,
     protectionInstruction,
     "",
     "BRIEF REQUIREMENTS (judge holistically in briefFidelity and ageAppropriate):",
     ...brief.requirements.required.map((r) => `- ${r}`),
     "",
-    "VISIBLE MUST-HAVES (report each in requiredPresent):",
+    "VISIBLE MUST-HAVES (copy each requirement verbatim in requiredPresent; do not paraphrase, merge or omit):",
     ...reviewRequirements.map((r) => `- ${r}`),
     "",
     "EXCLUDED:",
     ...brief.requirements.excluded.map((r) => `- ${r}`),
+    reviewMode === "teaser" ? "TEASER PASS/FAIL CHECKS:" : "",
+    reviewMode === "teaser"
+      ? milestoneRequirement
+        ? `- MILESTONE (required): ${milestoneRequirement}. Count the visible physical cue exactly and report what you counted.`
+        : "- MILESTONE: no exact physical milestone count is required; mark correct true."
+      : "",
+    reviewMode === "teaser"
+      ? identityExpectation
+        ? `- IDENTITY (required): ${identityExpectation}. Palette, accessories or an adjacent generic substitute do not count as accurate.`
+        : "- IDENTITY: judge the host's requested event world and scene details as a whole."
+      : "",
+    reviewMode === "teaser"
+      ? "- PURCHASE: would these exact pixels, by themselves, make a discerning host want to continue toward purchase?"
+      : "",
   ]
     .filter(Boolean)
     .join("\n");
 
-  let raw = "";
   let usage = { inputTokens: 0, outputTokens: 0 };
-  try {
+  const reviewSystem = reviewMode === "teaser" ? TEASER_SYSTEM : SYSTEM;
+  const reviewContent = [
+    {
+      type: "image" as const,
+      source: { type: "base64" as const, media_type: "image/png" as const, data: input.bytes.toString("base64") },
+    },
+    { type: "text" as const, text: userText },
+  ];
+  const reviewOnce = async (jsonRepair: boolean): Promise<Record<string, any> | null> => {
     const response = await client.messages.create({
       model: VISION_MODEL,
-      max_tokens: 700,
-      system: SYSTEM,
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "image",
-              source: { type: "base64", media_type: "image/png", data: input.bytes.toString("base64") },
-            },
-            { type: "text", text: userText },
-          ],
+      // A complete evidence checklist does not fit in the old 950-token cap.
+      // Bounded headroom scales with actual requirements, never unbounded prose.
+      max_tokens: reviewMode === "teaser" ? Math.min(4000, 2000 + reviewRequirements.length * 100) : 700,
+      system: jsonRepair
+        ? `${reviewSystem}\n\nOUTPUT REPAIR: Return one complete valid JSON object matching the required schema. No prose, markdown fence or trailing commentary. Do not omit any field.`
+        : reviewSystem,
+      messages: [{ role: "user", content: reviewContent }],
+      // Prompting for JSON is not a contract: a live canary returned malformed
+      // prose twice and forced two otherwise-reviewable paid images into the
+      // safe fallback. Anthropic's structured-output grammar guarantees a
+      // parseable response matching this exact verdict shape.
+      output_config: {
+        format: {
+          type: "json_schema",
+          schema: visionOutputSchema(reviewMode, reviewRequirements),
         },
-      ],
-    });
-    raw = response.content.map((b) => (b.type === "text" ? b.text : "")).join("");
+      },
+    }, { signal: input.signal });
     usage = {
-      inputTokens: response.usage?.input_tokens ?? 0,
-      outputTokens: response.usage?.output_tokens ?? 0,
+      inputTokens: usage.inputTokens + (response.usage?.input_tokens ?? 0),
+      outputTokens: usage.outputTokens + (response.usage?.output_tokens ?? 0),
     };
+    const raw = response.content.map((b) => (b.type === "text" ? b.text : "")).join("");
+    if (response.stop_reason === "max_tokens" || response.stop_reason === "refusal") return null;
+    return extractJson(raw);
+  };
+
+  let parsed: Record<string, any> | null = null;
+  try {
+    parsed = await reviewOnce(false);
+    // One bounded format-repair call prevents excellent paid pixels from being
+    // discarded merely because the critic wrapped or truncated its JSON. The
+    // second result still has to parse and satisfy every ordinary gate; two
+    // malformed responses remain a hard fail-closed outcome.
+    if (!parsed && !input.signal?.aborted) parsed = await reviewOnce(true);
   } catch (err) {
     return {
       scores: empty,
@@ -172,7 +381,6 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
     };
   }
 
-  const parsed = extractJson(raw);
   if (!parsed) {
     return {
       scores: empty,
@@ -197,28 +405,65 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
   };
 
   const reportedRequired = Array.isArray(parsed.requiredPresent)
-    ? parsed.requiredPresent.map((r: { requirement?: unknown; present?: unknown }) => ({
+    ? parsed.requiredPresent.map((r: { requirement?: unknown; present?: unknown; evidence?: unknown }) => ({
         requirement: String(r?.requirement ?? ""),
         present: r?.present === true,
+        evidence: hasEvidence(r?.evidence) ? r.evidence.trim() : "",
       }))
     : [];
   // The critic is instructed to report every item in order. Rebuild the
   // result from the server-owned list so omitting three difficult
   // requirements and returning one easy true can never become a pass.
-  const requiredPresent = reviewRequirements.map((requirement, index) => {
-    const exact = reportedRequired.find(
+  const requiredPresent = reviewRequirements.map((requirement) => {
+    const matching = reportedRequired.filter(
       (reported) => reported.requirement.trim().toLowerCase() === requirement.trim().toLowerCase(),
     );
-    const reported = exact ?? reportedRequired[index];
-    return { requirement, present: reported?.present === true };
+    const reported = matching.length === 1 ? matching[0] : undefined;
+    return { requirement, present: reported?.present === true && (reviewMode !== "teaser" || hasEvidence(reported.evidence)),
+      ...(reviewMode === "teaser" ? { evidence: reported?.evidence ?? "" } : {}) };
   });
+  const dimensionEvidence = reviewMode === "teaser"
+    ? Object.fromEntries(Object.keys(scores).map((key) => [key,
+        hasEvidence(parsed.dimensionEvidence?.[key]) ? parsed.dimensionEvidence[key].trim() : "",
+      ])) as Record<keyof VisionScores, string>
+    : undefined;
   const excludedFound = Array.isArray(parsed.excludedFound)
     ? parsed.excludedFound.filter((e: unknown): e is string => typeof e === "string" && e.trim().length > 0)
     : [];
+  const teaserChecks = reviewMode === "teaser"
+    ? {
+        milestone: {
+          required: Boolean(milestoneRequirement),
+          evidence: typeof parsed.teaserChecks?.milestone?.evidence === "string"
+            ? parsed.teaserChecks.milestone.evidence
+            : "",
+          correct: milestoneRequirement
+            ? parsed.teaserChecks?.milestone?.correct === true
+            : true,
+        },
+        identity: {
+          required: Boolean(identityExpectation),
+          evidence: typeof parsed.teaserChecks?.identity?.evidence === "string"
+            ? parsed.teaserChecks.identity.evidence
+            : "",
+          accurate: parsed.teaserChecks?.identity?.accurate === true,
+        },
+        purchase: {
+          evidence: typeof parsed.teaserChecks?.purchase?.evidence === "string"
+            ? parsed.teaserChecks.purchase.evidence
+            : "",
+          wouldCreatePurchaseDesire:
+            parsed.teaserChecks?.purchase?.wouldCreatePurchaseDesire === true,
+        },
+      }
+    : undefined;
 
   const failureCodes: string[] = [];
+  const scoreFloor = reviewMode === "teaser" ? TEASER_MIN_DIMENSION_SCORE : MIN_DIMENSION_SCORE;
   for (const key of Object.keys(scores) as (keyof VisionScores)[]) {
-    if (scores[key] < MIN_DIMENSION_SCORE) failureCodes.push(CODE_FOR_DIMENSION[key]);
+    if (scores[key] < scoreFloor || (dimensionEvidence && !hasEvidence(dimensionEvidence[key]))) {
+      failureCodes.push(CODE_FOR_DIMENSION[key]);
+    }
   }
   // A missing concrete VISIBLE MUST-HAVE is a failure even if every
   // dimension scored well. Holistic theme/age requirements stay governed by
@@ -231,6 +476,13 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
     failureCodes.push("brief-fidelity");
   }
   if (excludedFound.length > 0) failureCodes.push("excluded-present");
+  if (teaserChecks) {
+    if (teaserChecks.milestone.required && (!teaserChecks.milestone.correct || !hasEvidence(teaserChecks.milestone.evidence))) {
+      failureCodes.push("brief-fidelity", "age-appropriate");
+    }
+    if (!teaserChecks.identity.accurate || !hasEvidence(teaserChecks.identity.evidence)) failureCodes.push("brief-fidelity");
+    if (!teaserChecks.purchase.wouldCreatePurchaseDesire || !hasEvidence(teaserChecks.purchase.evidence)) failureCodes.push("premium-feel");
+  }
 
   return {
     scores,
@@ -242,6 +494,8 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
     unavailable: false,
     durationMs: Date.now() - started,
     usage,
+    teaserChecks,
+    dimensionEvidence,
   };
 }
 

@@ -17,7 +17,7 @@ import {
   runTier1Checks,
   uniformBorderRingFraction,
 } from "../server/aiFirst/tier1";
-import { MIN_DIMENSION_SCORE, runVisionGate, visionCostUsd } from "../server/aiFirst/visionGate";
+import { MIN_DIMENSION_SCORE, runVisionGate, visibleReviewRequirementsForBrief, visionCostUsd } from "../server/aiFirst/visionGate";
 import {
   ARTWORK_EDGE_REQUIREMENT,
   ARTWORK_TEXT_REQUIREMENT,
@@ -138,6 +138,31 @@ describe("tier 1 — palette diagnostics", () => {
     expect(finding).toBeDefined();
     expect(finding?.critical).toBe(true);
     expect(result.passed).toBe(false);
+  });
+
+  it("does not apply invitation-only crop, type and overlay checks to a standalone teaser", () => {
+    const result = tier1(busyTypeRegionPng(), {
+      concept: concept({
+        minOverlay: "none",
+        placementId: "centre",
+        safeTypographyRegion: "center",
+        semanticPalette: {
+          textSurface: "#FFFFFF",
+          headlineColor: "#F2F2F2",
+          bodyColor: "#EFEFEF",
+          accentColor: "#EEEEEE",
+        },
+      }),
+      overlayCoverage: 0.9,
+      artworkOpacity: 0.2,
+      layoutApplied: false,
+    });
+    const found = result.findings.map((finding) => finding.code);
+    expect(found).not.toContain("crop-unsafe");
+    expect(found).not.toContain("quiet-region");
+    expect(found).not.toContain("text-contrast");
+    expect(found).not.toContain("overlay-coverage");
+    expect(found).not.toContain("layout-opacity");
   });
 });
 
@@ -337,6 +362,21 @@ const allFive = {
   ageAppropriate: 5,
 };
 
+const passingDimensionEvidence = {
+  textLogoWatermarkFree: "No typography or brand marks in foreground or background.",
+  artifactFree: "Figures have clean anatomy and coherent ground contact.",
+  premiumFinish: "Purposeful layered illustration, controlled highlights and brushwork.",
+  briefFidelity: "The scene visibly delivers the requested world and activities.",
+  compositionQuality: "All lead subjects are complete within the frame.",
+  ageAppropriate: "Playful family-audience treatment without mature content.",
+};
+
+const passingTeaserChecks = {
+  milestone: { evidence: "No exact count is required.", correct: true },
+  identity: { evidence: "The requested event world is specific and accurate.", accurate: true },
+  purchase: { evidence: "The finish is distinctive and premium.", wouldCreatePurchaseDesire: true },
+};
+
 const runVision = (body: Record<string, unknown>, over: Partial<EventBrief> = {}) =>
   runVisionGate({
     bytes: artworkPng(),
@@ -352,6 +392,55 @@ const runVision = (body: Record<string, unknown>, over: Partial<EventBrief> = {}
   });
 
 describe("tier 2 — acceptance", () => {
+  it.each([5.9, 6, "5", null])("rejects malformed score %s instead of clamping it to a pass", async (value) => {
+    expect((await runVision({ artifactFree: value })).passed).toBe(false);
+  });
+
+  it("does not recycle a reordered checklist answer for an omitted requirement", async () => {
+    const verdict = await runVision({ requiredPresent: [{ requirement: "bubbles", present: true }] }, {
+      requirements: { required: ["[VISIBLE HOST DETAIL] ice cream", "[VISIBLE HOST DETAIL] bubbles"], preferred: [], excluded: [] },
+    });
+    expect(verdict.requiredPresent).toEqual([
+      { requirement: "ice cream", present: false }, { requirement: "bubbles", present: true },
+    ]);
+    expect(verdict.passed).toBe(false);
+  });
+
+  it("rejects conflicting duplicate checklist answers", async () => {
+    const verdict = await runVision({ requiredPresent: [{ requirement: "bubbles", present: true }, { requirement: "bubbles", present: false }] }, {
+      requirements: { required: ["[VISIBLE HOST DETAIL] bubbles"], preferred: [], excluded: [] },
+    });
+    expect(verdict.passed).toBe(false);
+  });
+
+  it.each(["dimensionEvidence", "identity", "purchase", "requirement"])("keeps unsupported 5/5 teaser private when %s evidence is missing", async (missing) => {
+    const verdict = await runVisionGate({ bytes: artworkPng(), concept: concept(), reviewMode: "teaser",
+      brief: brief({ requirements: { required: ["[VISIBLE HOST DETAIL] bubbles"], preferred: [], excluded: [] } }),
+      client: critic({ ...allFive, excludedFound: [], notes: "",
+        requiredPresent: [{ requirement: "bubbles", present: true, evidence: missing === "requirement" ? " " : "Visible in the upper foreground" }],
+        dimensionEvidence: missing === "dimensionEvidence" ? {} : passingDimensionEvidence,
+        teaserChecks: { ...passingTeaserChecks,
+          ...(missing === "identity" ? { identity: { accurate: true, evidence: " " } } : {}),
+          ...(missing === "purchase" ? { purchase: { wouldCreatePurchaseDesire: true, evidence: " " } } : {}),
+        },
+      }),
+    });
+    expect(verdict.passed).toBe(false);
+  });
+
+  it("fails closed on a token-truncated response even when its visible JSON looks complete", async () => {
+    let calls = 0;
+    const verdict = await runVisionGate({ bytes: artworkPng(), concept: concept(), brief: brief(), client: {
+      messages: { create: async () => { calls += 1; return { stop_reason: "max_tokens",
+        content: [{ type: "text", text: JSON.stringify({ ...allFive, requiredPresent: [], excludedFound: [], notes: "" }) }],
+        usage: { input_tokens: 10, output_tokens: 700 } }; } },
+    } as unknown as Anthropic });
+    expect(calls).toBe(2);
+    expect(verdict.unavailable).toBe(true);
+    expect(verdict.passed).toBe(false);
+    expect(verdict.usage.outputTokens).toBe(1400);
+  });
+
   it("passes only when every dimension is at least 4", async () => {
     expect(MIN_DIMENSION_SCORE).toBe(4);
     expect((await runVision({})).passed).toBe(true);
@@ -400,6 +489,34 @@ describe("tier 2 — acceptance", () => {
     const verdict = await runVision(
       { requiredPresent: visible.map((requirement, index) => ({ requirement, present: index !== 0 })) },
       construction,
+    );
+    expect(verdict.passed).toBe(false);
+    expect(verdict.failureCodes).toContain("brief-fidelity");
+  });
+
+  it("turns teaser milestone, named-identity and host-detail contracts into binary must-haves", async () => {
+    const teaser = brief({
+      requirements: {
+        required: [
+          "[VISIBLE MILESTONE] exactly four separate unnumbered birthday candles",
+          "[VISIBLE NAMED IDENTITY] Meekah is unmistakably recognizable as the requested co-host",
+          "[VISIBLE HOST DETAIL] floating bubbles and colorful ice-cream treats",
+        ],
+        preferred: [],
+        excluded: [],
+      },
+    });
+    const visible = visibleReviewRequirementsForBrief(teaser);
+    expect(visible).toEqual([
+      "exactly four separate unnumbered birthday candles",
+      "Meekah is unmistakably recognizable as the requested co-host",
+      "floating bubbles and colorful ice-cream treats",
+    ]);
+    const verdict = await runVision(
+      {
+        requiredPresent: visible.map((requirement, index) => ({ requirement, present: index !== 0 })),
+      },
+      teaser,
     );
     expect(verdict.passed).toBe(false);
     expect(verdict.failureCodes).toContain("brief-fidelity");
@@ -483,6 +600,148 @@ describe("tier 2 — acceptance", () => {
     expect(reviewText).toContain("left 21%, top 32%, width 58%, height 40%");
     expect(reviewText).toContain("FINAL TYPE PROTECTION: veil (88% local surface opacity)");
     expect(reviewText).toContain("no face, person, hero object or required subject");
+  });
+
+  it("reviews a teaser as exact standalone pixels without inventing a live type box", async () => {
+    let reviewText = "";
+    let systemText = "";
+    let outputConfig: any;
+    const capturingCritic = {
+      messages: {
+        create: async (request: any) => {
+          systemText = request.system;
+          outputConfig = request.output_config;
+          reviewText = request.messages[0].content.find((part: any) => part.type === "text")?.text ?? "";
+          return {
+            content: [{
+              type: "text",
+              text: JSON.stringify({
+                ...allFive,
+                requiredPresent: [],
+                excludedFound: [],
+                teaserChecks: passingTeaserChecks,
+                dimensionEvidence: passingDimensionEvidence,
+                notes: "",
+              }),
+            }],
+            usage: { input_tokens: 1200, output_tokens: 180 },
+          };
+        },
+      },
+    } as unknown as Anthropic;
+
+    const verdict = await runVisionGate({
+      bytes: artworkPng(),
+      concept: concept({ minOverlay: "none" }),
+      brief: brief(),
+      client: capturingCritic,
+      reviewMode: "teaser",
+    });
+
+    expect(verdict.passed).toBe(true);
+    expect(systemText).toContain("exact final pixels");
+    expect(systemText).toContain("no browser crop");
+    expect(systemText).toContain("exact count must match the stated number exactly");
+    expect(systemText).toContain("weak named identity");
+    expect(systemText).toContain("requires 5 in every dimension");
+    expect(systemText).toContain("count each visible item one by one");
+    expect(reviewText).toContain("FINAL CUSTOMER SURFACE");
+    expect(reviewText).toContain("TEASER PASS/FAIL CHECKS");
+    expect(reviewText).toContain("would these exact pixels");
+    expect(reviewText).not.toContain("LIVE TYPOGRAPHY BOX");
+    expect(reviewText).not.toContain("FINAL TYPE PROTECTION");
+    expect(outputConfig?.format?.type).toBe("json_schema");
+    expect(outputConfig?.format?.schema?.required).toContain("teaserChecks");
+    expect(outputConfig?.format?.schema?.additionalProperties).toBe(false);
+  });
+
+  it("holds a merely professional 4/5 teaser private even though invitation review accepts 4/5", async () => {
+    const teaser = await runVisionGate({
+      bytes: artworkPng(),
+      concept: concept({ minOverlay: "none" }),
+      brief: brief(),
+      client: critic({
+        ...allFive,
+        premiumFinish: 4,
+        requiredPresent: [],
+        excludedFound: [],
+        teaserChecks: passingTeaserChecks,
+        dimensionEvidence: passingDimensionEvidence,
+        notes: "Professional, but not exceptional.",
+      }),
+      reviewMode: "teaser",
+    });
+    const invitation = await runVision({ premiumFinish: 4 });
+
+    expect(teaser.passed).toBe(false);
+    expect(teaser.failureCodes).toContain("premium-feel");
+    expect(invitation.passed).toBe(true);
+  });
+
+  it("rejects a wrong physical milestone count even when the critic scores every dimension 5", async () => {
+    const milestoneBrief = brief({
+      milestone: "4th",
+      themeName: "Blippi + Meekah",
+      requirements: {
+        required: [
+          "a clear non-text 4th birthday cue using four separate unnumbered birthday candles or an equally explicit physical count",
+        ],
+        preferred: [],
+        excluded: [],
+      },
+    });
+    const verdict = await runVisionGate({
+      bytes: artworkPng(),
+      concept: concept({ minOverlay: "none" }),
+      brief: milestoneBrief,
+      client: critic({
+        ...allFive,
+        requiredPresent: [],
+        excludedFound: [],
+        teaserChecks: {
+          ...passingTeaserChecks,
+          milestone: { evidence: "Six candles are visible.", correct: false },
+        },
+        notes: "The candle count contradicts the fourth-birthday brief.",
+      }),
+      reviewMode: "teaser",
+    });
+
+    expect(verdict.passed).toBe(false);
+    expect(verdict.failureCodes).toEqual(expect.arrayContaining(["brief-fidelity", "age-appropriate"]));
+    expect(verdict.teaserChecks?.milestone).toEqual(expect.objectContaining({
+      required: true,
+      evidence: "Six candles are visible.",
+      correct: false,
+    }));
+  });
+
+  it("rejects palette-only named characters and stock-promo purchase desire", async () => {
+    const namedBrief = brief({
+      themeName: "Blippi + Meekah",
+      requirements: { required: [], preferred: [], excluded: [] },
+    });
+    const verdict = await runVisionGate({
+      bytes: artworkPng(),
+      concept: concept({ minOverlay: "none" }),
+      brief: namedBrief,
+      client: critic({
+        ...allFive,
+        requiredPresent: [],
+        excludedFound: [],
+        teaserChecks: {
+          milestone: { evidence: "No exact count required.", correct: true },
+          identity: { evidence: "Meekah is only suggested by purple clothing.", accurate: false },
+          purchase: { evidence: "The scene feels like a stock promo.", wouldCreatePurchaseDesire: false },
+        },
+        notes: "Generic adjacent identity and synthetic promo finish.",
+      }),
+      reviewMode: "teaser",
+    });
+
+    expect(verdict.passed).toBe(false);
+    expect(verdict.failureCodes).toEqual(expect.arrayContaining(["brief-fidelity", "premium-feel"]));
+    expect(verdict.teaserChecks?.identity.required).toBe(true);
   });
 
   it("reviews a paper-panel concept as the final protected card without hiding required subjects", async () => {
@@ -574,14 +833,47 @@ describe("tier 2 — acceptance", () => {
   });
 
   it("is never a silent pass when the critic returns unparseable prose", async () => {
+    let calls = 0;
     const verdict = await runVisionGate({
       bytes: artworkPng(),
       concept: concept(),
       brief: brief(),
-      client: { messages: { create: async () => ({ content: [{ type: "text", text: "looks nice!" }], usage: {} }) } } as unknown as Anthropic,
+      client: { messages: { create: async () => {
+        calls += 1;
+        return { content: [{ type: "text", text: "looks nice!" }], usage: {} };
+      } } } as unknown as Anthropic,
     });
+    expect(calls).toBe(2);
     expect(verdict.unavailable).toBe(true);
     expect(verdict.passed).toBe(false);
+  });
+
+  it("retries one malformed critic response and accepts only a valid ordinary verdict", async () => {
+    let calls = 0;
+    const valid = {
+      ...allFive,
+      requiredPresent: [],
+      excludedFound: [],
+      notes: "clean repair",
+    };
+    const verdict = await runVisionGate({
+      bytes: artworkPng(),
+      concept: concept(),
+      brief: brief(),
+      client: { messages: { create: async () => {
+        calls += 1;
+        return {
+          content: [{ type: "text", text: calls === 1 ? "The image is excellent." : JSON.stringify(valid) }],
+          usage: { input_tokens: 10, output_tokens: 5 },
+        };
+      } } } as unknown as Anthropic,
+    });
+
+    expect(calls).toBe(2);
+    expect(verdict.unavailable).toBe(false);
+    expect(verdict.passed).toBe(true);
+    expect(verdict.notes).toBe("clean repair");
+    expect(verdict.usage).toEqual({ inputTokens: 20, outputTokens: 10 });
   });
 
   it("prices the critic call for the ledger", () => {

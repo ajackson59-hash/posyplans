@@ -407,7 +407,8 @@ export function namedReferenceAutoResolutionEnabled(
   if (["1", "true", "yes", "on"].includes(configured || "")) return true;
   if (["0", "false", "no", "off"].includes(configured || "")) return false;
   return env.VERCEL_ENV === "preview"
-    && env.VERCEL_GIT_COMMIT_REF === "fix/launch-qa-find-my-event-label";
+    && ["fix/launch-qa-find-my-event-label", "codex/launch-blockers"]
+      .includes(env.VERCEL_GIT_COMMIT_REF || "");
 }
 
 export async function resolveNamedCreativeReference(

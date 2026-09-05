@@ -36,6 +36,31 @@ import { DEFAULT_ARTWORK_MODEL, type ArtworkModel, type ArtworkQuality, type Art
 
 export type ArtworkAttemptStatus = "accepted" | "rejected";
 
+export interface ArtworkReviewEvidence {
+  version: 1;
+  /** Identifies the exact customer-visible bytes reviewed, NOT the retained source. */
+  reviewedAssetHash: string | null;
+  verdict: VisionVerdict | null;
+  generationDurationMs: number;
+  reviewError?: string;
+}
+
+/** Backward-compatible envelope in the existing JSON column; no schema migration. */
+export function encodeAttemptVision(scores: VisionVerdict["scores"] | null, evidence?: ArtworkReviewEvidence | null): string | null {
+  return evidence ? JSON.stringify({ version: 1, scores, reviewEvidence: evidence })
+    : scores ? JSON.stringify(scores) : null;
+}
+
+export function decodeAttemptVision(json: string | null): {
+  visionScores: VisionVerdict["scores"] | null; reviewEvidence: ArtworkReviewEvidence | null;
+} {
+  if (!json) return { visionScores: null, reviewEvidence: null };
+  const parsed = JSON.parse(json);
+  return parsed?.version === 1
+    ? { visionScores: parsed.scores ?? null, reviewEvidence: parsed.reviewEvidence ?? null }
+    : { visionScores: parsed, reviewEvidence: null };
+}
+
 export interface ArtworkAttemptRecord {
   /** Stable id for this row, used by the per-attempt binary asset route. */
   id: string;
@@ -54,6 +79,7 @@ export interface ArtworkAttemptRecord {
   failureCodes: string[];
   tier1Findings: Tier1Finding[];
   visionScores: VisionVerdict["scores"] | null;
+  reviewEvidence?: ArtworkReviewEvidence | null;
   model: ArtworkModel;
   quality: ArtworkQuality;
   /** Null only for evidence written before provider provenance was added. */
@@ -76,6 +102,7 @@ export interface ArtworkAttemptInput {
   failureCodes: string[];
   tier1Findings: Tier1Finding[];
   visionScores: VisionVerdict["scores"] | null;
+  reviewEvidence?: ArtworkReviewEvidence | null;
   model?: ArtworkModel;
   quality?: ArtworkQuality;
   size?: ArtworkSize | null;
@@ -117,6 +144,7 @@ export class InMemoryArtworkAttemptStore implements AiFirstArtworkAttemptStore {
       failureCodes: input.failureCodes,
       tier1Findings: input.tier1Findings,
       visionScores: input.visionScores,
+      reviewEvidence: input.reviewEvidence ?? null,
       model: input.model ?? DEFAULT_ARTWORK_MODEL,
       quality: input.quality ?? "high",
       size: input.size ?? null,

@@ -55,6 +55,7 @@ import {
   type ConceptOnlyProofResult,
 } from "./conceptOnlyProof";
 import { extractInspirationNotes } from "../inviteDesignAi";
+import { customerVisiblePreviewBytes } from "../prePaymentPreviewQuality";
 import { runTier1Checks } from "./tier1";
 import { runVisionGate, type VisionGateInput, type VisionVerdict } from "./visionGate";
 import { briefForHostDirection } from "./conceptPreflight";
@@ -147,6 +148,27 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
   const gated = (handler: (req: Request, res: Response) => Promise<void> | void) => {
     return async (req: Request, res: Response) => {
       if (!flags().aiFirstInvitations) {
+        res.status(404).json({ error: "Not found" });
+        return;
+      }
+      await handler(req, res);
+    };
+  };
+
+  /**
+   * The named pre-payment canary intentionally runs while the broader
+   * AI-first invitation flag remains off. Its retained evidence still needs
+   * the same owner-scoped audit/recheck surface on the two certified Preview
+   * branches; otherwise paid pixels can be retained but never reviewed.
+   * Everywhere else keeps the existing AI-first flag boundary.
+   */
+  const retainedEvidenceGated = (handler: (req: Request, res: Response) => Promise<void> | void) => {
+    return async (req: Request, res: Response) => {
+      const environment = env();
+      const certifiedNamedPreview = environment.VERCEL_ENV === "preview"
+        && ["fix/launch-qa-find-my-event-label", "codex/launch-blockers"]
+          .includes(environment.VERCEL_GIT_COMMIT_REF || "");
+      if (!flags().aiFirstInvitations && !certifiedNamedPreview) {
         res.status(404).json({ error: "Not found" });
         return;
       }
@@ -852,7 +874,7 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
    */
   app.get(
     "/api/events/owner/:ownerToken/ai-first/review/attempts",
-    gated(async (req, res) => {
+    retainedEvidenceGated(async (req, res) => {
       const ownerToken = String(req.params.ownerToken);
       const event = await deps.storage.getEventByOwnerToken(ownerToken);
       if (!event) {
@@ -877,6 +899,7 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
           failureCodes: row.failureCodes,
           tier1Findings: row.tier1Findings,
           visionScores: row.visionScores,
+          reviewEvidence: row.reviewEvidence ?? null,
           model: row.model,
           quality: row.quality,
           size: row.size,
@@ -897,7 +920,7 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
    */
   app.get(
     "/api/events/owner/:ownerToken/ai-first/review/attempts/:id/asset",
-    gated(async (req, res) => {
+    retainedEvidenceGated(async (req, res) => {
       const ownerToken = String(req.params.ownerToken);
       const event = await deps.storage.getEventByOwnerToken(ownerToken);
       if (!event) {
@@ -934,7 +957,7 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
    */
   app.post(
     "/api/events/owner/:ownerToken/ai-first/review/attempts/:id/recheck",
-    gated(async (req, res) => {
+    retainedEvidenceGated(async (req, res) => {
       const ownerToken = String(req.params.ownerToken);
       const event = await deps.storage.getEventByOwnerToken(ownerToken);
       if (!event) {
@@ -1002,12 +1025,27 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
         return;
       }
 
-      const repair = validateLayoutBeforeGeneration(row.concept);
+      let reviewedBytes: Buffer;
+      try {
+        reviewedBytes = customerVisiblePreviewBytes(bytes);
+      } catch (error) {
+        res.status(422).json({
+          error: `The retained artwork could not be prepared for customer review: ${error instanceof Error ? error.message : String(error)}`,
+          denial: "retained-artwork-preview-unavailable",
+          imageProviderCalls: 0,
+          billedArtworkAttempts: 0,
+        });
+        return;
+      }
+
       const tier1 = runTier1Checks({
-        bytes,
+        // Match the pre-payment path exactly: judge the standalone 560px
+        // teaser customers receive, without invitation text-placement rules.
+        bytes: reviewedBytes,
         concept: row.concept,
-        overlayCoverage: OVERLAY_COVERAGE[repair.overlay],
-        artworkOpacity: repair.artworkOpacity ?? 1,
+        overlayCoverage: OVERLAY_COVERAGE[row.concept.minOverlay],
+        artworkOpacity: 1,
+        layoutApplied: false,
         ocr: env().NODE_ENV === "production",
       });
       if (!tier1.passed) {
@@ -1037,9 +1075,10 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
       const direction = [row.concept.conceptName, row.concept.description, row.concept.art.prompt].join(" ");
       const effectiveBrief = briefForHostDirection(baseBrief, direction);
       const vision = await (deps.reviewRetainedArtwork ?? runVisionGate)({
-        bytes,
+        bytes: reviewedBytes,
         concept: row.concept,
         brief: effectiveBrief,
+        reviewMode: "teaser",
       });
       if (vision.unavailable) {
         res.status(503).json({
