@@ -913,12 +913,14 @@ export interface PreviewQualityDependencies {
   /** Two initial internal candidates maximum; neither is customer-visible before approval. */
   maxCandidates?: 1 | 2;
   /**
-   * Text-first named previews may privately render both candidates at once,
-   * then quality-review both and choose the stronger approved result. When
-   * neither passes but one is a verified near-pass, one high-fidelity targeted
-   * correction may follow. Broad failures stop after the original pair.
+   * Text-first previews render both candidates at once. The first full pass is
+   * stable: the sibling may finish for private evidence but cannot replace it.
    */
   parallelCandidates?: boolean;
+  /** Publish a full-resolution pass while the sibling is still being reviewed. */
+  onApproved?: (result: Extract<QualityLockedPreviewResult, { kind: "approved-image" }>) => Promise<void>;
+  /** Explicit research-only budget. Customer first looks never enable a third render. */
+  allowTargetedCorrection?: boolean;
   /**
    * When provided, every billed candidate — accepted or rejected — is
    * durably recorded for protected owner-scoped review, matching the main
@@ -1045,7 +1047,7 @@ export async function generateQualityLockedPreview(
   // Named entertainment worlds are the hardest pre-payment images: identity,
   // scene fidelity and artifact-free character integration all have to pass at
   // once. Spend the higher render tier only there; generic previews remain on
-  // medium. Named previews allow two candidates and one eligible correction.
+  // medium. Customer named previews allow two candidates, without serial repair.
   const quality = dependencies.quality ?? (referenceLed || namedReference ? "high" : "medium");
   const retainUnreviewable = async (
     generated: Awaited<ReturnType<ArtworkGenerator>>, attempt: number, model: ArtworkModel,
@@ -1096,6 +1098,26 @@ export async function generateQualityLockedPreview(
       sourceBytes?: Buffer;
       review?: PreviewQualityReview;
       error?: string;
+    };
+    let firstApproved: ParallelOutcome | undefined;
+    const publishFirstApproved = async (outcome: ParallelOutcome): Promise<void> => {
+      if (!outcome.passed || !outcome.sourceBytes || firstApproved || dependencies.signal?.aborted) return;
+      // Claim synchronously, before the first await. Two simultaneous passes
+      // must never publish two different assets or swap art after checkout.
+      firstApproved = outcome;
+      try {
+        await dependencies.onApproved?.({
+          kind: "approved-image",
+          dataUrl: `data:image/png;base64,${outcome.sourceBytes.toString("base64")}`,
+          attempts: 2,
+          model: outcome.model,
+          reviews: outcome.review ? [outcome.review] : [],
+        });
+      } catch {
+        // The final return still carries this exact winner so the caller can
+        // retry persistence, without choosing a different sibling image.
+        console.error("[prepayment-preview] early approved-image publication failed");
+      }
     };
 
     const prompts = namedReference
@@ -1246,7 +1268,9 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
         }
       }
 
-      return { candidate, model, passed, sourceBytes: generated.bytes, review };
+      const outcome = { candidate, model, passed, sourceBytes: generated.bytes, review };
+      await publishFirstApproved(outcome);
+      return outcome;
     };
 
     const outcomes = await Promise.all([
@@ -1255,7 +1279,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
     ]);
     reviews.push(...outcomes.flatMap((outcome) => outcome.review ? [outcome.review] : []));
 
-    const approved = outcomes
+    const approved = firstApproved ?? outcomes
       .filter((outcome): outcome is ParallelOutcome & { sourceBytes: Buffer; review: PreviewQualityReview } =>
         outcome.passed && Boolean(outcome.sourceBytes) && Boolean(outcome.review?.vision),
       )
@@ -1265,7 +1289,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
         return weightedVisionScore(bv) - weightedVisionScore(av);
       })[0];
 
-    if (approved) {
+    if (approved?.sourceBytes && !dependencies.signal?.aborted) {
       return {
         kind: "approved-image",
         // The gate inspected the exact 560px teaser transform, but paid reuse
@@ -1287,7 +1311,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
         weightedVisionScore(b.review.vision!.scores) - weightedVisionScore(a.review.vision!.scores),
       )[0];
 
-    if (strongestNearPass && !dependencies.signal?.aborted) {
+    if (dependencies.allowTargetedCorrection === true && strongestNearPass && !dependencies.signal?.aborted) {
       // A high-fidelity edit is useful for a clean image that only needs
       // framing or prominence adjusted. It is the wrong tool for visible
       // artifacts or synthetic material finish: live canaries proved that it

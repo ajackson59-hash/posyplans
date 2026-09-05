@@ -198,6 +198,8 @@ export default function DraftGenerating() {
     ),
     enabled: !!ownerToken,
     retry: false,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     refetchInterval: (query) => {
       const current = query.state.data as PrePaymentPreviewReadiness | undefined;
       return current?.generationState === "generating"
@@ -394,7 +396,10 @@ export default function DraftGenerating() {
   // silently above the fold.
   useEffect(() => {
     const restorePreview = () => {
-      if (document.visibilityState !== "visible") return;
+      if (document.visibilityState !== "visible" || !ownerToken) return;
+      // iOS bfcache/app suspension can outlive polling. Refresh status only;
+      // never repeat the generation POST or incur a new image charge.
+      void previewReadiness.refetch();
       if (previewInProgress || previewReady || previewImageLoaded) {
         bringPreviewIntoView("auto");
       }
@@ -405,7 +410,7 @@ export default function DraftGenerating() {
       document.removeEventListener("visibilitychange", restorePreview);
       window.removeEventListener("pageshow", restorePreview);
     };
-  }, [bringPreviewIntoView, previewImageLoaded, previewInProgress, previewReady]);
+  }, [bringPreviewIntoView, ownerToken, previewReadiness.refetch, previewImageLoaded, previewInProgress, previewReady]);
 
   const previewIsVisible = previewReady && previewImageLoaded;
   const previewCouldNotBeShown = startPrePaymentPreview.isError || (previewReady && previewImageFailed);

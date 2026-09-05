@@ -421,7 +421,7 @@ describe("prepayment preview quality lock", () => {
     expect(svg).toContain(".foot { font: 700 18px");
   });
 
-  it("renders two private text-first candidates in parallel and returns only the stronger approved result", async () => {
+  it("renders two private text-first candidates in parallel and returns an approved result", async () => {
     let started = 0;
     let release!: () => void;
     const bothStarted = new Promise<void>((resolve) => { release = resolve; });
@@ -473,6 +473,65 @@ describe("prepayment preview quality lock", () => {
     expect(readPngSize(approvedBytes)).toEqual({ width: 1260, height: 2240 });
   });
 
+  it("publishes the first full pass before its sibling settles and never swaps the winning source", async () => {
+    let finishSibling!: () => void;
+    const sibling = new Promise<void>((resolve) => { finishSibling = resolve; });
+    let published!: () => void;
+    const publishedSignal = new Promise<void>((resolve) => { published = resolve; });
+    let calls = 0;
+    const generateImage = vi.fn(async () => {
+      const fill = ++calls;
+      if (fill === 1) await sibling;
+      const bytes = generatedPng(fill);
+      return { bytes, dataUrl: "ignored", durationMs: 10 };
+    });
+    const onApproved = vi.fn(async (result) => {
+      expect(decodePng(Buffer.from(result.dataUrl.split(",")[1], "base64")).rgb[0]).toBe(2);
+      published();
+    });
+    let settled = false;
+    const running = generateQualityLockedPreview(event, {
+      generateImage, runTier1: () => tier1(), runVision: async () => vision(true),
+      parallelCandidates: true, maxCandidates: 2, onApproved,
+    }).then((result) => { settled = true; return result; });
+    await publishedSignal;
+    expect(settled).toBe(false);
+    expect(onApproved).toHaveBeenCalledTimes(1);
+    finishSibling();
+    const result = await running;
+    expect(onApproved).toHaveBeenCalledTimes(1);
+    if (result.kind !== "approved-image") throw new Error("expected pass");
+    expect(decodePng(Buffer.from(result.dataUrl.split(",")[1], "base64")).rgb[0]).toBe(2);
+    expect(result.reviews).toHaveLength(2);
+  });
+
+  it("never starts an automatic third render even when both candidates are near-passes", async () => {
+    const generateImage = vi.fn(async () => ({ bytes: generatedPng(3), dataUrl: "ignored", durationMs: 10 }));
+    const onApproved = vi.fn();
+    const result = await generateQualityLockedPreview(event, {
+      generateImage, runTier1: () => tier1(), runVision: async () => nearPassVision("Local seam."),
+      parallelCandidates: true, maxCandidates: 2, onApproved,
+    });
+    expect(result.kind).toBe("rejected");
+    expect(generateImage).toHaveBeenCalledTimes(2);
+    expect(onApproved).not.toHaveBeenCalled();
+  });
+
+  it("does not publish a review that arrives after cancellation", async () => {
+    const controller = new AbortController();
+    const onApproved = vi.fn();
+    const generateImage = vi.fn(async () => ({ bytes: generatedPng(4), dataUrl: "ignored", durationMs: 10 }));
+    await generateQualityLockedPreview(event, {
+      generateImage, runTier1: () => tier1(), runVision: async () => {
+        controller.abort();
+        return vision(true);
+      },
+      parallelCandidates: true, maxCandidates: 2, onApproved, signal: controller.signal,
+    });
+    expect(onApproved).not.toHaveBeenCalled();
+    expect(generateImage).toHaveBeenCalledTimes(2);
+  });
+
   it("rebuilds an artifact or premium near-pass independently and rechecks the exact teaser pixels", async () => {
     let call = 0;
     const retained: Array<Record<string, unknown>> = [];
@@ -519,6 +578,7 @@ describe("prepayment preview quality lock", () => {
       runVision: runVision as never,
       maxCandidates: 2,
       parallelCandidates: true,
+      allowTargetedCorrection: true,
       attemptRetention: {
         store: attemptStore as never,
         eventId: event.id,
@@ -589,6 +649,7 @@ describe("prepayment preview quality lock", () => {
       runVision: runVision as never,
       maxCandidates: 2,
       parallelCandidates: true,
+      allowTargetedCorrection: true,
     });
 
     expect(result.kind).toBe("approved-image");
@@ -624,6 +685,7 @@ describe("prepayment preview quality lock", () => {
       runVision: runVision as never,
       maxCandidates: 2,
       parallelCandidates: true,
+      allowTargetedCorrection: true,
     });
 
     expect(result.kind).toBe("rejected");

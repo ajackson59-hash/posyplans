@@ -68,6 +68,28 @@ beforeEach(() => {
 });
 
 describe("DraftGenerating pre-payment preview", () => {
+  it("recovers an approved image on mobile pageshow without another generation or checkout", async () => {
+    let ready = false;
+    apiRequestJson.mockImplementation((method: string, url: string) => {
+      if (method === "GET" && url.endsWith("/prepayment-preview/readiness")) return Promise.resolve({
+        ready, kind: ready ? "approved-image" : "none", generationState: ready ? "ready" : "generating",
+        pollAfterMs: 60000, namedReference: null,
+      });
+      if (method === "GET" && url.endsWith("/master-planner/entitlement")) return Promise.resolve({
+        eventId: 94, freeDraftState: "none", emailCaptured: false, planTier: "spark", sparkUnlocked: false, canGenerate: false,
+      });
+      throw new Error(`Unexpected request: ${method} ${url}`);
+    });
+    renderPaywall();
+    await screen.findByTestId("prepayment-preview-progress-proof");
+    ready = true;
+    fireEvent(window, new Event("pageshow"));
+    await screen.findByTestId("img-prepayment-preview");
+    expect(callsTo(`/api/events/owner/${OWNER}/prepayment-preview`)).toHaveLength(0);
+    expect(callsTo("/api/checkout/create-session")).toHaveLength(0);
+    expect(callsTo(`/api/events/owner/${OWNER}/prepayment-preview/readiness`).length).toBeGreaterThanOrEqual(2);
+  });
+
   it("reveals the personalized preview before allowing a Spark checkout", async () => {
     const preview = deferred<{ ready: boolean }>();
     const checkout = deferred<{ url: string }>();

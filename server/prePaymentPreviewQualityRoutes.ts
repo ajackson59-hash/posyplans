@@ -68,6 +68,7 @@ export interface PrePaymentPreviewQualityStorage {
   getEventByOwnerToken(ownerToken: string): Promise<Event | undefined>;
   updateEventById(eventId: number, data: Partial<Event>): Promise<Event | undefined>;
   reservePrePaymentPreview(event: Event, startedAt: number): Promise<Event | undefined>;
+  completePrePaymentPreview(event: Event, data: Pick<Event, "prePaymentPreviewUrl" | "prePaymentPreviewUsedAt">): Promise<Event | undefined>;
 }
 
 export type PreviewBackgroundScheduler = (task: () => Promise<void>) => void;
@@ -104,12 +105,10 @@ type PreviewGenerationState = "idle" | "generating" | "ready" | "fallback";
 
 const QUALITY_APPROVED_PNG_PREFIX = "data:image/png;posy-quality-approved;base64,";
 const STANDARD_PNG_PREFIX = "data:image/png;base64,";
-// The direction card is returned immediately, so this is a background quality
-// budget rather than customer-blocking latency. Live medium renders took about
-// 55 seconds and a high render exceeded 115; preserve enough of Vercel's
-// 300-second function window for exact-pixel review and one source-locked
-// private correction, while retaining a final buffer for safe fallback writes.
-export const PREPAYMENT_PREVIEW_JOB_TIMEOUT_MS = 290_000;
+// Safety ceiling, NOT a claim of successful artwork latency. A prior high
+// render exceeded 115 seconds; reserve review headroom without permitting the
+// four-minute serial-repair path. The launch target remains a measured 90s.
+export const PREPAYMENT_PREVIEW_JOB_TIMEOUT_MS = 150_000;
 const GENERAL_CLASSIFIER_TIMEOUT_MS = 7_500;
 const REFERENCE_RESOLUTION_TIMEOUT_MS = 12_000;
 const BACKGROUND_STALE_MS = PREPAYMENT_PREVIEW_JOB_TIMEOUT_MS + 15_000;
@@ -264,15 +263,11 @@ async function persistDirectionCard(
   // already-awaited general-classifier result so the card correctly reflects
   // it instead of silently falling back to the generic card.
   const dataUrl = directionCardDataUrl(event, resolvedNamed);
-  const updated = await store.updateEventById(event.id, {
+  const updated = await store.completePrePaymentPreview(event, {
     prePaymentPreviewUrl: dataUrl,
     prePaymentPreviewUsedAt: timestamp,
   });
-  return updated ?? {
-    ...event,
-    prePaymentPreviewUrl: dataUrl,
-    prePaymentPreviewUsedAt: timestamp,
-  };
+  return updated ?? await store.getEventByOwnerToken(event.ownerToken) ?? event;
 }
 
 async function persistReferenceBoard(
@@ -282,15 +277,11 @@ async function persistReferenceBoard(
   timestamp: number,
 ): Promise<Event> {
   const dataUrl = await referenceBoardDataUrl(event, references);
-  const updated = await store.updateEventById(event.id, {
+  const updated = await store.completePrePaymentPreview(event, {
     prePaymentPreviewUrl: dataUrl,
     prePaymentPreviewUsedAt: timestamp,
   });
-  return updated ?? {
-    ...event,
-    prePaymentPreviewUrl: dataUrl,
-    prePaymentPreviewUsedAt: timestamp,
-  };
+  return updated ?? await store.getEventByOwnerToken(event.ownerToken) ?? event;
 }
 
 interface ReadinessResponse {
@@ -356,11 +347,11 @@ async function persistApprovedImage(
 ): Promise<boolean> {
   const approved = qualityApprovedDataUrl(dataUrl);
   if (!approved) return false;
-  await store.updateEventById(event.id, {
+  const updated = await store.completePrePaymentPreview(event, {
     prePaymentPreviewUrl: approved,
     prePaymentPreviewUsedAt: timestamp,
   });
-  return true;
+  return Boolean(updated);
 }
 
 interface AutomaticClassifiedJobDependencies {
@@ -399,6 +390,21 @@ async function runAutomaticNamedPreviewJob({
 }: AutomaticNamedJobDependencies): Promise<void> {
   const jobStartedAt = Date.now();
   const remainingMs = () => Math.max(1, jobTimeoutMs - (Date.now() - jobStartedAt));
+  const abortController = new AbortController();
+  let publication: Promise<boolean> | undefined;
+  const publishApproved = async (result: Extract<Awaited<ReturnType<typeof generateQualityLockedPreview>>, { kind: "approved-image" }>) => {
+    if (abortController.signal.aborted) return;
+    // One write owns the winner even while the sibling continues privately.
+    // A timeout must await this in-flight write before deciding on fallback.
+    publication ??= persistApprovedImage(store, event, result.dataUrl, now()).then((saved) => {
+      if (saved) console.info(`[prepayment-preview] ${JSON.stringify({
+        eventId: event.id, kind: "approved-image", phase: "first-approved",
+        timeToApprovedMs: Date.now() - jobStartedAt, model: result.model,
+      })}`);
+      return saved;
+    }).catch(() => false);
+    await publication;
+  };
   try {
     let resolved: ResolvedNamedReference | null = null;
     try {
@@ -422,7 +428,6 @@ async function runAutomaticNamedPreviewJob({
       return;
     }
 
-    const abortController = new AbortController();
     const generationTimeoutMs = remainingMs();
     const result = await withPreviewDeadline(
       generate(event, {
@@ -439,6 +444,8 @@ async function runAutomaticNamedPreviewJob({
         quality: "high",
         maxCandidates: 2,
         parallelCandidates: true,
+        allowTargetedCorrection: false,
+        onApproved: publishApproved,
         namedReference,
         attemptRetention: { store: artworkAttemptStore, eventId: event.id, ownerToken: event.ownerToken },
         signal: abortController.signal,
@@ -448,7 +455,9 @@ async function runAutomaticNamedPreviewJob({
       (error) => abortController.abort(error),
     );
 
+    if (await publication) return;
     if (result.kind === "approved-image"
+      && !abortController.signal.aborted
       && await persistApprovedImage(store, event, result.dataUrl, now())) {
       console.info(`[prepayment-preview] ${JSON.stringify({
         eventId: event.id,
@@ -476,6 +485,8 @@ async function runAutomaticNamedPreviewJob({
       rejectionSummary: summarizeRejectionForLog(result.reviews),
     })}`);
   } catch (error) {
+    // A slow/failed sibling cannot erase an image already approved and saved.
+    if (await publication) return;
     try {
       await persistDirectionCard(store, event, now(), namedReference);
     } catch (persistError) {
