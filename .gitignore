@@ -8,3 +8,5 @@ dist/
 .vercel
 .env.vercel
 .env.vercel.preview
+# Full-resolution source masters require private delivery, not public Git assets.
+/server/aiFirst/sceneAssets/**/source.png

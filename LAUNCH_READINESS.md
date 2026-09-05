@@ -51,6 +51,22 @@ No database schema migration, package upgrade or scheduled paid canary is added.
 
 ## Design-led prototype evidence and activation boundary
 
+### Owner-approved art direction
+
+The owner approved the construction gouache illustration's visual standard for
+original children's themes. `sceneAssets/construction-gouache-v1/manifest.json`
+records that precise scope and the original 1024×1536 master checksum. This
+approval is **style-only**, not a named-theme, arbitrary-brief, commercial,
+final-pixel or latency certification. The first source is one complete scene,
+not independently reusable layers.
+
+The private master is excluded from the published Git tree and public assets.
+`prepareSceneStyleSource` preserves its original bytes and produces the exact
+deterministic 373×560 teaser. CI verifies this contract with synthetic pixels;
+`tools/qa/verifySceneStyleSource.ts` separately checks the actual approved
+master, without provider calls. Private deployment storage must be configured
+before activating source reuse. Do not expose the master to satisfy CI.
+
 ### Private review integration (current closeout)
 
 `scenePreviewReview.ts` now connects the compositor to the existing deterministic
