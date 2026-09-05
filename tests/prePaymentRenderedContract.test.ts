@@ -32,5 +32,13 @@ describe("pre-payment rendered first-look contract", () => {
     expect(progressBranch).toMatch(/directionCard/);
     expect(progressBranch).toMatch(/headline|cues|eventName/);
     expect(progressBranch).toContain("Creating your personalized first look");
+    expect(progressBranch).toContain('role="status"');
+    expect(progressBranch).toContain("This can take several minutes");
+  });
+
+  it("distinguishes an event direction from quality-approved artwork", () => {
+    expect(source).toContain('readinessKind === "direction-card" || readinessKind === "reference-board"');
+    expect(source).toContain('previewIsDirectionOnly ? "Your event direction is ready');
+    expect(source).not.toContain("Your first look is ready — view it above");
   });
 });

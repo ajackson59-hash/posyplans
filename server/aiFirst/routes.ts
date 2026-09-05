@@ -899,6 +899,7 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
           failureCodes: row.failureCodes,
           tier1Findings: row.tier1Findings,
           visionScores: row.visionScores,
+          reviewEvidence: row.reviewEvidence ?? null,
           model: row.model,
           quality: row.quality,
           size: row.size,

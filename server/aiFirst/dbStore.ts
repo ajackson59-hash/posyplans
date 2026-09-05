@@ -20,6 +20,7 @@ import {
   type RunStatus,
 } from "./runStore";
 import type { AiFirstArtworkAttemptStore, ArtworkAttemptRecord } from "./artworkAttemptStore";
+import { decodeAttemptVision, encodeAttemptVision } from "./artworkAttemptStore";
 import { DEFAULT_ARTWORK_MODEL, type ArtworkModel, type ArtworkQuality, type ArtworkSize } from "./artwork";
 
 /**
@@ -414,7 +415,7 @@ function toArtworkAttemptRecord(row: ArtworkAttemptRow): ArtworkAttemptRecord {
     concept: JSON.parse(row.conceptJson),
     failureCodes: JSON.parse(row.failureCodesJson),
     tier1Findings: JSON.parse(row.tier1FindingsJson),
-    visionScores: row.visionScoresJson ? JSON.parse(row.visionScoresJson) : null,
+    ...decodeAttemptVision(row.visionScoresJson),
     model: row.model as ArtworkModel,
     quality: row.quality as ArtworkQuality,
     size: (row.size as ArtworkSize | null) ?? null,
@@ -444,7 +445,7 @@ export class DbArtworkAttemptStore implements AiFirstArtworkAttemptStore {
         conceptJson: JSON.stringify(input.concept),
         failureCodesJson: JSON.stringify(input.failureCodes),
         tier1FindingsJson: JSON.stringify(input.tier1Findings),
-        visionScoresJson: input.visionScores ? JSON.stringify(input.visionScores) : null,
+        visionScoresJson: encodeAttemptVision(input.visionScores, input.reviewEvidence),
         model: input.model ?? DEFAULT_ARTWORK_MODEL,
         quality: input.quality ?? "high",
         size: input.size ?? null,

@@ -27,6 +27,13 @@ afterEach(() => {
 });
 
 describe("AI-first artwork reference inputs", () => {
+  it("does not spend an extra provider request when a preview forbids transient retries", async () => {
+    fetchMock.mockResolvedValueOnce(new Response("temporary upstream failure", { status: 503 }));
+    await expect(generateArtwork({ prompt: "A premium illustrated scene", aspectRatio: "9:16",
+      quality: "high", maxTransientRetries: 0 })).rejects.toThrow("503");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("uses the normal GPT Image 2 generations endpoint when no reference pixels exist", async () => {
     const result = await generateArtwork({
       prompt: "A refined rooftop dinner",

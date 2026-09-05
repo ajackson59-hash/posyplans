@@ -15,6 +15,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { eq, and } from "drizzle-orm";
 import { randomBytes } from "crypto";
+import { previewReservationCondition } from "./prePaymentPreviewReservation";
 
 if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL is not set. Add the Supabase pooled connection string to your environment.");
@@ -75,6 +76,7 @@ export interface IStorage {
 
   getEventById(eventId: number): Promise<Event | undefined>;
   updateEventById(eventId: number, data: Partial<Event>): Promise<Event | undefined>;
+  reservePrePaymentPreview(event: Event, startedAt: number): Promise<Event | undefined>;
   setEventCapturedEmail(eventId: number, email: string): Promise<Event | undefined>;
   getEventsByEmail(email: string): Promise<Event[]>;
 
@@ -93,6 +95,15 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  async reservePrePaymentPreview(event: Event, startedAt: number): Promise<Event | undefined> {
+    const [reserved] = await db.update(events).set({
+      prePaymentPreviewAttempts: event.prePaymentPreviewAttempts + 1,
+      prePaymentPreviewUrl: "",
+      prePaymentPreviewUsedAt: startedAt,
+    }).where(previewReservationCondition(event)).returning();
+    return reserved;
+  }
+
   async createEvent(data: InsertEvent): Promise<Event> {
     const ownerToken = randomToken(24);
     const shareSlug = randomToken(10);

@@ -47,6 +47,16 @@ const updateEventById = vi.fn(async (id: number, data: Partial<Event>) => {
   return stored;
 });
 const generate = vi.fn();
+const reservePrePaymentPreview = vi.fn(async (event: Event, startedAt: number) => {
+  if (stored.id !== event.id || stored.ownerToken !== event.ownerToken || stored.sparkUnlockedAt ||
+      stored.prePaymentPreviewAttempts >= 3 ||
+      stored.prePaymentPreviewAttempts !== event.prePaymentPreviewAttempts ||
+      stored.prePaymentPreviewUsedAt !== event.prePaymentPreviewUsedAt ||
+      stored.prePaymentPreviewUrl !== event.prePaymentPreviewUrl) return undefined;
+  stored = { ...stored, prePaymentPreviewAttempts: stored.prePaymentPreviewAttempts + 1,
+    prePaymentPreviewUrl: "", prePaymentPreviewUsedAt: startedAt };
+  return stored;
+});
 const classifyNamedReference = vi.fn();
 const resolveNamedReference = vi.fn();
 const scheduledTasks: Array<() => Promise<void>> = [];
@@ -63,7 +73,7 @@ function makeApp(options: {
   const app = express();
   app.use(express.json({ limit: "6mb" }));
   registerPrePaymentPreviewQualityRoutes(app, {
-    store: { getEventByOwnerToken, updateEventById },
+    store: { getEventByOwnerToken, updateEventById, reservePrePaymentPreview },
     isUnlocked: async () => options.unlocked ?? false,
     mode: () => options.mode ?? "direction-card",
     autoNamedEnabled: () => options.autoNamed ?? true,
@@ -116,6 +126,7 @@ beforeEach(() => {
   stored = { ...baseEvent };
   getEventByOwnerToken.mockClear();
   updateEventById.mockClear();
+  reservePrePaymentPreview.mockClear();
   generate.mockReset();
   classifyNamedReference.mockReset();
   classifyNamedReference.mockResolvedValue(null);
@@ -125,6 +136,27 @@ beforeEach(() => {
 });
 
 describe("quality-locked prepayment preview routes", () => {
+  it.each([true, false])("reserves only one paid job across simultaneous stale reads (named=%s)", async (named) => {
+    if (!named) stored = genericEvent();
+    const snapshot = { ...stored };
+    getEventByOwnerToken.mockResolvedValueOnce({ ...snapshot }).mockResolvedValueOnce({ ...snapshot });
+    const results = await Promise.all([makeApp({ mode: "quality-image" }), makeApp({ mode: "quality-image" })]
+      .map((app) => request(app).post(`/api/events/owner/${OWNER}/prepayment-preview`)
+        .send({ email: "qa@example.com" })));
+    expect(results.map((result) => result.status)).toEqual([202, 202]);
+    expect(reservePrePaymentPreview).toHaveBeenCalledTimes(2);
+    expect(schedule).toHaveBeenCalledTimes(1);
+    expect(stored.prePaymentPreviewAttempts).toBe(1);
+  });
+
+  it("never starts paid work when the durable reservation fails", async () => {
+    reservePrePaymentPreview.mockResolvedValueOnce(undefined);
+    await request(makeApp()).post(`/api/events/owner/${OWNER}/prepayment-preview`)
+      .send({ email: "qa@example.com" });
+    expect(schedule).not.toHaveBeenCalled();
+    expect(generate).not.toHaveBeenCalled();
+  });
+
   it("rejects an invalid email before any resolution, generation or write", async () => {
     const response = await request(makeApp())
       .post(`/api/events/owner/${OWNER}/prepayment-preview`)

@@ -67,6 +67,7 @@ const requestSchema = z.object({
 export interface PrePaymentPreviewQualityStorage {
   getEventByOwnerToken(ownerToken: string): Promise<Event | undefined>;
   updateEventById(eventId: number, data: Partial<Event>): Promise<Event | undefined>;
+  reservePrePaymentPreview(event: Event, startedAt: number): Promise<Event | undefined>;
 }
 
 export type PreviewBackgroundScheduler = (task: () => Promise<void>) => void;
@@ -341,20 +342,10 @@ async function reservePreviewAttempt(
   store: PrePaymentPreviewQualityStorage,
   event: Event,
   startedAt: number,
-): Promise<Event> {
-  const updated = await store.updateEventById(event.id, {
-    prePaymentPreviewAttempts: event.prePaymentPreviewAttempts + 1,
-    prePaymentPreviewUrl: "",
-    // During generation this field is the durable start timestamp. Completion
-    // replaces it with the final asset timestamp, enabling stale recovery.
-    prePaymentPreviewUsedAt: startedAt,
-  });
-  return updated ?? {
-    ...event,
-    prePaymentPreviewAttempts: event.prePaymentPreviewAttempts + 1,
-    prePaymentPreviewUrl: "",
-    prePaymentPreviewUsedAt: startedAt,
-  };
+): Promise<Event | undefined> {
+  // A lost reservation is NOT permission to generate. In particular, never
+  // fabricate an in-memory reservation when the durable write returned no row.
+  return store.reservePrePaymentPreview(event, startedAt);
 }
 
 async function persistApprovedImage(
@@ -699,6 +690,11 @@ export function registerPrePaymentPreviewQualityRoutes(
       }
 
       const reservedEvent = await reservePreviewAttempt(store, event, timestamp);
+      if (!reservedEvent) {
+        const latest = await store.getEventByOwnerToken(event.ownerToken);
+        if (!latest) return res.status(404).json({ error: "Event not found" });
+        return res.status(202).json(await readiness(latest, mode, namedAutoEnabled, timestamp));
+      }
       event = reservedEvent;
       schedule(() => runAutomaticNamedPreviewJob({
         store,
@@ -734,6 +730,11 @@ export function registerPrePaymentPreviewQualityRoutes(
     }
 
     const reservedEvent = await reservePreviewAttempt(store, event, timestamp);
+    if (!reservedEvent) {
+      const latest = await store.getEventByOwnerToken(event.ownerToken);
+      if (!latest) return res.status(404).json({ error: "Event not found" });
+      return res.status(202).json(await readiness(latest, mode, namedAutoEnabled, timestamp));
+    }
     schedule(() => runAutomaticClassifiedPreviewJob({
       store,
       event: reservedEvent,

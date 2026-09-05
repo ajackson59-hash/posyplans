@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { createHash } from "node:crypto";
 import type Anthropic from "@anthropic-ai/sdk";
 import type { Event } from "@shared/schema";
 import type { Tier1Result } from "../server/aiFirst/tier1";
 import type { VisionVerdict } from "../server/aiFirst/visionGate";
+import type { ArtworkRequest } from "../server/aiFirst/artwork";
 import { decodePng, encodePng, readPngSize } from "../server/aiFirst/png";
 import {
   buildDirectionCard,
@@ -12,6 +14,7 @@ import {
   detectNamedCreativeReferenceSync,
   directionCardDataUrl,
   generateQualityLockedPreview,
+  customerVisiblePreviewBytes,
   readPrePaymentPreviewMode,
 } from "../server/prePaymentPreviewQuality";
 
@@ -853,7 +856,40 @@ describe("prepayment preview quality lock", () => {
         // actual rejected image, not only the codes that rejected it.
         expect(Buffer.isBuffer(record.bytes)).toBe(true);
         expect(readPngSize(record.bytes as Buffer)).toEqual({ width: 630, height: 1120 });
+        expect(record.reviewEvidence).toEqual({
+          version: 1,
+          reviewedAssetHash: createHash("sha256").update(customerVisiblePreviewBytes(record.bytes as Buffer)).digest("hex"),
+          verdict: vision(false, "generic adjacent character art"), generationDurationMs: 100,
+        });
       }
+    });
+
+    it.each([true, false])("retains billed images when review throws (parallel=%s)", async (parallel) => {
+      const { store, records } = fakeAttemptStore();
+      const generateImage = vi.fn(async (_input: ArtworkRequest) => ({ bytes: generatedPng(5), dataUrl: "unused", durationMs: 100 }));
+      const result = await generateQualityLockedPreview(event, {
+        generateImage, runTier1: () => tier1(true), runVision: async () => { throw new Error("review transport failed"); },
+        parallelCandidates: parallel, maxCandidates: 2,
+        attemptRetention: { store: store as never, eventId: event.id, ownerToken: "private-owner" },
+      });
+      expect(result.kind).not.toBe("approved-image");
+      expect(records).toHaveLength(generateImage.mock.calls.length);
+      for (const record of records) {
+        expect(record.status).toBe("rejected");
+        expect(record.reviewEvidence).toMatchObject({ verdict: null, reviewError: "review transport failed" });
+      }
+      expect(generateImage.mock.calls.every(([input]) => input.maxTransientRetries === 0)).toBe(true);
+      expect(generateImage).toHaveBeenCalledTimes(parallel ? 2 : 1);
+    });
+
+    it("retains malformed provider bytes rather than silently losing the billed attempt", async () => {
+      const { store, records } = fakeAttemptStore();
+      const bytes = Buffer.from("not a PNG");
+      await generateQualityLockedPreview(event, { generateImage: async () => ({ bytes, dataUrl: "unused", durationMs: 100 }),
+        maxCandidates: 1, attemptRetention: { store: store as never, eventId: event.id, ownerToken: "private-owner" } });
+      expect(records).toHaveLength(1);
+      expect(records[0].bytes).toEqual(bytes);
+      expect(records[0].reviewEvidence).toMatchObject({ reviewedAssetHash: null, verdict: null });
     });
 
     it("records an approved candidate as accepted", async () => {

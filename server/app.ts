@@ -41,15 +41,6 @@ function redactSensitivePath(path: string): string {
     .replace(/(\/guest\/)[^/]+/g, "$1[REDACTED]");
 }
 
-function redactSensitiveJson(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(redactSensitiveJson);
-  if (!value || typeof value !== "object") return value;
-  return Object.fromEntries(Object.entries(value as Record<string, unknown>).map(([key, entry]) => {
-    if (/token/i.test(key)) return [key, "[REDACTED]"];
-    return [key, redactSensitiveJson(entry)];
-  }));
-}
-
 // Builds a fresh Express app + companion http.Server, wired with the shared
 // body-parsing and request-logging middleware. Route registration is kept
 // separate (see ensureRoutesRegistered below) so both the traditional
@@ -86,22 +77,12 @@ export function createExpressApp(): { app: express.Express; httpServer: Server }
   app.use((req, res, next) => {
     const start = Date.now();
     const path = redactSensitivePath(req.path);
-    let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-    const originalResJson = res.json;
-    res.json = function (bodyJson, ...args) {
-      capturedJsonResponse = bodyJson;
-      return originalResJson.apply(res, [bodyJson, ...args]);
-    };
-
     res.on("finish", () => {
       const duration = Date.now() - start;
       if (path.startsWith("/api")) {
-        let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-        if (capturedJsonResponse) {
-          logLine += ` :: ${JSON.stringify(redactSensitiveJson(capturedJsonResponse))}`;
-        }
-
+        // Never copy response bodies into logs: credentials can be nested in
+        // URLs, and bodies also carry email, guest details and artwork bytes.
+        const logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
         log(logLine);
       }
     });

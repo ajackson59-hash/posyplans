@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { createHash } from "node:crypto";
 import type { Event } from "@shared/schema";
 import {
   ARTWORK_EDGE_REQUIREMENT,
@@ -1044,8 +1045,31 @@ export async function generateQualityLockedPreview(
   // Named entertainment worlds are the hardest pre-payment images: identity,
   // scene fidelity and artifact-free character integration all have to pass at
   // once. Spend the higher render tier only there; generic previews remain on
-  // medium and every unpaid event still has the same hard two-candidate cap.
+  // medium. Named previews allow two candidates and one eligible correction.
   const quality = dependencies.quality ?? (referenceLed || namedReference ? "high" : "medium");
+  const retainUnreviewable = async (
+    generated: Awaited<ReturnType<ArtworkGenerator>>, attempt: number, model: ArtworkModel,
+    renderQuality: ArtworkQuality, error: unknown, reviewedBytes?: Buffer,
+  ): Promise<void> => {
+    if (!dependencies.attemptRetention) return;
+    const { store, eventId, ownerToken, runId } = dependencies.attemptRetention;
+    const size = sizeForAspect(aspectRatioForLayout(concept.layoutStyle));
+    try {
+      await store.record({
+        eventId, ownerToken, runId, directionIndex: 0, attempt, status: "rejected",
+        bytes: generated.bytes, concept, failureCodes: ["vision-unavailable"],
+        tier1Findings: [], visionScores: null, model, quality: renderQuality, size,
+        costUsdMicros: estimateImageCostUsdMicros(model, renderQuality, size),
+        reviewEvidence: {
+          version: 1, reviewedAssetHash: reviewedBytes ? createHash("sha256").update(reviewedBytes).digest("hex") : null,
+          verdict: null, generationDurationMs: generated.durationMs,
+          reviewError: (error instanceof Error ? error.message : String(error)).slice(0, 1200),
+        },
+      });
+    } catch {
+      console.error("[prepayment-preview] failed to retain unreviewable provider result", { eventId, attempt });
+    }
+  };
   const referenceIdentityNotes = dependencies.inspirationNotes?.trim()
     ? `AUTHORITATIVE IDENTITY NOTES: ${dependencies.inspirationNotes.trim()}`
     : "";
@@ -1111,6 +1135,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
           model,
           quality,
           referenceImages: undefined,
+          maxTransientRetries: 0,
           signal: dependencies.signal,
         });
       } catch (error) {
@@ -1126,6 +1151,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
       try {
         reviewedBytes = customerVisiblePreviewBytes(generated.bytes);
       } catch (error) {
+        await retainUnreviewable(generated, candidate, model, quality, error);
         return {
           candidate,
           model,
@@ -1158,6 +1184,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
           });
         }
       } catch (error) {
+        await retainUnreviewable(generated, candidate, model, quality, error, reviewedBytes);
         return {
           candidate,
           model,
@@ -1205,6 +1232,10 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
             failureCodes: passed ? [] : candidateFailureCodes,
             tier1Findings: tier1.findings,
             visionScores: vision?.scores ?? null,
+            reviewEvidence: {
+              version: 1, reviewedAssetHash: createHash("sha256").update(reviewedBytes).digest("hex"),
+              verdict: vision ?? null, generationDurationMs: generated.durationMs,
+            },
             model,
             quality,
             size,
@@ -1268,6 +1299,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
       let repaired: Awaited<ReturnType<ArtworkGenerator>> | undefined;
       try {
         repaired = await generateImage({
+          maxTransientRetries: 0,
           prompt: buildTargetedCorrectionPrompt(
             basePrompt,
             strongestNearPass.review,
@@ -1349,6 +1381,10 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
                 failureCodes: passed ? [] : repairFailureCodes,
                 tier1Findings: tier1.findings,
                 visionScores: vision?.scores ?? null,
+                reviewEvidence: {
+                  version: 1, reviewedAssetHash: createHash("sha256").update(reviewedBytes).digest("hex"),
+                  verdict: vision ?? null, generationDurationMs: repaired.durationMs,
+                },
                 model: repairModel,
                 quality: repairQuality,
                 size,
@@ -1369,6 +1405,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
             };
           }
         } catch (error) {
+          await retainUnreviewable(repaired, 3, repairModel, repairQuality, error);
           console.warn("[prepayment-preview] targeted correction review unavailable; using safe fallback:", error);
         }
 
@@ -1424,6 +1461,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
     try {
       generated = await generateImage({
         prompt,
+        maxTransientRetries: 0,
         aspectRatio: aspectRatioForLayout(concept.layoutStyle),
         model,
         quality,
@@ -1445,6 +1483,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
     try {
       reviewedBytes = customerVisiblePreviewBytes(generated.bytes);
     } catch (error) {
+      await retainUnreviewable(generated, candidate, model, quality, error);
       return {
         kind: "unavailable",
         attempts: candidate,
@@ -1474,6 +1513,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
         });
       }
     } catch (error) {
+      await retainUnreviewable(generated, candidate, model, quality, error, reviewedBytes);
       return {
         kind: "unavailable",
         attempts: candidate,
@@ -1522,6 +1562,10 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
           failureCodes: passed ? [] : failureCodes,
           tier1Findings: tier1.findings,
           visionScores: vision?.scores ?? null,
+          reviewEvidence: {
+            version: 1, reviewedAssetHash: createHash("sha256").update(reviewedBytes).digest("hex"),
+            verdict: vision ?? null, generationDurationMs: generated.durationMs,
+          },
           model,
           quality,
           size,

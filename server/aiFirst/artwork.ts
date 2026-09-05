@@ -49,6 +49,8 @@ export interface ArtworkRequest {
    */
   inputFidelity?: ArtworkInputFidelity;
   signal?: AbortSignal;
+  /** Preview budgets count provider requests, including transient HTTP failures. */
+  maxTransientRetries?: 0 | 1;
 }
 
 export interface ArtworkResult {
@@ -221,7 +223,8 @@ export async function generateArtwork(request: ArtworkRequest): Promise<ArtworkR
     : "https://api.openai.com/v1/images/generations";
   const operation = usesReferenceImages ? "edit" : "request";
 
-  for (let attempt = 0; attempt <= MAX_TRANSIENT_RETRIES; attempt += 1) {
+  const maxRetries = request.maxTransientRetries ?? MAX_TRANSIENT_RETRIES;
+  for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
     const response = await fetch(
       endpoint,
       requestInit(request, apiKey, model, quality, size, usesReferenceImages),
@@ -240,7 +243,7 @@ export async function generateArtwork(request: ArtworkRequest): Promise<ArtworkR
     }
 
     const body = await response.text().catch(() => "");
-    if (attempt < MAX_TRANSIENT_RETRIES && TRANSIENT_STATUS_CODES.has(response.status)) {
+    if (attempt < maxRetries && TRANSIENT_STATUS_CODES.has(response.status)) {
       const delayMs = retryDelayMs(response, body);
       console.warn(`[ai-first-artwork] ${model} ${operation} returned ${response.status}; retrying once in ${delayMs}ms`);
       await waitForRetry(delayMs, request.signal);

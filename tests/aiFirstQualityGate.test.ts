@@ -362,6 +362,15 @@ const allFive = {
   ageAppropriate: 5,
 };
 
+const passingDimensionEvidence = {
+  textLogoWatermarkFree: "No typography or brand marks in foreground or background.",
+  artifactFree: "Figures have clean anatomy and coherent ground contact.",
+  premiumFinish: "Purposeful layered illustration, controlled highlights and brushwork.",
+  briefFidelity: "The scene visibly delivers the requested world and activities.",
+  compositionQuality: "All lead subjects are complete within the frame.",
+  ageAppropriate: "Playful family-audience treatment without mature content.",
+};
+
 const passingTeaserChecks = {
   milestone: { evidence: "No exact count is required.", correct: true },
   identity: { evidence: "The requested event world is specific and accurate.", accurate: true },
@@ -383,6 +392,55 @@ const runVision = (body: Record<string, unknown>, over: Partial<EventBrief> = {}
   });
 
 describe("tier 2 — acceptance", () => {
+  it.each([5.9, 6, "5", null])("rejects malformed score %s instead of clamping it to a pass", async (value) => {
+    expect((await runVision({ artifactFree: value })).passed).toBe(false);
+  });
+
+  it("does not recycle a reordered checklist answer for an omitted requirement", async () => {
+    const verdict = await runVision({ requiredPresent: [{ requirement: "bubbles", present: true }] }, {
+      requirements: { required: ["[VISIBLE HOST DETAIL] ice cream", "[VISIBLE HOST DETAIL] bubbles"], preferred: [], excluded: [] },
+    });
+    expect(verdict.requiredPresent).toEqual([
+      { requirement: "ice cream", present: false }, { requirement: "bubbles", present: true },
+    ]);
+    expect(verdict.passed).toBe(false);
+  });
+
+  it("rejects conflicting duplicate checklist answers", async () => {
+    const verdict = await runVision({ requiredPresent: [{ requirement: "bubbles", present: true }, { requirement: "bubbles", present: false }] }, {
+      requirements: { required: ["[VISIBLE HOST DETAIL] bubbles"], preferred: [], excluded: [] },
+    });
+    expect(verdict.passed).toBe(false);
+  });
+
+  it.each(["dimensionEvidence", "identity", "purchase", "requirement"])("keeps unsupported 5/5 teaser private when %s evidence is missing", async (missing) => {
+    const verdict = await runVisionGate({ bytes: artworkPng(), concept: concept(), reviewMode: "teaser",
+      brief: brief({ requirements: { required: ["[VISIBLE HOST DETAIL] bubbles"], preferred: [], excluded: [] } }),
+      client: critic({ ...allFive, excludedFound: [], notes: "",
+        requiredPresent: [{ requirement: "bubbles", present: true, evidence: missing === "requirement" ? " " : "Visible in the upper foreground" }],
+        dimensionEvidence: missing === "dimensionEvidence" ? {} : passingDimensionEvidence,
+        teaserChecks: { ...passingTeaserChecks,
+          ...(missing === "identity" ? { identity: { accurate: true, evidence: " " } } : {}),
+          ...(missing === "purchase" ? { purchase: { wouldCreatePurchaseDesire: true, evidence: " " } } : {}),
+        },
+      }),
+    });
+    expect(verdict.passed).toBe(false);
+  });
+
+  it("fails closed on a token-truncated response even when its visible JSON looks complete", async () => {
+    let calls = 0;
+    const verdict = await runVisionGate({ bytes: artworkPng(), concept: concept(), brief: brief(), client: {
+      messages: { create: async () => { calls += 1; return { stop_reason: "max_tokens",
+        content: [{ type: "text", text: JSON.stringify({ ...allFive, requiredPresent: [], excludedFound: [], notes: "" }) }],
+        usage: { input_tokens: 10, output_tokens: 700 } }; } },
+    } as unknown as Anthropic });
+    expect(calls).toBe(2);
+    expect(verdict.unavailable).toBe(true);
+    expect(verdict.passed).toBe(false);
+    expect(verdict.usage.outputTokens).toBe(1400);
+  });
+
   it("passes only when every dimension is at least 4", async () => {
     expect(MIN_DIMENSION_SCORE).toBe(4);
     expect((await runVision({})).passed).toBe(true);
@@ -562,6 +620,7 @@ describe("tier 2 — acceptance", () => {
                 requiredPresent: [],
                 excludedFound: [],
                 teaserChecks: passingTeaserChecks,
+                dimensionEvidence: passingDimensionEvidence,
                 notes: "",
               }),
             }],
@@ -607,6 +666,7 @@ describe("tier 2 — acceptance", () => {
         requiredPresent: [],
         excludedFound: [],
         teaserChecks: passingTeaserChecks,
+        dimensionEvidence: passingDimensionEvidence,
         notes: "Professional, but not exceptional.",
       }),
       reviewMode: "teaser",

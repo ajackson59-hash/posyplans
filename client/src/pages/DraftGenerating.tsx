@@ -337,6 +337,7 @@ export default function DraftGenerating() {
 
   const readinessKind = previewReadiness.data?.kind ?? "none";
   const readinessState = previewReadiness.data?.generationState ?? "idle";
+  const previewIsDirectionOnly = readinessKind === "direction-card" || readinessKind === "reference-board";
   const directionCard =
     startPrePaymentPreview.data?.directionCard
     ?? previewReadiness.data?.directionCard
@@ -572,7 +573,7 @@ export default function DraftGenerating() {
               <div className="relative min-h-[240px]">
                 <img
                   src={previewAssetUrl}
-                  alt="A personalized first look built from your event direction"
+                  alt={previewIsDirectionOnly ? "Your personalized event direction" : "Your quality-approved personalized artwork"}
                   className="block w-full h-auto"
                   data-testid="img-prepayment-preview"
                   onLoad={() => setPreviewImageLoaded(true)}
@@ -586,7 +587,7 @@ export default function DraftGenerating() {
                 )}
               </div>
             ) : previewInProgress ? (
-              <div className="min-h-[240px] px-6 py-6 text-left" data-testid="prepayment-preview-progress-proof">
+              <div className="min-h-[240px] px-6 py-6 text-left" role="status" aria-live="polite" data-testid="prepayment-preview-progress-proof">
                 <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-primary">
                   <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
                   Creating your personalized first look…
@@ -614,12 +615,12 @@ export default function DraftGenerating() {
                       </div>
                     )}
                     <p className="text-xs leading-relaxed text-muted-foreground">
-                      Posy is finding the right visual references and reviewing the artwork privately. You may continue to checkout now—your first look will keep working in the background.
+                      Posy is reviewing your artwork privately. This can take several minutes. If no image meets the quality bar, we’ll keep your event direction here. You can continue to checkout while it runs.
                     </p>
                   </div>
                 ) : (
                   <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
-                    Posy is reviewing your event details and artwork privately. You may continue to checkout now—your first look will keep working in the background.
+                    Posy is reviewing your event details and artwork privately. This can take several minutes. If no image meets the quality bar, we’ll keep your event direction here. You can continue to checkout while it runs.
                   </p>
                 )}
               </div>
@@ -839,7 +840,7 @@ export default function DraftGenerating() {
                   data-testid="button-view-personalized-preview"
                 >
                   <CheckCircle2 className="h-3.5 w-3.5" />
-                  Your first look is ready — view it above
+                  {previewIsDirectionOnly ? "Your event direction is ready — view it above" : "Your artwork is ready — view it above"}
                 </button>
               )}
               <Button

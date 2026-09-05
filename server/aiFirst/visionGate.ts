@@ -23,7 +23,9 @@ export type { VisionScores };
 export interface VisionVerdict {
   scores: VisionScores;
   /** One entry per REQUIRED item, in the brief's order. */
-  requiredPresent: { requirement: string; present: boolean }[];
+  requiredPresent: { requirement: string; present: boolean; evidence?: string }[];
+  /** Located visual observations, not merely a repeated numeric verdict. */
+  dimensionEvidence?: Record<keyof VisionScores, string>;
   /** One entry per EXCLUDED item that the critic saw. */
   excludedFound: string[];
   notes: string;
@@ -75,8 +77,10 @@ Judge BRIEF REQUIREMENTS holistically through briefFidelity and ageAppropriate. 
 
 Then make three explicit teaser checks. For milestone, describe and count the visible physical cue; never infer the requested age from the prompt. For identity, every specifically named subject must be independently recognizable through canonical face, hair, costume, silhouette and world details—palette-only or adjacent generic characters are false. For purchase, false means the scene reads as a stock promo, generic AI image, synthetic render or otherwise would not create desire to continue. Missing check fields are failures.
 
+EVIDENCE BEFORE SCORING: inspect the supplied pixels, not an imagined image from the brief. First complete requiredPresent (copy each requirement verbatim and include its visible location/features as evidence), then teaserChecks, then dimensionEvidence for all six dimensions, then assign scores. Before claiming a signature accessory is missing, inspect the named subject's face and costume explicitly; describe what is visible and where. Never infer absence from small size or from a prior candidate: each image is independent. Every sub-5 score needs a concrete visible defect and location in dimensionEvidence; every 5 needs positive observable support. Judge fidelity to the requested illustrated medium: intentional gouache texture, cel shading and stylized depth are not photographic defects. This does not excuse malformed anatomy, incoherent lighting, unclear identity or synthetic stock-promo finish. Do not invent browser cropping or hidden overlays. When detail genuinely cannot be resolved, say so and keep the image private.
+
 Reply with JSON only:
-{"textLogoWatermarkFree":0,"artifactFree":0,"premiumFinish":0,"briefFidelity":0,"compositionQuality":0,"ageAppropriate":0,"requiredPresent":[{"requirement":"","present":true}],"excludedFound":[],"teaserChecks":{"milestone":{"evidence":"","correct":true},"identity":{"evidence":"","accurate":true},"purchase":{"evidence":"","wouldCreatePurchaseDesire":true}},"notes":""}`;
+{"requiredPresent":[{"requirement":"","present":true,"evidence":""}],"excludedFound":[],"teaserChecks":{"milestone":{"evidence":"","correct":true},"identity":{"evidence":"","accurate":true},"purchase":{"evidence":"","wouldCreatePurchaseDesire":true}},"dimensionEvidence":{"textLogoWatermarkFree":"","artifactFree":"","premiumFinish":"","briefFidelity":"","compositionQuality":"","ageAppropriate":""},"textLogoWatermarkFree":0,"artifactFree":0,"premiumFinish":0,"briefFidelity":0,"compositionQuality":0,"ageAppropriate":0,"notes":""}`;
 
 const SCORE_PROPERTIES = {
   textLogoWatermarkFree: { type: "integer" },
@@ -100,14 +104,28 @@ const REQUIRED_PRESENT_SCHEMA = {
   },
 } as const;
 
-const visionOutputSchema = (reviewMode: "invitation" | "teaser") => ({
+const visionOutputSchema = (reviewMode: "invitation" | "teaser", requirements: string[]) => ({
   type: "object",
   properties: {
-    ...SCORE_PROPERTIES,
-    requiredPresent: REQUIRED_PRESENT_SCHEMA,
+    requiredPresent: reviewMode === "teaser" ? {
+      ...REQUIRED_PRESENT_SCHEMA,
+      items: {
+        ...REQUIRED_PRESENT_SCHEMA.items,
+        properties: { ...REQUIRED_PRESENT_SCHEMA.items.properties,
+          requirement: requirements.length ? { type: "string", enum: requirements } : { type: "string" },
+          evidence: { type: "string" } },
+        required: ["requirement", "present", "evidence"],
+      },
+    } : REQUIRED_PRESENT_SCHEMA,
     excludedFound: { type: "array", items: { type: "string" } },
     ...(reviewMode === "teaser"
       ? {
+          dimensionEvidence: {
+            type: "object",
+            properties: Object.fromEntries(Object.keys(SCORE_PROPERTIES).map((key) => [key, { type: "string" }])),
+            required: Object.keys(SCORE_PROPERTIES),
+            additionalProperties: false,
+          },
           teaserChecks: {
             type: "object",
             properties: {
@@ -138,6 +156,7 @@ const visionOutputSchema = (reviewMode: "invitation" | "teaser") => ({
           },
         }
       : {}),
+    ...SCORE_PROPERTIES,
     notes: { type: "string" },
   },
   required: [
@@ -149,7 +168,7 @@ const visionOutputSchema = (reviewMode: "invitation" | "teaser") => ({
     "ageAppropriate",
     "requiredPresent",
     "excludedFound",
-    ...(reviewMode === "teaser" ? ["teaserChecks"] : []),
+    ...(reviewMode === "teaser" ? ["teaserChecks", "dimensionEvidence"] : []),
     "notes",
   ],
   additionalProperties: false,
@@ -166,10 +185,10 @@ const CODE_FOR_DIMENSION: Record<keyof VisionScores, string> = {
 };
 
 function clampScore(value: unknown): number {
-  const n = typeof value === "number" ? value : Number(value);
-  if (!Number.isFinite(n)) return 0;
-  return Math.max(0, Math.min(5, n));
+  return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 5 ? value : 0;
 }
+
+const hasEvidence = (value: unknown): value is string => typeof value === "string" && value.trim().length > 0;
 
 const VISIBLE_REQUIREMENT_PREFIX = /^\[VISIBLE (?:HOST DETAIL|MILESTONE|NAMED IDENTITY)\]\s*/i;
 
@@ -278,7 +297,7 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
     "BRIEF REQUIREMENTS (judge holistically in briefFidelity and ageAppropriate):",
     ...brief.requirements.required.map((r) => `- ${r}`),
     "",
-    "VISIBLE MUST-HAVES (report each in requiredPresent):",
+    "VISIBLE MUST-HAVES (copy each requirement verbatim in requiredPresent; do not paraphrase, merge or omit):",
     ...reviewRequirements.map((r) => `- ${r}`),
     "",
     "EXCLUDED:",
@@ -313,7 +332,9 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
   const reviewOnce = async (jsonRepair: boolean): Promise<Record<string, any> | null> => {
     const response = await client.messages.create({
       model: VISION_MODEL,
-      max_tokens: reviewMode === "teaser" ? 950 : 700,
+      // A complete evidence checklist does not fit in the old 950-token cap.
+      // Bounded headroom scales with actual requirements, never unbounded prose.
+      max_tokens: reviewMode === "teaser" ? Math.min(4000, 2000 + reviewRequirements.length * 100) : 700,
       system: jsonRepair
         ? `${reviewSystem}\n\nOUTPUT REPAIR: Return one complete valid JSON object matching the required schema. No prose, markdown fence or trailing commentary. Do not omit any field.`
         : reviewSystem,
@@ -325,7 +346,7 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
       output_config: {
         format: {
           type: "json_schema",
-          schema: visionOutputSchema(reviewMode),
+          schema: visionOutputSchema(reviewMode, reviewRequirements),
         },
       },
     }, { signal: input.signal });
@@ -334,6 +355,7 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
       outputTokens: usage.outputTokens + (response.usage?.output_tokens ?? 0),
     };
     const raw = response.content.map((b) => (b.type === "text" ? b.text : "")).join("");
+    if (response.stop_reason === "max_tokens" || response.stop_reason === "refusal") return null;
     return extractJson(raw);
   };
 
@@ -383,21 +405,28 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
   };
 
   const reportedRequired = Array.isArray(parsed.requiredPresent)
-    ? parsed.requiredPresent.map((r: { requirement?: unknown; present?: unknown }) => ({
+    ? parsed.requiredPresent.map((r: { requirement?: unknown; present?: unknown; evidence?: unknown }) => ({
         requirement: String(r?.requirement ?? ""),
         present: r?.present === true,
+        evidence: hasEvidence(r?.evidence) ? r.evidence.trim() : "",
       }))
     : [];
   // The critic is instructed to report every item in order. Rebuild the
   // result from the server-owned list so omitting three difficult
   // requirements and returning one easy true can never become a pass.
-  const requiredPresent = reviewRequirements.map((requirement, index) => {
-    const exact = reportedRequired.find(
+  const requiredPresent = reviewRequirements.map((requirement) => {
+    const matching = reportedRequired.filter(
       (reported) => reported.requirement.trim().toLowerCase() === requirement.trim().toLowerCase(),
     );
-    const reported = exact ?? reportedRequired[index];
-    return { requirement, present: reported?.present === true };
+    const reported = matching.length === 1 ? matching[0] : undefined;
+    return { requirement, present: reported?.present === true && (reviewMode !== "teaser" || hasEvidence(reported.evidence)),
+      ...(reviewMode === "teaser" ? { evidence: reported?.evidence ?? "" } : {}) };
   });
+  const dimensionEvidence = reviewMode === "teaser"
+    ? Object.fromEntries(Object.keys(scores).map((key) => [key,
+        hasEvidence(parsed.dimensionEvidence?.[key]) ? parsed.dimensionEvidence[key].trim() : "",
+      ])) as Record<keyof VisionScores, string>
+    : undefined;
   const excludedFound = Array.isArray(parsed.excludedFound)
     ? parsed.excludedFound.filter((e: unknown): e is string => typeof e === "string" && e.trim().length > 0)
     : [];
@@ -432,7 +461,9 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
   const failureCodes: string[] = [];
   const scoreFloor = reviewMode === "teaser" ? TEASER_MIN_DIMENSION_SCORE : MIN_DIMENSION_SCORE;
   for (const key of Object.keys(scores) as (keyof VisionScores)[]) {
-    if (scores[key] < scoreFloor) failureCodes.push(CODE_FOR_DIMENSION[key]);
+    if (scores[key] < scoreFloor || (dimensionEvidence && !hasEvidence(dimensionEvidence[key]))) {
+      failureCodes.push(CODE_FOR_DIMENSION[key]);
+    }
   }
   // A missing concrete VISIBLE MUST-HAVE is a failure even if every
   // dimension scored well. Holistic theme/age requirements stay governed by
@@ -446,11 +477,11 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
   }
   if (excludedFound.length > 0) failureCodes.push("excluded-present");
   if (teaserChecks) {
-    if (teaserChecks.milestone.required && !teaserChecks.milestone.correct) {
+    if (teaserChecks.milestone.required && (!teaserChecks.milestone.correct || !hasEvidence(teaserChecks.milestone.evidence))) {
       failureCodes.push("brief-fidelity", "age-appropriate");
     }
-    if (!teaserChecks.identity.accurate) failureCodes.push("brief-fidelity");
-    if (!teaserChecks.purchase.wouldCreatePurchaseDesire) failureCodes.push("premium-feel");
+    if (!teaserChecks.identity.accurate || !hasEvidence(teaserChecks.identity.evidence)) failureCodes.push("brief-fidelity");
+    if (!teaserChecks.purchase.wouldCreatePurchaseDesire || !hasEvidence(teaserChecks.purchase.evidence)) failureCodes.push("premium-feel");
   }
 
   return {
@@ -464,6 +495,7 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
     durationMs: Date.now() - started,
     usage,
     teaserChecks,
+    dimensionEvidence,
   };
 }
 
