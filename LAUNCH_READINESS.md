@@ -51,6 +51,28 @@ No database schema migration, package upgrade or scheduled paid canary is added.
 
 ## Design-led prototype evidence and activation boundary
 
+### Private review integration (current closeout)
+
+`scenePreviewReview.ts` now connects the compositor to the existing deterministic
+checks and strict teaser critic, with one explicitly confirmed critic request,
+no hidden HTTP retries and no JSON repair for this research path. It snapshots
+the complete brief, recipe and source bytes before awaiting anything; stale
+briefs, owner mismatches and uncertified inputs fail before spending. A bounded
+timeout/abort cannot become a late approval. The original composite, exact
+560px hash, complete verdict, critic usage and composition provenance go to the
+existing owner-scoped attempt store. A failed evidence write blocks acceptance.
+
+The render method is `posy-scene-compositor-v1`, not a pretend OpenAI model.
+Its zero new image-output charge explicitly excludes source-art creation and
+critic charges. Existing text columns/JSON envelope are reused; no schema or
+permission changes. The old retained-image recheck route explicitly refuses
+to promote these private research records.
+
+**No customer route imports the research reviewer. No artwork pack is enabled.
+This integration is not a live latency improvement or an approved art library.**
+The production first-look critic now disables SDK-level HTTP retries; its
+existing one-time JSON-format repair and all score floors remain unchanged.
+
 The compositor tests cover Blippi/Meekah soft play, Unicorn Academy winter,
 KPop Demon Hunters, original construction and adult garden briefs. They use
 plain engineering pixels, not approved art. Determinism and requirement
@@ -67,7 +89,8 @@ Before activating this rendering path:
 2. Run the EXISTING strict gate on the FINAL composite's exact 560px transform,
    retaining both original source and complete evidence. No overlay, crop or
    later composition step may change those reviewed teaser pixels. The
-   prototype deliberately has no customer route or approval marker yet.
+   private reviewer implements this boundary, but deliberately has no customer
+   activation route or paid-reuse marker yet.
 3. Use the retained failures to calibrate the critic against human labels,
    including the false missing-glasses rejection. Do not lower the six 5/5
    floors, binary identity/milestone checks or purchase-desire requirement.
@@ -76,6 +99,38 @@ Before activating this rendering path:
    first-approved elapsed time, p50/p95, human agreement and all-in cost per
    successful result. Do not exclude failures from the success-rate denominator
    or infer reliability from a single passing example.
+
+### Retained live baseline and offline benchmark
+
+QA event #34 on `4692dd00be30cef9bd942d480aa7e895e6cd554b` produced two high-quality
+text-first candidates. Attempt 131 was rejected for premium finish (4/5);
+attempt 132 received six 5/5 scores. The server logged first approved delivery
+at **132,186 ms**. Accepted generation took 96,894 ms and its critic 34,265 ms.
+The request handler itself took 88 ms; that is not image completion latency.
+The served 373×560 teaser's SHA-256 exactly matched the retained critic hash;
+the retained 1024×1536 source hash also matched. This was read-only evidence
+retrieval; no third image or re-review was requested.
+
+The sanitized baseline is `tools/qa/benchmarks/event34-baseline.json`. The
+visual inspection was by an AI agent, not an independent human certification.
+Recorded $0.33 covers image outputs only; all-in cost remains unknown. Final
+job termination timing was not separately measured and remains null.
+Two critic verdicts were retained, but the physical HTTP-request count was not
+instrumented before hidden SDK retries were disabled; that count is also null.
+
+`previewBenchmark.ts` and the offline CLI count all registered trials, including
+missing results, errors, unsupported briefs and fast direction-card fallbacks.
+They keep SHA/render-path/brief cohorts separate, require matching reviewed,
+delivered and human-inspected hashes, and enforce request budgets. The proposed
+observed gate requires five cases across named-child/original-child/adult,
+at least 20 trials per case, and 95% quality-verified delivery within 90 seconds
+**in every case**. It is an observed benchmark, not a statistical guarantee of
+future reliability or a replacement for the other release gates. Fixture
+results cannot qualify. Missing all-in charges remain unknown, not zero.
+
+No repeated paid benchmark has been started. Its manifest must be registered
+before spending and its total request/cost budget approved separately. The
+single existing baseline correctly returns HOLD from the offline checker.
 
 The current waitUntil job survives browser navigation, but is NOT a durable
 retry queue that can guarantee completion after a worker crash. Saved status
@@ -87,8 +142,8 @@ separate release gates below. No claim of complete project readiness is made.
 
 | Area | Automated coverage | Live proof required before release |
 | --- | --- | --- |
-| Image quality | Exact teaser transform; high-quality named path; strict scores; complete requirements; retry bounds; private rejects; full-resolution reuse | Human inspection and strict acceptance on named-child, original-child and adult-event briefs, including crowded required details. Latest retained canary did not pass; no claim that the new reviewer is calibrated yet. |
-| Speed/recovery | Immediate direction card; non-blocking background job; bounded timeout/abort; reload/readiness; duplicate submission | Measure first response and final artwork at mobile widths under realistic load. A roughly four-minute prior run is not a proven conversion-friendly experience. |
+| Image quality | Exact teaser transform; high-quality named path; strict scores; complete requirements; retry bounds; private rejects; full-resolution reuse | Event #34 has one automated pass and one private rejection. Human certification and repeated named-child, original-child and adult-event results, including crowded details, remain unproven. |
+| Speed/recovery | Immediate direction card; non-blocking background job; bounded timeout/abort; reload/readiness; duplicate submission | Event #34 reached first approved delivery in 132.186 seconds, exceeding the proposed 90-second target. Measure mobile end-to-end latency under realistic load; the private compositor has no live speed proof yet. |
 | Payment/access | Spark/Plus entitlement; currency; checkout handoff; paid image apply; email binding | Stripe test-mode checkout, signed webhook, duplicate webhook, return/reload and correct unlock. No real purchase required. |
 | Delivery/RSVP | Email recovery; token-scoped guest routes; RSVP rendering; startup failure recovery | Controlled test recipient receives invitation and recovery link; guest RSVP round trip persists. No real guests or unsolicited messages. |
 | Privacy/security | Owner-scoped evidence; no public rejected assets; response-log hygiene; protected Preview | Confirm deployed protection, secret availability without exposing values, and no owner URLs in logs. Audit access revocation and retention policy before broad rollout. |

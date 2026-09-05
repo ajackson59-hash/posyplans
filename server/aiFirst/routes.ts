@@ -904,7 +904,9 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
           quality: row.quality,
           size: row.size,
           costUsdMicros: row.costUsdMicros,
-          costEstimateStatus: row.size ? "image-output-only-model-size-estimate" : "legacy-unverified",
+          costEstimateStatus: row.reviewEvidence?.composition
+            ? "composition-only-excludes-source-art-and-review"
+            : row.size ? "image-output-only-model-size-estimate" : "legacy-unverified",
           createdAt: row.createdAt,
         })),
       });
@@ -983,6 +985,17 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
         res.status(409).json({
           error: "Only rejected retained artwork can be re-reviewed.",
           denial: "attempt-not-rejected",
+          imageProviderCalls: 0,
+          billedArtworkAttempts: 0,
+        });
+        return;
+      }
+      // Private compositor research must not become customer artwork through
+      // the older retained-image promotion route, even after a critic pass.
+      if (row.model === "posy-scene-compositor-v1" || row.reviewEvidence?.composition) {
+        res.status(409).json({
+          error: "Composed scenes are private research and are not enabled for customer use.",
+          denial: "scene-promotion-disabled",
           imageProviderCalls: 0,
           billedArtworkAttempts: 0,
         });

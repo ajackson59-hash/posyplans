@@ -35,6 +35,10 @@ import type { VisionVerdict } from "./visionGate";
 import { DEFAULT_ARTWORK_MODEL, type ArtworkModel, type ArtworkQuality, type ArtworkSize } from "./artwork";
 
 export type ArtworkAttemptStatus = "accepted" | "rejected";
+/** A compositor is not an image model and must never be sent to a provider. */
+export const SCENE_COMPOSITION_MODEL = "posy-scene-compositor-v1";
+export type ArtworkAttemptModel = ArtworkModel | typeof SCENE_COMPOSITION_MODEL;
+export type ArtworkAttemptQuality = ArtworkQuality | "not-applicable";
 
 export interface ArtworkReviewEvidence {
   version: 1;
@@ -43,6 +47,18 @@ export interface ArtworkReviewEvidence {
   verdict: VisionVerdict | null;
   generationDurationMs: number;
   reviewError?: string;
+  composition?: {
+    recipeId: string;
+    styleId: string;
+    briefDigest: string;
+    assetDigests: string[];
+    sourceWidth: number;
+    sourceHeight: number;
+    compositionDurationMs: number;
+    /** Source-pack creation and critic usage are additional, not free. */
+    imageProviderCalls: 0;
+    customerActivation: "disabled";
+  };
 }
 
 /** Backward-compatible envelope in the existing JSON column; no schema migration. */
@@ -80,8 +96,8 @@ export interface ArtworkAttemptRecord {
   tier1Findings: Tier1Finding[];
   visionScores: VisionVerdict["scores"] | null;
   reviewEvidence?: ArtworkReviewEvidence | null;
-  model: ArtworkModel;
-  quality: ArtworkQuality;
+  model: ArtworkAttemptModel;
+  quality: ArtworkAttemptQuality;
   /** Null only for evidence written before provider provenance was added. */
   size: ArtworkSize | null;
   costUsdMicros: number;
@@ -103,8 +119,8 @@ export interface ArtworkAttemptInput {
   tier1Findings: Tier1Finding[];
   visionScores: VisionVerdict["scores"] | null;
   reviewEvidence?: ArtworkReviewEvidence | null;
-  model?: ArtworkModel;
-  quality?: ArtworkQuality;
+  model?: ArtworkAttemptModel;
+  quality?: ArtworkAttemptQuality;
   size?: ArtworkSize | null;
   costUsdMicros: number;
   now?: number;

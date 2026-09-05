@@ -21,7 +21,7 @@ import {
 } from "./runStore";
 import type { AiFirstArtworkAttemptStore, ArtworkAttemptRecord } from "./artworkAttemptStore";
 import { decodeAttemptVision, encodeAttemptVision } from "./artworkAttemptStore";
-import { DEFAULT_ARTWORK_MODEL, type ArtworkModel, type ArtworkQuality, type ArtworkSize } from "./artwork";
+import { DEFAULT_ARTWORK_MODEL, type ArtworkSize } from "./artwork";
 
 /**
  * postgres-js surfaces a Postgres unique-violation (SQLSTATE 23505) as a
@@ -416,8 +416,8 @@ function toArtworkAttemptRecord(row: ArtworkAttemptRow): ArtworkAttemptRecord {
     failureCodes: JSON.parse(row.failureCodesJson),
     tier1Findings: JSON.parse(row.tier1FindingsJson),
     ...decodeAttemptVision(row.visionScoresJson),
-    model: row.model as ArtworkModel,
-    quality: row.quality as ArtworkQuality,
+    model: row.model as ArtworkAttemptRecord["model"],
+    quality: row.quality as ArtworkAttemptRecord["quality"],
     size: (row.size as ArtworkSize | null) ?? null,
     costUsdMicros: row.costUsdMicros,
     createdAt: row.createdAt,

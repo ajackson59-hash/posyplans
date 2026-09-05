@@ -1260,6 +1260,28 @@ describe("retained rejected artwork can be re-reviewed without another image gen
     expect(wrongOwner.status).toBe(404);
   });
 
+  it("never promotes private composed scenes through retained-image recheck", async () => {
+    const stores = await seedRetainedAttempt();
+    stores.attempt.model = "posy-scene-compositor-v1";
+    stores.attempt.quality = "not-applicable";
+    stores.attempt.costUsdMicros = 0;
+    stores.attempt.reviewEvidence = { version: 1, reviewedAssetHash: null, verdict: null, generationDurationMs: 0,
+      composition: { recipeId: "private-test", styleId: "fixture-only", briefDigest: "a".repeat(64), assetDigests: [],
+        sourceWidth: 1024, sourceHeight: 1536, compositionDurationMs: 10, imageProviderCalls: 0, customerActivation: "disabled" } };
+    let reviews = 0;
+    const app = appFor({ ...stores, reviewRetainedArtwork: async () => { reviews++; return passingReview; } });
+    const response = await request(app)
+      .post(`/api/events/owner/${OWNER}/ai-first/review/attempts/${stores.attempt.id}/recheck`)
+      .send({ confirmRetainedReview: true, expectedAssetHash: stores.attempt.assetHash });
+    expect(response.status).toBe(409);
+    expect(response.body.denial).toBe("scene-promotion-disabled");
+    expect(reviews).toBe(0);
+    const listing = await request(app).get(`/api/events/owner/${OWNER}/ai-first/review/attempts`);
+    expect(listing.body.attempts[0].costEstimateStatus).toBe("composition-only-excludes-source-art-and-review");
+    expect(listing.body.attempts[0].previewId).toBeNull();
+    expect(listing.body.attempts[0].assetBytesBase64).toBeUndefined();
+  });
+
   it("runs semantic vision once, saves one private preview, and is exactly idempotent", async () => {
     const stores = await seedRetainedAttempt();
     let visionCalls = 0;

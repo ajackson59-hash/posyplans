@@ -214,6 +214,8 @@ export interface VisionGateInput {
   /** Invitation is the default; teaser reviews exact standalone pixels. */
   reviewMode?: "invitation" | "teaser";
   signal?: AbortSignal;
+  /** Explicit budget for repairing malformed JSON; never a quality retry. */
+  maxFormatRepairs?: 0 | 1;
 }
 
 export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdict> {
@@ -349,7 +351,7 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
           schema: visionOutputSchema(reviewMode, reviewRequirements),
         },
       },
-    }, { signal: input.signal });
+    }, { signal: input.signal, ...(reviewMode === "teaser" ? { maxRetries: 0 } : {}) });
     usage = {
       inputTokens: usage.inputTokens + (response.usage?.input_tokens ?? 0),
       outputTokens: usage.outputTokens + (response.usage?.output_tokens ?? 0),
@@ -366,7 +368,7 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
     // discarded merely because the critic wrapped or truncated its JSON. The
     // second result still has to parse and satisfy every ordinary gate; two
     // malformed responses remain a hard fail-closed outcome.
-    if (!parsed && !input.signal?.aborted) parsed = await reviewOnce(true);
+    if (!parsed && input.maxFormatRepairs !== 0 && !input.signal?.aborted) parsed = await reviewOnce(true);
   } catch (err) {
     return {
       scores: empty,
