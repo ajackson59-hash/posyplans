@@ -968,9 +968,14 @@ function isTargetedCorrectionCandidate(review: PreviewQualityReview): boolean {
     && repairableScores.some((score) => score < 5);
 }
 
+function requiresIndependentReconstruction(review: PreviewQualityReview): boolean {
+  return review.failureCodes.some((code) => code === "artifact" || code === "premium-feel");
+}
+
 function buildTargetedCorrectionPrompt(
   basePrompt: string,
   review: PreviewQualityReview,
+  independentReconstruction: boolean,
 ): string {
   const failureCodes = review.failureCodes.length > 0
     ? Array.from(new Set(review.failureCodes))
@@ -979,7 +984,7 @@ function buildTargetedCorrectionPrompt(
   const repairDirectives = failureCodes.map((code) => {
     switch (code) {
       case "artifact":
-        return "ARTIFACT REBUILD: Redraw every affected region from clean underlying forms; do not blur, clone, patch over or cosmetically retouch the source defect. Reconstruct malformed anatomy, joins, seams, halos, contact shadows and repeated forms. Give repeated objects organic variation in scale, occlusion, edge shape, highlights, texture and depth spacing—never copied or stamped patterns.";
+        return "ARTIFACT REBUILD: Draw every affected region from clean underlying forms; do not simulate a fix with blur, cloning, patching or cosmetic retouching. Reconstruct malformed anatomy, joins, seams, halos, contact shadows and repeated forms. Give repeated objects organic variation in scale, occlusion, edge shape, highlights, texture and depth spacing—never copied or stamped patterns.";
       case "premium-feel":
         return "MATERIAL AND FINISH REBUILD: Replace waxy, plastic, rubbery, airbrushed or synthetic-looking surfaces with intentional hand-painted material variation, coherent shared lighting and dimensional depth. Skin and faces need restrained specular highlights, natural color and shadow variation, and a matte living finish; fabrics, foam, food and props must each read as their own believable material.";
       case "brief-fidelity":
@@ -990,6 +995,18 @@ function buildTargetedCorrectionPrompt(
         return `MEASURED DEFECT REBUILD (${code}): Visibly reconstruct the affected local region until the cited defect is absent at customer teaser size.`;
     }
   }).join("\n");
+
+  if (independentReconstruction) {
+    return `${basePrompt}
+
+PRIVATE THIRD CANDIDATE — INDEPENDENT CRITIC-LED RECONSTRUCTION:
+Generate a completely new image from the written event brief. No prior artwork is attached and no prior pixel arrangement, camera, pose, geometry, texture, highlight, edge, shadow or object spacing may be copied. This must be a genuinely independent composition, not a retouch, trace or cosmetic variation of either earlier candidate.
+Preserve the requested identities, wardrobe, event setting, activities, required details, palette and exclusions semantically—not by reproducing defective source pixels. Use a refined matte ink-and-tempera editorial illustration treatment distinct from the earlier cel-painted and gouache candidates, with intentional material texture and physically coherent depth.
+Measured failure classes to eliminate: ${findings}.
+STRICT CRITIC EVIDENCE FROM THE STRONGEST PRIOR CANDIDATE: ${review.notes || "Eliminate every defect that kept one or more quality dimensions at 4/5."}
+${repairDirectives}
+The new image must make every requested feature unmistakable at 560-pixel customer teaser size. Add no text, letters, numbers, logos, watermarks, children, milestone props, extra characters, unrequested activities or decorative objects.`;
+  }
 
   return `${basePrompt}
 
@@ -1240,21 +1257,33 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
       )[0];
 
     if (strongestNearPass && !dependencies.signal?.aborted) {
-      const repairModel = REFERENCE_ARTWORK_MODEL;
+      // A high-fidelity edit is useful for a clean image that only needs
+      // framing or prominence adjusted. It is the wrong tool for visible
+      // artifacts or synthetic material finish: live canaries proved that it
+      // faithfully preserved the defective pixels and returned identical
+      // scores. Those failures now get a fresh text-first GPT Image 2 render.
+      const independentReconstruction = requiresIndependentReconstruction(strongestNearPass.review);
+      const repairModel = independentReconstruction ? DEFAULT_ARTWORK_MODEL : REFERENCE_ARTWORK_MODEL;
       const repairQuality: ArtworkQuality = "high";
       let repaired: Awaited<ReturnType<ArtworkGenerator>> | undefined;
       try {
         repaired = await generateImage({
-          prompt: buildTargetedCorrectionPrompt(basePrompt, strongestNearPass.review),
+          prompt: buildTargetedCorrectionPrompt(
+            basePrompt,
+            strongestNearPass.review,
+            independentReconstruction,
+          ),
           aspectRatio: aspectRatioForLayout(concept.layoutStyle),
           model: repairModel,
           quality: repairQuality,
-          inputFidelity: "high",
-          referenceImages: [{
-            bytes: strongestNearPass.sourceBytes,
-            mimeType: "image/png",
-            filename: "strongest-near-pass.png",
-          }],
+          inputFidelity: independentReconstruction ? undefined : "high",
+          referenceImages: independentReconstruction
+            ? undefined
+            : [{
+                bytes: strongestNearPass.sourceBytes,
+                mimeType: "image/png",
+                filename: "strongest-near-pass.png",
+              }],
           signal: dependencies.signal,
         });
       } catch (error) {

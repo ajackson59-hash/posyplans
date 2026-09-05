@@ -470,8 +470,17 @@ describe("prepayment preview quality lock", () => {
     expect(readPngSize(approvedBytes)).toEqual({ width: 1260, height: 2240 });
   });
 
-  it("repairs only the strongest professional near-pass and rechecks the exact teaser pixels", async () => {
+  it("rebuilds an artifact or premium near-pass independently and rechecks the exact teaser pixels", async () => {
     let call = 0;
+    const retained: Array<Record<string, unknown>> = [];
+    const attemptStore = {
+      record: vi.fn(async (input: Record<string, unknown>) => {
+        retained.push(input);
+        return { id: `attempt-${retained.length}`, ...input } as never;
+      }),
+      listForOwner: vi.fn(async () => []),
+      findById: vi.fn(async () => undefined),
+    };
     const generateImage = vi.fn(async () => {
       call += 1;
       const bytes = generatedPng(call, 1260, 2240);
@@ -507,6 +516,11 @@ describe("prepayment preview quality lock", () => {
       runVision: runVision as never,
       maxCandidates: 2,
       parallelCandidates: true,
+      attemptRetention: {
+        store: attemptStore as never,
+        eventId: event.id,
+        ownerToken: "owner-token-abc",
+      },
     });
 
     expect(result.kind).toBe("approved-image");
@@ -517,29 +531,74 @@ describe("prepayment preview quality lock", () => {
 
     const correction = generateImage.mock.calls[2][0];
     expect(correction).toEqual(expect.objectContaining({
+      model: "gpt-image-2",
+      quality: "high",
+    }));
+    expect(correction.inputFidelity).toBeUndefined();
+    expect(correction.referenceImages).toBeUndefined();
+    expect(correction.prompt).toContain("INDEPENDENT CRITIC-LED RECONSTRUCTION");
+    expect(correction.prompt).toContain("Generate a completely new image from the written event brief");
+    expect(correction.prompt).toContain("no prior pixel arrangement");
+    expect(correction.prompt).toContain("Measured failure classes to eliminate: artifact, premium-feel");
+    expect(correction.prompt).toContain("Some repeated spheres show copy-stamp uniformity");
+    expect(correction.prompt).toContain("organic variation in scale, occlusion, edge shape, highlights, texture and depth spacing");
+    expect(correction.prompt).toContain("Skin and faces need restrained specular highlights");
+    expect(correction.prompt).toContain("matte ink-and-tempera editorial illustration");
+    expect(correction.prompt).not.toContain("SOURCE-LOCKED NEAR-PASS");
+    expect(correction.prompt).not.toContain("Make the smallest localized corrections");
+    expect(retained).toHaveLength(3);
+    expect(retained.map((record) => record.model)).toEqual([
+      "gpt-image-2",
+      "gpt-image-2",
+      "gpt-image-2",
+    ]);
+    expect(retained.reduce((sum, record) => sum + Number(record.costUsdMicros), 0)).toBe(495_000);
+
+    if (result.kind !== "approved-image") throw new Error("expected approved image");
+    expect(result.model).toBe("gpt-image-2");
+    const approvedBytes = Buffer.from(result.dataUrl.split(",")[1], "base64");
+    expect(readPngSize(approvedBytes)).toEqual({ width: 1260, height: 2240 });
+    expect(decodePng(approvedBytes).rgb[0]).toBe(3);
+  });
+
+  it("keeps high-fidelity source editing for a clean near-pass that only needs safer framing", async () => {
+    let call = 0;
+    const generateImage = vi.fn(async () => {
+      call += 1;
+      const bytes = generatedPng(call, 1260, 2240);
+      return { bytes, dataUrl: `data:image/png;base64,${bytes.toString("base64")}`, durationMs: 100 };
+    });
+    const runVision = vi.fn(async (input: { bytes: Buffer }) => {
+      const fill = decodePng(input.bytes).rgb[0];
+      if (fill < 3) {
+        return nearPassVision(
+          "Move the existing subjects inward to restore safe breathing room.",
+          { artifactFree: 5, premiumFinish: 5, compositionQuality: 4 },
+          ["crop-unsafe"],
+        );
+      }
+      return vision(true, "The reframed source now passes every dimension.");
+    });
+
+    const result = await generateQualityLockedPreview(event, {
+      generateImage,
+      runTier1: () => tier1(true),
+      runVision: runVision as never,
+      maxCandidates: 2,
+      parallelCandidates: true,
+    });
+
+    expect(result.kind).toBe("approved-image");
+    const correction = generateImage.mock.calls[2][0];
+    expect(correction).toEqual(expect.objectContaining({
       model: "gpt-image-1.5",
       quality: "high",
       inputFidelity: "high",
     }));
     expect(correction.prompt).toContain("SOURCE-GUIDED NEAR-PASS REBUILD");
-    expect(correction.prompt).toContain("Measured failure classes: artifact, premium-feel");
-    expect(correction.prompt).toContain("Some repeated spheres show copy-stamp uniformity");
-    expect(correction.prompt).toContain("The flagged regions are NOT protected");
-    expect(correction.prompt).toContain("Visibly redraw every measured defect from scratch");
-    expect(correction.prompt).toContain("organic variation in scale, occlusion, edge shape, highlights, texture and depth spacing");
-    expect(correction.prompt).toContain("Skin and faces need restrained specular highlights");
-    expect(correction.prompt).toContain("Keep every unflagged, already-correct feature stable");
-    expect(correction.prompt).not.toContain("SOURCE-LOCKED NEAR-PASS");
-    expect(correction.prompt).not.toContain("Make the smallest localized corrections");
+    expect(correction.prompt).toContain("COMPOSITION SAFETY REBUILD");
     expect(correction.referenceImages).toHaveLength(1);
     expect(readPngSize(correction.referenceImages![0].bytes)).toEqual({ width: 1260, height: 2240 });
-    expect(decodePng(correction.referenceImages![0].bytes).rgb[0]).toBe(2);
-
-    if (result.kind !== "approved-image") throw new Error("expected approved image");
-    expect(result.model).toBe("gpt-image-1.5");
-    const approvedBytes = Buffer.from(result.dataUrl.split(",")[1], "base64");
-    expect(readPngSize(approvedBytes)).toEqual({ width: 1260, height: 2240 });
-    expect(decodePng(approvedBytes).rgb[0]).toBe(3);
   });
 
   it("keeps a failed targeted correction private and returns the safe fallback", async () => {
