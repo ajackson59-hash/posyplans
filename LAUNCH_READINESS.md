@@ -6,7 +6,62 @@ PR #44 remains draft, unmerged and Preview-only. The owner redeployed the
 existing Production commit `db829a1` during environment setup; that did not
 publish PR #44. This work has not changed main or Production.
 
-## Current comparison awaiting a diagnostic extension
+## Latest diagnostic and shared reviewer correction
+
+The owner approved the $5 diagnostic extension described below and replenished
+API credits after Moana Event 40 hit `credit_balance_exhausted`. That event
+attempted two image requests; neither returned pixels, and no critic ran.
+Its one classifier used 504 input / 34 output tokens ($0.000674 at standard
+rates). Billing for the failed image requests remains unknown.
+
+The remaining frozen KPop case ran once as Event 41 on exact Preview `8201691`
+(Verify #399). The first-look POST returned 202 in 104 ms. There were exactly
+two image requests, two physical critic requests, and no classifier, research,
+image retry, checkout or email. Both candidates remain privately rejected.
+
+| Attempt | Tier | Generation including normalization | Critic | Scores: text/artifact/premium/brief/composition/age |
+| --- | --- | --- | --- | --- |
+| 141 | medium | 41,928 ms | 30,021 ms | 5/5/4/2/5/5 |
+| 142 | high | 113,546 ms | 22,193 ms | 5/5/5/3/5/5 |
+
+Both critics incorrectly claimed the requested KPop Demon Hunters property
+was nonexistent or invented. The [official Netflix cast page](https://www.netflix.com/tudum/articles/kpop-demon-hunters-cast)
+establishes the film and requested Rumi, Mira and Zoey characters. Agent pixel
+inspection also found headset microphones in attempt 141 despite a missing-mic
+finding. These are reviewer defects, not independent human identity approval.
+The high candidate passed purchase desire and the five non-brief dimensions;
+the medium candidate also missed the premium floor. Neither result is promoted
+or re-reviewed. High generation alone again exceeded the 90-second target.
+The browser displayed the saved direction card by 170,463 ms; that is an
+observation upper bound, not exact server completion or successful artwork.
+
+Both original 1024x1536 source hashes and recomputed 373x560 reviewed hashes
+match the retained attempt records. Returned usage multiplied by standard
+prices totals $0.224200 for images and $0.051633 for critics ($0.275833 combined).
+This is not invoice reconciliation and excludes the earlier failed Moana calls.
+Full hashes, usage and frozen-brief evidence are retained in PR #44.
+
+The code audit found that the generator received the assembled brief's
+`inspirationNotes`, while the shared vision reviewer omitted them. The fix
+passes that complete context to both teaser and invitation review, including
+named identity descriptions and host-supplied design references. Context is
+explicitly task data, never authority to award scores; URLs are provenance,
+not a claim of live research or attached reference pixels. Unfamiliarity cannot
+justify an unsupported nonexistence claim; unresolved identity still rejects.
+No acceptance threshold, binary check, model or retry policy changes.
+Regression tests cover both review modes, complete context and retained failure.
+Verification: TypeScript, 67 test files / 802 tests, production build and Vercel
+function bundle pass locally. The focused image suites pass 144 tests.
+This shared handoff repair has not been exercised by a new live image request.
+
+The extension is complete: two of two events submitted, four of four image
+requests attempted (two failed, two returned), two of eight physical critics
+and one of two classifiers used. Remaining critic capacity does not authorize
+re-reviewing rejected artwork. No further paid diagnostic is authorized by
+this extension. The repeated benchmark remains separately unapproved. Release
+status stays **HOLD** for quality, reviewer calibration and delivery latency.
+
+## Preserved comparison policy and approved extension scope
 
 The named customer path on this Preview branch now deliberately compares one
 medium-tier render and one high-tier render in parallel. This supersedes the
@@ -30,13 +85,13 @@ Provider-supplied input/output token breakdowns are retained when complete and
 consistent. Missing usage remains unknown, and successful-response usage does
 not account for any failed earlier requests. No invoice-total claim is made.
 
-Proposed next step, **not yet authorized or submitted**: two new synthetic
+Previously proposed and subsequently approved scope: two new synthetic
 events using the exact frozen Moana and KPop briefs, one per direction on the
 same final SHA, with at most four image requests (two medium, two high), eight
 physical critic requests including the existing bounded format repair, and
 two classifier requests. No reference search, extra image retry, checkout,
-outbound email, merge or Production change. Request a **$5 API spending
-allowance** for this diagnostic extension; this is a conservative planning
+outbound email, merge or Production change. The approved **$5 API spending
+allowance** for this diagnostic extension is a conservative planning
 allowance, not a fixed provider invoice quote. Expected image outputs alone
 are approximately $0.412; input and critic tokens are additional. Preserve
 all outcomes and stop at a confirmed defect or unresolved usage accounting.
@@ -44,14 +99,14 @@ This comparison cannot establish the repeated 95%/90-second release target.
 The larger repeated benchmark remains separately unapproved and must not run
 merely because this small comparison is approved.
 
-Local verification of this prepared comparison: TypeScript, 67 files / 800
-tests, production build and Vercel function bundle pass. No live image call
-has used the revised reviewer or mixed render tiers yet. Pricing inputs are
+Local verification of the original prepared comparison: TypeScript, 67 files /
+800 tests, production build and Vercel function bundle passed before the live
+diagnostic reported above. Pricing inputs are
 documented by [OpenAI](https://developers.openai.com/api/docs/pricing) and
 [Anthropic](https://platform.claude.com/docs/en/about-claude/pricing); retain
 the distinction between estimated reserves, measured token usage and billing.
 
-## Latest general-direction diagnostic evidence
+## Earlier general-direction diagnostic evidence — preserved
 
 The complete frozen briefs, request caps, results and remaining work are in
 [PR #44](https://github.com/ajackson59-hash/posyplans/pull/44). Preserve failed
