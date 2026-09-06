@@ -27,7 +27,7 @@ const CURATED_REFERENCE_SOURCES: Readonly<Record<string, CuratedReferenceSource>
     ],
     pageUrls: ["https://www.blippi.com/about"],
     notes:
-      "Official Blippi visual references show Blippi as a full adult host in a bright blue shirt, orange suspenders, orange bow tie, orange glasses and blue-and-orange cap. Official Meekah references show a distinct adult woman with natural curly hair and a purple-and-orange play-and-learn outfit. Keep both hosts recognizable, together and central; do not substitute an isolated bow tie, palette, logo or generic second adult.",
+      "Official Blippi visual references show Blippi as an adult host in a bright blue shirt, orange suspenders, orange bow tie, orange glasses and blue-and-orange cap. Official Meekah references show a distinct adult woman with natural curly hair and a purple-and-orange play-and-learn outfit. These are individual identity descriptions, not a requirement to include both hosts.",
   },
   "unicorn-academy": {
     imageUrls: [
@@ -35,7 +35,7 @@ const CURATED_REFERENCE_SOURCES: Readonly<Record<string, CuratedReferenceSource>
       "https://cdn.prod.website-files.com/64b69cbacda0592c92130359/64b7f7f9c553df802bd8435f_character_single_02_layla-unicorn.png",
     ],
     notes:
-      "Official Unicorn Academy references show polished animated academy-age riders in jewel-toned riding uniforms, each paired with a visually distinct bonded magical unicorn. Preserve recognizable rider-and-unicorn pair design, markings, silhouettes and academy-world styling; do not substitute generic children, generic horses, rainbow clipart or an unrelated unicorn party.",
+      "Official Unicorn Academy references depict animated academy-age riders in jewel-toned riding uniforms and distinct bonded magical unicorns with specific markings and silhouettes. These describe the series world; the host chooses which characters, unicorns, setting and activities to depict.",
   },
   "kpop-demon-hunters": {
     imageUrls: [
@@ -46,7 +46,7 @@ const CURATED_REFERENCE_SOURCES: Readonly<Record<string, CuratedReferenceSource>
       "https://www.netflix.com/tudum/kpop-demon-hunters",
     ],
     notes:
-      "Official Netflix visual references show Rumi, Mira and Zoey as three distinct stylized animated young women with different faces, hair silhouettes and coordinated contemporary K-pop performance styling. Preserve all three as central performers and add unmistakable supernatural hunter energy; do not substitute a generic girl group or abstract neon.",
+      "Netflix's labeled character stills establish distinct KPop Demon Hunters designs. Rumi has swept-up purple hair continuing into a long thick braid, defined eyebrows and a yellow performance jacket. Mira has long pink high twin ponytails, an angular face, a dark cropped top and a yellow skirt in the pictured stage outfit. Zoey has dark hair with blunt bangs and gathered braided sections, a turquoise cropped top with dark trim and dangling earrings. These describe pictured reference outfits, not every possible costume; preserve recognizable identity within the host's requested treatment. Cast, pose, setting, weapons and stage props are determined by the host's brief. Source: https://www.netflix.com/tudum/articles/kpop-demon-hunters-cast",
   },
   "paw-patrol": {
     imageUrls: [
@@ -82,7 +82,8 @@ export interface ResolvedNamedReference {
  * Retain existing curated facts when available without claiming a live search
  * occurred. Every other named world uses the same complete subject contract. */
 export function namedReferenceIdentityNotes(reference: NamedCreativeReference): string {
-  return [CURATED_REFERENCE_SOURCES[reference.id]?.notes, ...reference.requirements]
+  return ["REFERENCE SCOPE: use reference descriptions only to identify the subjects requested in the complete host brief. They do not add cast members, fixed character counts, activities, locations or props. Explicit host scope and exclusions remain binding.",
+    CURATED_REFERENCE_SOURCES[reference.id]?.notes, ...reference.requirements]
     .filter(Boolean).join(" ");
 }
 

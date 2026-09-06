@@ -37,13 +37,13 @@ const SUBJECT_FAMILIES: readonly SubjectFamily[] = [
     identityCue:
       /\b(k[ -]?pop demon hunters?|huntr\/?x|rumi|mira|zoey|demon[- ]hunt)\b/i,
     bindingRequirements: [
-      "The KPop Demon Hunters identity must be direct and unmistakable, with the recognizable heroine trio Rumi, Mira and Zoey depicted as the central themed characters",
-      "Preserve the trio's distinct K-pop performance energy, signature character silhouettes and supernatural demon-hunting weapons; generic pop stars, abstract neon or an unnamed girl group do not satisfy the theme",
+      "The KPop Demon Hunters identity must be direct and unmistakable through the host's requested named characters and their independently recognizable faces, hair, costume and silhouettes",
+      "Preserve the host's exact cast scope, requested scene and activities; property recognition does not require an unrequested trio, weapons, performance stage or supernatural props; generic pop stars, abstract neon or an unnamed girl group do not satisfy a requested named-character identity",
       "Do not include a franchise logo, movie title, character names as rendered text, or copy another invitation's composition",
     ],
     reviewRequirements: [
-      "The recognizable KPop Demon Hunters heroine trio is visibly present as three distinct central characters",
-      "Both K-pop performance energy and supernatural demon-hunting cues are unmistakably visible",
+      "Each specifically requested KPop Demon Hunters character is independently recognizable through visible identity features",
+      "The host's requested cast scope, scene and activities are visibly respected",
     ],
     compatibleThemeIds: [],
   },

@@ -43,7 +43,9 @@ describe("reference-backed prepayment preview board", () => {
     expect(svg).toContain("Hayden&apos;s Unicorn Academy 7th Birthday");
     expect(svg).toContain("Unicorn Academy");
     expect(svg).toContain("Academy riders");
-    expect(svg).toContain("Winter snow-globe igloo");
+    expect(svg).toContain("Winter wonderland");
+    expect(svg).toContain("Glowing igloo");
+    expect(svg).not.toMatch(/snow.globe/i);
     expect(svg).toContain(
       `data:image/png;base64,${references[0].bytes.toString("base64")}`,
     );

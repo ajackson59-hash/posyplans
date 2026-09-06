@@ -6,7 +6,39 @@ PR #44 remains draft, unmerged and Preview-only. The owner redeployed the
 existing Production commit `db829a1` during environment setup; that did not
 publish PR #44. This work has not changed main or Production.
 
-## Latest diagnostic and shared reviewer correction
+## Latest fixed reviewer calibration and host-scope correction
+
+The owner authorized reviewer calibration after the shared context repair.
+The [frozen control record](tools/qa/REVIEWER_CALIBRATION.md) contains source
+provenance, exact hashes, pre-registered labels, all four results and limits.
+On Preview `7a862fc` (Verify #401), the reviewer correctly identified both
+official Rumi/Zoey portraits and rejected both swapped-character requests:
+**4/4 identity controls correct**, four physical critic calls, zero image calls,
+no retries. Token-derived cost totals **$0.094797**, not invoice reconciliation.
+All eight claim/result records remain owner-private and rejected without
+preview IDs; previous generated artwork and event state remain unchanged.
+
+All four full artwork verdicts failed. The controls exposed a separate shared
+scope defect: subject-family rules imposed a heroine trio and supernatural
+props on a single-character brief. The follow-up removes that forced expansion,
+along with curated fixed settings and extra-host defaults. Every explicitly
+requested cast member, scene detail and exclusion remains binding. Requested
+direction-card details are preserved; reference defaults cannot displace them.
+Descriptive reference notes cannot add unrequested subjects or props. The old
+preview prompt no longer inserts the prior synthetic soft-play scene. The
+calibration route is unregistered; older deployments share its consumed keys.
+
+This follow-up has no new live artwork/critic validation. The four controls
+calibrate named identity on these reference inputs only; broader artistic
+scoring showed inconsistencies and remains unproven. Neither premium generated
+artwork across directions nor the 95%/90-second target is established. Launch
+remains **HOLD**, with no promotion, checkout or outbound email performed.
+Local verification of the follow-up: TypeScript, 68 test files / 830 tests,
+production build and Vercel function bundle pass. Regression coverage retains
+full requested casts, single characters, exclusions, mixed media, exact source
+reuse, and requested direction-card/reference-board details without defaults.
+
+## Earlier tier diagnostic and shared reviewer correction
 
 The owner approved the $5 diagnostic extension described below and replenished
 API credits after Moana Event 40 hit `credit_balance_exhausted`. That event

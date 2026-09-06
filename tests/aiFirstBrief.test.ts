@@ -141,7 +141,7 @@ describe("brief — requirements the server owns, not the model", () => {
     });
 
     expect(subjectFamiliesForBrief(themedBrief).map((family) => family.id)).toContain("kpop-demon-hunters");
-    expect(concreteSubjectRequirementsForBrief(themedBrief).join(" ")).toContain("Rumi, Mira and Zoey");
+    expect(concreteSubjectRequirementsForBrief(themedBrief).join(" ")).toContain("host's requested named characters");
     expect(concreteSubjectReviewRequirementsForBrief(themedBrief)).toHaveLength(2);
     expect(buildUserPrompt({ brief: themedBrief })).toContain("Rumi, Mira and Zoey");
     expect(buildArtworkConstraints(themedBrief)).toContain("generic pop stars");
@@ -201,7 +201,7 @@ describe("brief — requirements the server owns, not the model", () => {
     expect(effective.requirements.required.join(" ")).not.toContain("colour family");
     expect(subjectFamiliesForBrief(effective).map((family) => family.id)).toEqual(["kpop-demon-hunters"]);
     expect(prompt).toContain("Visual identity for this generation: KPop Demon Hunters");
-    expect(prompt).toContain("Rumi, Mira and Zoey");
+    expect(prompt).toContain(direction);
     expect(prompt).not.toContain("Construction subject map");
   });
 

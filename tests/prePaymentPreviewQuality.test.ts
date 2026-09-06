@@ -7,6 +7,8 @@ import type { VisionVerdict } from "../server/aiFirst/visionGate";
 import type { ArtworkRequest } from "../server/aiFirst/artwork";
 import { InMemoryArtworkAttemptStore } from "../server/aiFirst/artworkAttemptStore";
 import { decodePng, encodePng, readPngSize } from "../server/aiFirst/png";
+import { concreteSubjectRequirementsForBrief, concreteSubjectReviewRequirementsForBrief } from "../server/aiFirst/conceptPreflight";
+import { namedReferenceIdentityNotes } from "../server/namedReferenceResolver";
 import {
   buildDirectionCard,
   buildQualityLockedPreviewBrief,
@@ -111,6 +113,61 @@ function nearPassVision(
 describe("prepayment preview quality lock", () => {
   afterEach(() => {
     clearNamedThemeDetectionCache();
+  });
+
+  it.each([
+    ["Rumi", ["Rumi"], ["Mira", "Zoey"]],
+    ["Rumi and Zoey", ["Rumi", "Zoey"], ["Mira"]],
+    ["Rumi, Mira and Zoey", ["Rumi", "Mira", "Zoey"], []],
+    ["Jinu", ["Jinu"], ["Rumi", "Mira", "Zoey"]],
+  ])("preserves the requested KPop cast: %s", async (cast, included, absent) => {
+    const { brief, namedReference } = await buildQualityLockedPreviewBrief({ ...event,
+      eventName: "Character portrait study", themeName: "KPop Demon Hunters", vibeDescription: `Show ${cast} in a quiet watercolor garden portrait. No weapons or stage.` } as Event);
+    const requirements = brief.requirements.required.join(" ");
+    for (const subject of included as string[]) expect(requirements).toContain(`${subject} is independently recognizable`);
+    for (const subject of absent as string[]) expect(requirements).not.toContain(`${subject} is independently recognizable`);
+    const inferred = concreteSubjectReviewRequirementsForBrief(brief).join(" ");
+    expect(inferred).not.toMatch(/trio is visibly|three distinct central|supernatural.*unmistakably/);
+    expect(concreteSubjectRequirementsForBrief(brief).join(" ")).toContain("host's exact cast scope");
+    expect(brief.vibe).toContain("quiet watercolor garden portrait");
+    expect(brief.requirements.excluded.join(" ")).toContain("weapons or stage");
+    expect(namedReferenceIdentityNotes(namedReference!)).toContain("They do not add cast members");
+    expect(namedReferenceIdentityNotes(namedReference!)).not.toContain("Preserve all three");
+  });
+
+  it.each([
+    ["Blippi", "Blippi", "Meekah"], ["Meekah", "Meekah", "Blippi"],
+    ["Blippi only. No Meekah", "Blippi", "Meekah"],
+  ])("does not add the other host to %s", async (direction, present, absent) => {
+    const { brief, namedReference } = await buildQualityLockedPreviewBrief({ ...event,
+      eventName: "Character portrait study", themeName: "", vibeDescription: `${direction}. A watercolor seaside portrait.` } as Event);
+    expect(namedReference?.label).toBe(present);
+    expect(brief.requirements.required.join(" ")).toContain(`${present} is visibly identifiable`);
+    expect(brief.requirements.required.join(" ")).not.toContain(`${absent} is visibly identifiable`);
+    expect(namedReference?.cues.join(" ")).not.toMatch(/soft play|bubbles|ice.cream/i);
+  });
+
+  it("keeps both explicitly requested hosts independently binding", async () => {
+    const { brief } = await buildQualityLockedPreviewBrief({ ...event,
+      themeName: "Blippi + Meekah", vibeDescription: "Show Blippi and Meekah in a hand-painted garden scene." } as Event);
+    expect(brief.requirements.required.join(" ")).toContain("Blippi is visibly identifiable");
+    expect(brief.requirements.required.join(" ")).toContain("Meekah is visibly identifiable");
+  });
+
+  it.each(["Unicorn Academy", "PAW Patrol", "Bluey"])("keeps preset scenes out of %s host requirements", async (theme) => {
+    const { brief, namedReference } = await buildQualityLockedPreviewBrief({ ...event,
+      eventName: "Character portrait study", themeName: theme, vibeDescription: "A restrained embroidered character portrait with a linen background." } as Event);
+    expect(brief.vibe).toContain("embroidered character portrait");
+    expect(brief.requirements.required.join(" ")).not.toMatch(/winter wonderland|glowing igloo|snow.globe|both central|rescue-team world/);
+    expect(namedReference?.cues.join(" ")).not.toMatch(/winter|igloo|snow.globe/i);
+    expect(namedReferenceIdentityNotes(namedReference!)).toContain("Explicit host scope and exclusions remain binding");
+  });
+
+  it("shows requested scene cues and omits negated preset details on the direction card", () => {
+    const card = buildDirectionCard({ ...event, eventName: "A garden party", themeName: "Unicorn Academy",
+      vibeDescription: "In a garden. No igloo, snow globe, bubbles or ice cream." } as Event);
+    expect(card.cues).toContain("Garden florals");
+    expect(card.cues.join(" ")).not.toMatch(/igloo|snow.globe|bubbles|ice.cream/i);
   });
 
   it("keeps teaser artwork full-bleed instead of generating an unfinished blank panel", async () => {

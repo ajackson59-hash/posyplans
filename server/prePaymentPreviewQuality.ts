@@ -178,36 +178,33 @@ const NAMED_REFERENCES: readonly NamedCreativeReference[] = [
     id: "blippi-meekah",
     label: "Blippi + Meekah",
     trigger: /\b(?:blippi|blippy|blipi|meekah|mika)\b/i,
-    cues: ["Blippi + Meekah", "Indoor soft play", "Bubbles", "Ice-cream treats"],
+    cues: ["Blippi + Meekah", "Recognizable hosts", "Your chosen setting", "Your requested activities"],
     palette: ["#17315C", "#FF7A00", "#F8F3E8", "#B79DE2"],
     requirements: [
       "Blippi is visibly identifiable as a full lead character through his blue-and-orange play-and-learn outfit, orange glasses and orange bow tie—not merely an isolated accessory or color palette",
       "Meekah is visibly identifiable as a distinct full co-host through her natural curly hair and recognizable purple play-and-learn wardrobe with warm orange/yellow accents—not a generic second adult",
-      "Blippi and Meekah are both central to the same joyful event scene and visibly interact with the requested setting or activities",
     ],
   },
   {
     id: "unicorn-academy",
     label: "Unicorn Academy",
     trigger: /\bunicorn acad(?:emy|amy)\b/i,
-    cues: ["Unicorn Academy", "Academy riders", "Bonded magical unicorns", "Winter snow-globe igloo"],
+    cues: ["Unicorn Academy", "Requested characters", "Magical academy world", "Your event details"],
     palette: ["#4B356C", "#D5A93C", "#F7F1E8", "#AFCEF0"],
     requirements: [
-      "The Unicorn Academy animated-series identity is unmistakable through recognizable academy riders and their distinct bonded magical unicorns—not generic children riding generic unicorns",
-      "The rider-and-unicorn bonds are the central subject and the requested winter wonderland, glowing igloo and party-inside-a-snow-globe setting remain visibly present",
-      "A generic unicorn party, fantasy horse scene or rainbow palette alone does not satisfy the requested named world",
+      "The specifically requested Unicorn Academy characters or bonded unicorns are independently recognizable through their actual designs, markings and silhouettes",
+      "The host's requested cast, setting and activities are faithfully depicted within the recognizable Unicorn Academy world",
     ],
   },
   {
     id: "kpop-demon-hunters",
     label: "KPop Demon Hunters",
     trigger: /\b(k[ -]?pop demon hunters?|huntr\/?x|rumi|mira|zoey|saja boys?)\b/i,
-    cues: ["KPop Demon Hunters", "Heroine trio", "Performance energy", "Supernatural hunter details"],
+    cues: ["KPop Demon Hunters", "Requested characters", "Your chosen scene", "Recognizable world"],
     palette: ["#2A1748", "#E847A8", "#F7F1F6", "#55CBD2"],
     requirements: [
-      "The recognizable KPop Demon Hunters heroine trio is visibly present as three distinct central characters",
-      "Both K-pop performance energy and supernatural demon-hunting cues are unmistakably visible",
-      "Generic pop stars, abstract neon or an unnamed girl group do not satisfy the requested identity",
+      "Each specifically requested KPop Demon Hunters character is independently recognizable through canonical face, hair, costume and silhouette",
+      "The host's requested cast scope, setting and activities are faithfully depicted within the recognizable named world",
     ],
   },
   {
@@ -217,8 +214,8 @@ const NAMED_REFERENCES: readonly NamedCreativeReference[] = [
     cues: ["PAW Patrol", "Rescue pups", "Adventure Bay energy", "Teamwork + celebration"],
     palette: ["#1D4F7A", "#E33B32", "#F3F0E8", "#F4C441"],
     requirements: [
-      "The PAW Patrol identity is unmistakable through recognizable rescue pups with their distinct roles and gear—not generic puppies in colored hats",
-      "The rescue-team world and the requested celebration are both visibly present",
+      "Each specifically requested PAW Patrol character is independently recognizable through its actual breed, face, markings and role-specific design",
+      "The host's requested cast scope and event scene are faithfully depicted within the recognizable PAW Patrol world",
     ],
   },
   {
@@ -228,16 +225,36 @@ const NAMED_REFERENCES: readonly NamedCreativeReference[] = [
     cues: ["Bluey", "Playful family energy", "Australian-home warmth", "Imaginative games"],
     palette: ["#245B87", "#4A90D9", "#F6EFE4", "#F1C66B"],
     requirements: [
-      "The Bluey animated-series identity is unmistakable through the recognizable blue-heeler family world—not generic blue cartoon dogs",
-      "The requested celebration remains visible rather than becoming an unrelated character portrait",
+      "Each specifically requested Bluey character is independently recognizable through its actual face, markings, colors and silhouette",
+      "The host's requested cast scope and scene are faithfully depicted within the recognizable Bluey world",
     ],
   },
 ];
 
-/** Curated fast path only. Zero I/O, zero latency, unchanged behavior for these five. */
+/** Recognition supplies identity, never a canned cast count or event setting. */
 function detectCuratedNamedCreativeReference(text: string): NamedCreativeReference | null {
   for (const reference of NAMED_REFERENCES) {
-    if (reference.trigger.test(text)) return reference;
+    if (!reference.trigger.test(text)) continue;
+    const isRequested = (pattern: RegExp) => Array.from(text.matchAll(new RegExp(pattern.source, "gi")))
+      .some(match => !targetIsNegated(text, match.index ?? 0));
+    if (reference.id === "blippi-meekah") {
+      const blippi = isRequested(/\b(?:blippi|blippy|blipi)\b/);
+      const meekah = isRequested(/\b(?:meekah|mika)\b/);
+      if (!blippi && !meekah) continue;
+      const label = blippi && meekah ? reference.label : blippi ? "Blippi" : "Meekah";
+      return { ...reference, label, cues: [label, ...reference.cues.slice(1)], requirements: [
+        ...(blippi ? [reference.requirements[0]] : []), ...(meekah ? [reference.requirements[1]] : []),
+      ] };
+    }
+    if (reference.id === "kpop-demon-hunters") {
+      const subjects = ["Rumi", "Mira", "Zoey", "Jinu", "Saja Boys"]
+        .filter(subject => isRequested(new RegExp(`\\b${escapeForRegExp(subject)}\\b`)));
+      return { ...reference, requirements: [
+        ...(subjects.length ? subjects.map(subject => `${subject} is independently recognizable through canonical face, hair, costume and silhouette`)
+          : [reference.requirements[0]]), reference.requirements[1],
+      ] };
+    }
+    return reference;
   }
   return null;
 }
@@ -438,6 +455,7 @@ const CUE_RULES: readonly CueRule[] = [
   { trigger: /soft[- ]play|foam blocks?|climbing blocks?|tunnels?|slides?/i, label: "Indoor soft play" },
   { trigger: /bubbles?|bubble wands?/i, label: "Bubbles" },
   { trigger: /ice[ -]?cream|frozen treats?/i, label: "Ice-cream treats" },
+  { trigger: /academy[- ]riders|riders and bonded/i, label: "Academy riders" },
   { trigger: /igloo/i, label: "Glowing igloo" },
   { trigger: /snow[ -]?globe/i, label: "Snow-globe atmosphere" },
   { trigger: /winter wonderland|\bwinter\b|snowy|snow\b/i, label: "Winter wonderland" },
@@ -495,11 +513,12 @@ export function buildDirectionCard(
   const brief = prePaymentPreviewSourceBrief(event);
   const named = resolvedNamed !== undefined ? resolvedNamed : detectNamedCreativeReferenceSync(brief);
   const detectedCues = CUE_RULES
-    .filter((rule) => rule.trigger.test(brief))
+    .filter((rule) => Array.from(brief.matchAll(new RegExp(rule.trigger.source, "gi")))
+      .some(match => !targetIsNegated(brief, match.index ?? 0)))
     .map((rule) => rule.label);
   const themeCue = event.themeName?.trim() || "";
   const fallbackCue = event.eventType?.trim() || "Personal celebration";
-  const cues = unique([...(named?.cues ?? []), themeCue, ...detectedCues, fallbackCue]).slice(0, 4);
+  const cues = unique([named?.label ?? "", themeCue, ...detectedCues, ...(named?.cues ?? []), fallbackCue]).slice(0, 4);
   while (cues.length < 4) {
     const fallback = ["Made from your details", "Invitation-ready direction", "Event-specific styling", "Editable after unlock"][cues.length];
     cues.push(fallback);

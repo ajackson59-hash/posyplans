@@ -564,8 +564,9 @@ describe("quality-locked prepayment preview routes", () => {
     expect(classifyNamedReference).toHaveBeenCalledTimes(1);
     expect(generate).toHaveBeenCalledTimes(1);
     expect(generate.mock.calls[0][0].vibeDescription).toBe(stored.vibeDescription);
-    expect(generate.mock.calls[0][1]).toMatchObject({ namedReference, inspirationNotes: namedReference.requirements[0],
+    expect(generate.mock.calls[0][1]).toMatchObject({ namedReference, inspirationNotes: expect.stringContaining(namedReference.requirements[0]),
       quality: "high", maxCandidates: 2, parallelCandidates: true, allowTargetedCorrection: false });
+    expect(generate.mock.calls[0][1].inspirationNotes).toContain("They do not add cast members");
     expect(generate.mock.calls[0][1].referenceImages).toBeUndefined();
     const ready = await request(app).get(`/api/events/owner/${OWNER}/prepayment-preview/readiness`);
     expect(ready.body.kind).toBe("approved-image");
