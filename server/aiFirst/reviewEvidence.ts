@@ -1,7 +1,7 @@
 /** Server-owned review rules. A valid report is not proof that its visual judgment is correct. */
 import type { VisionScores } from "@shared/aiFirstStream";
 
-export const REVIEW_EVIDENCE_VERSION = "located-medium-review-v1";
+export const REVIEW_EVIDENCE_VERSION = "located-medium-review-v2";
 export const REVIEW_CRITERIA = {
   textLogoWatermarkFree: ["lettering", "logo", "watermark"],
   artifactFree: ["malformed-anatomy", "malformed-object", "composite-seam", "duplicated-pattern", "incoherent-light"],

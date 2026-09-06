@@ -11,7 +11,6 @@
 // working exactly as before whether the flag is on or off.
 
 import type { Express, Request, Response } from "express";
-import { registerReviewCalibrationRoutes } from "./reviewCalibrationRoutes";
 import { registerStyleSourceRoutes } from "./styleSourceRoutes";
 import { readFeatureFlags } from "@shared/featureFlags";
 import { AI_FIRST_CONCEPT_KEY, themeFromSnapshot, type AiFirstSnapshot } from "@shared/aiFirstTheme";
@@ -136,7 +135,6 @@ export function abortOnUnexpectedResponseClose(res: Response, controller: AbortC
 
 export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
   registerStyleSourceRoutes(app, deps);
-  registerReviewCalibrationRoutes(app, deps, "consistency-v1");
   const env = () => deps.env ?? process.env;
   const flags = () => readFeatureFlags(env());
 

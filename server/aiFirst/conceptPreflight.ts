@@ -20,6 +20,8 @@ export interface SubjectFamily {
   bindingRequirements?: readonly string[];
   /** Concrete positive subjects Tier 2 can answer present/absent from pixels. */
   reviewRequirements?: readonly string[];
+  /** Broad named-cast fallback; exact tagged identities supersede this checklist. */
+  reviewScope?: "named-cast";
   /** Curated themes whose shipped artwork genuinely depicts this subject. */
   compatibleThemeIds: readonly string[];
   /** Broader keyword families absorbed by this more-specific identity. */
@@ -45,6 +47,7 @@ const SUBJECT_FAMILIES: readonly SubjectFamily[] = [
       "Each specifically requested KPop Demon Hunters character is independently recognizable through visible identity features",
       "The host's requested cast scope, scene and activities are visibly respected",
     ],
+    reviewScope: "named-cast",
     compatibleThemeIds: [],
   },
   {
@@ -261,7 +264,12 @@ export function concreteSubjectRequirementsForBrief(brief: EventBrief): string[]
  * exclusion checks instead of being duplicated as impossible checklist rows.
  */
 export function concreteSubjectReviewRequirementsForBrief(brief: EventBrief): string[] {
-  return subjectFamiliesForBrief(brief).flatMap((family) => family.reviewRequirements ?? []);
+  const exactNamedTargets = brief.requirements.required.some(r => /^\[VISIBLE NAMED IDENTITY\]\s*\S/i.test(r));
+  // Do not ask the critic to invent a second, broader cast interpretation after
+  // the server has already supplied exact named targets. Other world checks
+  // (e.g. construction cues in a compound brief) remain independent requirements.
+  return subjectFamiliesForBrief(brief).flatMap((family) =>
+    family.reviewScope === "named-cast" && exactNamedTargets ? [] : family.reviewRequirements ?? []);
 }
 
 export function preflightConceptForBrief(concept: AiFirstConcept, brief: EventBrief): ConceptPreflightResult {

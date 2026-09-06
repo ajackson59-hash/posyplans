@@ -17,7 +17,7 @@ import {
   runTier1Checks,
   uniformBorderRingFraction,
 } from "../server/aiFirst/tier1";
-import { MIN_DIMENSION_SCORE, runVisionGate, visibleReviewRequirementsForBrief, visionCostUsd } from "../server/aiFirst/visionGate";
+import { MIN_DIMENSION_SCORE, runVisionGate, visibleReviewRequirementsForBrief, namedIdentityReviewTargetsForBrief, visionCostUsd } from "../server/aiFirst/visionGate";
 import {
   ARTWORK_EDGE_REQUIREMENT,
   ARTWORK_TEXT_REQUIREMENT,
@@ -604,6 +604,39 @@ describe("tier 2 — acceptance", () => {
     expect(reviewText).toContain("left 21%, top 32%, width 58%, height 40%");
     expect(reviewText).toContain("FINAL TYPE PROTECTION: veil (88% local surface opacity)");
     expect(reviewText).toContain("no face, person, hero object or required subject");
+  });
+
+  it.each(["Rumi from KPop Demon Hunters", "Moana from Disney", "Talia, the host's original heroine"])(
+    "restricts named identity checks to the requested role for %s", async name => {
+      const requirement = `${name} is recognizable in the right-hand panel`;
+      const b = brief({ visualIdentityOverride: `An unnamed adult photograph left and ${name} right in a mixed-media diptych`,
+        requirements: { required: [`[VISIBLE NAMED IDENTITY] ${requirement}`], preferred: [], excluded: [] } });
+      let modelText = "";
+      await runVisionGate({ bytes: artworkPng(), concept: concept(), brief: b, reviewMode: "teaser", client: {
+        messages: { create: async (request: any) => {
+          modelText = request.messages[0].content.find((x: any) => x.type === "text").text;
+          return { content: [{ type: "text", text: JSON.stringify({ ...allFive,
+            requiredPresent: [{ requirement, present: true, evidence: "Visible character in right panel" }],
+            excludedFound: [], notes: "", dimensionAssessments: passingDimensionAssessments, teaserChecks: passingTeaserChecks }) }],
+            usage: { input_tokens: 100, output_tokens: 100 } };
+        } },
+      } as unknown as Anthropic });
+      expect(namedIdentityReviewTargetsForBrief(b)).toEqual([requirement]);
+      expect(modelText).toContain(`NAMED IDENTITY SCOPE (server-owned targets): ${JSON.stringify([requirement])}`);
+      expect(modelText).toContain("does not need a franchise identity");
+      expect(modelText).toContain(`- IDENTITY (required): ${requirement}.`);
+      const checklist = modelText.split("VISIBLE MUST-HAVES")[1].split("EXCLUDED:")[0];
+      expect(checklist).toContain(requirement);
+      expect(checklist).not.toContain("Each specifically requested KPop");
+    });
+
+  it("preserves every exact named target and independent construction checks in a compound brief", () => {
+    const b = brief({ visualIdentityOverride: "Rumi and Zoey from KPop Demon Hunters on a construction site",
+      requirements: { required: ["[VISIBLE NAMED IDENTITY] Rumi", "[VISIBLE NAMED IDENTITY] Zoey", "[VISIBLE HOST DETAIL] excavator", "[VISIBLE NAMED IDENTITY] "], preferred: [], excluded: [] } });
+    expect(namedIdentityReviewTargetsForBrief(b)).toEqual(["Rumi", "Zoey"]);
+    expect(concreteSubjectReviewRequirementsForBrief(b)).toEqual([
+      "The construction / little-builder identity is unmistakably visible through at least two coherent builder or jobsite cues",
+    ]);
   });
 
   it("reviews a teaser as exact standalone pixels without inventing a live type box", async () => {

@@ -6,7 +6,19 @@ PR #44 remains draft, unmerged and Preview-only. The owner redeployed the
 existing Production commit `db829a1` during environment setup; that did not
 publish PR #44. This work has not changed main or Production.
 
-## Latest fixed reviewer calibration and host-scope correction
+## Latest reviewer consistency correction and frozen evidence
+
+The [pre-registered consistency record](tools/qa/REVIEW_CONSISTENCY.md) preserves eight fixed reviewer calls on `4201100` / Preview https://posy-jrjy330zr-poseplans.vercel.app (Verify #403). All sixteen claim/result records remain private and unpromotable. Cost was **$0.238944** from 46,008 input / 6,728 output tokens; **zero image calls** and zero retries.
+
+The new located, medium-aware assessments kept craft and composition scores stable across repeated requests and deliberate identity swaps. All four wrong-character controls failed correctly. But identity agreement was only **6/8**, and two repeated checklists changed. One complete-looking 5/5 verdict correctly failed the new integrity validator because it lacked a usable required-item answer. The controls did not certify all artwork directions or premium visual correctness.
+
+Both false identity failures demanded a franchise identity for an unnamed photographic subject beside the requested animated character. The follow-up now binds identity review to the explicit named targets and their roles, replacing the broader full-scene identity target. Redundant named-cast fallback rows no longer compete with exact targets; independent scene checks and all host details/exclusions remain. Structural contradictions stay private and cannot trigger image regeneration. The six 5/5 teaser floor is unchanged.
+
+The frozen paid results use rubric v1. The follow-up is rubric v2 and **has no new live critic or artwork proof**. The calibration registration is removed. Local verification: TypeScript, 69 files / 857 tests, production build and function bundle. Tests verify request/persistence contracts; they do not prove semantic identity accuracy.
+
+Reviewer duration was 16.8–29.6 seconds; observed HTTP duration was 23.2–45.0 seconds. No fresh generation timing was measured. The earlier 113.5-second high render remains a separate blocker. Launch is **HOLD** pending fixed-control revalidation, independently assessed examples across media and the representative customer-flow cohort. No checkout, message delivery, merge or Production change occurred.
+
+## Earlier fixed reviewer calibration and host-scope correction
 
 The owner authorized reviewer calibration after the shared context repair.
 The [frozen control record](tools/qa/REVIEWER_CALIBRATION.md) contains source
