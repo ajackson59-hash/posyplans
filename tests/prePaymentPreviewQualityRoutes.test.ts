@@ -245,6 +245,7 @@ describe("quality-locked prepayment preview routes", () => {
     expect(generate.mock.calls[0][1]).toEqual(expect.objectContaining({
       inspirationNotes: expect.stringContaining("orange glasses"),
       quality: "high",
+      candidateQualities: ["medium", "high"],
       maxCandidates: 2,
       parallelCandidates: true,
       allowTargetedCorrection: false,

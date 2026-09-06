@@ -5,6 +5,7 @@ import type { Event } from "@shared/schema";
 import type { Tier1Result } from "../server/aiFirst/tier1";
 import type { VisionVerdict } from "../server/aiFirst/visionGate";
 import type { ArtworkRequest } from "../server/aiFirst/artwork";
+import { InMemoryArtworkAttemptStore } from "../server/aiFirst/artworkAttemptStore";
 import { decodePng, encodePng, readPngSize } from "../server/aiFirst/png";
 import {
   buildDirectionCard,
@@ -447,6 +448,36 @@ describe("prepayment preview quality lock", () => {
     } as unknown as Event;
     const card = buildDirectionCard(genericEvent, resolved);
     expect(card.namedReference).toEqual({ id: "named-theme-sesame-street", label: "Sesame Street" });
+  });
+
+  it.each([false, true])("records each render tier and keeps a rejected faster candidate private (fast rejected=%s)", async (rejectFast) => {
+    const attempts = new InMemoryArtworkAttemptStore();
+    const generateImage = vi.fn(async (request: ArtworkRequest) => {
+      const bytes = generatedPng(request.quality === "medium" ? 1 : 2);
+      return { bytes, dataUrl: `data:image/png;base64,${bytes.toString("base64")}`, durationMs: 1 };
+    });
+    const result = await generateQualityLockedPreview(event, {
+      quality: "high", candidateQualities: ["medium", "high"], parallelCandidates: true, maxCandidates: 2,
+      attemptRetention: { store: attempts, eventId: event.id, ownerToken: "private-test-owner" },
+      generateImage, runTier1: () => tier1(),
+      runVision: async ({ bytes }) => {
+        const rejected = rejectFast && decodePng(bytes).rgb[0] === 1;
+        return { ...vision(!rejected), failureCodes: rejected ? ["artifact"] : [] };
+      },
+    });
+    expect(result.kind).toBe("approved-image");
+    expect(generateImage).toHaveBeenCalledTimes(2);
+    expect(generateImage.mock.calls.map(([request]) => request.quality)).toEqual(["medium", "high"]);
+    for (const [request] of generateImage.mock.calls) expect(request).toMatchObject({ outputFormat: "jpeg", maxTransientRetries: 0 });
+    const rows = attempts.all.slice().sort((a, b) => a.attempt - b.attempt);
+    expect(rows.map((row) => row.quality)).toEqual(["medium", "high"]);
+    expect(rows.map((row) => row.costUsdMicros)).toEqual([41_000, 165_000]);
+    expect(rows[0].status).toBe(rejectFast ? "rejected" : "accepted");
+    if (result.kind === "approved-image") {
+      const source = Buffer.from(result.dataUrl.split(",")[1], "base64");
+      expect(readPngSize(source)).toEqual({ width: 630, height: 1120 });
+      expect(decodePng(source).rgb[0]).toBe(rejectFast ? 2 : 1);
+    }
   });
 
   it("builds a useful deterministic proof from the host's actual details", async () => {

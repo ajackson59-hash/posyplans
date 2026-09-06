@@ -407,10 +407,11 @@ async function runAutomaticNamedPreviewJob({
         // A failed external image download must not suppress a valid named
         // brief. Canonical identity remains mandatory in the final pixel gate.
         inspirationNotes: namedReferenceIdentityNotes(namedReference),
-        // Named entertainment worlds carry the hardest identity + scene +
-        // finish contract. Do not override generateQualityLockedPreview's
-        // named-theme high-quality default back down to medium here.
+        // Preview comparison: the faster candidate can publish only after the
+        // same six-5/5 and binary checks. Keep a parallel high-tier candidate;
+        // never accept a weaker verdict to meet the latency target.
         quality: "high",
+        candidateQualities: ["medium", "high"],
         maxCandidates: 2,
         parallelCandidates: true,
         allowTargetedCorrection: false,

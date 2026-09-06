@@ -27,6 +27,25 @@ afterEach(() => {
 });
 
 describe("AI-first artwork reference inputs", () => {
+  it.each([undefined, { input_tokens: 50, output_tokens: 100 }, {
+    input_tokens: 50, output_tokens: 100, input_tokens_details: { text_tokens: 80, image_tokens: 0 },
+  }])("keeps absent or inconsistent provider usage unknown", async (usage) => {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({ data: [{ b64_json: GENERATED_B64 }], usage }), { status: 200 }));
+    const result = await generateArtwork({ prompt: "Private art brief", aspectRatio: "9:16", maxTransientRetries: 0 });
+    expect(result.telemetry?.responseUsage).toBeUndefined();
+  });
+
+  it("retains provider input and output usage without equating it with all-in invoice cost", async () => {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({ data: [{ b64_json: GENERATED_B64 }], usage: {
+      input_tokens: 50, output_tokens: 100, input_tokens_details: { text_tokens: 50, image_tokens: 0 },
+      output_tokens_details: { text_tokens: 0, image_tokens: 100 },
+    } }), { status: 200 }));
+    const result = await generateArtwork({ prompt: "Private art brief", aspectRatio: "9:16", maxTransientRetries: 0 });
+    expect(result.telemetry?.responseUsage).toEqual({ inputTokens: 50, outputTokens: 100,
+      textInputTokens: 50, imageInputTokens: 0, textOutputTokens: 0, imageOutputTokens: 100 });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("does not spend an extra provider request when a preview forbids transient retries", async () => {
     fetchMock.mockResolvedValueOnce(new Response("temporary upstream failure", { status: 503 }));
     await expect(generateArtwork({ prompt: "A premium illustrated scene", aspectRatio: "9:16",

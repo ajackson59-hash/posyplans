@@ -68,6 +68,13 @@ export interface ArtworkResult {
     providerRequestCount: number;
     providerDurationMs: number;
     normalizationDurationMs: number;
+    /** Usage from this successful response only, when supplied. Failed earlier
+     * requests and missing fields must not be represented as free usage. */
+    responseUsage?: {
+      inputTokens: number; outputTokens: number;
+      textInputTokens: number; imageInputTokens: number;
+      textOutputTokens: number | null; imageOutputTokens: number | null;
+    };
   };
 }
 
@@ -178,6 +185,22 @@ export function estimateImageCostUsdMicros(
 }
 
 export type ArtworkGenerator = (request: ArtworkRequest) => Promise<ArtworkResult>;
+
+function responseUsage(value: any): NonNullable<ArtworkResult["telemetry"]>["responseUsage"] {
+  const count = (v: unknown): v is number => Number.isSafeInteger(v) && (v as number) >= 0;
+  if (!value || ![value.input_tokens, value.output_tokens, value.input_tokens_details?.text_tokens,
+    value.input_tokens_details?.image_tokens].every(count)) return undefined;
+  if (value.input_tokens !== value.input_tokens_details.text_tokens + value.input_tokens_details.image_tokens) return undefined;
+  const output = value.output_tokens_details;
+  const hasOutputDetails = count(output?.text_tokens) && count(output?.image_tokens)
+    && output.text_tokens + output.image_tokens === value.output_tokens;
+  return {
+    inputTokens: value.input_tokens, outputTokens: value.output_tokens,
+    textInputTokens: value.input_tokens_details.text_tokens, imageInputTokens: value.input_tokens_details.image_tokens,
+    textOutputTokens: hasOutputDetails ? output.text_tokens : null,
+    imageOutputTokens: hasOutputDetails ? output.image_tokens : null,
+  };
+}
 
 function imageEditBody(
   request: ArtworkRequest,
@@ -310,7 +333,8 @@ export async function generateArtwork(request: ArtworkRequest): Promise<ArtworkR
     );
 
     if (response.ok) {
-      const data = (await response.json()) as { data?: { b64_json?: string }[] };
+      const data = (await response.json()) as { data?: { b64_json?: string }[]; usage?: unknown };
+      const usage = responseUsage(data.usage);
       const b64 = data.data?.[0]?.b64_json;
       if (!b64) throw new Error(`${model} returned no image data`);
 
@@ -338,6 +362,7 @@ export async function generateArtwork(request: ArtworkRequest): Promise<ArtworkR
             {
               bytes, dataUrl: `data:image/jpeg;base64,${b64}`, durationMs: Date.now() - started,
               telemetry: { outputFormat, providerRequestCount: attempt + 1, providerDurationMs,
+                ...(usage ? { responseUsage: usage } : {}),
                 normalizationDurationMs: Date.now() - normalizationStarted },
             },
           );
@@ -350,6 +375,7 @@ export async function generateArtwork(request: ArtworkRequest): Promise<ArtworkR
         durationMs: Date.now() - started,
         telemetry: {
           outputFormat, providerRequestCount: attempt + 1, providerDurationMs,
+          ...(usage ? { responseUsage: usage } : {}),
           normalizationDurationMs: Date.now() - normalizationStarted,
         },
       };

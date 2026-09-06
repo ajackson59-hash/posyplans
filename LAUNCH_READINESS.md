@@ -6,6 +6,51 @@ PR #44 remains draft, unmerged and Preview-only. The owner redeployed the
 existing Production commit `db829a1` during environment setup; that did not
 publish PR #44. This work has not changed main or Production.
 
+## Current comparison awaiting a diagnostic extension
+
+The named customer path on this Preview branch now deliberately compares one
+medium-tier render and one high-tier render in parallel. This supersedes the
+two-high-tier policy recorded below; it does not change the six-5/5 or binary
+acceptance criteria. The first complete pass is stable, weaker images remain
+private, native source size is unchanged, and paid reuse retains the source.
+Generic one-candidate requests retain their existing medium tier. Each attempt
+records its actual tier and corresponding output estimate, including failures
+while preparing or reviewing returned bytes. This policy is an **unproven
+Preview experiment**, not an approved Production rollout or latency promise.
+
+The critic now explicitly prohibits invented identity-name badges, lettering
+or franchise-logo prerequisites; it must identify actual mismatches or
+uncertainty. Clearly visible headset microphones count unless handheld ones
+were specifically requested. Absent unrequested age props cannot lower age or
+brief scores. Genuine missing identity/details, uncertainty and inappropriate
+content remain blocking. Existing rejects have NOT been promoted or re-reviewed.
+The customer copy no longer claims that live visual research occurred.
+
+Provider-supplied input/output token breakdowns are retained when complete and
+consistent. Missing usage remains unknown, and successful-response usage does
+not account for any failed earlier requests. No invoice-total claim is made.
+
+Proposed next step, **not yet authorized or submitted**: two new synthetic
+events using the exact frozen Moana and KPop briefs, one per direction on the
+same final SHA, with at most four image requests (two medium, two high), eight
+physical critic requests including the existing bounded format repair, and
+two classifier requests. No reference search, extra image retry, checkout,
+outbound email, merge or Production change. Request a **$5 API spending
+allowance** for this diagnostic extension; this is a conservative planning
+allowance, not a fixed provider invoice quote. Expected image outputs alone
+are approximately $0.412; input and critic tokens are additional. Preserve
+all outcomes and stop at a confirmed defect or unresolved usage accounting.
+This comparison cannot establish the repeated 95%/90-second release target.
+The larger repeated benchmark remains separately unapproved and must not run
+merely because this small comparison is approved.
+
+Local verification of this prepared comparison: TypeScript, 67 files / 800
+tests, production build and Vercel function bundle pass. No live image call
+has used the revised reviewer or mixed render tiers yet. Pricing inputs are
+documented by [OpenAI](https://developers.openai.com/api/docs/pricing) and
+[Anthropic](https://platform.claude.com/docs/en/about-claude/pricing); retain
+the distinction between estimated reserves, measured token usage and billing.
+
 ## Latest general-direction diagnostic evidence
 
 The complete frozen briefs, request caps, results and remaining work are in
@@ -68,17 +113,45 @@ and missing cases; do not replace them with easier prompts or reset events.
   prevent general named routing, all required identity notes reach the high
   two-candidate path, and failed final reviews still remain private. These are
   software-contract checks; the repaired image path is not yet live-certified.
+- On exact Preview `6294720` (Verify #398), KPop Event 39 reached the real
+  text-first two-high-tier image path without any classifier or reference
+  research call. The POST returned 202 in 115 ms. Both images were retained
+  privately as rejected attempts 139 and 140. Provider times were 112,297 /
+  114,734 ms, PNG normalization 745 / 724 ms, and critic times 28,278 / 32,247
+  ms. Each candidate used one image request and one critic request. Thus
+  generation alone exceeded 90 seconds; JPEG transport did not solve latency.
+- Attempt 139 scores were 5/4/4/3/5/5; attempt 140 scores 5/5/5/3/5/4 in the
+  standard text/artifact/premium/brief/composition/age order. Both identity and
+  purchase checks failed. The browser showed the direction card by 172,812 ms;
+  this is an observation upper bound, not exact server completion time.
+- Agent inspection of the exact retained 373x560 review pixels found headset
+  microphones in attempt 139 despite a missing-microphone finding. Attempt
+  140's notes penalized missing age decoration even though the brief excluded
+  age props; attempt 139's identity evidence demanded name badges/insignia
+  despite the text-free rule. These are calibration concerns, not independent
+  human approval of either image or proof of canonical identity. Both stay
+  rejected. Original 1024x1536 source hashes and recomputed teaser hashes match.
+- Read-only checks on `6294720` confirm checkout configuration and the
+  `send.posyplans.com` email sender are configured. This does not establish
+  test/live Stripe mode, signed-webhook settlement, unlock or email delivery.
 
 Paid diagnostics may resume on the verified correction, within the existing
-untouched-case caps. Four of eight events were submitted, four image
-requests attempted, and three critic verdicts completed (at most six physical
+untouched-case caps. Five of eight events were submitted, six image
+requests attempted, and five critic verdicts completed (at most eight physical
 critic calls including possible earlier format repair). Moana added one
 classifier request and one reference-search invocation, no image/critic calls.
-The four untouched cases retain a combined cap of five image calls. Eight
+The three untouched cases retain a combined cap of three image calls. Six
 calls remain under the overall twelve-image cap, but unused Frozen/Moana
 image allowances do not authorize resubmissions or larger per-case caps.
 Failed-request/classifier/search costs remain incompletely reconciled.
 No checkout or email delivery occurred in this batch.
+
+Image/critic diagnostics are paused at KPop's confirmed latency failure and
+review-calibration concerns. Construction, photographic garden dinner and
+lacquer-inlay cases remain unsubmitted; do not run easier briefs to hide the
+named-case failures. Known image-output/critic estimates plus the measured
+Moana classifier total $0.838896 for this batch so far, excluding unreconciled
+image inputs, earlier classifiers, the refused request and Moana search.
 
 Reliable recognition, provider acceptance, cross-direction visual quality and
 approved-image delivery within the existing target remain launch blockers.

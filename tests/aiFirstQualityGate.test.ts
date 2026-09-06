@@ -648,6 +648,10 @@ describe("tier 2 — acceptance", () => {
     expect(systemText).toContain("weak named identity");
     expect(systemText).toContain("requires 5 in every dimension");
     expect(systemText).toContain("count each visible item one by one");
+    expect(systemText).toContain("Never require name badges, lettering, logos or franchise insignia");
+    expect(systemText).toContain("clearly visible headset microphone");
+    expect(systemText).toContain("missing candles, numerals or age decorations must not lower");
+    expect(systemText).toContain("Genuine ambiguity, incorrect identity, missing requested details and inappropriate content still fail");
     expect(reviewText).toContain("FINAL CUSTOMER SURFACE");
     expect(reviewText).toContain("TEASER PASS/FAIL CHECKS");
     expect(reviewText).toContain("would these exact pixels");

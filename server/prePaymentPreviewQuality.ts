@@ -948,6 +948,9 @@ export interface PreviewQualityDependencies {
    * stable: the sibling may finish for private evidence but cannot replace it.
    */
   parallelCandidates?: boolean;
+  /** Server-owned comparison of render tiers; both use the identical final
+   * quality gate. Omitted preserves the caller's single quality setting. */
+  candidateQualities?: readonly [ArtworkQuality, ArtworkQuality];
   /** Publish a full-resolution pass while the sibling is still being reviewed. */
   onApproved?: (result: Extract<QualityLockedPreviewResult, { kind: "approved-image" }>) => Promise<void>;
   /** Explicit research-only budget. Customer first looks never enable a third render. */
@@ -1179,6 +1182,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
 
     const evaluateParallelCandidate = async (candidate: number): Promise<ParallelOutcome> => {
       const model = DEFAULT_ARTWORK_MODEL;
+      const candidateQuality = dependencies.candidateQualities?.[candidate - 1] ?? quality;
       if (dependencies.signal?.aborted) {
         return {
           candidate,
@@ -1197,14 +1201,14 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
           prompt: prompts[candidate - 1],
           aspectRatio: aspectRatioForLayout(concept.layoutStyle),
           model,
-          quality,
+          quality: candidateQuality,
           referenceImages: undefined,
           maxTransientRetries: 0,
           signal: dependencies.signal,
         });
       } catch (error) {
         if (error instanceof ArtworkNormalizationError) {
-          await retainUnreviewable(error.result, candidate, model, quality, error);
+          await retainUnreviewable(error.result, candidate, model, candidateQuality, error);
         }
         return {
           candidate,
@@ -1218,7 +1222,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
       try {
         reviewedBytes = customerVisiblePreviewBytes(generated.bytes);
       } catch (error) {
-        await retainUnreviewable(generated, candidate, model, quality, error);
+        await retainUnreviewable(generated, candidate, model, candidateQuality, error);
         return {
           candidate,
           model,
@@ -1252,7 +1256,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
           });
         }
       } catch (error) {
-        await retainUnreviewable(generated, candidate, model, quality, error, reviewedBytes);
+        await retainUnreviewable(generated, candidate, model, candidateQuality, error, reviewedBytes);
         return {
           candidate,
           model,
@@ -1306,9 +1310,9 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
               generationTelemetry: generated.telemetry,
             },
             model,
-            quality,
+            quality: candidateQuality,
             size,
-            costUsdMicros: estimateImageCostUsdMicros(model, quality, size),
+            costUsdMicros: estimateImageCostUsdMicros(model, candidateQuality, size),
           });
         } catch (error) {
           console.error("[prepayment-preview] failed to persist parallel attempt evidence (non-fatal):", error);
