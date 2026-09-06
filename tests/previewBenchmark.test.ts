@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { summarizePreviewBenchmark, type PreviewBenchmark } from "../server/aiFirst/previewBenchmark";
 
 function fixture(): PreviewBenchmark {
-  const cases: PreviewBenchmark["cases"] = ["blippi-meekah", "unicorn-academy", "kpop", "construction", "adult-garden"]
+  const cases: PreviewBenchmark["cases"] = ["blippi-meekah", "frozen", "kpop", "construction", "adult-garden", "moana", "original-vector", "lacquer-inlay"]
     .map((id, index) => ({ id, cohort: index < 3 ? "named-child" : index === 3 ? "original-child" : "adult",
       briefDigest: String(index).repeat(64), trialIds: Array.from({ length: 20 }, (_, n) => `${id}-${n}`) }));
   return {
@@ -10,7 +10,7 @@ function fixture(): PreviewBenchmark {
     // Synthetic values test accounting; they are never written as live evidence.
     results: cases.flatMap((item) => item.trialIds.map((trialId) => ({
       trialId, deploymentSha: "a".repeat(40), renderPath: "scene-composition", briefDigest: item.briefDigest,
-      evidence: "live", outcome: "approved", firstApprovedMs: 40_000, terminalMs: 42_000, automatedPass: true,
+      evidence: "live", outcome: "approved", firstApprovedMs: 40_000, browserLoadedMs: 41_000, terminalMs: 42_000, automatedPass: true,
       reviewedAssetHash: "b".repeat(64), deliveredAssetHash: "b".repeat(64),
       humanReview: "pass", humanReviewedAssetHash: "b".repeat(64),
       imageProviderRequests: 0, criticRequests: 1, recordedCostUsdMicros: 50_000, allInCostUsdMicros: 60_000,
@@ -19,10 +19,24 @@ function fixture(): PreviewBenchmark {
 }
 
 describe("offline preview launch benchmark accounting", () => {
+  it("cannot shrink the promised eight-direction release matrix to five", () => {
+    const input = fixture(); input.cases = input.cases.slice(0, 5);
+    const ids = new Set(input.cases.flatMap(row => row.trialIds));
+    input.results = input.results.filter(row => ids.has(row.trialId));
+    expect(summarizePreviewBenchmark(input).blockers).toContain("insufficient-event-coverage");
+  });
+
+  it.each([undefined, null, 30_000, 95_000])("does not confuse server approval with on-time browser delivery (%s)", (browserLoadedMs) => {
+    const input = fixture(); input.results.forEach(row => { row.browserLoadedMs = browserLoadedMs; });
+    const report = summarizePreviewBenchmark(input);
+    expect(report.verifiedWithinTarget).toBe(0);
+    expect(report.meetsObservedArtworkBenchmark).toBe(false);
+    expect(report.approvedOnlyLatencyMs.p95).toBe(40_000);
+  });
   it("requires repeated, complete, independently reviewed evidence across every cohort", () => {
     const report = summarizePreviewBenchmark(fixture());
     expect(report.meetsObservedArtworkBenchmark).toBe(true);
-    expect(report.planned).toBe(100); expect(report.verifiedWithinTargetRate).toBe(1);
+    expect(report.planned).toBe(160); expect(report.verifiedWithinTargetRate).toBe(1);
     expect(report.approvedOnlyLatencyMs).toEqual({ p50: 40_000, p95: 40_000 });
     expect(report.observedTerminalLatencyMs).toEqual({ p50: 42_000, p95: 42_000 });
     expect(report.allInCostPerVerifiedOnTimeResultUsdMicros).toBe(60_000);
@@ -31,8 +45,8 @@ describe("offline preview launch benchmark accounting", () => {
   it("keeps missing trials in the denominator instead of reporting only wins", () => {
     const input = fixture(); input.results.splice(0, 10);
     const report = summarizePreviewBenchmark(input);
-    expect(report.planned).toBe(100); expect(report.observed).toBe(90); expect(report.missing).toBe(10);
-    expect(report.verifiedWithinTargetRate).toBe(.9);
+    expect(report.planned).toBe(160); expect(report.observed).toBe(150); expect(report.missing).toBe(10);
+    expect(report.verifiedWithinTargetRate).toBe(150 / 160);
     expect(report.allInCostUsdMicros).toBeNull();
     expect(report.meetsObservedArtworkBenchmark).toBe(false);
   });
@@ -44,8 +58,8 @@ describe("offline preview launch benchmark accounting", () => {
     const report = summarizePreviewBenchmark(input);
     expect(report.outcomes[outcome]).toBe(2);
     expect(report.byCase[0].verifiedWithinTargetRate).toBe(.9);
-    // Aggregate 98% cannot hide an individual event world's 90% result.
-    expect(report.verifiedWithinTargetRate).toBe(.98);
+    // Aggregate 98.75% cannot hide an individual event world's 90% result.
+    expect(report.verifiedWithinTargetRate).toBe(158 / 160);
     expect(report.meetsObservedArtworkBenchmark).toBe(false);
     expect(report.approvedOnlyLatencyMs.p50).toBe(40_000);
   });
@@ -89,13 +103,13 @@ describe("offline preview launch benchmark accounting", () => {
     const report = summarizePreviewBenchmark(input);
     expect(report.approvedOnlyLatencyMs).toEqual({ p50: null, p95: null });
     expect(report.observedTerminalLatencyMs).toEqual({ p50: null, p95: null });
-    expect(report.mismatchedOrSimulatedResults).toBe(100);
+    expect(report.mismatchedOrSimulatedResults).toBe(160);
   });
 
   it("keeps unknown all-in charges unknown and includes failed-request costs", () => {
     const input = fixture(); input.results[0].allInCostUsdMicros = null;
     const report = summarizePreviewBenchmark(input);
-    expect(report.recordedCostUsdMicros).toBe(5_000_000);
+    expect(report.recordedCostUsdMicros).toBe(8_000_000);
     expect(report.allInCostUsdMicros).toBeNull();
     expect(report.allInCostPerVerifiedOnTimeResultUsdMicros).toBeNull();
     expect(report.blockers).toContain("incomplete-cost-accounting");

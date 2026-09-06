@@ -6,7 +6,24 @@ PR #44 remains draft, unmerged and Preview-only. The owner redeployed the
 existing Production commit `db829a1` during environment setup; that did not
 publish PR #44. This work has not changed main or Production.
 
-## Latest reviewer consistency correction and frozen evidence
+## Reference architecture comparison prepared
+
+The [registered reference comparison](tools/qa/REFERENCE_ARCHITECTURE.md) adds
+verified reference pixels to the shared reviewer, with explicit identity and
+independently assessed craft-example roles. Sixteen fixed calls compare current
+rubric v2 with and without two official identity images. Exact inputs, negative
+controls, repetitions and durable owner-private claims are fixed before dispatch.
+No fresh images or customer policy changes are included. Results are pending;
+neither reviewer reliability nor faster artwork delivery is asserted.
+
+The release scorecard now requires all eight promised directions and measured
+browser image load within 90 seconds. Server approval alone cannot count as
+successful delivery. GPT Image 2 reference requests omit the unsupported explicit
+input-fidelity parameter. Local checks: TypeScript, 70 files / 869 tests,
+production frontend and function bundle pass. Independent human premium labels
+remain pending; existing generated rejects are not promoted or re-reviewed.
+
+## Earlier reviewer consistency correction and frozen evidence
 
 The [pre-registered consistency record](tools/qa/REVIEW_CONSISTENCY.md) preserves eight fixed reviewer calls on `4201100` / Preview https://posy-jrjy330zr-poseplans.vercel.app (Verify #403). All sixteen claim/result records remain private and unpromotable. Cost was **$0.238944** from 46,008 input / 6,728 output tokens; **zero image calls** and zero retries.
 

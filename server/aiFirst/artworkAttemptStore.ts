@@ -60,6 +60,8 @@ export interface ArtworkReviewEvidence {
     identityCorrect: boolean | null;
     deploymentSha: string | null;
     reviewerVersion: string;
+    referenceMode?: string;
+    referenceHashes?: string[];
     imageProviderCalls: 0;
     criticRequests: number | null;
     criticCostUsdMicrosFromUsage: number | null;

@@ -114,12 +114,13 @@ describe("AI-first artwork reference inputs", () => {
     expect(Buffer.from(await (images[0] as Blob).arrayBuffer()).equals(referenceBytes)).toBe(true);
   });
 
-  it("does not send an unsupported fidelity parameter unless the caller selects it", async () => {
+  it("omits GPT Image 2's unsupported fidelity field even if a caller supplies it", async () => {
     await generateArtwork({
       prompt: "Use the supplied image as loose inspiration",
       aspectRatio: "1:1",
       model: "gpt-image-2",
       quality: "medium",
+      inputFidelity: "high",
       referenceImages: [{
         bytes: Buffer.from("reference"),
         mimeType: "image/jpeg",

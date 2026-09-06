@@ -7,6 +7,7 @@
 // its own floor and the required/excluded lists are pass/fail.
 
 import Anthropic from "@anthropic-ai/sdk";
+import { prepareReviewReferences, REVIEW_REFERENCE_INSTRUCTION, type ReviewReference, type ReviewReferenceEvidence } from "./reviewReferences";
 import { ASSESSMENT_SCHEMA, REVIEW_EVIDENCE_INSTRUCTION, validateReviewEvidence, type DimensionAssessments } from "./reviewEvidence";
 import type { EventBrief } from "./brief";
 import type { AiFirstConcept } from "@shared/aiFirstInvite";
@@ -23,6 +24,8 @@ export { MIN_DIMENSION_SCORE };
 export type { VisionScores };
 
 export interface VisionVerdict {
+  /** Exact attached reference hashes/provenance, retained privately with this verdict. */
+  referenceEvidence?: ReviewReferenceEvidence[];
   scores: VisionScores;
   /** One entry per REQUIRED item, in the brief's order. */
   requiredPresent: { requirement: string; present: boolean; evidence?: string }[];
@@ -220,6 +223,7 @@ export function namedIdentityReviewTargetsForBrief(brief: EventBrief): string[] 
 
 export interface VisionGateInput {
   bytes: Buffer;
+  referenceImages?: readonly ReviewReference[];
   concept: AiFirstConcept;
   brief: EventBrief;
   client?: Anthropic;
@@ -231,6 +235,20 @@ export interface VisionGateInput {
 }
 
 export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdict> {
+  let references: ReturnType<typeof prepareReviewReferences>;
+  try { references = prepareReviewReferences(input.referenceImages); }
+  catch {
+    return { scores: { textLogoWatermarkFree: 0, artifactFree: 0, premiumFinish: 0,
+      briefFidelity: 0, compositionQuality: 0, ageAppropriate: 0 },
+      requiredPresent: [], excludedFound: [], notes: "Review reference validation failed",
+      passed: false, failureCodes: ["review-reference-invalid"], unavailable: true,
+      durationMs: 0, requestCount: 0, usage: { inputTokens: 0, outputTokens: 0 } };
+  }
+  const verdict = await evaluateVisionGate(input, references.content);
+  return references.evidence.length ? { ...verdict, referenceEvidence: references.evidence } : verdict;
+}
+
+async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anthropic.Messages.ContentBlockParam[]): Promise<VisionVerdict> {
   const started = Date.now();
   const empty: VisionScores = {
     textLogoWatermarkFree: 0,
@@ -355,12 +373,15 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
 
   let usage = { inputTokens: 0, outputTokens: 0 };
   let requestCount = 0;
-  const reviewSystem = reviewMode === "teaser" ? TEASER_SYSTEM : SYSTEM;
+  const reviewSystem = (reviewMode === "teaser" ? TEASER_SYSTEM : SYSTEM)
+    + (referenceContent.length ? `\n\n${REVIEW_REFERENCE_INSTRUCTION}` : "");
   const reviewContent = [
+    ...(referenceContent.length ? [{ type: "text" as const, text: "CANDIDATE IMAGE — the only image to score:" }] : []),
     {
       type: "image" as const,
       source: { type: "base64" as const, media_type: "image/png" as const, data: input.bytes.toString("base64") },
     },
+    ...referenceContent,
     { type: "text" as const, text: userText },
   ];
   const reviewOnce = async (jsonRepair: boolean): Promise<Record<string, any> | null> => {

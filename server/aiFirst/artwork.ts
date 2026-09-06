@@ -217,7 +217,8 @@ function imageEditBody(
   form.append("background", "opaque");
   form.append("output_format", request.outputFormat ?? "png");
   if (request.outputFormat === "jpeg") form.append("output_compression", "100");
-  if (request.inputFidelity) {
+  // GPT Image 2 uses high input fidelity automatically; its API rejects this field.
+  if (request.inputFidelity && model !== "gpt-image-2") {
     form.append("input_fidelity", request.inputFidelity);
   }
 

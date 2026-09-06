@@ -5,7 +5,7 @@ const id = z.string().trim().min(1).max(160);
 const digest = z.string().regex(/^[a-f0-9]{64}$/);
 const ms = z.number().finite().int().nonnegative();
 const cost = z.number().finite().int().nonnegative().nullable();
-const path = z.enum(["text-first", "scene-composition"]);
+const path = z.enum(["text-first", "reference-led", "scene-composition"]);
 
 export const previewBenchmarkSchema = z.object({
   version: z.literal(1),
@@ -25,6 +25,8 @@ export const previewBenchmarkSchema = z.object({
     evidence: z.enum(["live", "simulated"]),
     outcome: z.enum(["approved", "fallback", "timeout", "error", "unsupported"]),
     firstApprovedMs: ms.nullable(),
+    /** Measured from the same submission start until browser image load; absent is unknown. */
+    browserLoadedMs: ms.nullable().optional(),
     terminalMs: ms.nullable(),
     automatedPass: z.boolean(),
     reviewedAssetHash: digest.nullable(),
@@ -79,7 +81,7 @@ export function summarizePreviewBenchmark(value: unknown) {
         result.allInCostUsdMicros < result.recordedCostUsdMicros) throw new Error("Inconsistent cost ledger");
   }
   const failures = new Set<string>();
-  if (input.cases.length < 5 || new Set(input.cases.map((item) => item.cohort)).size !== 3) {
+  if (input.cases.length < 8 || new Set(input.cases.map((item) => item.cohort)).size !== 3) {
     failures.add("insufficient-event-coverage");
   }
   const byCase = input.cases.map((item) => {
@@ -100,7 +102,9 @@ export function summarizePreviewBenchmark(value: unknown) {
       if (delivered) automaticDelivered++;
       const humanPass = row.humanReview === "pass" && row.humanReviewedAssetHash === row.deliveredAssetHash;
       if (delivered && !humanPass) failures.add("human-quality-unconfirmed-or-failed");
-      if (scopeMatches && withinBudget && delivered && humanPass && row.firstApprovedMs! <= PREVIEW_BENCHMARK_TARGET_MS) {
+      const loaded = row.browserLoadedMs != null && row.firstApprovedMs != null && row.browserLoadedMs >= row.firstApprovedMs;
+      if (delivered && !loaded) failures.add("browser-delivery-time-unverified");
+      if (scopeMatches && withinBudget && delivered && humanPass && loaded && row.browserLoadedMs! <= PREVIEW_BENCHMARK_TARGET_MS) {
         verifiedWithinTarget++;
       }
     }
@@ -118,6 +122,8 @@ export function summarizePreviewBenchmark(value: unknown) {
     .filter(isDelivered)
     .map((row) => row.firstApprovedMs!);
   const terminal = scopedResults.filter((row) => row.terminalMs !== null).map((row) => row.terminalMs!);
+  const browserLoaded = scopedResults.filter(isDelivered).filter(row => row.browserLoadedMs != null &&
+    row.browserLoadedMs >= row.firstApprovedMs!).map(row => row.browserLoadedMs!);
   const completeCosts = input.results.length === planned.length && input.results.every((row) => row.allInCostUsdMicros !== null);
   const allInCostUsdMicros = completeCosts
     ? input.results.reduce((sum, row) => sum + row.allInCostUsdMicros!, 0) : null;
@@ -132,6 +138,7 @@ export function summarizePreviewBenchmark(value: unknown) {
     verifiedWithinTarget, verifiedWithinTargetRate: verifiedWithinTarget / planned.length,
     /** Explicitly conditional metrics: failures never masquerade as fast art. */
     approvedOnlyLatencyMs: { p50: percentile(firstApproved, .5), p95: percentile(firstApproved, .95) },
+    browserLoadedApprovedOnlyLatencyMs: { p50: percentile(browserLoaded, .5), p95: percentile(browserLoaded, .95) },
     observedTerminalLatencyMs: { p50: percentile(terminal, .5), p95: percentile(terminal, .95) },
     recordedCostUsdMicros: input.results.reduce((sum, row) => sum + (row.recordedCostUsdMicros ?? 0), 0),
     allInCostUsdMicros,

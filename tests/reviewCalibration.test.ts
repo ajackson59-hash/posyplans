@@ -3,7 +3,7 @@ import express from "express";
 import request from "supertest";
 import type Anthropic from "@anthropic-ai/sdk";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { CALIBRATION_CASES, CONSISTENCY_CASES, calibrationProfile, runReviewCalibration, type CalibrationCaseId } from "../server/aiFirst/reviewCalibration";
+import { CALIBRATION_CASES, CONSISTENCY_CASES, REFERENCE_COMPARISON_CASES, calibrationProfile, runReviewCalibration, type CalibrationCaseId } from "../server/aiFirst/reviewCalibration";
 import { registerReviewCalibrationRoutes } from "../server/aiFirst/reviewCalibrationRoutes";
 import { InMemoryArtworkAttemptStore } from "../server/aiFirst/artworkAttemptStore";
 import { encodePng } from "../server/aiFirst/png";
@@ -14,10 +14,12 @@ const bytes = encodePng({ width: 120, height: 60, rgb: new Uint8Array(120 * 60 *
 const hash = createHash("sha256").update(bytes).digest("hex");
 const originalControls = structuredClone(CALIBRATION_CASES);
 const originalConsistency = structuredClone(CONSISTENCY_CASES);
+const originalReferenceCases = structuredClone(REFERENCE_COMPARISON_CASES);
 beforeEach(() => {
-  for (const control of [...Object.values(CALIBRATION_CASES), ...Object.values(CONSISTENCY_CASES)]) Object.assign(control, { sourceHash: hash, reviewedHash: hash });
+  for (const control of [...Object.values(CALIBRATION_CASES), ...Object.values(CONSISTENCY_CASES), ...Object.values(REFERENCE_COMPARISON_CASES)]) Object.assign(control, { sourceHash: hash, reviewedHash: hash });
 });
 afterEach(() => {
+  for (const key of Object.keys(REFERENCE_COMPARISON_CASES)) Object.assign(REFERENCE_COMPARISON_CASES[key], originalReferenceCases[key]);
   for (const key of Object.keys(CONSISTENCY_CASES)) Object.assign(CONSISTENCY_CASES[key], originalConsistency[key]);
   for (const key of Object.keys(CALIBRATION_CASES) as CalibrationCaseId[]) Object.assign(CALIBRATION_CASES[key], originalControls[key]);
 });
@@ -52,6 +54,34 @@ const root = `/api/events/owner/${owner.ownerToken}/ai-first/review/calibration`
 const body = () => ({ sourceBase64: bytes.toString("base64"), confirmOneVisionCall: true });
 
 describe("private fixed reviewer calibration", () => {
+  it("compares reference pixels with a simultaneous text baseline under sixteen non-replayable claims", async () => {
+    const store = new InMemoryArtworkAttemptStore(), c = critic(true);
+    expect(Object.keys(REFERENCE_COMPARISON_CASES)).toHaveLength(16);
+    for (const caseId of Object.keys(REFERENCE_COMPARISON_CASES)) {
+      const args = { ...input(store, c.client), dataset: "references-v1" as const, caseId, referenceSources: [bytes, bytes] };
+      expect(await runReviewCalibration(args)).toMatchObject({ kind: "calibrated", criticRequests: 1, imageProviderCalls: 0 });
+      expect(await runReviewCalibration(args)).toMatchObject({ kind: "blocked", reason: "case-already-claimed" });
+    }
+    expect(c.create).toHaveBeenCalledTimes(16);
+    const bodies = c.create.mock.calls.map(([body]) => body);
+    expect(bodies[0].messages[0].content.filter((b: any) => b.type === "image")).toHaveLength(1);
+    expect(bodies[1].messages[0].content.filter((b: any) => b.type === "image")).toHaveLength(3);
+    expect(bodies[0]).toEqual(bodies[3]); expect(bodies[1]).toEqual(bodies[2]);
+    expect(JSON.stringify(bodies)).not.toContain("expectedIdentity");
+    expect(JSON.stringify(bodies)).not.toContain("rumi-matched");
+    expect(store.all).toHaveLength(32);
+    expect(store.all.every(row => row.status === "rejected" && !row.previewId)).toBe(true);
+    expect(store.all[3].reviewEvidence?.verdict?.referenceEvidence).toHaveLength(2);
+  });
+
+  it("validates the complete reference pack before claiming or buying a comparison review", async () => {
+    const store = new InMemoryArtworkAttemptStore(), c = critic(true);
+    for (const referenceSources of [undefined, [bytes], [bytes, Buffer.from("changed")]]) {
+      expect(await runReviewCalibration({ ...input(store, c.client), dataset: "references-v1",
+        caseId: "rumi-matched-1-pixels", referenceSources })).toMatchObject({ kind: "blocked" });
+    }
+    expect(c.create).not.toHaveBeenCalled(); expect(store.all).toHaveLength(0);
+  });
   it("caps the new calibration at eight physical calls across repeat requests and redeploys", async () => {
     const store = new InMemoryArtworkAttemptStore(), c = critic(true);
     expect(Object.keys(CONSISTENCY_CASES)).toHaveLength(8);

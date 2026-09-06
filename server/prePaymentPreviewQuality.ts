@@ -22,6 +22,7 @@ import {
   type ArtworkSize,
 } from "./aiFirst/artwork";
 import type { AiFirstArtworkAttemptStore } from "./aiFirst/artworkAttemptStore";
+import type { ReviewReference } from "./aiFirst/reviewReferences";
 import { boxDownsampleRgb, decodePng, encodePng } from "./aiFirst/png";
 import { ageFromMilestone, buildEventBrief, type EventBrief } from "./aiFirst/brief";
 import { buildArtworkConstraints, buildRetryPrompt } from "./aiFirst/prompt";
@@ -953,6 +954,8 @@ export interface PreviewQualityDependencies {
   inspirationNotes?: string;
   /** Original uploaded pixels used as high-fidelity identity anchors. */
   referenceImages?: ArtworkReferenceImage[];
+  /** Verified review references; independent of render inputs and never inferred from filenames. */
+  reviewReferenceImages?: readonly ReviewReference[];
   /** Named themes use high output quality; generic previews stay medium. */
   quality?: ArtworkQuality;
   /**
@@ -1273,6 +1276,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
             concept,
             brief,
             reviewMode: "teaser",
+            referenceImages: dependencies.reviewReferenceImages,
             signal: dependencies.signal,
           });
         }
@@ -1442,6 +1446,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
                 concept,
                 brief,
                 reviewMode: "teaser",
+                referenceImages: dependencies.reviewReferenceImages,
                 signal: dependencies.signal,
               })
             : undefined;
@@ -1617,6 +1622,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
           concept,
           brief,
           reviewMode: "teaser",
+          referenceImages: dependencies.reviewReferenceImages,
           signal: dependencies.signal,
         });
       }

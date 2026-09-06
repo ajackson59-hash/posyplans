@@ -7,6 +7,7 @@ import { buildQualityLockedPreviewBrief, customerVisiblePreviewBytes } from "../
 import { REVIEW_CALIBRATION_MODEL, type AiFirstArtworkAttemptStore, type ArtworkAttemptInput } from "./artworkAttemptStore";
 import { sceneBriefDigest } from "./sceneComposition";
 import { runVisionGate, visionCostUsd, type VisionVerdict } from "./visionGate";
+import { prepareReviewReferences, type ReviewReference } from "./reviewReferences";
 
 export const CALIBRATION_DATASET = "identity-reference-controls-20260906-v1";
 export const CALIBRATION_OWNER_EVENT = 41;
@@ -33,6 +34,11 @@ export const CONSISTENCY_DATASET = "located-review-controls-20260906-v1";
 // Eight immutable global claims: two repetitions of four identical-pixel controls.
 export const CONSISTENCY_CASES = Object.fromEntries(Object.entries(CALIBRATION_CASES).flatMap(([baseCaseId, control]) =>
   [1, 2].map(repetition => [`${baseCaseId}-${repetition}`, { ...control, baseCaseId: baseCaseId as CalibrationCaseId }])));
+export const REFERENCE_COMPARISON_DATASET = "reference-review-ab-20260906-v1";
+export const REFERENCE_COMPARISON_CASES = Object.fromEntries(Object.entries(CALIBRATION_CASES).flatMap(([baseCaseId, control]) =>
+  [1, 2].flatMap(repetition => (repetition === 1 ? ["text", "pixels"] : ["pixels", "text"]).map(referenceMode =>
+    [`${baseCaseId}-${repetition}-${referenceMode}`, { ...control, baseCaseId: baseCaseId as CalibrationCaseId, referenceMode }]))));
+export type CalibrationDataset = "consistency-v1" | "references-v1";
 const REFERENCE_NOTES = `Character descriptions established from Netflix's official cast article and its labeled animated stills. Rumi: swept-up purple hair continuing into a long, thick braid; sharply defined dark eyebrows; a yellow performance jacket with contrasting dark trim. Zoey: dark hair with short blunt bangs and gathered braided sections; a turquoise cropped stage top with dark patterned trim; dangling earrings. Both are distinct animated members of HUNTR/X in KPop Demon Hunters. These descriptions identify the characters, not which character is present in the submitted pixels. Source provenance: ${CALIBRATION_SOURCE}`;
 
 export async function calibrationProfile(caseId: CalibrationCaseId) {
@@ -50,7 +56,9 @@ export async function calibrationProfile(caseId: CalibrationCaseId) {
 export async function runReviewCalibration(input: {
   caseId: CalibrationCaseId | string;
   /** Only the separately bounded eight-call experiment uses this mode. */
-  dataset?: "consistency-v1";
+  dataset?: CalibrationDataset;
+  /** Both arms require the same two verified sources; only the pixels arm attaches them. */
+  referenceSources?: readonly Buffer[];
   bytes: Buffer;
   owner: { id: number; ownerToken: string };
   environment: NodeJS.ProcessEnv;
@@ -61,30 +69,50 @@ export async function runReviewCalibration(input: {
 }) {
   const { owner, store, environment } = input;
   const consistency = input.dataset === "consistency-v1";
-  const caseSet = consistency ? CONSISTENCY_CASES : CALIBRATION_CASES;
+  const referenceComparison = input.dataset === "references-v1";
+  const caseSet = referenceComparison ? REFERENCE_COMPARISON_CASES : consistency ? CONSISTENCY_CASES : CALIBRATION_CASES;
   const control = Object.hasOwn(caseSet, input.caseId) ? caseSet[input.caseId as keyof typeof caseSet] : undefined;
   if (environment.VERCEL_ENV !== "preview" || environment.VERCEL_GIT_COMMIT_REF !== "codex/launch-blockers" ||
       owner.id !== CALIBRATION_OWNER_EVENT || !owner.ownerToken || !store.recordOnce || !control || input.signal?.aborted) {
     return { kind: "blocked" as const, reason: "calibration-not-authorized" };
   }
   if (hash(input.bytes) !== control.sourceHash) return { kind: "blocked" as const, reason: "source-integrity" };
+  let referenceImages: ReviewReference[] = [];
+  const referenceMode = referenceComparison ? REFERENCE_COMPARISON_CASES[input.caseId].referenceMode : undefined;
+  if (referenceComparison) {
+    if (input.referenceSources?.length !== 2 || input.referenceSources.some((bytes, index) =>
+      hash(bytes) !== (index === 0 ? CALIBRATION_CASES["rumi-matched"].reviewedHash : CALIBRATION_CASES["zoey-matched"].reviewedHash))) {
+      return { kind: "blocked" as const, reason: "reference-source-integrity" };
+    }
+    referenceImages = input.referenceSources.map((bytes, index) => {
+      const reviewed = customerVisiblePreviewBytes(bytes);
+      return { bytes: reviewed, sha256: hash(reviewed), sourceUrl: CALIBRATION_SOURCE,
+        role: "identity", subject: index === 0 ? "Rumi from KPop Demon Hunters" : "Zoey from KPop Demon Hunters",
+        region: "Animated right-hand panel only; the photographic left-hand panel is not a character reference" };
+    });
+    try { prepareReviewReferences(referenceImages); }
+    catch { return { kind: "blocked" as const, reason: "reference-validation" }; }
+  }
   const reviewed = customerVisiblePreviewBytes(input.bytes);
   if (hash(reviewed) !== control.reviewedHash) return { kind: "blocked" as const, reason: "reviewed-pixel-integrity" };
-  const baseCaseId = consistency ? CONSISTENCY_CASES[input.caseId].baseCaseId : input.caseId as CalibrationCaseId;
+  const baseCaseId = referenceComparison ? REFERENCE_COMPARISON_CASES[input.caseId].baseCaseId
+    : consistency ? CONSISTENCY_CASES[input.caseId].baseCaseId : input.caseId as CalibrationCaseId;
   const { brief, concept, requiredIdentity } = await calibrationProfile(baseCaseId);
-  if (consistency) {
+  if (consistency || referenceComparison) {
     // The old fixture override contained only a name, so the shared art contract
     // could lose the explicit photographic/animated diptych. Freeze full intent.
     brief.visualIdentityOverride = `An intentional editorial diptych: a photographic adult portrait on the left and a stylized 3D animated portrait of ${control.requested} from KPop Demon Hunters on the right. Preserve this mixed photographic and animated treatment and the intentional portrait framing.`;
   }
   const profileDigest = sceneBriefDigest(brief);
   const runId = `review-calibration-${randomUUID()}`;
-  const datasetId = consistency ? CONSISTENCY_DATASET : CALIBRATION_DATASET;
+  const datasetId = referenceComparison ? REFERENCE_COMPARISON_DATASET : consistency ? CONSISTENCY_DATASET : CALIBRATION_DATASET;
   const key = `${datasetId}:${input.caseId}`;
   const calibration = { datasetId, caseId: input.caseId, stage: "claimed" as const,
     profileDigest, sourceUrl: CALIBRATION_SOURCE, expectedIdentity: control.expectedIdentity,
     identityCorrect: null, deploymentSha: environment.VERCEL_GIT_COMMIT_SHA ?? null,
-    reviewerVersion: consistency ? REVIEW_EVIDENCE_VERSION : REVIEWER_VERSION, imageProviderCalls: 0 as const, criticRequests: null,
+    reviewerVersion: consistency || referenceComparison ? REVIEW_EVIDENCE_VERSION : REVIEWER_VERSION,
+    ...(referenceComparison ? { referenceMode, referenceHashes: referenceImages.map(r => r.sha256) } : {}),
+    imageProviderCalls: 0 as const, criticRequests: null,
     criticCostUsdMicrosFromUsage: null, customerActivation: "disabled" as const };
   const base: ArtworkAttemptInput = { eventId: owner.id, ownerToken: owner.ownerToken, runId,
     directionIndex: Object.keys(caseSet).indexOf(input.caseId), attempt: 0,
@@ -110,6 +138,7 @@ export async function runReviewCalibration(input: {
   try {
     if (input.signal?.aborted) cancel();
     verdict = await runVisionGate({ bytes: reviewed, brief, concept, client: input.client,
+      referenceImages: referenceMode === "pixels" ? referenceImages : undefined,
       reviewMode: "teaser", maxFormatRepairs: 0, signal: controller.signal });
   } finally { clearTimeout(timer); input.signal?.removeEventListener("abort", cancel); }
   const observed = verdict.requiredPresent.find(row => row.requirement === requiredIdentity);
