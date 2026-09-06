@@ -32,9 +32,80 @@ import { createHash } from "node:crypto";
 import type { AiFirstConcept } from "@shared/aiFirstInvite";
 import type { Tier1Finding } from "./tier1";
 import type { VisionVerdict } from "./visionGate";
-import { DEFAULT_ARTWORK_MODEL, type ArtworkModel, type ArtworkQuality, type ArtworkSize } from "./artwork";
+import { DEFAULT_ARTWORK_MODEL, type ArtworkResult, type ArtworkModel, type ArtworkQuality, type ArtworkSize } from "./artwork";
 
 export type ArtworkAttemptStatus = "accepted" | "rejected";
+/** A compositor is not an image model and must never be sent to a provider. */
+export const SCENE_COMPOSITION_MODEL = "posy-scene-compositor-v1";
+export const STYLE_SOURCE_MODEL = "posy-style-source-v1";
+export const REVIEW_CALIBRATION_MODEL = "posy-review-calibration-v1";
+export type ArtworkAttemptModel = ArtworkModel | typeof SCENE_COMPOSITION_MODEL | typeof STYLE_SOURCE_MODEL | typeof REVIEW_CALIBRATION_MODEL;
+export type ArtworkAttemptQuality = ArtworkQuality | "not-applicable";
+
+export interface ArtworkReviewEvidence {
+  version: 1;
+  /** Identifies the exact customer-visible bytes reviewed, NOT the retained source. */
+  reviewedAssetHash: string | null;
+  verdict: VisionVerdict | null;
+  generationDurationMs: number;
+  generationTelemetry?: ArtworkResult["telemetry"];
+  reviewError?: string;
+  calibration?: {
+    datasetId: string;
+    caseId: string;
+    stage: "claimed" | "completed";
+    profileDigest: string;
+    sourceUrl: string;
+    expectedIdentity: boolean;
+    identityCorrect: boolean | null;
+    deploymentSha: string | null;
+    reviewerVersion: string;
+    referenceMode?: string;
+    referenceHashes?: string[];
+    imageProviderCalls: 0;
+    criticRequests: number | null;
+    criticCostUsdMicrosFromUsage: number | null;
+    customerActivation: "disabled";
+  };
+  styleSource?: {
+    sourceId: string;
+    scope: "source-profile-only";
+    stage: "stored" | "review-claimed" | "reviewed";
+    profileDigest: string;
+    imageProviderCalls: 0;
+    /** Dispatch attempts, not proof of receipt/billing. A crash leaves null. */
+    criticRequests: 0 | 1 | null;
+    customerActivation: "disabled";
+  };
+  composition?: {
+    recipeId: string;
+    styleId: string;
+    briefDigest: string;
+    assetDigests: string[];
+    sourceWidth: number;
+    sourceHeight: number;
+    compositionDurationMs: number;
+    /** Source-pack creation and critic usage are additional, not free. */
+    imageProviderCalls: 0;
+    customerActivation: "disabled";
+  };
+}
+
+/** Backward-compatible envelope in the existing JSON column; no schema migration. */
+export function encodeAttemptVision(scores: VisionVerdict["scores"] | null, evidence?: ArtworkReviewEvidence | null): string | null {
+  return evidence ? JSON.stringify({ version: 1, scores, reviewEvidence: evidence })
+    : scores ? JSON.stringify(scores) : null;
+}
+
+export function decodeAttemptVision(json: string | null): {
+  visionScores: VisionVerdict["scores"] | null; reviewEvidence: ArtworkReviewEvidence | null;
+} {
+  if (!json) return { visionScores: null, reviewEvidence: null };
+  const parsed = JSON.parse(json);
+  return parsed?.version === 1
+    ? { visionScores: parsed.scores ?? null, reviewEvidence: parsed.reviewEvidence ?? null }
+    : { visionScores: parsed, reviewEvidence: null };
+}
 
 export interface ArtworkAttemptRecord {
   /** Stable id for this row, used by the per-attempt binary asset route. */
@@ -54,8 +125,9 @@ export interface ArtworkAttemptRecord {
   failureCodes: string[];
   tier1Findings: Tier1Finding[];
   visionScores: VisionVerdict["scores"] | null;
-  model: ArtworkModel;
-  quality: ArtworkQuality;
+  reviewEvidence?: ArtworkReviewEvidence | null;
+  model: ArtworkAttemptModel;
+  quality: ArtworkAttemptQuality;
   /** Null only for evidence written before provider provenance was added. */
   size: ArtworkSize | null;
   costUsdMicros: number;
@@ -76,8 +148,9 @@ export interface ArtworkAttemptInput {
   failureCodes: string[];
   tier1Findings: Tier1Finding[];
   visionScores: VisionVerdict["scores"] | null;
-  model?: ArtworkModel;
-  quality?: ArtworkQuality;
+  reviewEvidence?: ArtworkReviewEvidence | null;
+  model?: ArtworkAttemptModel;
+  quality?: ArtworkAttemptQuality;
   size?: ArtworkSize | null;
   costUsdMicros: number;
   now?: number;
@@ -85,6 +158,10 @@ export interface ArtworkAttemptInput {
 
 export interface AiFirstArtworkAttemptStore {
   record(input: ArtworkAttemptInput): Promise<ArtworkAttemptRecord>;
+  /** Atomic unique-key insert. A cross-owner collision must return no row. */
+  recordOnce?(input: ArtworkAttemptInput & { idempotencyKey: string }): Promise<{
+    created: boolean; record?: ArtworkAttemptRecord;
+  }>;
   /** Owner-scoped: an event's attempt evidence can only be read with its own ownerToken. Never includes bytes. */
   listForOwner(eventId: number, ownerToken: string): Promise<ArtworkAttemptRecord[]>;
   /** For the per-attempt binary asset route. Owner-scoped by construction. */
@@ -99,6 +176,13 @@ function nextId(): string {
 
 export class InMemoryArtworkAttemptStore implements AiFirstArtworkAttemptStore {
   private rows: ArtworkAttemptRecord[] = [];
+
+  async recordOnce(input: ArtworkAttemptInput & { idempotencyKey: string }) {
+    const existing = this.rows.find((row) => row.idempotencyKey === input.idempotencyKey);
+    if (existing) return { created: false, record: existing.eventId === input.eventId &&
+      existing.ownerToken === input.ownerToken ? existing : undefined };
+    return { created: true, record: await this.record(input) };
+  }
 
   async record(input: ArtworkAttemptInput): Promise<ArtworkAttemptRecord> {
     const record: ArtworkAttemptRecord = {
@@ -117,6 +201,7 @@ export class InMemoryArtworkAttemptStore implements AiFirstArtworkAttemptStore {
       failureCodes: input.failureCodes,
       tier1Findings: input.tier1Findings,
       visionScores: input.visionScores,
+      reviewEvidence: input.reviewEvidence ?? null,
       model: input.model ?? DEFAULT_ARTWORK_MODEL,
       quality: input.quality ?? "high",
       size: input.size ?? null,

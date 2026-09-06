@@ -41,9 +41,10 @@ function diagnosticBody(eventName: string, ownerToken: string): string {
  * No secret values or complete recipient addresses are ever returned.
  */
 export function registerEmailDiagnosticRoutes(app: Express): void {
-  app.get("/api/email/config", (_req, res) => {
-    const config = getEmailConfiguration();
+  app.get("/api/email/config", async (req, res) => {
     res.setHeader("Cache-Control", "no-store");
+
+    const config = getEmailConfiguration();
     return res.json({
       configured: config.productionSenderConfigured,
       apiKeyConfigured: config.apiKeyConfigured,

@@ -446,6 +446,7 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
     let tier1 = runTier1Checks({
       bytes,
       concept,
+      brief: input.brief,
       overlayCoverage: OVERLAY_COVERAGE[repair.overlay],
       artworkOpacity: artworkOpacity ?? 1,
       ocr: input.ocr,
@@ -467,6 +468,7 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
         const candidateTier1 = runTier1Checks({
           bytes,
           concept: candidateConcept,
+          brief: input.brief,
           overlayCoverage: OVERLAY_COVERAGE[candidateRepair.overlay],
           artworkOpacity: candidateRepair.artworkOpacity ?? 1,
           ocr: input.ocr,
@@ -494,6 +496,7 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
       const candidateTier1 = runTier1Checks({
         bytes,
         concept: candidateConcept,
+        brief: input.brief,
         overlayCoverage: OVERLAY_COVERAGE[candidateRepair.overlay],
         artworkOpacity: candidateRepair.artworkOpacity ?? artworkOpacity ?? 1,
         ocr: input.ocr,
@@ -517,7 +520,9 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
     }
 
     const passed = tier1.passed && vision?.passed === true;
-    failureCodes = tier1.passed ? (vision?.failureCodes ?? ["vision-unavailable"]) : retryCodesFor(tier1.findings);
+    failureCodes = tier1.passed
+      ? (vision?.unavailable ? ["vision-unavailable"] : (vision?.failureCodes ?? ["vision-unavailable"]))
+      : retryCodesFor(tier1.findings);
 
     attempts.push({
       attempt,

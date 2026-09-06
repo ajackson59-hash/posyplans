@@ -21,8 +21,7 @@ import {
 } from "./prePaymentReferenceBoard";
 import {
   namedReferenceAutoResolutionEnabled,
-  resolveNamedCreativeReference,
-  type ResolvedNamedReference,
+  namedReferenceIdentityNotes,
 } from "./namedReferenceResolver";
 import {
   PREPAYMENT_PREVIEW_QUALITY_LOCK_CUTOFF_MS,
@@ -67,6 +66,8 @@ const requestSchema = z.object({
 export interface PrePaymentPreviewQualityStorage {
   getEventByOwnerToken(ownerToken: string): Promise<Event | undefined>;
   updateEventById(eventId: number, data: Partial<Event>): Promise<Event | undefined>;
+  reservePrePaymentPreview(event: Event, startedAt: number): Promise<Event | undefined>;
+  completePrePaymentPreview(event: Event, data: Pick<Event, "prePaymentPreviewUrl" | "prePaymentPreviewUsedAt">): Promise<Event | undefined>;
 }
 
 export type PreviewBackgroundScheduler = (task: () => Promise<void>) => void;
@@ -76,13 +77,14 @@ export interface PrePaymentPreviewQualityRouteDependencies {
   isUnlocked?: (event: Event) => Promise<boolean>;
   mode?: () => PrePaymentPreviewMode;
   autoNamedEnabled?: () => boolean;
-  resolveNamedReference?: typeof resolveNamedCreativeReference;
+  classifyNamedReference?: (text: string, signal?: AbortSignal) => Promise<NamedCreativeReference | null>;
   generate?: (
     event: Event,
     dependencies?: PreviewQualityDependencies,
   ) => ReturnType<typeof generateQualityLockedPreview>;
   schedule?: PreviewBackgroundScheduler;
   now?: () => number;
+  jobTimeoutMs?: number;
   /**
    * Every billed pre-payment preview candidate — accepted or rejected — is
    * durably retained here for protected owner-scoped review, the same store
@@ -96,13 +98,51 @@ export interface PrePaymentPreviewQualityRouteDependencies {
   artworkAttemptStore?: AiFirstArtworkAttemptStore;
 }
 
-type PreviewAssetKind = "direction-card" | "reference-board" | "approved-image" | "none";
+export type PreviewAssetKind = "direction-card" | "reference-board" | "approved-image" | "none";
 type PreviewGenerationState = "idle" | "generating" | "ready" | "fallback";
 
 const QUALITY_APPROVED_PNG_PREFIX = "data:image/png;posy-quality-approved;base64,";
 const STANDARD_PNG_PREFIX = "data:image/png;base64,";
-const BACKGROUND_STALE_MS = 6 * 60 * 1000;
+// Safety ceiling, NOT a claim of successful artwork latency. A prior high
+// render exceeded 115 seconds; reserve review headroom without permitting the
+// four-minute serial-repair path. The launch target remains a measured 90s.
+export const PREPAYMENT_PREVIEW_JOB_TIMEOUT_MS = 150_000;
+const GENERAL_CLASSIFIER_TIMEOUT_MS = 7_500;
+const BACKGROUND_STALE_MS = PREPAYMENT_PREVIEW_JOB_TIMEOUT_MS + 15_000;
 const POLL_AFTER_MS = 2500;
+
+class PrePaymentPreviewDeadlineError extends Error {
+  constructor(stage: string) {
+    super(`${stage} exceeded Posy's preview deadline`);
+    this.name = "PrePaymentPreviewDeadlineError";
+  }
+}
+
+function withPreviewDeadline<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  stage: string,
+  onTimeout?: (error: PrePaymentPreviewDeadlineError) => void,
+): Promise<T> {
+  const boundedMs = Math.max(1, Math.floor(timeoutMs));
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      const error = new PrePaymentPreviewDeadlineError(stage);
+      onTimeout?.(error);
+      reject(error);
+    }, boundedMs);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
 
 function isSvgDataUrl(value: string | null | undefined): boolean {
   return Boolean(
@@ -161,22 +201,12 @@ function namedReferenceForEventSync(event: Event): NamedCreativeReference | null
   return detectNamedCreativeReferenceSync(eventNamedReferenceBrief(event));
 }
 
-/**
- * Curated + general classifier. Awaits a paid model call for anything
- * outside the curated five, so this must only ever be invoked once per
- * customer action — from the POST route, immediately before scheduling the
- * background generation job — never from a GET/read/poll path.
- */
-async function namedReferenceForEventGeneral(event: Event): Promise<NamedCreativeReference | null> {
-  return detectNamedCreativeReference(eventNamedReferenceBrief(event));
-}
-
 function imageIsCurrent(event: Event): boolean {
   return Boolean(qualityApprovedPayload(event.prePaymentPreviewUrl))
     && (event.prePaymentPreviewUsedAt ?? 0) >= PREPAYMENT_PREVIEW_QUALITY_LOCK_CUTOFF_MS;
 }
 
-function assetKind(event: Event): PreviewAssetKind {
+export function prePaymentPreviewAssetKind(event: Event): PreviewAssetKind {
   if (isReferenceBoardDataUrl(event.prePaymentPreviewUrl)) return "reference-board";
   if (isSvgDataUrl(event.prePaymentPreviewUrl)) return "direction-card";
   if (imageIsCurrent(event)) return "approved-image";
@@ -184,7 +214,7 @@ function assetKind(event: Event): PreviewAssetKind {
 }
 
 function backgroundIsStale(event: Event, timestamp: number): boolean {
-  if (assetKind(event) !== "none" || event.prePaymentPreviewAttempts <= 0) return false;
+  if (prePaymentPreviewAssetKind(event) !== "none" || event.prePaymentPreviewAttempts <= 0) return false;
   const startedAt = event.prePaymentPreviewUsedAt ?? 0;
   return startedAt <= 0 || timestamp - startedAt >= BACKGROUND_STALE_MS;
 }
@@ -230,15 +260,11 @@ async function persistDirectionCard(
   // already-awaited general-classifier result so the card correctly reflects
   // it instead of silently falling back to the generic card.
   const dataUrl = directionCardDataUrl(event, resolvedNamed);
-  const updated = await store.updateEventById(event.id, {
+  const updated = await store.completePrePaymentPreview(event, {
     prePaymentPreviewUrl: dataUrl,
     prePaymentPreviewUsedAt: timestamp,
   });
-  return updated ?? {
-    ...event,
-    prePaymentPreviewUrl: dataUrl,
-    prePaymentPreviewUsedAt: timestamp,
-  };
+  return updated ?? await store.getEventByOwnerToken(event.ownerToken) ?? event;
 }
 
 async function persistReferenceBoard(
@@ -248,15 +274,11 @@ async function persistReferenceBoard(
   timestamp: number,
 ): Promise<Event> {
   const dataUrl = await referenceBoardDataUrl(event, references);
-  const updated = await store.updateEventById(event.id, {
+  const updated = await store.completePrePaymentPreview(event, {
     prePaymentPreviewUrl: dataUrl,
     prePaymentPreviewUsedAt: timestamp,
   });
-  return updated ?? {
-    ...event,
-    prePaymentPreviewUrl: dataUrl,
-    prePaymentPreviewUsedAt: timestamp,
-  };
+  return updated ?? await store.getEventByOwnerToken(event.ownerToken) ?? event;
 }
 
 interface ReadinessResponse {
@@ -279,11 +301,12 @@ async function readiness(
   mode: PrePaymentPreviewMode,
   autoNamedEnabled: boolean,
   timestamp: number,
+  resolvedNamed?: NamedCreativeReference | null,
 ): Promise<ReadinessResponse> {
-  // Curated-only, synchronous, network-free — this runs on every readiness
-  // poll (every 2.5s while generating), so it must never await a model call.
-  const card = buildDirectionCard(event);
-  const kind = assetKind(event);
+  // Curated-only, synchronous and network-free on GET. The explicit POST may
+  // pass its one already-resolved general classification into this response.
+  const card = buildDirectionCard(event, resolvedNamed);
+  const kind = prePaymentPreviewAssetKind(event);
   const state = generationState(event, kind, timestamp);
   const referenceCaptured = kind === "reference-board";
   const hasNamedReference = Boolean(card.namedReference);
@@ -307,20 +330,10 @@ async function reservePreviewAttempt(
   store: PrePaymentPreviewQualityStorage,
   event: Event,
   startedAt: number,
-): Promise<Event> {
-  const updated = await store.updateEventById(event.id, {
-    prePaymentPreviewAttempts: event.prePaymentPreviewAttempts + 1,
-    prePaymentPreviewUrl: "",
-    // During generation this field is the durable start timestamp. Completion
-    // replaces it with the final asset timestamp, enabling stale recovery.
-    prePaymentPreviewUsedAt: startedAt,
-  });
-  return updated ?? {
-    ...event,
-    prePaymentPreviewAttempts: event.prePaymentPreviewAttempts + 1,
-    prePaymentPreviewUrl: "",
-    prePaymentPreviewUsedAt: startedAt,
-  };
+): Promise<Event | undefined> {
+  // A lost reservation is NOT permission to generate. In particular, never
+  // fabricate an in-memory reservation when the durable write returned no row.
+  return store.reservePrePaymentPreview(event, startedAt);
 }
 
 async function persistApprovedImage(
@@ -331,60 +344,90 @@ async function persistApprovedImage(
 ): Promise<boolean> {
   const approved = qualityApprovedDataUrl(dataUrl);
   if (!approved) return false;
-  await store.updateEventById(event.id, {
+  const updated = await store.completePrePaymentPreview(event, {
     prePaymentPreviewUrl: approved,
     prePaymentPreviewUsedAt: timestamp,
   });
-  return true;
+  return Boolean(updated);
+}
+
+interface AutomaticClassifiedJobDependencies {
+  store: PrePaymentPreviewQualityStorage;
+  event: Event;
+  mode: PrePaymentPreviewMode;
+  namedAutoEnabled: boolean;
+  classifyNamedReference: NonNullable<PrePaymentPreviewQualityRouteDependencies["classifyNamedReference"]>;
+  generate: NonNullable<PrePaymentPreviewQualityRouteDependencies["generate"]>;
+  artworkAttemptStore: AiFirstArtworkAttemptStore;
+  now: () => number;
+  jobTimeoutMs: number;
 }
 
 interface AutomaticNamedJobDependencies {
   store: PrePaymentPreviewQualityStorage;
   event: Event;
   namedReference: NamedCreativeReference;
-  resolveNamedReference: typeof resolveNamedCreativeReference;
   generate: NonNullable<PrePaymentPreviewQualityRouteDependencies["generate"]>;
   artworkAttemptStore: AiFirstArtworkAttemptStore;
   now: () => number;
+  jobTimeoutMs: number;
 }
 
 async function runAutomaticNamedPreviewJob({
   store,
   event,
   namedReference,
-  resolveNamedReference,
   generate,
   artworkAttemptStore,
   now,
+  jobTimeoutMs,
 }: AutomaticNamedJobDependencies): Promise<void> {
-  try {
-    let resolved: ResolvedNamedReference | null = null;
-    try {
-      resolved = await resolveNamedReference(event, namedReference);
-    } catch (error) {
-      console.error("[prepayment-preview] automatic named-reference resolution failed:", error);
-    }
-
-    if (!resolved?.images.length) {
-      await persistDirectionCard(store, event, now(), namedReference);
-      console.warn(`[prepayment-preview] ${JSON.stringify({
-        eventId: event.id,
-        kind: "direction-card",
-        namedReference: namedReference.id,
-        automaticReferenceResolved: false,
+  const jobStartedAt = Date.now();
+  const remainingMs = () => Math.max(1, jobTimeoutMs - (Date.now() - jobStartedAt));
+  const abortController = new AbortController();
+  let publication: Promise<boolean> | undefined;
+  const publishApproved = async (result: Extract<Awaited<ReturnType<typeof generateQualityLockedPreview>>, { kind: "approved-image" }>) => {
+    if (abortController.signal.aborted) return;
+    // One write owns the winner even while the sibling continues privately.
+    // A timeout must await this in-flight write before deciding on fallback.
+    publication ??= persistApprovedImage(store, event, result.dataUrl, now()).then((saved) => {
+      if (saved) console.info(`[prepayment-preview] ${JSON.stringify({
+        eventId: event.id, kind: "approved-image", phase: "first-approved",
+        timeToApprovedMs: Date.now() - jobStartedAt, model: result.model,
       })}`);
-      return;
-    }
+      return saved;
+    }).catch(() => false);
+    await publication;
+  };
+  try {
+    const generationTimeoutMs = remainingMs();
+    const result = await withPreviewDeadline(
+      generate(event, {
+        // This path generates from text and never uses reference pixels.
+        // A failed external image download must not suppress a valid named
+        // brief. Canonical identity remains mandatory in the final pixel gate.
+        inspirationNotes: namedReferenceIdentityNotes(namedReference),
+        // Preview comparison: the faster candidate can publish only after the
+        // same six-5/5 and binary checks. Keep a parallel high-tier candidate;
+        // never accept a weaker verdict to meet the latency target.
+        quality: "high",
+        candidateQualities: ["medium", "high"],
+        maxCandidates: 2,
+        parallelCandidates: true,
+        allowTargetedCorrection: false,
+        onApproved: publishApproved,
+        namedReference,
+        attemptRetention: { store: artworkAttemptStore, eventId: event.id, ownerToken: event.ownerToken },
+        signal: abortController.signal,
+      }),
+      generationTimeoutMs,
+      "Artwork generation and private review",
+      (error) => abortController.abort(error),
+    );
 
-    const result = await generate(event, {
-      inspirationNotes: resolved.notes,
-      referenceImages: resolved.images,
-      quality: "high",
-      maxCandidates: 2,
-      attemptRetention: { store: artworkAttemptStore, eventId: event.id, ownerToken: event.ownerToken },
-    });
-
+    if (await publication) return;
     if (result.kind === "approved-image"
+      && !abortController.signal.aborted
       && await persistApprovedImage(store, event, result.dataUrl, now())) {
       console.info(`[prepayment-preview] ${JSON.stringify({
         eventId: event.id,
@@ -392,7 +435,7 @@ async function runAutomaticNamedPreviewJob({
         model: result.model,
         privateCandidates: result.attempts,
         namedReference: namedReference.id,
-        automaticReferenceStrategy: resolved.strategy,
+        generationStrategy: "text-first",
       })}`);
       return;
     }
@@ -404,7 +447,7 @@ async function runAutomaticNamedPreviewJob({
       model: result.model,
       privateCandidates: result.attempts,
       namedReference: namedReference.id,
-      automaticReferenceStrategy: resolved.strategy,
+      generationStrategy: "text-first",
       error: result.kind === "unavailable" ? result.error : undefined,
       // Full per-candidate tier1/vision evidence is durably retained in
       // artworkAttemptStore (see /ai-first/review/attempts); this compact
@@ -412,6 +455,8 @@ async function runAutomaticNamedPreviewJob({
       rejectionSummary: summarizeRejectionForLog(result.reviews),
     })}`);
   } catch (error) {
+    // A slow/failed sibling cannot erase an image already approved and saved.
+    if (await publication) return;
     try {
       await persistDirectionCard(store, event, now(), namedReference);
     } catch (persistError) {
@@ -421,13 +466,104 @@ async function runAutomaticNamedPreviewJob({
   }
 }
 
-async function readyResponse(event: Event, mode: PrePaymentPreviewMode, autoNamed: boolean, timestamp: number) {
-  return readiness(event, mode, autoNamed, timestamp);
+async function runAutomaticClassifiedPreviewJob({
+  store,
+  event,
+  mode,
+  namedAutoEnabled,
+  classifyNamedReference,
+  generate,
+  artworkAttemptStore,
+  now,
+  jobTimeoutMs,
+}: AutomaticClassifiedJobDependencies): Promise<void> {
+  const startedAt = Date.now();
+  const remainingMs = () => Math.max(1, jobTimeoutMs - (Date.now() - startedAt));
+  const recognitionController = new AbortController();
+  let namedReference: NamedCreativeReference | null = null;
+  try {
+    namedReference = await withPreviewDeadline(
+      classifyNamedReference(eventNamedReferenceBrief(event), recognitionController.signal),
+      Math.min(GENERAL_CLASSIFIER_TIMEOUT_MS, remainingMs()),
+      "Named-theme recognition",
+      (error) => recognitionController.abort(error),
+    );
+  } catch (error) {
+    console.warn("[prepayment-preview] one-shot background named-theme recognition failed closed:", error);
+    await persistDirectionCard(store, event, now());
+    return;
+  }
+
+  if (namedReference) {
+    if (namedAutoEnabled) {
+      await runAutomaticNamedPreviewJob({
+        store,
+        event,
+        namedReference,
+        generate,
+        artworkAttemptStore,
+        now,
+        jobTimeoutMs: remainingMs(),
+      });
+      return;
+    }
+    await persistDirectionCard(store, event, now(), namedReference);
+    return;
+  }
+
+  if (mode !== "quality-image") {
+    await persistDirectionCard(store, event, now());
+    return;
+  }
+
+  const abortController = new AbortController();
+  const generationTimeoutMs = remainingMs();
+  try {
+    const result = await withPreviewDeadline(
+      generate(event, {
+        quality: "medium",
+        maxCandidates: 1,
+        namedReference: null,
+        attemptRetention: { store: artworkAttemptStore, eventId: event.id, ownerToken: event.ownerToken },
+        signal: abortController.signal,
+      }),
+      generationTimeoutMs,
+      "Artwork generation and private review",
+      (error) => abortController.abort(error),
+    );
+
+    if (result.kind === "approved-image"
+      && await persistApprovedImage(store, event, result.dataUrl, now())) {
+      return;
+    }
+    await persistDirectionCard(store, event, now());
+    console.warn(`[prepayment-preview] ${JSON.stringify({
+      eventId: event.id,
+      kind: result.kind,
+      model: result.model,
+      privateCandidates: result.attempts,
+      error: result.kind === "unavailable" ? result.error : undefined,
+      rejectionSummary: summarizeRejectionForLog(result.reviews),
+    })}`);
+  } catch (error) {
+    await persistDirectionCard(store, event, now());
+    console.error("[prepayment-preview] classified background preview failed closed:", error);
+  }
+}
+
+async function readyResponse(
+  event: Event,
+  mode: PrePaymentPreviewMode,
+  autoNamed: boolean,
+  timestamp: number,
+  resolvedNamed?: NamedCreativeReference | null,
+) {
+  return readiness(event, mode, autoNamed, timestamp, resolvedNamed);
 }
 
 /**
  * Registers before the legacy preview handlers. Raw provider output is never
- * customer-visible. Named-world research and generation run after the HTTP
+ * customer-visible. Named-world classification and generation run after the HTTP
  * response under Vercel waitUntil, so mobile navigation cannot cancel the job.
  */
 export function registerPrePaymentPreviewQualityRoutes(
@@ -439,11 +575,14 @@ export function registerPrePaymentPreviewQualityRoutes(
   const readMode = dependencies.mode ?? (() => readPrePaymentPreviewMode());
   const autoNamedEnabled = dependencies.autoNamedEnabled
     ?? (() => namedReferenceAutoResolutionEnabled());
-  const resolveNamedReference = dependencies.resolveNamedReference
-    ?? resolveNamedCreativeReference;
+  const classifyNamedReference = dependencies.classifyNamedReference
+    ?? ((text: string, signal?: AbortSignal) => detectNamedCreativeReference(text, {
+      signal, requireResolvedClassification: true,
+    }));
   const generate = dependencies.generate ?? generateQualityLockedPreview;
   const schedule = dependencies.schedule ?? defaultSchedule;
   const now = dependencies.now ?? Date.now;
+  const jobTimeoutMs = dependencies.jobTimeoutMs ?? PREPAYMENT_PREVIEW_JOB_TIMEOUT_MS;
   const artworkAttemptStore = dependencies.artworkAttemptStore ?? new DbArtworkAttemptStore();
 
   app.get("/api/events/owner/:ownerToken/prepayment-preview/readiness", async (req, res) => {
@@ -484,84 +623,84 @@ export function registerPrePaymentPreviewQualityRoutes(
     const timestamp = now();
     const mode = readMode();
     const namedAutoEnabled = autoNamedEnabled();
-    let currentKind = assetKind(event);
+    let currentKind = prePaymentPreviewAssetKind(event);
     const hasHostReference = referenceImages.length > 0;
-    // Explicit customer action (POST = "show me my first look") is the one
-    // and only place allowed to await the paid general classifier. Its
-    // result is threaded into the scheduled background job below so the
-    // resolution happens once and is reused, never re-derived on reads.
-    const namedReference = await namedReferenceForEventGeneral(event);
 
     if (backgroundIsStale(event, timestamp)) {
       event = await persistDirectionCard(store, event, timestamp);
       currentKind = "direction-card";
     }
 
+    // Treat repeated submits as the same in-flight request before attempting
+    // any general classification. This keeps arbitrary named themes one-shot
+    // even across duplicate browser requests.
+    if (currentKind === "none" && event.prePaymentPreviewAttempts > 0) {
+      res.setHeader("Retry-After", String(Math.ceil(POLL_AFTER_MS / 1000)));
+      return res.status(202).json(await readiness(event, mode, namedAutoEnabled, timestamp));
+    }
+    if (currentKind === "direction-card" && event.prePaymentPreviewAttempts > 0) {
+      return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
+    }
+
+    // A previously completed safe asset is idempotent for every theme type.
+    // Quality-approved arbitrary named themes do not need to be rediscovered by
+    // the curated read-only detector in order to remain visible.
+    if (currentKind === "approved-image" || currentKind === "reference-board") {
+      return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
+    }
+
+    if (hasHostReference) {
+      event = await persistReferenceBoard(store, event, referenceImages, timestamp);
+      return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
+    }
+
+    const namedReference = namedReferenceForEventSync(event);
+
     if (namedReference) {
-      if (currentKind === "approved-image" && namedAutoEnabled && !hasHostReference) {
-        return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
-      }
-
-      if (currentKind === "reference-board" && !hasHostReference) {
-        return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
-      }
-
-      // This remains only as a backward-compatible optional override. The
-      // normal screen no longer asks the customer to research or upload.
-      if (hasHostReference) {
-        event = await persistReferenceBoard(store, event, referenceImages, timestamp);
-        return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
-      }
-
       if (!namedAutoEnabled) {
         if (currentKind !== "direction-card") {
-          event = await persistDirectionCard(store, event, timestamp);
+          event = await persistDirectionCard(store, event, timestamp, namedReference);
         }
-        return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
-      }
-
-      if (currentKind === "none" && event.prePaymentPreviewAttempts > 0) {
-        res.setHeader("Retry-After", String(Math.ceil(POLL_AFTER_MS / 1000)));
-        return res.status(202).json(await readiness(event, mode, namedAutoEnabled, timestamp));
-      }
-
-      if (currentKind === "direction-card" && event.prePaymentPreviewAttempts > 0) {
-        return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
+        return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp, namedReference));
       }
 
       const allowance = canAttemptPrePaymentPreview(event);
       if (!allowance.ok) {
         if (currentKind !== "direction-card") {
-          event = await persistDirectionCard(store, event, timestamp);
+          event = await persistDirectionCard(store, event, timestamp, namedReference);
         }
-        return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
+        return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp, namedReference));
       }
 
       const reservedEvent = await reservePreviewAttempt(store, event, timestamp);
+      if (!reservedEvent) {
+        const latest = await store.getEventByOwnerToken(event.ownerToken);
+        if (!latest) return res.status(404).json({ error: "Event not found" });
+        return res.status(202).json(await readiness(latest, mode, namedAutoEnabled, timestamp));
+      }
       event = reservedEvent;
       schedule(() => runAutomaticNamedPreviewJob({
         store,
         event: reservedEvent,
         namedReference,
-        resolveNamedReference,
         generate,
         artworkAttemptStore,
         now,
+        jobTimeoutMs,
       }));
 
       res.setHeader("Retry-After", String(Math.ceil(POLL_AFTER_MS / 1000)));
-      return res.status(202).json(await readiness(reservedEvent, mode, namedAutoEnabled, timestamp));
+      return res.status(202).json(await readiness(reservedEvent, mode, namedAutoEnabled, timestamp, namedReference));
     }
 
-    // Original and generic themes retain the existing explicit release gate.
-    if (currentKind === "approved-image" && mode === "quality-image") {
-      return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
-    }
-    if (currentKind === "direction-card" && mode !== "quality-image") {
+    if (currentKind === "direction-card") {
       return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
     }
 
-    if (mode !== "quality-image") {
+    // Unknown names and original themes are classified once after the explicit
+    // action. The HTTP response is immediate; classification, optional visual
+    // research, generation and review all happen in the scheduled job.
+    if (!namedAutoEnabled && mode !== "quality-image") {
       event = await persistDirectionCard(store, event, timestamp);
       return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
     }
@@ -572,46 +711,26 @@ export function registerPrePaymentPreviewQualityRoutes(
       return res.json(await readyResponse(event, mode, namedAutoEnabled, timestamp));
     }
 
-    event = await reservePreviewAttempt(store, event, timestamp);
-
-    let result: Awaited<ReturnType<typeof generateQualityLockedPreview>>;
-    try {
-      result = await generate(event, {
-        referenceImages,
-        maxCandidates: 2,
-        attemptRetention: { store: artworkAttemptStore, eventId: event.id, ownerToken: event.ownerToken },
-      });
-    } catch (error) {
-      event = await persistDirectionCard(store, event, now());
-      console.error("[prepayment-preview] private quality pipeline failed closed:", error);
-      return res.json(await readyResponse(event, mode, namedAutoEnabled, now()));
+    const reservedEvent = await reservePreviewAttempt(store, event, timestamp);
+    if (!reservedEvent) {
+      const latest = await store.getEventByOwnerToken(event.ownerToken);
+      if (!latest) return res.status(404).json({ error: "Event not found" });
+      return res.status(202).json(await readiness(latest, mode, namedAutoEnabled, timestamp));
     }
+    schedule(() => runAutomaticClassifiedPreviewJob({
+      store,
+      event: reservedEvent,
+      mode,
+      namedAutoEnabled,
+      classifyNamedReference,
+      generate,
+      artworkAttemptStore,
+      now,
+      jobTimeoutMs,
+    }));
 
-    if (result.kind === "approved-image"
-      && await persistApprovedImage(store, event, result.dataUrl, now())) {
-      console.info(`[prepayment-preview] ${JSON.stringify({
-        eventId: event.id,
-        kind: result.kind,
-        model: result.model,
-        privateCandidates: result.attempts,
-      })}`);
-      const completed = await store.getEventByOwnerToken(req.params.ownerToken) ?? event;
-      return res.json(await readyResponse(completed, mode, namedAutoEnabled, now()));
-    }
-
-    event = await persistDirectionCard(store, event, now());
-    console.warn(`[prepayment-preview] ${JSON.stringify({
-      eventId: event.id,
-      kind: result.kind,
-      model: result.model,
-      privateCandidates: result.attempts,
-      error: result.kind === "unavailable" ? result.error : undefined,
-      // Full per-candidate tier1/vision evidence is durably retained in
-      // artworkAttemptStore (see /ai-first/review/attempts); this compact
-      // summary just keeps the last candidate's reason legible inline.
-      rejectionSummary: summarizeRejectionForLog(result.reviews),
-    })}`);
-    return res.json(await readyResponse(event, mode, namedAutoEnabled, now()));
+    res.setHeader("Retry-After", String(Math.ceil(POLL_AFTER_MS / 1000)));
+    return res.status(202).json(await readiness(reservedEvent, mode, namedAutoEnabled, timestamp));
   });
 
   app.get("/api/events/owner/:ownerToken/prepayment-preview/asset", async (req, res) => {
@@ -635,8 +754,7 @@ export function registerPrePaymentPreviewQualityRoutes(
     }
 
     const approvedPayload = qualityApprovedPayload(stored);
-    const approvedLaneEnabled = namedReference ? namedAutoEnabled : mode === "quality-image";
-    if (!approvedPayload || !imageIsCurrent(event) || !approvedLaneEnabled) {
+    if (!approvedPayload || !imageIsCurrent(event)) {
       return res.status(404).json({ error: "No approved first look available yet" });
     }
 

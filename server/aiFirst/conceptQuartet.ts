@@ -11,6 +11,7 @@ import { validateLayoutBeforeGeneration } from "@shared/aiFirstLayout";
 import type { EventBrief } from "./brief";
 import { preflightConceptForBrief, subjectFamiliesForBrief } from "./conceptPreflight";
 import { buildArtworkConstraints } from "./prompt";
+import { conflictsWithRequestedMedium, resolveArtDirection } from "./artDirection";
 
 export const REQUIRED_CONCEPT_QUARTET_SIZE = 4;
 
@@ -171,6 +172,9 @@ export function preflightConceptQuartet(
 
   concepts.forEach((concept, index) => {
     const label = `concept ${index + 1} (${concept.conceptName})`;
+    if (conflictsWithRequestedMedium(brief, concept.art.medium)) {
+      addPerConceptError(index, `${label} substitutes another medium for the host-requested artwork treatment`);
+    }
     const artBrief = `${concept.art.medium} ${concept.art.composition} ${concept.art.prompt}`;
     const subject = preflightConceptForBrief(concept, brief);
     const layout = validateLayoutBeforeGeneration(concept);
@@ -213,7 +217,7 @@ export function preflightConceptQuartet(
     // boundary. At least three are required; one intentional repeat is allowed
     // when it gives the named theme a stronger, more coherent result.
     const media = concepts.map((concept) => mediumFamily(concept.art.medium));
-    if (uniqueCount(media) < 3) {
+    if (!resolveArtDirection(brief).requestedTreatment && uniqueCount(media) < 3) {
       errors.push("quartet should aim for 4 distinct illustration media; at least 3 are required");
     }
     addUniquenessError(errors, "style lanes", concepts.map((concept) => concept.styleLaneId));

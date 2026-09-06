@@ -11,6 +11,10 @@
 // pixels and the preview store hashes bytes. Re-decoding a base64 string in
 // three places would be the same work done three times.
 
+import { decode as decodeJpeg } from "jpeg-js";
+import { createHash } from "node:crypto";
+import { encodePng } from "./png";
+
 export type ArtworkModel = "gpt-image-1" | "gpt-image-1.5" | "gpt-image-2";
 /** Current quality-first default for text-only generation. */
 export const DEFAULT_ARTWORK_MODEL: ArtworkModel = "gpt-image-2";
@@ -37,6 +41,8 @@ export interface ArtworkRequest {
   aspectRatio: ArtworkAspectRatio;
   model?: ArtworkModel;
   quality?: ArtworkQuality;
+  /** Provider transport only; returned bytes are always full-resolution PNG. */
+  outputFormat?: "png" | "jpeg";
   /**
    * High-fidelity visual references for named characters or entertainment
    * worlds. When present, the provider's image-edits endpoint generates a new
@@ -49,12 +55,91 @@ export interface ArtworkRequest {
    */
   inputFidelity?: ArtworkInputFidelity;
   signal?: AbortSignal;
+  /** Preview budgets count provider requests, including transient HTTP failures. */
+  maxTransientRetries?: 0 | 1;
 }
 
 export interface ArtworkResult {
   bytes: Buffer;
   dataUrl: string;
   durationMs: number;
+  telemetry?: {
+    outputFormat: "png" | "jpeg";
+    providerRequestCount: number;
+    providerDurationMs: number;
+    normalizationDurationMs: number;
+    /** Usage from this successful response only, when supplied. Failed earlier
+     * requests and missing fields must not be represented as free usage. */
+    responseUsage?: {
+      inputTokens: number; outputTokens: number;
+      textInputTokens: number; imageInputTokens: number;
+      textOutputTokens: number | null; imageOutputTokens: number | null;
+    };
+  };
+}
+
+/** Keep an unreviewable provider response available to private attempt retention. */
+export class ArtworkNormalizationError extends Error {
+  readonly result!: ArtworkResult;
+  constructor(message: string, result: ArtworkResult) {
+    super(message);
+    this.name = "ArtworkNormalizationError";
+    // Logging the error must not dump private image bytes or its data URL.
+    Object.defineProperty(this, "result", { value: result });
+  }
+}
+
+export interface ArtworkProviderDiagnostics {
+  status: number;
+  code: string | null;
+  type: string | null;
+  requestId: string | null;
+  moderationStage: "input" | "output" | "unknown";
+  moderationCategories: string[];
+  model: ArtworkModel;
+  quality: ArtworkQuality;
+  size: ArtworkSize;
+  outputFormat: "png" | "jpeg";
+  operation: "edit" | "request";
+  providerRequestCount: number;
+  providerDurationMs: number;
+  promptSha256: string;
+}
+
+/** Provider messages can echo private prompts. Retain identifiers and coarse
+ * diagnostics, never the raw response body, prompt, credentials or image data. */
+export class ArtworkProviderError extends Error {
+  constructor(readonly diagnostics: ArtworkProviderDiagnostics) {
+    super(`${diagnostics.model} ${diagnostics.operation} failed (${diagnostics.status}): ${diagnostics.code ?? diagnostics.type ?? "provider_error"}${diagnostics.requestId ? `; request ${diagnostics.requestId}` : ""}`);
+    this.name = "ArtworkProviderError";
+  }
+}
+
+function providerFailure(
+  response: Response, body: string, request: ArtworkRequest,
+  context: Pick<ArtworkProviderDiagnostics, "model" | "quality" | "size" | "operation" | "providerRequestCount" | "providerDurationMs">,
+): ArtworkProviderError {
+  let error: Record<string, any> = {};
+  try {
+    const parsed = JSON.parse(body);
+    if (parsed?.error && typeof parsed.error === "object") error = parsed.error;
+  } catch { /* Non-JSON provider failures still have HTTP and request identity. */ }
+  const identifier = (value: unknown): string | null =>
+    typeof value === "string" && /^[a-z][a-z0-9_]{0,79}$/.test(value) ? value : null;
+  const requestId = [response.headers.get("x-request-id"), error.request_id,
+    typeof error.message === "string" ? error.message.match(/\breq_[a-zA-Z0-9]{8,128}\b/)?.[0] : null,
+  ].find((value) => typeof value === "string" && /^req_[a-zA-Z0-9]{8,128}$/.test(value)) ?? null;
+  const details = error.moderation_details;
+  const stage = details?.moderation_stage;
+  const allowedCategories = new Set(["harassment", "self-harm", "sexual", "violence"]);
+  return new ArtworkProviderError({
+    ...context, status: response.status, code: identifier(error.code), type: identifier(error.type), requestId,
+    moderationStage: stage === "input" || stage === "output" ? stage : "unknown",
+    moderationCategories: Array.isArray(details?.categories)
+      ? Array.from(new Set<string>(details.categories.filter((value: unknown): value is string => typeof value === "string" && allowedCategories.has(value)))) : [],
+    outputFormat: request.outputFormat ?? "png",
+    promptSha256: createHash("sha256").update(request.prompt).digest("hex"),
+  });
 }
 
 const SIZE_FOR_ASPECT: Record<ArtworkAspectRatio, ArtworkSize> = {
@@ -101,6 +186,22 @@ export function estimateImageCostUsdMicros(
 
 export type ArtworkGenerator = (request: ArtworkRequest) => Promise<ArtworkResult>;
 
+function responseUsage(value: any): NonNullable<ArtworkResult["telemetry"]>["responseUsage"] {
+  const count = (v: unknown): v is number => Number.isSafeInteger(v) && (v as number) >= 0;
+  if (!value || ![value.input_tokens, value.output_tokens, value.input_tokens_details?.text_tokens,
+    value.input_tokens_details?.image_tokens].every(count)) return undefined;
+  if (value.input_tokens !== value.input_tokens_details.text_tokens + value.input_tokens_details.image_tokens) return undefined;
+  const output = value.output_tokens_details;
+  const hasOutputDetails = count(output?.text_tokens) && count(output?.image_tokens)
+    && output.text_tokens + output.image_tokens === value.output_tokens;
+  return {
+    inputTokens: value.input_tokens, outputTokens: value.output_tokens,
+    textInputTokens: value.input_tokens_details.text_tokens, imageInputTokens: value.input_tokens_details.image_tokens,
+    textOutputTokens: hasOutputDetails ? output.text_tokens : null,
+    imageOutputTokens: hasOutputDetails ? output.image_tokens : null,
+  };
+}
+
 function imageEditBody(
   request: ArtworkRequest,
   model: ArtworkModel,
@@ -114,8 +215,10 @@ function imageEditBody(
   form.append("quality", quality);
   form.append("n", "1");
   form.append("background", "opaque");
-  form.append("output_format", "png");
-  if (request.inputFidelity) {
+  form.append("output_format", request.outputFormat ?? "png");
+  if (request.outputFormat === "jpeg") form.append("output_compression", "100");
+  // GPT Image 2 uses high input fidelity automatically; its API rejects this field.
+  if (request.inputFidelity && model !== "gpt-image-2") {
     form.append("input_fidelity", request.inputFidelity);
   }
 
@@ -160,6 +263,8 @@ function requestInit(
           // Without this an image model can return a fully transparent alpha
           // channel, which composites to an invisible card.
           background: "opaque",
+          output_format: request.outputFormat ?? "png",
+          ...(request.outputFormat === "jpeg" ? { output_compression: 100 } : {}),
         }),
         signal: request.signal,
       };
@@ -221,33 +326,78 @@ export async function generateArtwork(request: ArtworkRequest): Promise<ArtworkR
     : "https://api.openai.com/v1/images/generations";
   const operation = usesReferenceImages ? "edit" : "request";
 
-  for (let attempt = 0; attempt <= MAX_TRANSIENT_RETRIES; attempt += 1) {
+  const maxRetries = request.maxTransientRetries ?? MAX_TRANSIENT_RETRIES;
+  for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
     const response = await fetch(
       endpoint,
       requestInit(request, apiKey, model, quality, size, usesReferenceImages),
     );
 
     if (response.ok) {
-      const data = (await response.json()) as { data?: { b64_json?: string }[] };
+      const data = (await response.json()) as { data?: { b64_json?: string }[]; usage?: unknown };
+      const usage = responseUsage(data.usage);
       const b64 = data.data?.[0]?.b64_json;
       if (!b64) throw new Error(`${model} returned no image data`);
 
+      const providerDurationMs = Date.now() - started;
+      const normalizationStarted = Date.now();
+      const outputFormat = request.outputFormat ?? "png";
+      let bytes = Buffer.from(b64, "base64");
+      if (outputFormat === "jpeg") {
+        try {
+          // Decode once, without resizing or another lossy encoding. The existing
+          // PNG review/store paths now see precisely these decoded source pixels.
+          // Bound allocation and reject malformed or unexpectedly sized output.
+          const decoded = decodeJpeg(bytes, {
+            useTArray: true, formatAsRGBA: false, tolerantDecoding: false,
+            maxResolutionInMP: 2, maxMemoryUsageInMB: 64,
+          });
+          const [width, height] = size.split("x").map(Number);
+          if (decoded.width !== width || decoded.height !== height) {
+            throw new Error(`${model} returned unexpected JPEG dimensions: ${decoded.width}x${decoded.height}; expected ${size}`);
+          }
+          bytes = encodePng({ width, height, rgb: decoded.data });
+        } catch (error) {
+          throw new ArtworkNormalizationError(
+            `JPEG normalization failed: ${error instanceof Error ? error.message : String(error)}`,
+            {
+              bytes, dataUrl: `data:image/jpeg;base64,${b64}`, durationMs: Date.now() - started,
+              telemetry: { outputFormat, providerRequestCount: attempt + 1, providerDurationMs,
+                ...(usage ? { responseUsage: usage } : {}),
+                normalizationDurationMs: Date.now() - normalizationStarted },
+            },
+          );
+        }
+      }
+
       return {
-        bytes: Buffer.from(b64, "base64"),
-        dataUrl: `data:image/png;base64,${b64}`,
+        bytes,
+        dataUrl: `data:image/png;base64,${bytes.toString("base64")}`,
         durationMs: Date.now() - started,
+        telemetry: {
+          outputFormat, providerRequestCount: attempt + 1, providerDurationMs,
+          ...(usage ? { responseUsage: usage } : {}),
+          normalizationDurationMs: Date.now() - normalizationStarted,
+        },
       };
     }
 
     const body = await response.text().catch(() => "");
-    if (attempt < MAX_TRANSIENT_RETRIES && TRANSIENT_STATUS_CODES.has(response.status)) {
+    const failure = providerFailure(response, body, request, {
+      model, quality, size, operation, providerRequestCount: attempt + 1,
+      providerDurationMs: Date.now() - started,
+    });
+    console.warn("[ai-first-artwork] provider failure", JSON.stringify(failure.diagnostics));
+    const isGenerationRejection = failure.diagnostics.type === "image_generation_user_error"
+      || failure.diagnostics.code === "moderation_block" || failure.diagnostics.code === "moderation_blocked";
+    if (attempt < maxRetries && TRANSIENT_STATUS_CODES.has(response.status) && !isGenerationRejection) {
       const delayMs = retryDelayMs(response, body);
       console.warn(`[ai-first-artwork] ${model} ${operation} returned ${response.status}; retrying once in ${delayMs}ms`);
       await waitForRetry(delayMs, request.signal);
       continue;
     }
 
-    throw new Error(`${model} ${operation} failed (${response.status}): ${body.slice(0, 300)}`);
+    throw failure;
   }
 
   throw new Error(`${model} ${operation} failed without a response`);

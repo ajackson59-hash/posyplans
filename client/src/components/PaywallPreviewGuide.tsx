@@ -162,9 +162,9 @@ export default function PaywallPreviewGuide() {
       ) : previewReady && readiness?.kind === "direction-card" ? (
         <p className="text-xs leading-relaxed text-muted-foreground" data-testid="text-preview-quality-lock">
           {automaticNamedResearch && automaticAttempted
-            ? `Posy recognized ${namedLabel} and completed the visual research. The generated option did not clear Posy’s standard, so this reliable direction stayed in place instead of showing weak artwork.`
+            ? `Posy recognized ${namedLabel}, but no artwork cleared the private quality review. Your event direction is saved here.`
             : automaticNamedResearch
-              ? `Posy recognized ${namedLabel}. Visual research and private quality review are handled automatically—there is nothing else for you to find or upload.`
+              ? `Posy recognized ${namedLabel}. Your artwork will be reviewed privately before it appears here.`
               : namedLabel
                 ? `Posy recognized ${namedLabel} and captured every defining event detail without showing a generic substitute.`
                 : readiness.imageGenerationEnabled
@@ -178,7 +178,7 @@ export default function PaywallPreviewGuide() {
       ) : (
         <p className="text-xs text-muted-foreground" aria-live="polite">
           {automaticNamedResearch
-            ? `Posy is resolving the right ${namedLabel} visual world and reviewing the artwork privately. Nothing unapproved will be shown.`
+            ? `Posy is creating your ${namedLabel} artwork and reviewing it privately before showing it here.`
             : "Posy is building this from the details you already shared. Unapproved artwork is never shown."}
         </p>
       )}

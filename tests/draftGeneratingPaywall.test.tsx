@@ -68,6 +68,28 @@ beforeEach(() => {
 });
 
 describe("DraftGenerating pre-payment preview", () => {
+  it("recovers an approved image on mobile pageshow without another generation or checkout", async () => {
+    let ready = false;
+    apiRequestJson.mockImplementation((method: string, url: string) => {
+      if (method === "GET" && url.endsWith("/prepayment-preview/readiness")) return Promise.resolve({
+        ready, kind: ready ? "approved-image" : "none", generationState: ready ? "ready" : "generating",
+        pollAfterMs: 60000, namedReference: null,
+      });
+      if (method === "GET" && url.endsWith("/master-planner/entitlement")) return Promise.resolve({
+        eventId: 94, freeDraftState: "none", emailCaptured: false, planTier: "spark", sparkUnlocked: false, canGenerate: false,
+      });
+      throw new Error(`Unexpected request: ${method} ${url}`);
+    });
+    renderPaywall();
+    await screen.findByTestId("prepayment-preview-progress-proof");
+    ready = true;
+    fireEvent(window, new Event("pageshow"));
+    await screen.findByTestId("img-prepayment-preview");
+    expect(callsTo(`/api/events/owner/${OWNER}/prepayment-preview`)).toHaveLength(0);
+    expect(callsTo("/api/checkout/create-session")).toHaveLength(0);
+    expect(callsTo(`/api/events/owner/${OWNER}/prepayment-preview/readiness`).length).toBeGreaterThanOrEqual(2);
+  });
+
   it("reveals the personalized preview before allowing a Spark checkout", async () => {
     const preview = deferred<{ ready: boolean }>();
     const checkout = deferred<{ url: string }>();
@@ -125,12 +147,49 @@ describe("DraftGenerating pre-payment preview", () => {
     expect(previewImage.className).not.toContain("object-cover");
     expect(previewImage.className).not.toContain("aspect-square");
     expect(previewImage.className).not.toMatch(/aspect-\[/);
-    expect(screen.getByTestId("button-unlock-spark").textContent).toContain("Revealing your personalized first look");
+    expect(screen.getByTestId("button-unlock-spark").textContent).toContain("Continue to checkout — $9.99");
     expect(callsTo("/api/checkout/create-session")).toHaveLength(0);
 
     fireEvent.load(previewImage);
     expect(screen.getByTestId("button-unlock-spark").textContent).toContain("Unlock this event — $9.99");
     expect(callsTo("/api/checkout/create-session")).toHaveLength(0);
+
+    fireEvent.click(screen.getByTestId("button-unlock-spark"));
+    await waitFor(() => expect(callsTo("/api/checkout/create-session")).toHaveLength(1));
+  });
+
+  it("shows the event direction immediately and lets checkout continue while artwork finishes", async () => {
+    const checkout = deferred<{ url: string }>();
+    const directionCard = {
+      eventName: "Brian and Blippi's Extravaganza",
+      eyebrow: "THEME RECOGNIZED",
+      headline: "Blippi + Meekah",
+      supportingCopy: "Posy captured the direction.",
+      cues: ["Indoor soft play", "Bubbles", "Ice-cream treats"],
+    };
+
+    apiRequestJson.mockImplementation((method: string, url: string) => {
+      if (method === "GET" && url.endsWith("/prepayment-preview/readiness")) {
+        return Promise.resolve({ ready: false, generationState: "idle", pollAfterMs: null, kind: "none", namedReference: null, directionCard });
+      }
+      if (method === "GET" && url.endsWith("/master-planner/entitlement")) {
+        return Promise.resolve({ eventId: 94, freeDraftState: "none", emailCaptured: false, planTier: "spark", sparkUnlocked: false, canGenerate: false });
+      }
+      if (method === "POST" && url.endsWith("/prepayment-preview")) {
+        return Promise.resolve({ ready: false, generationState: "generating", pollAfterMs: 2500, kind: "none", namedReference: null, directionCard });
+      }
+      if (method === "POST" && url === "/api/checkout/create-session") return checkout.promise;
+      throw new Error(`Unexpected request: ${method} ${url}`);
+    });
+
+    renderPaywall();
+    fireEvent.change(await screen.findByTestId("input-spark-email"), { target: { value: EMAIL } });
+    fireEvent.click(screen.getByTestId("button-unlock-spark"));
+
+    const proof = await screen.findByTestId("prepayment-preview-progress-proof");
+    expect(proof.textContent).toContain("Blippi + Meekah");
+    expect(proof.textContent).toContain("Indoor soft play");
+    expect(screen.getByTestId("button-unlock-spark").textContent).toContain("Continue to checkout — $9.99");
 
     fireEvent.click(screen.getByTestId("button-unlock-spark"));
     await waitFor(() => expect(callsTo("/api/checkout/create-session")).toHaveLength(1));

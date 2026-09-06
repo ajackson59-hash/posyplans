@@ -11,6 +11,7 @@
 // working exactly as before whether the flag is on or off.
 
 import type { Express, Request, Response } from "express";
+import { registerStyleSourceRoutes } from "./styleSourceRoutes";
 import { readFeatureFlags } from "@shared/featureFlags";
 import { AI_FIRST_CONCEPT_KEY, themeFromSnapshot, type AiFirstSnapshot } from "@shared/aiFirstTheme";
 import { OVERLAY_COVERAGE, validateLayoutBeforeGeneration } from "@shared/aiFirstLayout";
@@ -55,6 +56,7 @@ import {
   type ConceptOnlyProofResult,
 } from "./conceptOnlyProof";
 import { extractInspirationNotes } from "../inviteDesignAi";
+import { customerVisiblePreviewBytes } from "../prePaymentPreviewQuality";
 import { runTier1Checks } from "./tier1";
 import { runVisionGate, type VisionGateInput, type VisionVerdict } from "./visionGate";
 import { briefForHostDirection } from "./conceptPreflight";
@@ -132,6 +134,7 @@ export function abortOnUnexpectedResponseClose(res: Response, controller: AbortC
 }
 
 export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
+  registerStyleSourceRoutes(app, deps);
   const env = () => deps.env ?? process.env;
   const flags = () => readFeatureFlags(env());
 
@@ -147,6 +150,27 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
   const gated = (handler: (req: Request, res: Response) => Promise<void> | void) => {
     return async (req: Request, res: Response) => {
       if (!flags().aiFirstInvitations) {
+        res.status(404).json({ error: "Not found" });
+        return;
+      }
+      await handler(req, res);
+    };
+  };
+
+  /**
+   * The named pre-payment canary intentionally runs while the broader
+   * AI-first invitation flag remains off. Its retained evidence still needs
+   * the same owner-scoped audit/recheck surface on the two certified Preview
+   * branches; otherwise paid pixels can be retained but never reviewed.
+   * Everywhere else keeps the existing AI-first flag boundary.
+   */
+  const retainedEvidenceGated = (handler: (req: Request, res: Response) => Promise<void> | void) => {
+    return async (req: Request, res: Response) => {
+      const environment = env();
+      const certifiedNamedPreview = environment.VERCEL_ENV === "preview"
+        && ["fix/launch-qa-find-my-event-label", "codex/launch-blockers"]
+          .includes(environment.VERCEL_GIT_COMMIT_REF || "");
+      if (!flags().aiFirstInvitations && !certifiedNamedPreview) {
         res.status(404).json({ error: "Not found" });
         return;
       }
@@ -852,7 +876,7 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
    */
   app.get(
     "/api/events/owner/:ownerToken/ai-first/review/attempts",
-    gated(async (req, res) => {
+    retainedEvidenceGated(async (req, res) => {
       const ownerToken = String(req.params.ownerToken);
       const event = await deps.storage.getEventByOwnerToken(ownerToken);
       if (!event) {
@@ -877,11 +901,18 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
           failureCodes: row.failureCodes,
           tier1Findings: row.tier1Findings,
           visionScores: row.visionScores,
+          reviewEvidence: row.reviewEvidence ?? null,
           model: row.model,
           quality: row.quality,
           size: row.size,
           costUsdMicros: row.costUsdMicros,
-          costEstimateStatus: row.size ? "image-output-only-model-size-estimate" : "legacy-unverified",
+          costEstimateStatus: row.reviewEvidence?.calibration
+            ? "review-only-cost-in-calibration-evidence"
+            : row.reviewEvidence?.styleSource
+            ? "source-review-excludes-original-art-and-critic-cost"
+            : row.reviewEvidence?.composition
+            ? "composition-only-excludes-source-art-and-review"
+            : row.size ? "image-output-only-model-size-estimate" : "legacy-unverified",
           createdAt: row.createdAt,
         })),
       });
@@ -897,7 +928,7 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
    */
   app.get(
     "/api/events/owner/:ownerToken/ai-first/review/attempts/:id/asset",
-    gated(async (req, res) => {
+    retainedEvidenceGated(async (req, res) => {
       const ownerToken = String(req.params.ownerToken);
       const event = await deps.storage.getEventByOwnerToken(ownerToken);
       if (!event) {
@@ -934,7 +965,7 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
    */
   app.post(
     "/api/events/owner/:ownerToken/ai-first/review/attempts/:id/recheck",
-    gated(async (req, res) => {
+    retainedEvidenceGated(async (req, res) => {
       const ownerToken = String(req.params.ownerToken);
       const event = await deps.storage.getEventByOwnerToken(ownerToken);
       if (!event) {
@@ -960,6 +991,19 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
         res.status(409).json({
           error: "Only rejected retained artwork can be re-reviewed.",
           denial: "attempt-not-rejected",
+          imageProviderCalls: 0,
+          billedArtworkAttempts: 0,
+        });
+        return;
+      }
+      // Private compositor research must not become customer artwork through
+      // the older retained-image promotion route, even after a critic pass.
+      if (row.model === "posy-review-calibration-v1" || row.reviewEvidence?.calibration ||
+          row.model === "posy-scene-compositor-v1" || row.reviewEvidence?.composition ||
+          row.model === "posy-style-source-v1" || row.reviewEvidence?.styleSource) {
+        res.status(409).json({
+          error: "Composed scenes are private research and are not enabled for customer use.",
+          denial: "scene-promotion-disabled",
           imageProviderCalls: 0,
           billedArtworkAttempts: 0,
         });
@@ -1002,22 +1046,13 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
         return;
       }
 
-      const repair = validateLayoutBeforeGeneration(row.concept);
-      const tier1 = runTier1Checks({
-        bytes,
-        concept: row.concept,
-        overlayCoverage: OVERLAY_COVERAGE[repair.overlay],
-        artworkOpacity: repair.artworkOpacity ?? 1,
-        ocr: env().NODE_ENV === "production",
-      });
-      if (!tier1.passed) {
+      let reviewedBytes: Buffer;
+      try {
+        reviewedBytes = customerVisiblePreviewBytes(bytes);
+      } catch (error) {
         res.status(422).json({
-          error: "The retained artwork still fails Posy's deterministic quality checks.",
-          denial: "tier1-quality-rejected",
-          failureCodes: Array.from(
-            new Set(tier1.findings.filter((finding) => finding.critical).map((finding) => finding.code)),
-          ),
-          tier1Findings: tier1.findings,
+          error: `The retained artwork could not be prepared for customer review: ${error instanceof Error ? error.message : String(error)}`,
+          denial: "retained-artwork-preview-unavailable",
           imageProviderCalls: 0,
           billedArtworkAttempts: 0,
         });
@@ -1036,10 +1071,36 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
       });
       const direction = [row.concept.conceptName, row.concept.description, row.concept.art.prompt].join(" ");
       const effectiveBrief = briefForHostDirection(baseBrief, direction);
-      const vision = await (deps.reviewRetainedArtwork ?? runVisionGate)({
-        bytes,
+      const tier1 = runTier1Checks({
+        // Match the pre-payment path exactly: judge the standalone 560px
+        // teaser customers receive, without invitation text-placement rules.
+        bytes: reviewedBytes,
         concept: row.concept,
         brief: effectiveBrief,
+        overlayCoverage: OVERLAY_COVERAGE[row.concept.minOverlay],
+        artworkOpacity: 1,
+        layoutApplied: false,
+        ocr: env().NODE_ENV === "production",
+      });
+      if (!tier1.passed) {
+        res.status(422).json({
+          error: "The retained artwork still fails Posy's deterministic quality checks.",
+          denial: "tier1-quality-rejected",
+          failureCodes: Array.from(
+            new Set(tier1.findings.filter((finding) => finding.critical).map((finding) => finding.code)),
+          ),
+          tier1Findings: tier1.findings,
+          imageProviderCalls: 0,
+          billedArtworkAttempts: 0,
+        });
+        return;
+      }
+
+      const vision = await (deps.reviewRetainedArtwork ?? runVisionGate)({
+        bytes: reviewedBytes,
+        concept: row.concept,
+        brief: effectiveBrief,
+        reviewMode: "teaser",
       });
       if (vision.unavailable) {
         res.status(503).json({

@@ -1,5 +1,31 @@
 # QA harnesses
 
+## Offline first-look benchmark
+
+Run without network access, credentials or paid provider calls:
+
+```bash
+node --import tsx tools/qa/summarizePreviewBenchmark.ts tools/qa/benchmarks/event34-baseline.json
+```
+
+Exit 0 means the observed artwork benchmark meets its requirements, 1 means
+HOLD, and 2 means malformed evidence. The retained event-34 baseline should
+return **1**, not success: it is one automated pass at 132.186 seconds, with
+independent human review and all-in costs still unconfirmed.
+
+The schema in `server/aiFirst/previewBenchmark.ts` is strict and excludes owner
+tokens, images, URLs and email. Register every trial ID before a live run and
+keep failed/missing trials. Do not mix commits, rendering architectures, briefs
+or simulated/live evidence. Report approved-only p50/p95 separately from
+terminal timing; a 50ms fallback is not a 50ms artwork success. Human labels
+must refer to the exact delivered image, not a larger source or an AI verdict.
+
+The five-case / twenty-trials-per-case minimum is an observed acceptance
+sample, not a statistical guarantee or approval to spend on 100 requests.
+Paid runs require a separate explicit budget. No build or CI step executes
+paid canaries. See `LAUNCH_READINESS.md` for the remaining activation and
+whole-product gates.
+
 ## `reliabilityFixtureHarness` (tests/aiFirstQaFixtureHarness.test.ts)
 
 Fixture / non-provider QA surface for the PR #3 reliability repair. It

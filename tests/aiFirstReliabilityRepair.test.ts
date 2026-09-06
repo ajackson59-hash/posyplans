@@ -19,8 +19,15 @@ import { InMemoryUsageStore } from "../server/aiFirst/usage";
 import { InMemoryRunStore } from "../server/aiFirst/runStore";
 import { InMemoryArtworkAttemptStore } from "../server/aiFirst/artworkAttemptStore";
 import type { EventBrief } from "../server/aiFirst/brief";
+import { readPngSize } from "../server/aiFirst/png";
 import type { VisionGateInput, VisionVerdict } from "../server/aiFirst/visionGate";
-import { concept, conceptQuartet, framedArtworkForAspect, artworkForAspect } from "./aiFirstFixtures";
+import {
+  artworkForAspect,
+  busyTypeRegionPng,
+  concept,
+  conceptQuartet,
+  framedArtworkForAspect,
+} from "./aiFirstFixtures";
 
 const OWNER = "owner-token";
 const EVENT_ID = 1;
@@ -1179,12 +1186,11 @@ describe("every billed artwork result is retained for protected review; rejected
 });
 
 describe("retained rejected artwork can be re-reviewed without another image generation", () => {
-  async function seedRetainedAttempt() {
+  async function seedRetainedAttempt(bytes = artworkForAspect("9:16")) {
     const previewStore = new InMemoryPreviewStore();
     const usageStore = new InMemoryUsageStore();
     const runStore = new InMemoryRunStore();
     const artworkAttemptStore = new InMemoryArtworkAttemptStore();
-    const bytes = artworkForAspect("9:16");
     const retainedConcept = concept({
       conceptName: "Demon Stage Trio",
       description: "Rumi, Mira and Zoey command a supernatural K-pop stage.",
@@ -1254,6 +1260,42 @@ describe("retained rejected artwork can be re-reviewed without another image gen
     expect(wrongOwner.status).toBe(404);
   });
 
+  it.each(["posy-scene-compositor-v1", "posy-style-source-v1", "posy-review-calibration-v1"] as const)("never promotes private research through retained-image recheck: %s", async (model) => {
+    const stores = await seedRetainedAttempt();
+    stores.attempt.model = model;
+    stores.attempt.quality = "not-applicable";
+    stores.attempt.costUsdMicros = 0;
+    stores.attempt.reviewEvidence = { version: 1, reviewedAssetHash: null, verdict: null, generationDurationMs: 0,
+      composition: { recipeId: "private-test", styleId: "fixture-only", briefDigest: "a".repeat(64), assetDigests: [],
+        sourceWidth: 1024, sourceHeight: 1536, compositionDurationMs: 10, imageProviderCalls: 0, customerActivation: "disabled" } };
+    if (model === "posy-style-source-v1") stores.attempt.reviewEvidence = {
+      version: 1, reviewedAssetHash: null, verdict: null, generationDurationMs: 0,
+      styleSource: { sourceId: "fixture", scope: "source-profile-only", stage: "stored", profileDigest: "a".repeat(64),
+        imageProviderCalls: 0, criticRequests: 0, customerActivation: "disabled" },
+    };
+    if (model === "posy-review-calibration-v1") stores.attempt.reviewEvidence = {
+      version: 1, reviewedAssetHash: null, verdict: null, generationDurationMs: 0,
+      calibration: { datasetId: "fixture", caseId: "fixed", stage: "completed", profileDigest: "a".repeat(64),
+        sourceUrl: "https://example.com/reference", expectedIdentity: true, identityCorrect: true,
+        deploymentSha: "fixture", reviewerVersion: "fixture", imageProviderCalls: 0, criticRequests: 1,
+        criticCostUsdMicrosFromUsage: 1, customerActivation: "disabled" },
+    };
+    let reviews = 0;
+    const app = appFor({ ...stores, reviewRetainedArtwork: async () => { reviews++; return passingReview; } });
+    const response = await request(app)
+      .post(`/api/events/owner/${OWNER}/ai-first/review/attempts/${stores.attempt.id}/recheck`)
+      .send({ confirmRetainedReview: true, expectedAssetHash: stores.attempt.assetHash });
+    expect(response.status).toBe(409);
+    expect(response.body.denial).toBe("scene-promotion-disabled");
+    expect(reviews).toBe(0);
+    const listing = await request(app).get(`/api/events/owner/${OWNER}/ai-first/review/attempts`);
+    expect(listing.body.attempts[0].costEstimateStatus).toBe(model === "posy-review-calibration-v1"
+      ? "review-only-cost-in-calibration-evidence" : model === "posy-style-source-v1"
+      ? "source-review-excludes-original-art-and-critic-cost" : "composition-only-excludes-source-art-and-review");
+    expect(listing.body.attempts[0].previewId).toBeNull();
+    expect(listing.body.attempts[0].assetBytesBase64).toBeUndefined();
+  });
+
   it("runs semantic vision once, saves one private preview, and is exactly idempotent", async () => {
     const stores = await seedRetainedAttempt();
     let visionCalls = 0;
@@ -1288,6 +1330,30 @@ describe("retained rejected artwork can be re-reviewed without another image gen
     expect(replay.body.reused).toBe(true);
     expect(visionCalls).toBe(1);
     expect(await stores.previewStore.listForEvent(EVENT_ID)).toHaveLength(1);
+  });
+
+  it("rechecks the exact standalone teaser pixels without invitation text-region rules", async () => {
+    const sourceBytes = busyTypeRegionPng(512, 768);
+    const stores = await seedRetainedAttempt(sourceBytes);
+    let reviewedInput: VisionGateInput | undefined;
+    const app = appFor({
+      ...stores,
+      reviewRetainedArtwork: async (input) => {
+        reviewedInput = input;
+        return passingReview;
+      },
+    });
+
+    const response = await request(app)
+      .post(`/api/events/owner/${OWNER}/ai-first/review/attempts/${stores.attempt.id}/recheck`)
+      .send({ confirmRetainedReview: true, expectedAssetHash: stores.attempt.assetHash });
+
+    expect(response.status).toBe(200);
+    expect(reviewedInput?.reviewMode).toBe("teaser");
+    expect(readPngSize(reviewedInput!.bytes)).toEqual({ width: 373, height: 560 });
+    expect(reviewedInput!.bytes.equals(sourceBytes)).toBe(false);
+    expect(response.body.imageProviderCalls).toBe(0);
+    expect(response.body.billedArtworkAttempts).toBe(0);
   });
 });
 
