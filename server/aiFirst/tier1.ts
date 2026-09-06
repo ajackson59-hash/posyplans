@@ -30,6 +30,8 @@ import { LAYOUT_FRAMES } from "@shared/inviteLayout";
 import type { AiFirstConcept } from "@shared/aiFirstInvite";
 import { aspectRatioForLayout } from "@shared/aiFirstInvite";
 import { LOCAL_TYPE_SURFACE_ALPHA } from "@shared/themeCatalog";
+import { resolveArtDirection } from "./artDirection";
+import type { EventBrief } from "./brief";
 
 export type Tier1Code =
   | "file-integrity"
@@ -117,6 +119,8 @@ const EXPECTED_ASPECT: Record<"16:9" | "1:1" | "9:16", number> = {
 export interface Tier1Input {
   bytes: Buffer;
   concept: AiFirstConcept;
+  /** Host intent makes ambiguous style heuristics advisory; vision remains mandatory. */
+  brief?: EventBrief;
   /** Overlay actually applied, for the coverage check. */
   overlayCoverage: number;
   /** Artwork opacity actually applied by the layout. */
@@ -134,13 +138,15 @@ export function runTier1Checks(input: Tier1Input): Tier1Result {
   const started = Date.now();
   const findings: Tier1Finding[] = [];
   const { bytes, concept } = input;
+  const requestedTreatment = input.brief && resolveArtDirection(input.brief).requestedTreatment;
+  const styleReviewNote = requestedTreatment ? "; inspect against the requested treatment in the mandatory vision review" : "";
 
   // D2 — file size. Cheap, and a near-empty file makes every later check lie.
   if (bytes.length < MIN_BYTES) {
     findings.push({
       code: "file-size",
-      critical: true,
-      message: `artwork is ${bytes.length} bytes — too small to be a real illustration`,
+      critical: !requestedTreatment,
+      message: `artwork is ${bytes.length} bytes — unusually small${styleReviewNote}`,
       measured: bytes.length,
       limit: MIN_BYTES,
     });
@@ -168,6 +174,13 @@ export function runTier1Checks(input: Tier1Input): Tier1Result {
   }
 
   // D3 — dimensions match the aspect the layout asked for.
+  // Waiving the compression-size heuristic must not admit a tiny raster.
+  // A compact requested treatment still needs at least a full teaser's pixels.
+  if (requestedTreatment && bytes.length < MIN_BYTES && Math.max(image.width, image.height) < 560) {
+    findings.push({ code: "dimensions", critical: true,
+      message: "compact artwork is below the 560px minimum customer teaser resolution",
+      measured: Math.max(image.width, image.height), limit: 560 });
+  }
   const expected = EXPECTED_ASPECT[aspectRatioForLayout(concept.layoutStyle)];
   const actual = image.width / image.height;
   if (Math.abs(actual - expected) / expected > ASPECT_TOLERANCE) {
@@ -195,12 +208,15 @@ export function runTier1Checks(input: Tier1Input): Tier1Result {
   }
 
   // D5 — flat bands / corruption.
+  // Repeated rows/columns and a uniform perimeter are ambiguous in vector,
+  // line, abstract and unfamiliar requested treatments. Record the evidence
+  // and defer its meaning to vision; do not declare those pixels approved.
   const band = longestFlatBand(grid);
   if (band > MAX_FLAT_BAND_FRACTION) {
     findings.push({
       code: "flat-bands",
-      critical: true,
-      message: `a flat band covers ${(band * 100).toFixed(1)}% of the long edge, which reads as corruption`,
+      critical: !requestedTreatment,
+      message: `a flat band covers ${(band * 100).toFixed(1)}% of the long edge${styleReviewNote}`,
       measured: band,
       limit: MAX_FLAT_BAND_FRACTION,
     });
@@ -211,8 +227,8 @@ export function runTier1Checks(input: Tier1Input): Tier1Result {
   if (ring > MAX_MARGIN_RING_FRACTION) {
     findings.push({
       code: "printed-margin",
-      critical: true,
-      message: `the artwork draws its own ${(ring * 100).toFixed(1)}% uniform border — the renderer already frames the card`,
+      critical: !requestedTreatment,
+      message: `a uniform perimeter covers ${(ring * 100).toFixed(1)}% of the short edge${styleReviewNote}`,
       measured: ring,
       limit: MAX_MARGIN_RING_FRACTION,
     });

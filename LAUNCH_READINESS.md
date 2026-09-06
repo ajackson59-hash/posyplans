@@ -51,6 +51,57 @@ No database schema migration, package upgrade or scheduled paid canary is added.
 
 ## Design-led prototype evidence and activation boundary
 
+### General artwork scope (supersedes a construction-library launch strategy)
+
+The product requirement is free-form artwork direction across original themes,
+named characters/franchises (including Disney), adult events, and requested
+media. A small scene catalog is not the solution or the acceptance boundary.
+The construction source remains one private reference/test case and has no
+automatic customer matching or activation.
+
+`artDirection.ts` carries the current host direction verbatim through the
+shared image constraints and vision critic. Recognized medium names provide
+conservative hints; they are not a whitelist. Explicit unfamiliar treatment
+labels also remain binding. Original host words and current-direction overrides
+are retained so unspecified or unfamiliar styles are not replaced by a catalog.
+No new classification/model request is added by this resolver.
+
+For an explicit host treatment, the early small-file, uniform-band and uniform-
+perimeter heuristics remain recorded but defer their visual meaning to the
+mandatory critic. Those measurements can describe deliberate vector art or
+negative space, not just corruption or a generated paper margin. Decoding,
+blank-output, aspect, crop, text and layout checks remain blocking; no customer
+image can pass without the normal vision verdict. A real compressed flat-PNG
+fixture verifies that this path reaches vision and that a failed vision verdict
+still stays private. This is a style-aware review change, not a numerical score
+reduction.
+
+Requested media take precedence over the first-look illustration defaults.
+Both parallel candidates preserve that treatment while varying staging;
+generic food/soft-play material rules cannot override explicit prominence or
+medium choices. The paid concept quartet also retains a requested medium,
+with structural variety preserved. Known medium substitutions fail its
+zero-image preflight. Adult themes no longer categorically exclude requested
+cartoon characters. The critic receives the same contract, audits an explicit
+medium as a visible requirement, and judges premium craft within that medium.
+All existing score floors, exact identity/count checks, source retention,
+native-ratio delivery, request limits, first-approved publication and paywall
+boundaries remain in force.
+
+The engineering matrix includes Disney Frozen, Mickey/Minnie, Moana, Alice,
+Unicorn Academy, KPop Demon Hunters, original construction, adult photography,
+line art, abstract vector work, oil painting, stained glass, embroidery and
+an unfamiliar lacquer-inlay treatment. Its pixels and critic responses are
+synthetic: passing tests proves transport/rejection behavior, not visual quality.
+
+**This generalizes intent handling, not a universal success or speed guarantee.**
+No new paid generation or live benchmark accompanies this change. The latest
+live construction source proof and earlier 132.186-second named first look
+were measured before this change and cannot certify its output. Broad live
+identity/style/brief-fidelity and end-to-end latency evidence is still required
+before this can be called a final launch solution. Do not extrapolate the
+construction source's approximately 6.4-second stored-image GET to fresh renders.
+
 ### Owner-approved art direction
 
 Private source storage and review now use the existing owner-scoped artwork

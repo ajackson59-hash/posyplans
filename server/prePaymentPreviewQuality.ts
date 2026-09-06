@@ -24,6 +24,7 @@ import type { AiFirstArtworkAttemptStore } from "./aiFirst/artworkAttemptStore";
 import { boxDownsampleRgb, decodePng, encodePng } from "./aiFirst/png";
 import { ageFromMilestone, buildEventBrief, type EventBrief } from "./aiFirst/brief";
 import { buildArtworkConstraints, buildRetryPrompt } from "./aiFirst/prompt";
+import { resolveArtDirection } from "./aiFirst/artDirection";
 import {
   retryCodesFor,
   runTier1Checks,
@@ -68,6 +69,10 @@ function buildTeaserArtworkPrompt(concept: AiFirstConcept): string {
  * unrelated event worlds carry soft-play or catering instructions.
  */
 function buildPhysicalStagingConstraints(brief: EventBrief): string {
+  const direction = resolveArtDirection(brief);
+  if (direction.requestedTreatment) {
+    return "BINDING MEDIUM-AWARE STAGING — Honor the host's requested treatment, quantities, density, placement and prominence. Keep every required element readable at 560px. Use coherent anatomy, mechanical connections and perspective appropriate to the chosen medium. Deliberate flat shapes do not require photographic shadows or lens effects; requested glossy 3D may use intentional specular highlights. Do not impose a serving station, rear placement, matte texture or sparse bubble count when the host asked for something else.";
+  }
   const scene = [
     brief.vibe,
     ...brief.requirements.required,
@@ -96,7 +101,7 @@ function buildPhysicalStagingConstraints(brief: EventBrief): string {
     );
   }
 
-  return lines.join("\n");
+  return ["STAGING DEFAULTS — Apply these only where the host did not specify another treatment, quantity, density, prominence or position. A food hero stays the hero; explicitly requested foreground food is not moved to the rear.", ...lines].join("\n");
 }
 
 /**
@@ -110,6 +115,7 @@ function buildNamedWorldArtConstraints(
   namedReference: NamedCreativeReference | null,
 ): string {
   if (!namedReference) return "";
+  const direction = resolveArtDirection(brief);
 
   const scene = [
     brief.vibe,
@@ -117,27 +123,29 @@ function buildNamedWorldArtConstraints(
     ...brief.requirements.preferred,
   ].join(" ");
   const lines = [
-    `BINDING ORIGINAL-ILLUSTRATION MEDIUM — Render ${namedReference.label} as entirely original commissioned editorial illustration with deliberate hand-painted texture and crisp character design. Absolutely no photograph, photoreal live-action frame, licensed/promotional still, cosplay, mascot suit, lookalike actor or stock-photo visual language.`,
+    direction.requestedTreatment
+      ? `BINDING REQUESTED MEDIUM — Render ${namedReference.label} in ${direction.requestedTreatment}. Preserve canonical character identity and the requested version. Do not substitute an unrelated actor, mascot suit or promotional layout; medium does not erase identity.`
+      : `DEFAULT ORIGINAL-ILLUSTRATION MEDIUM — Only when the host has not requested a medium, render ${namedReference.label} as original commissioned editorial illustration with deliberate hand-painted texture and crisp character design. In this default treatment use no photograph, photoreal live-action frame, licensed/promotional still, cosplay, mascot suit, lookalike actor or stock-photo visual language.`,
     "BINDING FIRST-GLANCE SCENE HIERARCHY — Every REQUIRED line must have independently identifiable pixels at the 560-pixel customer teaser size. Named subjects lead the action; the requested venue and activities are substantial co-heroes; supporting required props remain clearly readable. No required element may be a tiny, blurred, cropped or incidental background afterthought.",
   ];
 
-  if (/\bsoft[- ]play|foam blocks?|ball pit|climbing (?:blocks?|structures?|equipment)|play mats?\b/i.test(scene)) {
+  if (!direction.requestedTreatment && /\bsoft[- ]play|foam blocks?|ball pit|climbing (?:blocks?|structures?|equipment)|play mats?\b/i.test(scene)) {
     lines.push(
       "BINDING SOFT-PLAY SCENE MAP — Make the ball pit a large lower-to-middle scene anchor and the foam climbing structures substantial side and rear architecture. Stage the named characters dancing or interacting inside this environment; do not reduce the ball pit or climbing structures to distant décor.",
     );
   }
-  if (/\bbubbles?|bubble wands?\b/i.test(scene)) {
+  if (!direction.requestedTreatment && /\bbubbles?|bubble wands?\b/i.test(scene)) {
     lines.push(
       "BINDING VISIBLE BUBBLES — Show a clearly visible sparse handful of floating bubbles across foreground and midground depth planes without covering faces. They must read immediately as bubbles at teaser size, not disappear into bokeh or background lighting.",
     );
   }
-  if (/\bice[ -]?cream|frozen treats?|cake|cupcakes?|desserts?|food|treats?\b/i.test(scene)) {
+  if (!direction.requestedTreatment && /\bice[ -]?cream|frozen treats?|cake|cupcakes?|desserts?|food|treats?\b/i.test(scene)) {
     lines.push(
       "BINDING VISIBLE SERVING STATION — Give the built-in serving counter a clear side or midground zone with several colorful treats visibly identifiable at teaser size. It remains integrated behind the main action, but may not shrink into a distant sliver or generic blur.",
     );
   }
 
-  return lines.join("\n");
+  return ["NAMED-SCENE DEFAULTS — Explicit host placement, density, medium and hero choices take precedence over the optional scene map below.", ...lines].join("\n");
 }
 
 /**
@@ -750,7 +758,7 @@ function enrichBriefForNamedReference(brief: EventBrief, named: NamedCreativeRef
           ? [
               `a generic adjacent aesthetic standing in for ${named.label}`,
               "isolated accessories or palette-only shorthand standing in for the requested characters or world",
-              "photographs, photoreal live-action frames, promotional stills, cosplay, mascot suits, lookalike actors or stock-photo depictions of the named characters",
+              "unrequested photographs, photoreal live-action frames, promotional stills, cosplay, mascot suits, lookalike actors or stock-photo substitutions for the requested named-character treatment",
               "an invented portrait, gender or physical appearance for the celebrant when the host did not supply a personal visual reference",
               "any child in the foreground or central hero plane when the host did not supply a personal visual reference for the celebrant",
               ...(named.id === "blippi-meekah"
@@ -759,7 +767,7 @@ function enrichBriefForNamedReference(brief: EventBrief, named: NamedCreativeRef
             ]
           : []),
         "a visible blank card, white rectangle, paper panel, placard, sign, frame or placeholder box inside the artwork",
-        "a collage, split panel, sticker sheet, merchandise mockup, pasted character cutout or television-promo layout",
+        "unrequested collage, split panels, sticker sheets, merchandise mockups, accidental pasted character cutouts or television-promo layouts",
         "a freestanding poster, banner, easel, title card, invitation card, menu board, screen or other rectangular surface reserved for text",
         "a lead character's face or head cropped off by the canvas edge",
         ...(age !== null && !hostExplicitlyRequestedCandles
@@ -790,6 +798,7 @@ export async function buildQualityLockedPreviewBrief(
     inspirationNotes,
   });
   const brief = enrichBriefForNamedReference(baseBrief, namedReference);
+  const artDirection = resolveArtDirection(brief);
   const card = buildDirectionCard(event, namedReference);
   // AiFirstConcept intentionally caps art.prompt at 1,200 characters. The
   // full host brief, REQUIRED/EXCLUDED constraints and identity-reference notes
@@ -806,16 +815,24 @@ export async function buildQualityLockedPreviewBrief(
       : "MILESTONE: age-appropriate energy only. Do not show birthday candles, numeral props or countable age markers; Posy UI carries the exact age."
     : "MILESTONE: age-appropriate tone only; no invented names, dates or logos.";
   const prompt = [
-    "full portrait canvas; one cinematic environment.",
+    artDirection.requestedTreatment
+      ? "full portrait canvas; composition in the host's requested treatment."
+      : "full portrait canvas; one cinematic environment.",
     `IDENTITY: ${identity}; host details share one scene.`,
-    namedReference
+    artDirection.requestedTreatment
+      ? `REQUESTED MEDIUM: ${artDirection.requestedTreatment}. Preserve the host's treatment and palette; do not replace it with a default illustration style.`
+      : namedReference
       ? "ORIGINAL ILLUSTRATION: commissioned hand-painted editorial art; exact named identity; no photography, live-action performers, promotional stills or generic mascots."
       : "NATIVE STYLE: premium commissioned illustration with believable material physics, cinematic light and no stock-photo or generic-template visual language.",
-    "NO DESIGN SURFACES: no card, panel, sign, frame, collage, poster, mockup or text box.",
+    artDirection.requestedTreatment
+      ? "NO DESIGN SURFACES: no placeholder card, sign, mockup or text box. A host-requested collage is intentional artwork, not an accidental pasted cutout."
+      : "NO DESIGN SURFACES: no card, panel, sign, frame, collage, poster, mockup or text box.",
     namedReference
       ? "STORY: candid named-character interaction; do not invent any child in the foreground or central hero plane without a supplied celebrant reference."
       : "STORY: asymmetric candid interaction and varied poses, not a front-facing catalog or character-promo pose.",
-    "DEPTH/MATERIAL: directional key + subtle rim light, natural depth falloff, contact/cast shadows, controlled saturation/color bounce; correct hands, joints, scale, gravity/perspective. No waxy skin, plastic food, repeated object clusters, stamped bubbles or composite seams.",
+    artDirection.requestedTreatment
+      ? "MEDIUM/CRAFT: precise shapes, clean subject anatomy and coherent treatment. Preserve requested flatness, dimensionality, texture, density and prominence. No accidental composite seams or malformed required details."
+      : "DEPTH/MATERIAL DEFAULT: directional key + subtle rim light, natural depth falloff, contact/cast shadows, controlled saturation/color bounce; correct hands, joints, scale, gravity/perspective. No waxy skin, plastic food, repeated object clusters, stamped bubbles or composite seams.",
     "HANDS/PROPS: unless required, no food or small props in hands; use natural hands and stable surfaces at believable scale.",
     milestoneDirection,
     "COMPOSITION: fully frame faces, hands and required objects with breathing room; avoid dense repeated foreground clutter.",
@@ -845,8 +862,10 @@ export async function buildQualityLockedPreviewBrief(
       accentColor: card.palette[0],
     },
     art: {
-      medium: namedReference ? "premium commissioned hand-painted editorial illustration" : "premium cinematic event illustration",
-      composition: "portrait scene-led full-bleed teaser using the full canvas; all required subjects, faces and defining objects remain fully visible, with no panel, blank rectangle, cropped head or edge-clipped hero subject",
+      medium: artDirection.medium ?? (namedReference ? "premium commissioned hand-painted editorial illustration" : "premium cinematic event illustration"),
+      composition: artDirection.requestedTreatment
+        ? "full-canvas host-directed artwork; all required subjects remain visible; no placeholder panel or edge-clipped hero"
+        : "portrait scene-led full-bleed teaser using the full canvas; all required subjects, faces and defining objects remain fully visible, with no panel, blank rectangle, cropped head or edge-clipped hero subject",
       prompt: prompt.slice(0, 1200),
     },
     safeTypographyRegion: "center",
@@ -979,7 +998,9 @@ function buildTargetedCorrectionPrompt(
   basePrompt: string,
   review: PreviewQualityReview,
   independentReconstruction: boolean,
+  brief: EventBrief,
 ): string {
+  const treatment = resolveArtDirection(brief).requestedTreatment;
   const failureCodes = review.failureCodes.length > 0
     ? Array.from(new Set(review.failureCodes))
     : ["minor finish defects"];
@@ -989,6 +1010,7 @@ function buildTargetedCorrectionPrompt(
       case "artifact":
         return "ARTIFACT REBUILD: Draw every affected region from clean underlying forms; do not simulate a fix with blur, cloning, patching or cosmetic retouching. Reconstruct malformed anatomy, joins, seams, halos, contact shadows and repeated forms. Give repeated objects organic variation in scale, occlusion, edge shape, highlights, texture and depth spacing—never copied or stamped patterns.";
       case "premium-feel":
+        if (treatment) return `MATERIAL AND FINISH REBUILD: Preserve ${treatment} and the requested palette, texture and dimensionality. Correct the critic's concrete finish defects within that treatment; do not add unrequested brushwork, realism, matte texture or depth.`;
         return "MATERIAL AND FINISH REBUILD: Replace waxy, plastic, rubbery, airbrushed or synthetic-looking surfaces with intentional hand-painted material variation, coherent shared lighting and dimensional depth. Skin and faces need restrained specular highlights, natural color and shadow variation, and a matte living finish; fabrics, foam, food and props must each read as their own believable material.";
       case "brief-fidelity":
         return "BRIEF AND PROMINENCE REBUILD: Restore the requested visual hierarchy. You may adjust the scale, placement, separation and visibility of existing required subjects or scene elements so each reads clearly at 560-pixel teaser size, without adding unrequested content.";
@@ -1004,7 +1026,7 @@ function buildTargetedCorrectionPrompt(
 
 PRIVATE THIRD CANDIDATE — INDEPENDENT CRITIC-LED RECONSTRUCTION:
 Generate a completely new image from the written event brief. No prior artwork is attached and no prior pixel arrangement, camera, pose, geometry, texture, highlight, edge, shadow or object spacing may be copied. This must be a genuinely independent composition, not a retouch, trace or cosmetic variation of either earlier candidate.
-Preserve the requested identities, wardrobe, event setting, activities, required details, palette and exclusions semantically—not by reproducing defective source pixels. Use a refined matte ink-and-tempera editorial illustration treatment distinct from the earlier cel-painted and gouache candidates, with intentional material texture and physically coherent depth.
+Preserve the requested identities, wardrobe, event setting, activities, required details, palette and exclusions semantically—not by reproducing defective source pixels. ${treatment ? `Preserve the SAME requested treatment (${treatment}); vary composition without switching medium.` : "Use a refined matte ink-and-tempera editorial illustration treatment distinct from the earlier cel-painted and gouache candidates, with intentional material texture and physically coherent depth."}
 Measured failure classes to eliminate: ${findings}.
 STRICT CRITIC EVIDENCE FROM THE STRONGEST PRIOR CANDIDATE: ${review.notes || "Eliminate every defect that kept one or more quality dimensions at 4/5."}
 ${repairDirectives}
@@ -1120,7 +1142,13 @@ export async function generateQualityLockedPreview(
       }
     };
 
-    const prompts = namedReference
+    const direction = resolveArtDirection(brief);
+    const prompts = direction.requestedTreatment
+      ? [
+          `${basePrompt}\n\nPRIVATE CANDIDATE ONE — Preserve ${direction.requestedTreatment}, every required identity and the full host direction. Build a clear composition with intentional subject hierarchy.`,
+          `${basePrompt}\n\nPRIVATE CANDIDATE TWO — Preserve the SAME requested treatment (${direction.requestedTreatment}), palette, identities and all required details. Independently vary camera or arrangement within the host's composition constraints, without switching medium.`,
+        ]
+      : namedReference
       ? [
           `${basePrompt}
 
@@ -1187,6 +1215,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
         tier1 = runTier1({
           bytes: reviewedBytes,
           concept,
+          brief,
           overlayCoverage: OVERLAY_COVERAGE[concept.minOverlay],
           artworkOpacity: 1,
           layoutApplied: false,
@@ -1328,6 +1357,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
             basePrompt,
             strongestNearPass.review,
             independentReconstruction,
+            brief,
           ),
           aspectRatio: aspectRatioForLayout(concept.layoutStyle),
           model: repairModel,
@@ -1353,6 +1383,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
           const tier1 = runTier1({
             bytes: reviewedBytes,
             concept,
+            brief,
             overlayCoverage: OVERLAY_COVERAGE[concept.minOverlay],
             artworkOpacity: 1,
             layoutApplied: false,
@@ -1522,6 +1553,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
       tier1 = runTier1({
         bytes: reviewedBytes,
         concept,
+        brief,
         overlayCoverage: OVERLAY_COVERAGE[concept.minOverlay],
         artworkOpacity: 1,
         layoutApplied: false,

@@ -1056,11 +1056,24 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
         return;
       }
 
+      const [menuItems, budgetItems, guests] = await Promise.all([
+        deps.storage.listMenuItems(event.id),
+        deps.storage.listBudgetItems(event.id),
+        deps.storage.listGuests(event.id),
+      ]);
+      const baseBrief = buildEventBrief({
+        event,
+        dna: computeEventDna({ eventType: event.eventType, menuItems, budgetItems }).scores,
+        guestCount: guests.length > 0 ? guests.length : null,
+      });
+      const direction = [row.concept.conceptName, row.concept.description, row.concept.art.prompt].join(" ");
+      const effectiveBrief = briefForHostDirection(baseBrief, direction);
       const tier1 = runTier1Checks({
         // Match the pre-payment path exactly: judge the standalone 560px
         // teaser customers receive, without invitation text-placement rules.
         bytes: reviewedBytes,
         concept: row.concept,
+        brief: effectiveBrief,
         overlayCoverage: OVERLAY_COVERAGE[row.concept.minOverlay],
         artworkOpacity: 1,
         layoutApplied: false,
@@ -1080,18 +1093,6 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
         return;
       }
 
-      const [menuItems, budgetItems, guests] = await Promise.all([
-        deps.storage.listMenuItems(event.id),
-        deps.storage.listBudgetItems(event.id),
-        deps.storage.listGuests(event.id),
-      ]);
-      const baseBrief = buildEventBrief({
-        event,
-        dna: computeEventDna({ eventType: event.eventType, menuItems, budgetItems }).scores,
-        guestCount: guests.length > 0 ? guests.length : null,
-      });
-      const direction = [row.concept.conceptName, row.concept.description, row.concept.art.prompt].join(" ");
-      const effectiveBrief = briefForHostDirection(baseBrief, direction);
       const vision = await (deps.reviewRetainedArtwork ?? runVisionGate)({
         bytes: reviewedBytes,
         concept: row.concept,

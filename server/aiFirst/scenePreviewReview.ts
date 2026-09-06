@@ -103,7 +103,7 @@ export async function reviewSceneComposition(input: {
     const teaser = customerVisiblePreviewBytes(composed.bytes);
     reviewedAssetHash = hash(teaser);
     tier1 = (dependencies.runTier1 ?? runTier1Checks)({
-      bytes: teaser, concept, overlayCoverage: OVERLAY_COVERAGE[concept.minOverlay],
+      bytes: teaser, concept, brief, overlayCoverage: OVERLAY_COVERAGE[concept.minOverlay],
       artworkOpacity: 1, layoutApplied: false, ocr: true,
     });
     if (tier1.passed) {

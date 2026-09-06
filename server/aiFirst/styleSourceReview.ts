@@ -110,7 +110,7 @@ export async function reviewRetainedStyleSource(row: ArtworkAttemptRecord, depen
   try {
     if (dependencies.signal?.aborted) cancel();
     if (controller.signal.aborted) throw new Error("cancelled");
-    tier1 = (dependencies.runTier1 ?? runTier1Checks)({ bytes: prepared.teaser, concept,
+    tier1 = (dependencies.runTier1 ?? runTier1Checks)({ bytes: prepared.teaser, concept, brief,
       overlayCoverage: OVERLAY_COVERAGE[concept.minOverlay], artworkOpacity: 1, layoutApplied: false, ocr: true });
     if (tier1.passed) {
       const deadline = new Promise<never>((_, reject) => {

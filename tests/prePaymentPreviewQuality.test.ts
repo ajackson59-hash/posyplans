@@ -158,7 +158,7 @@ describe("prepayment preview quality lock", () => {
       "the letter M, initials, monograms, wordmarks, badges, logos or any glyph-bearing patch on either character's clothing; keep Meekah's chest fabric plain or abstractly color-blocked",
     );
     expect(brief.requirements.excluded).toContain(
-      "photographs, photoreal live-action frames, promotional stills, cosplay, mascot suits, lookalike actors or stock-photo depictions of the named characters",
+      "unrequested photographs, photoreal live-action frames, promotional stills, cosplay, mascot suits, lookalike actors or stock-photo substitutions for the requested named-character treatment",
     );
     expect(concept.art.prompt).toContain("do not invent any child in the foreground or central hero plane");
     expect(brief.requirements.excluded).toContain(
@@ -457,8 +457,9 @@ describe("prepayment preview quality lock", () => {
     expect(result.reviews).toHaveLength(2);
     expect(generateImage.mock.calls[0][0].prompt).toContain("PRIVATE CANDIDATE ONE — CINEMATIC CEL-PAINTED EDITORIAL");
     expect(generateImage.mock.calls[1][0].prompt).toContain("PRIVATE CANDIDATE TWO — GOUACHE STORYBOOK EDITORIAL");
-    expect(generateImage.mock.calls[0][0].prompt).toContain("BINDING ORIGINAL-ILLUSTRATION MEDIUM");
-    expect(generateImage.mock.calls[0][0].prompt).toContain("Absolutely no photograph");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("DEFAULT ORIGINAL-ILLUSTRATION MEDIUM");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("Only when the host has not requested a medium");
+    expect(generateImage.mock.calls[0][0].prompt).toContain("In this default treatment use no photograph");
     expect(generateImage.mock.calls[0][0].prompt).toContain("BINDING FIRST-GLANCE SCENE HIERARCHY");
     expect(generateImage.mock.calls[0][0].prompt).toContain("560-pixel customer teaser size");
     expect(generateImage.mock.calls[0][0].prompt).toContain("BINDING SOFT-PLAY SCENE MAP");

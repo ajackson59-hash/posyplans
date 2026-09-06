@@ -147,17 +147,17 @@ function parseColors(raw: string): string[] {
 const UNIVERSAL_EXCLUSIONS = [
   "generated text, letters, words or numbers",
   "logos, signatures or watermarks",
-  "clip art or generic template graphics",
-  "stock photography",
-  "plastic-looking 3D render objects",
+  "unrequested generic clip art or template substitutions",
+  "unrequested stock-photo substitutions for the host's visual direction",
+  "unintended plastic-looking materials that contradict the requested medium",
   "printed paper margins, mats or card frames inside the artwork",
 ];
 
 /** Extra exclusions for young children's parties. */
-const CHILD_EXCLUSIONS = ["babyish or infantile imagery", "repetitive rounded cartoon shapes", "visual kitsch"];
+const CHILD_EXCLUSIONS = ["unrequested infantile treatment", "accidentally repeated cartoon shapes", "unrequested visual kitsch"];
 
 /** Extra exclusions for grown-up milestone events. */
-const ADULT_EXCLUSIONS = ["cartoon characters", "childish motifs", "novelty party imagery"];
+const ADULT_EXCLUSIONS = ["unrequested childish treatment", "novelty motifs that contradict the host's adult event direction"];
 
 const MOTIF_STOPWORDS = new Set([
   "a", "an", "and", "the", "with", "for", "of", "in", "on", "at", "to", "very", "really",
