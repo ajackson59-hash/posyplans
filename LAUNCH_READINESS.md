@@ -53,6 +53,29 @@ No database schema migration, package upgrade or scheduled paid canary is added.
 
 ### Owner-approved art direction
 
+Private source storage and review now use the existing owner-scoped artwork
+attempt table, with its existing unique-key index. No new database, bucket,
+public source URL, environment secret or schema migration is introduced.
+The fixed construction manifest is the only accepted upload; original bytes
+are checked on storage and retrieval. GET defaults to the exact 560px teaser;
+full-resolution access requires the same event owner credential. Both are
+private/no-store and only the launch-blockers Preview exposes these operations.
+
+An explicit separate POST can request one critic review. A durable unique
+claim is recorded BEFORE that request, globally per source hash, so parallel
+requests, replays, other owners and worker crashes cannot automatically spend
+again. A crash may leave an incomplete claim: this deliberately requires
+operator investigation instead of assuming no spend occurred. The critic has
+no SDK retry or JSON repair, with a 45-second deadline (60-second hard maximum).
+Original source, claim and final verdict are retained separately. If retention
+fails the route cannot report acceptance. No image generation is possible.
+
+This is **source-profile QA**, using the committed construction-art requirements;
+the owner event is only an access container and its customer brief/artwork is
+not changed. Even a strict pass does not certify arbitrary customer briefs,
+commercial reuse, or launch latency. Source records cannot be promoted through
+the retained-image recheck route. Customer activation remains disabled.
+
 The owner approved the construction gouache illustration's visual standard for
 original children's themes. `sceneAssets/construction-gouache-v1/manifest.json`
 records that precise scope and the original 1024×1536 master checksum. This

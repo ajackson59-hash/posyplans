@@ -37,7 +37,8 @@ import { DEFAULT_ARTWORK_MODEL, type ArtworkModel, type ArtworkQuality, type Art
 export type ArtworkAttemptStatus = "accepted" | "rejected";
 /** A compositor is not an image model and must never be sent to a provider. */
 export const SCENE_COMPOSITION_MODEL = "posy-scene-compositor-v1";
-export type ArtworkAttemptModel = ArtworkModel | typeof SCENE_COMPOSITION_MODEL;
+export const STYLE_SOURCE_MODEL = "posy-style-source-v1";
+export type ArtworkAttemptModel = ArtworkModel | typeof SCENE_COMPOSITION_MODEL | typeof STYLE_SOURCE_MODEL;
 export type ArtworkAttemptQuality = ArtworkQuality | "not-applicable";
 
 export interface ArtworkReviewEvidence {
@@ -47,6 +48,16 @@ export interface ArtworkReviewEvidence {
   verdict: VisionVerdict | null;
   generationDurationMs: number;
   reviewError?: string;
+  styleSource?: {
+    sourceId: string;
+    scope: "source-profile-only";
+    stage: "stored" | "review-claimed" | "reviewed";
+    profileDigest: string;
+    imageProviderCalls: 0;
+    /** Dispatch attempts, not proof of receipt/billing. A crash leaves null. */
+    criticRequests: 0 | 1 | null;
+    customerActivation: "disabled";
+  };
   composition?: {
     recipeId: string;
     styleId: string;
@@ -128,6 +139,10 @@ export interface ArtworkAttemptInput {
 
 export interface AiFirstArtworkAttemptStore {
   record(input: ArtworkAttemptInput): Promise<ArtworkAttemptRecord>;
+  /** Atomic unique-key insert. A cross-owner collision must return no row. */
+  recordOnce?(input: ArtworkAttemptInput & { idempotencyKey: string }): Promise<{
+    created: boolean; record?: ArtworkAttemptRecord;
+  }>;
   /** Owner-scoped: an event's attempt evidence can only be read with its own ownerToken. Never includes bytes. */
   listForOwner(eventId: number, ownerToken: string): Promise<ArtworkAttemptRecord[]>;
   /** For the per-attempt binary asset route. Owner-scoped by construction. */
@@ -142,6 +157,13 @@ function nextId(): string {
 
 export class InMemoryArtworkAttemptStore implements AiFirstArtworkAttemptStore {
   private rows: ArtworkAttemptRecord[] = [];
+
+  async recordOnce(input: ArtworkAttemptInput & { idempotencyKey: string }) {
+    const existing = this.rows.find((row) => row.idempotencyKey === input.idempotencyKey);
+    if (existing) return { created: false, record: existing.eventId === input.eventId &&
+      existing.ownerToken === input.ownerToken ? existing : undefined };
+    return { created: true, record: await this.record(input) };
+  }
 
   async record(input: ArtworkAttemptInput): Promise<ArtworkAttemptRecord> {
     const record: ArtworkAttemptRecord = {
