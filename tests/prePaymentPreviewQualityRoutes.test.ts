@@ -67,7 +67,6 @@ const reservePrePaymentPreview = vi.fn(async (event: Event, startedAt: number) =
   return stored;
 });
 const classifyNamedReference = vi.fn();
-const resolveNamedReference = vi.fn();
 const scheduledTasks: Array<() => Promise<void>> = [];
 const schedule = vi.fn((task: () => Promise<void>) => {
   scheduledTasks.push(task);
@@ -87,7 +86,6 @@ function makeApp(options: {
     mode: () => options.mode ?? "direction-card",
     autoNamedEnabled: () => options.autoNamed ?? true,
     classifyNamedReference,
-    resolveNamedReference,
     generate,
     schedule,
     now: () => NOW,
@@ -118,19 +116,6 @@ function decodedStoredSvg(): string {
   return Buffer.from(encoded, "base64").toString("utf8");
 }
 
-function automaticResolution() {
-  return {
-    images: [{
-      bytes: Buffer.from("official Blippi and Meekah reference pixels"),
-      mimeType: "image/png" as const,
-      filename: "automatic-reference-1.png",
-    }],
-    notes: "Official Blippi and Meekah identity references",
-    strategy: "curated" as const,
-    sourcePages: ["https://www.blippi.com/about"],
-  };
-}
-
 beforeEach(() => {
   stored = { ...baseEvent };
   getEventByOwnerToken.mockClear();
@@ -140,12 +125,11 @@ beforeEach(() => {
   generate.mockReset();
   classifyNamedReference.mockReset();
   classifyNamedReference.mockResolvedValue(null);
-  resolveNamedReference.mockReset();
   schedule.mockClear();
   scheduledTasks.length = 0;
 });
 
-afterEach(() => { vi.useRealTimers(); });
+afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
 
 describe("quality-locked prepayment preview routes", () => {
   it("serves the exact reviewed teaser and paid full source while the second candidate is still private", async () => {
@@ -161,7 +145,6 @@ describe("quality-locked prepayment preview routes", () => {
       scores: { textLogoWatermarkFree: 5, artifactFree: 5, premiumFinish: 5, briefFidelity: 5, compositionQuality: 5, ageAppropriate: 5 },
       durationMs: 1, usage: { inputTokens: 0, outputTokens: 0 },
     }));
-    resolveNamedReference.mockResolvedValue(automaticResolution());
     generate.mockImplementation((event, options) => generateQualityLockedPreview(event, {
       ...options,
       attemptRetention: { store: attempts, eventId: EVENT_ID, ownerToken: OWNER },
@@ -224,14 +207,12 @@ describe("quality-locked prepayment preview routes", () => {
       .send({ email: "not-an-email" });
 
     expect(response.status).toBe(400);
-    expect(resolveNamedReference).not.toHaveBeenCalled();
     expect(generate).not.toHaveBeenCalled();
     expect(schedule).not.toHaveBeenCalled();
     expect(updateEventById).not.toHaveBeenCalled();
   });
 
-  it("returns immediately, then automatically resolves and privately approves a named-theme first look", async () => {
-    resolveNamedReference.mockResolvedValue(automaticResolution());
+  it("returns immediately, then privately approves a text-first named-theme first look", async () => {
     generate.mockResolvedValue({
       kind: "approved-image",
       dataUrl: APPROVED_PNG,
@@ -253,7 +234,6 @@ describe("quality-locked prepayment preview routes", () => {
       automaticReferenceAttempted: true,
     }));
     expect(schedule).toHaveBeenCalledTimes(1);
-    expect(resolveNamedReference).not.toHaveBeenCalled();
     expect(generate).not.toHaveBeenCalled();
     expect(stored.prePaymentPreviewAttempts).toBe(1);
     expect(stored.prePaymentPreviewUsedAt).toBe(NOW);
@@ -261,10 +241,9 @@ describe("quality-locked prepayment preview routes", () => {
 
     await runScheduledTask();
 
-    expect(resolveNamedReference).toHaveBeenCalledTimes(1);
     expect(generate).toHaveBeenCalledTimes(1);
     expect(generate.mock.calls[0][1]).toEqual(expect.objectContaining({
-      inspirationNotes: "Official Blippi and Meekah identity references",
+      inspirationNotes: expect.stringContaining("orange glasses"),
       quality: "high",
       maxCandidates: 2,
       parallelCandidates: true,
@@ -287,7 +266,6 @@ describe("quality-locked prepayment preview routes", () => {
 
   it.each(["rejected", "timeout"])("keeps the early approved image when its sibling ends with %s", async (ending) => {
     const app = makeApp({ jobTimeoutMs: 1000 });
-    resolveNamedReference.mockResolvedValue(automaticResolution());
     let release!: () => void;
     const sibling = new Promise<void>((resolve) => { release = resolve; });
     let published!: () => void;
@@ -318,7 +296,6 @@ describe("quality-locked prepayment preview routes", () => {
 
   it.each(["newer-asset", "edited-brief", "rotated-owner", "newer-job"])("rejects stale job writes after %s", async (change) => {
     const app = makeApp();
-    resolveNamedReference.mockResolvedValue(automaticResolution());
     generate.mockImplementation(async (_event, options) => {
       if (change === "newer-asset") stored = { ...stored, prePaymentPreviewUrl: "newer-protected-asset" };
       if (change === "edited-brief") stored = { ...stored, vibeDescription: "Host changed the theme" };
@@ -334,7 +311,6 @@ describe("quality-locked prepayment preview routes", () => {
 
   it("rejects late approval callbacks after timeout without replacing the fallback", async () => {
     const app = makeApp({ jobTimeoutMs: 1000 });
-    resolveNamedReference.mockResolvedValue(automaticResolution());
     let options: any;
     generate.mockImplementation(async (_event, deps) => { options = deps; return new Promise(() => {}); });
     await request(app).post(`/api/events/owner/${OWNER}/prepayment-preview`).send({ email: "qa@example.com" });
@@ -348,8 +324,9 @@ describe("quality-locked prepayment preview routes", () => {
     expect(stored.prePaymentPreviewUrl).toBe(fallback);
   });
 
-  it("fails closed to the direction card when automatic reference resolution is unavailable", async () => {
-    resolveNamedReference.mockResolvedValue(null);
+  it("still requires private quality approval when external reference downloads are unavailable", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("reference sites unavailable"));
+    generate.mockResolvedValue({ kind: "rejected", attempts: 2, model: "gpt-image-2", reviews: [] });
 
     const response = await request(makeApp())
       .post(`/api/events/owner/${OWNER}/prepayment-preview`)
@@ -359,7 +336,9 @@ describe("quality-locked prepayment preview routes", () => {
     expect(response.body.generationState).toBe("generating");
     await runScheduledTask();
 
-    expect(generate).not.toHaveBeenCalled();
+    expect(generate).toHaveBeenCalledTimes(1);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(generate.mock.calls[0][1]).toMatchObject({ quality: "high", maxCandidates: 2, parallelCandidates: true });
     expect(stored.prePaymentPreviewAttempts).toBe(1);
     expect(stored.prePaymentPreviewUrl).toMatch(/^data:image\/svg\+xml;base64,/);
 
@@ -375,7 +354,6 @@ describe("quality-locked prepayment preview routes", () => {
   });
 
   it("falls back at the bounded deadline and aborts the active provider work", async () => {
-    resolveNamedReference.mockResolvedValue(automaticResolution());
     let providerSignal: AbortSignal | undefined;
     generate.mockImplementation((_event: Event, dependencies?: { signal?: AbortSignal }) => {
       providerSignal = dependencies?.signal;
@@ -395,7 +373,6 @@ describe("quality-locked prepayment preview routes", () => {
   });
 
   it("keeps rejected named-theme candidates private and shows the reliable direction", async () => {
-    resolveNamedReference.mockResolvedValue(automaticResolution());
     generate.mockResolvedValue({
       kind: "rejected",
       attempts: 2,
@@ -467,7 +444,6 @@ describe("quality-locked prepayment preview routes", () => {
       generationState: "fallback",
       automaticReferenceAttempted: true,
     }));
-    expect(resolveNamedReference).not.toHaveBeenCalled();
     expect(generate).not.toHaveBeenCalled();
     expect(schedule).not.toHaveBeenCalled();
   });
@@ -488,7 +464,6 @@ describe("quality-locked prepayment preview routes", () => {
       referenceCaptured: true,
       generationState: "ready",
     }));
-    expect(resolveNamedReference).not.toHaveBeenCalled();
     expect(generate).not.toHaveBeenCalled();
     expect(schedule).not.toHaveBeenCalled();
     expect(stored.prePaymentPreviewAttempts).toBe(0);
@@ -496,7 +471,7 @@ describe("quality-locked prepayment preview routes", () => {
     expect(decodedStoredSvg()).toContain(`data:image/png;base64,${referenceBytes.toString("base64")}`);
   });
 
-  it("uses the safe direction card when automatic named research is disabled", async () => {
+  it("uses the safe direction card when automatic named generation is disabled", async () => {
     const response = await request(makeApp({ autoNamed: false }))
       .post(`/api/events/owner/${OWNER}/prepayment-preview`)
       .send({ email: "host@example.com" });
@@ -506,7 +481,6 @@ describe("quality-locked prepayment preview routes", () => {
       kind: "direction-card",
       automaticReferenceAttempted: false,
     }));
-    expect(resolveNamedReference).not.toHaveBeenCalled();
     expect(generate).not.toHaveBeenCalled();
     expect(schedule).not.toHaveBeenCalled();
     expect(stored.prePaymentPreviewAttempts).toBe(0);
@@ -527,7 +501,6 @@ describe("quality-locked prepayment preview routes", () => {
 
     await runScheduledTask();
     expect(classifyNamedReference).toHaveBeenCalledTimes(1);
-    expect(resolveNamedReference).not.toHaveBeenCalled();
     expect(generate).not.toHaveBeenCalled();
     expect(stored.prePaymentPreviewAttempts).toBe(1);
     expect(stored.prePaymentPreviewUrl).toMatch(/^data:image\/svg\+xml;base64,/);
@@ -549,7 +522,7 @@ describe("quality-locked prepayment preview routes", () => {
       requirements: ["The Sesame Street identity is unmistakable through its recognizable neighborhood character world."],
     };
     classifyNamedReference.mockResolvedValue(sesame);
-    resolveNamedReference.mockResolvedValue(null);
+    generate.mockResolvedValue({ kind: "rejected", attempts: 2, model: "gpt-image-2", reviews: [] });
 
     const response = await request(makeApp())
       .post(`/api/events/owner/${OWNER}/prepayment-preview`)
@@ -571,6 +544,30 @@ describe("quality-locked prepayment preview routes", () => {
     const ready = await request(makeApp())
       .get(`/api/events/owner/${OWNER}/prepayment-preview/readiness`);
     expect(ready.status).toBe(200);
+    expect(classifyNamedReference).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["Moana and Maui", "Unfamiliar Star Academy"])("does not make %s depend on an unused external image download", async (label) => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("external images unavailable"));
+    stored = { ...genericEvent(), eventName: "General named QA", themeName: "",
+      vibeDescription: `${label}. Medium: lacquer inlay. Silver foliage and a crescent moon. No extra characters.` };
+    const namedReference = { id: "named-theme-test", label, trigger: /unused/, cues: [label],
+      palette: ["#112233", "#223344", "#334455", "#445566"],
+      requirements: [`${label} must each be independently recognizable`] };
+    classifyNamedReference.mockResolvedValue(namedReference);
+    generate.mockResolvedValue({ kind: "approved-image", attempts: 2, model: "gpt-image-2", reviews: [], dataUrl: APPROVED_PNG });
+    const app = makeApp({ mode: "quality-image" });
+    await request(app).post(`/api/events/owner/${OWNER}/prepayment-preview`).send({ email: "qa@example.com" });
+    await runScheduledTask();
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(classifyNamedReference).toHaveBeenCalledTimes(1);
+    expect(generate).toHaveBeenCalledTimes(1);
+    expect(generate.mock.calls[0][0].vibeDescription).toBe(stored.vibeDescription);
+    expect(generate.mock.calls[0][1]).toMatchObject({ namedReference, inspirationNotes: namedReference.requirements[0],
+      quality: "high", maxCandidates: 2, parallelCandidates: true, allowTargetedCorrection: false });
+    expect(generate.mock.calls[0][1].referenceImages).toBeUndefined();
+    const ready = await request(app).get(`/api/events/owner/${OWNER}/prepayment-preview/readiness`);
+    expect(ready.body.kind).toBe("approved-image");
     expect(classifyNamedReference).toHaveBeenCalledTimes(1);
   });
 
@@ -650,7 +647,6 @@ describe("quality-locked prepayment preview routes", () => {
     resolveLate?.(null);
     await Promise.resolve();
     expect(generate).not.toHaveBeenCalled();
-    expect(resolveNamedReference).not.toHaveBeenCalled();
     const ready = await request(app).get(`/api/events/owner/${OWNER}/prepayment-preview/readiness`);
     expect(ready.body).toMatchObject({ kind: "direction-card", generationState: "fallback" });
     expect(classifyNamedReference).toHaveBeenCalledTimes(1);

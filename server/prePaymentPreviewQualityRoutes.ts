@@ -21,8 +21,7 @@ import {
 } from "./prePaymentReferenceBoard";
 import {
   namedReferenceAutoResolutionEnabled,
-  resolveNamedCreativeReference,
-  type ResolvedNamedReference,
+  namedReferenceIdentityNotes,
 } from "./namedReferenceResolver";
 import {
   PREPAYMENT_PREVIEW_QUALITY_LOCK_CUTOFF_MS,
@@ -79,7 +78,6 @@ export interface PrePaymentPreviewQualityRouteDependencies {
   mode?: () => PrePaymentPreviewMode;
   autoNamedEnabled?: () => boolean;
   classifyNamedReference?: (text: string, signal?: AbortSignal) => Promise<NamedCreativeReference | null>;
-  resolveNamedReference?: typeof resolveNamedCreativeReference;
   generate?: (
     event: Event,
     dependencies?: PreviewQualityDependencies,
@@ -110,7 +108,6 @@ const STANDARD_PNG_PREFIX = "data:image/png;base64,";
 // four-minute serial-repair path. The launch target remains a measured 90s.
 export const PREPAYMENT_PREVIEW_JOB_TIMEOUT_MS = 150_000;
 const GENERAL_CLASSIFIER_TIMEOUT_MS = 7_500;
-const REFERENCE_RESOLUTION_TIMEOUT_MS = 12_000;
 const BACKGROUND_STALE_MS = PREPAYMENT_PREVIEW_JOB_TIMEOUT_MS + 15_000;
 const POLL_AFTER_MS = 2500;
 
@@ -360,7 +357,6 @@ interface AutomaticClassifiedJobDependencies {
   mode: PrePaymentPreviewMode;
   namedAutoEnabled: boolean;
   classifyNamedReference: NonNullable<PrePaymentPreviewQualityRouteDependencies["classifyNamedReference"]>;
-  resolveNamedReference: typeof resolveNamedCreativeReference;
   generate: NonNullable<PrePaymentPreviewQualityRouteDependencies["generate"]>;
   artworkAttemptStore: AiFirstArtworkAttemptStore;
   now: () => number;
@@ -371,7 +367,6 @@ interface AutomaticNamedJobDependencies {
   store: PrePaymentPreviewQualityStorage;
   event: Event;
   namedReference: NamedCreativeReference;
-  resolveNamedReference: typeof resolveNamedCreativeReference;
   generate: NonNullable<PrePaymentPreviewQualityRouteDependencies["generate"]>;
   artworkAttemptStore: AiFirstArtworkAttemptStore;
   now: () => number;
@@ -382,7 +377,6 @@ async function runAutomaticNamedPreviewJob({
   store,
   event,
   namedReference,
-  resolveNamedReference,
   generate,
   artworkAttemptStore,
   now,
@@ -406,38 +400,13 @@ async function runAutomaticNamedPreviewJob({
     await publication;
   };
   try {
-    let resolved: ResolvedNamedReference | null = null;
-    try {
-      resolved = await withPreviewDeadline(
-        resolveNamedReference(event, namedReference),
-        Math.min(REFERENCE_RESOLUTION_TIMEOUT_MS, remainingMs()),
-        "Named-theme visual research",
-      );
-    } catch (error) {
-      console.error("[prepayment-preview] automatic named-reference resolution failed:", error);
-    }
-
-    if (!resolved?.images.length) {
-      await persistDirectionCard(store, event, now(), namedReference);
-      console.warn(`[prepayment-preview] ${JSON.stringify({
-        eventId: event.id,
-        kind: "direction-card",
-        namedReference: namedReference.id,
-        automaticReferenceResolved: false,
-      })}`);
-      return;
-    }
-
     const generationTimeoutMs = remainingMs();
     const result = await withPreviewDeadline(
       generate(event, {
-        // Automatic research supplies the identity facts, but raw official
-        // pixels are deliberately NOT passed into the edit/compositing path.
-        // Live QA showed that path was slower and repeatedly collapsed into
-        // synthetic licensed-character promo art. Text-first GPT Image 2
-        // preserves the researched identity while building one cohesive event
-        // scene from scratch.
-        inspirationNotes: resolved.notes,
+        // This path generates from text and never uses reference pixels.
+        // A failed external image download must not suppress a valid named
+        // brief. Canonical identity remains mandatory in the final pixel gate.
+        inspirationNotes: namedReferenceIdentityNotes(namedReference),
         // Named entertainment worlds carry the hardest identity + scene +
         // finish contract. Do not override generateQualityLockedPreview's
         // named-theme high-quality default back down to medium here.
@@ -465,7 +434,7 @@ async function runAutomaticNamedPreviewJob({
         model: result.model,
         privateCandidates: result.attempts,
         namedReference: namedReference.id,
-        automaticReferenceStrategy: resolved.strategy,
+        generationStrategy: "text-first",
       })}`);
       return;
     }
@@ -477,7 +446,7 @@ async function runAutomaticNamedPreviewJob({
       model: result.model,
       privateCandidates: result.attempts,
       namedReference: namedReference.id,
-      automaticReferenceStrategy: resolved.strategy,
+      generationStrategy: "text-first",
       error: result.kind === "unavailable" ? result.error : undefined,
       // Full per-candidate tier1/vision evidence is durably retained in
       // artworkAttemptStore (see /ai-first/review/attempts); this compact
@@ -502,7 +471,6 @@ async function runAutomaticClassifiedPreviewJob({
   mode,
   namedAutoEnabled,
   classifyNamedReference,
-  resolveNamedReference,
   generate,
   artworkAttemptStore,
   now,
@@ -531,7 +499,6 @@ async function runAutomaticClassifiedPreviewJob({
         store,
         event,
         namedReference,
-        resolveNamedReference,
         generate,
         artworkAttemptStore,
         now,
@@ -595,7 +562,7 @@ async function readyResponse(
 
 /**
  * Registers before the legacy preview handlers. Raw provider output is never
- * customer-visible. Named-world research and generation run after the HTTP
+ * customer-visible. Named-world classification and generation run after the HTTP
  * response under Vercel waitUntil, so mobile navigation cannot cancel the job.
  */
 export function registerPrePaymentPreviewQualityRoutes(
@@ -611,8 +578,6 @@ export function registerPrePaymentPreviewQualityRoutes(
     ?? ((text: string, signal?: AbortSignal) => detectNamedCreativeReference(text, {
       signal, requireResolvedClassification: true,
     }));
-  const resolveNamedReference = dependencies.resolveNamedReference
-    ?? resolveNamedCreativeReference;
   const generate = dependencies.generate ?? generateQualityLockedPreview;
   const schedule = dependencies.schedule ?? defaultSchedule;
   const now = dependencies.now ?? Date.now;
@@ -717,7 +682,6 @@ export function registerPrePaymentPreviewQualityRoutes(
         store,
         event: reservedEvent,
         namedReference,
-        resolveNamedReference,
         generate,
         artworkAttemptStore,
         now,
@@ -758,7 +722,6 @@ export function registerPrePaymentPreviewQualityRoutes(
       mode,
       namedAutoEnabled,
       classifyNamedReference,
-      resolveNamedReference,
       generate,
       artworkAttemptStore,
       now,

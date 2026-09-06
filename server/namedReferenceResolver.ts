@@ -78,6 +78,14 @@ export interface ResolvedNamedReference {
   sourcePages: string[];
 }
 
+/** Text-first generation needs the identity contract, not downloaded pixels.
+ * Retain existing curated facts when available without claiming a live search
+ * occurred. Every other named world uses the same complete subject contract. */
+export function namedReferenceIdentityNotes(reference: NamedCreativeReference): string {
+  return [CURATED_REFERENCE_SOURCES[reference.id]?.notes, ...reference.requirements]
+    .filter(Boolean).join(" ");
+}
+
 export interface NamedReferenceResolverDependencies {
   fetchImpl?: typeof fetch;
   now?: () => number;

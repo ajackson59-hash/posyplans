@@ -48,15 +48,37 @@ and missing cases; do not replace them with easier prompts or reset events.
 - This correction passed TypeScript, 67 test files / 792 tests and production
   bundles locally. Live classifier speed, image acceptance and successful JPEG
   delivery still require the next exact Preview diagnostic.
+- On exact Preview `0100788` (Verify #397), Moana/Maui Event 38 confirmed the
+  general classifier completed in 3,113 ms with one Haiku request, 502 input
+  tokens and 30 output tokens. The first-look POST returned 202 in 98 ms.
+  The subsequent reference resolver returned no downloadable image, so the
+  route stopped before image generation. The browser displayed the fallback
+  by 17,394 ms; owner-scoped reads confirm zero image attempts. This is a failed
+  artwork trial and a successful recognition measurement, not an image pass.
+- The follow-up removes that unused download dependency from text-first
+  customer generation. Existing curated identity facts and all general
+  per-subject requirements remain in the prompt; external search/image
+  availability is no longer an approval prerequisite for pixels the generator
+  never used. No web research call is made by this customer path. Actual
+  character recognition is still mandatory in the six-5/5 final teaser review.
+  The reference resolver remains available for workflows that really use
+  reference pixels. Host-uploaded reference boards are unaffected.
+- Verification of that follow-up: TypeScript, 67 files / 794 tests and
+  production bundles pass. Tests prove unavailable external image sites do not
+  prevent general named routing, all required identity notes reach the high
+  two-candidate path, and failed final reviews still remain private. These are
+  software-contract checks; the repaired image path is not yet live-certified.
 
 Paid diagnostics may resume on the verified correction, within the existing
-untouched-case caps. Three of eight events were submitted, four image
+untouched-case caps. Four of eight events were submitted, four image
 requests attempted, and three critic verdicts completed (at most six physical
-critic calls including possible earlier format repair). The five untouched
-cases retain a combined cap of seven image calls. Eight calls remain under the
-overall twelve-image cap, but the unused second Frozen call does not authorize
-a resubmission or larger per-case cap. Failed-request/classifier costs remain
-unreconciled. No checkout or email delivery occurred in this batch.
+critic calls including possible earlier format repair). Moana added one
+classifier request and one reference-search invocation, no image/critic calls.
+The four untouched cases retain a combined cap of five image calls. Eight
+calls remain under the overall twelve-image cap, but unused Frozen/Moana
+image allowances do not authorize resubmissions or larger per-case caps.
+Failed-request/classifier/search costs remain incompletely reconciled.
+No checkout or email delivery occurred in this batch.
 
 Reliable recognition, provider acceptance, cross-direction visual quality and
 approved-image delivery within the existing target remain launch blockers.
