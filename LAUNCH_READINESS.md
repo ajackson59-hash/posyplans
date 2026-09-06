@@ -32,8 +32,25 @@ and missing cases; do not replace them with easier prompts or reset events.
   This protects every unfamiliar theme; it is not a successful live rerun or a
   resolution of the provider refusal. Local verification: 66 files / 782 tests,
   TypeScript and production bundles.
+- The next recognition correction uses Haiku 4.5 with a compact JSON schema
+  containing only `named`, `label` and every requested `subject`. It no longer
+  asks the classifier to compose palettes or review prose. Each named subject
+  receives its own identity requirement; the complete host direction and
+  requested medium remain binding. The same abort deadline, no-retry budget
+  and fail-closed routing remain in place. This is not a per-franchise allowlist.
+- Provider failures retain HTTP status, request ID, code/type, optional coarse
+  moderation stage/categories, request count, duration, render settings and a
+  prompt hash. Raw provider messages and private prompts are not logged.
+  Missing moderation details stay unknown; no cause is invented for Event 37.
+  `image_generation_user_error` and moderation refusals cannot be retried even
+  if returned with a transient HTTP status. This is diagnostic, not a claim
+  that the previous provider refusal has been resolved.
+- This correction passed TypeScript, 67 test files / 792 tests and production
+  bundles locally. Live classifier speed, image acceptance and successful JPEG
+  delivery still require the next exact Preview diagnostic.
 
-Paid diagnostics are paused. Three of eight events were submitted, four image
+Paid diagnostics may resume on the verified correction, within the existing
+untouched-case caps. Three of eight events were submitted, four image
 requests attempted, and three critic verdicts completed (at most six physical
 critic calls including possible earlier format repair). The five untouched
 cases retain a combined cap of seven image calls. Eight calls remain under the

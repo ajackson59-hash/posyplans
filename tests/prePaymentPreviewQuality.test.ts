@@ -16,6 +16,7 @@ import {
   generateQualityLockedPreview,
   customerVisiblePreviewBytes,
   readPrePaymentPreviewMode,
+  NAMED_THEME_DETECTION_MODEL,
 } from "../server/prePaymentPreviewQuality";
 
 /** Minimal fake matching the one Anthropic call shape this module needs. */
@@ -286,9 +287,7 @@ describe("prepayment preview quality lock", () => {
       const client = fakeAnthropicClient(JSON.stringify({
         named: true,
         label,
-        cues: [`${label} world`, "Signature characters", "Event setting", "No generic substitute"],
-        palette: ["#111111", "#222222", "#eeeeee", "#999999"],
-        requirements: [`The ${label} identity is unmistakable through its real, recognizable visual details—not a generic substitute.`],
+        subjects: [],
       }));
       const detected = await detectNamedCreativeReference(text, { client });
       expect(detected).not.toBeNull();
@@ -302,9 +301,7 @@ describe("prepayment preview quality lock", () => {
     const client = fakeAnthropicClient(JSON.stringify({
       named: true,
       label: "Bobs Burgers",
-      cues: ["a", "b", "c", "d"],
-      palette: ["#111111", "#222222", "#eeeeee", "#999999"],
-      requirements: ["req one"],
+      subjects: [],
     }));
     const first = await detectNamedCreativeReference("Bobs Burgers party", { client });
     const second = await detectNamedCreativeReference("Bobs Burgers party", { client });
@@ -313,8 +310,28 @@ describe("prepayment preview quality lock", () => {
     expect((client.messages.create as ReturnType<typeof vi.fn>)).toHaveBeenCalledTimes(1);
   });
 
+  it("uses a compact structured identity response without discarding the host's medium or any requested character", async () => {
+    const subjects = ["Moana", "Maui", "Elsa", "Anna", "Mickey Mouse"];
+    const hostDirection = "Moana, Maui, Elsa, Anna and Mickey Mouse in a moon garden. Medium: lacquer inlay. Silver foliage, blue shell petals and a dark pond. No other characters.";
+    const client = fakeAnthropicClient(JSON.stringify({ named: true, label: "Disney characters", subjects }));
+    const namedReference = await detectNamedCreativeReference(hostDirection, { client, requireResolvedClassification: true });
+    const [request] = vi.mocked(client.messages.create).mock.calls[0];
+    expect(NAMED_THEME_DETECTION_MODEL).toBe("claude-haiku-4-5-20251001");
+    expect(request).toMatchObject({ model: NAMED_THEME_DETECTION_MODEL, max_tokens: 350,
+      output_config: { format: { type: "json_schema", schema: {
+        additionalProperties: false, required: ["named", "label", "subjects"],
+      } } }, messages: [{ role: "user", content: hostDirection }],
+    });
+    expect(namedReference!.requirements.filter((requirement) => requirement.includes("independently recognizable"))).toHaveLength(5);
+    for (const subject of subjects) expect(namedReference!.requirements.join(" ")).toContain(subject);
+    const { brief } = await buildQualityLockedPreviewBrief({ ...event, eventName: "Moon garden", vibeDescription: hostDirection } as Event,
+      "", namedReference);
+    expect(JSON.stringify(brief)).toContain(hostDirection);
+    for (const subject of subjects) expect(JSON.stringify(brief)).toContain(subject);
+  });
+
   it("treats a clearly generic theme as not-named even when the classifier is consulted", async () => {
-    const client = fakeAnthropicClient(JSON.stringify({ named: false }));
+    const client = fakeAnthropicClient(JSON.stringify({ named: false, label: "", subjects: [] }));
     const detected = await detectNamedCreativeReference("simple dinosaur museum party", { client });
     expect(detected).toBeNull();
   });
@@ -354,7 +371,7 @@ describe("prepayment preview quality lock", () => {
   });
 
   it("uses an abortable single classifier request and requires an explicit original-theme verdict", async () => {
-    const client = fakeAnthropicClient('{"named":false}');
+    const client = fakeAnthropicClient('{"named":false,"label":"","subjects":[]}');
     const controller = new AbortController();
     expect(await detectNamedCreativeReference("An original moonlit gallery", {
       client, signal: controller.signal, requireResolvedClassification: true,
@@ -365,7 +382,7 @@ describe("prepayment preview quality lock", () => {
     });
   });
 
-  it.each(['{}', '{"named":true}', 'unparseable'])
+  it.each(['{}', '{"named":true}', '{"named":false}', '{"named":false,"label":"Frozen","subjects":[]}', '{"named":true,"label":"Frozen","subjects":[null]}', 'unparseable'])
     ("does not cache unresolved recognition as an original theme: %s", async (invalid) => {
       const client = fakeAnthropicClient(invalid);
       expect(await detectNamedCreativeReference("An unfamiliar property celebration", { client })).toBeNull();
@@ -377,7 +394,7 @@ describe("prepayment preview quality lock", () => {
 
   it("does not route a truncated classifier response as an original theme", async () => {
     const client = { messages: { create: vi.fn(async () => ({
-      content: [{ type: "text", text: '{"named":false}' }], stop_reason: "max_tokens",
+      content: [{ type: "text", text: '{"named":false,"label":"","subjects":[]}' }], stop_reason: "max_tokens",
     })) } } as unknown as Anthropic;
     await expect(detectNamedCreativeReference("An unfamiliar art world", {
       client, requireResolvedClassification: true,

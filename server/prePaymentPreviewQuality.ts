@@ -255,19 +255,23 @@ export function detectNamedCreativeReferenceSync(text: string): NamedCreativeRef
   return detectCuratedNamedCreativeReference(text);
 }
 
-export const NAMED_THEME_DETECTION_MODEL = "claude-sonnet-4-6";
+export const NAMED_THEME_DETECTION_MODEL = "claude-haiku-4-5-20251001";
 
-const NAMED_THEME_DETECTION_SYSTEM = `You help a premium invitation studio understand whether a host's free-text event description names a SPECIFIC, identifiable entertainment property: a TV show, movie, streaming series, book series, video game, toy line, band/artist, or a named fictional character from one of those (e.g. "Sesame Street", "Cocomelon", "Frozen", "Spider-Man", "Pokemon", "Mickey Mouse", "Barbie", "Minecraft", "Taylor Swift"). This is different from a purely generic theme with no owned intellectual property (e.g. "unicorn party", "dinosaur party", "princess party", "jungle safari", "under the sea", "superhero party" with no named hero).
+const NAMED_THEME_DETECTION_SYSTEM = `Extract only requested entertainment identities from the host brief. A named show, film, book, game, toy line, artist or character is named=true. Copy unfamiliar explicit property names faithfully; lack of familiarity is not evidence of an original theme. Preserve distinguishing title words (e.g. Unicorn Academy).
+label: requested property/character names; subjects: every explicitly requested character or performer, with no added cast. Exclude negated examples and the host/celebrant's own name. Never invent a celebrant identity.
+A purely original direction (watercolor construction, abstract art, garden dinner, unnamed princesses) is named=false, label="", subjects=[]. Do not infer Frozen from ice or Moana from an ocean. Include no palette, medium, art direction or explanatory prose. The complete host brief is preserved separately.`;
 
-If, and only if, a specific named property or character is identifiable, respond with strict JSON only (no markdown fences, no commentary):
-{"named": true, "label": "the real, correctly capitalized name of the show/movie/character/franchise", "cues": ["four short (2-4 word) visual cue phrases distinctive to this property"], "palette": ["#hex1", "#hex2", "#hex3", "#hex4"], "requirements": ["two or three sentences, each describing a concrete visual fact a reviewer could check for, phrased like: 'The <property> identity is unmistakable through <specific recognizable visual detail>—not a generic substitute.' Avoid vague phrases like 'themed' or 'inspired by'."]}
-
-The four palette hex colors should be four DISTINCT colors that evoke this property's real, recognizable brand palette: [dominant/ink color, accent color, light paper/background color, soft secondary color].
-
-If no specific named property is identifiable, respond with strict JSON only:
-{"named": false}
-
-Only ever output that one JSON object.`;
+const NAMED_THEME_DETECTION_FORMAT = {
+  type: "json_schema" as const,
+  schema: {
+    type: "object", additionalProperties: false,
+    properties: {
+      named: { type: "boolean" }, label: { type: "string" },
+      subjects: { type: "array", items: { type: "string" } },
+    },
+    required: ["named", "label", "subjects"],
+  },
+};
 
 interface NamedThemeDetectionDependencies {
   client?: Anthropic;
@@ -278,10 +282,8 @@ interface NamedThemeDetectionDependencies {
 
 interface LlmNamedThemeResult {
   named: boolean;
-  label?: string;
-  cues?: string[];
-  palette?: string[];
-  requirements?: string[];
+  label: string;
+  subjects: string[];
 }
 
 function extractJsonObject(raw: string): Record<string, any> | null {
@@ -295,7 +297,6 @@ function extractJsonObject(raw: string): Record<string, any> | null {
   }
 }
 
-const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 const FALLBACK_GENERIC_PALETTE: [string, string, string, string] = [
   "#445248", "#C9866B", "#F4EEE6", "#879887",
 ];
@@ -317,32 +318,18 @@ function coerceLlmDetection(parsed: Record<string, any> | null): NamedCreativeRe
   const label = typeof parsed.label === "string" ? parsed.label.trim() : "";
   if (!label) return null;
 
-  const rawCues = Array.isArray(parsed.cues)
-    ? parsed.cues.filter((c: unknown): c is string => typeof c === "string" && c.trim().length > 0)
-    : [];
-  const cues = rawCues.length > 0
-    ? rawCues.slice(0, 4)
-    : [label, "Recognizable visual world", "Event-specific setting", "No generic substitute"];
-
-  const rawPalette = Array.isArray(parsed.palette)
-    ? parsed.palette.filter((c: unknown): c is string => typeof c === "string" && HEX_COLOR.test(c))
-    : [];
-  const palette: [string, string, string, string] = [
-    rawPalette[0] ?? FALLBACK_GENERIC_PALETTE[0],
-    rawPalette[1] ?? FALLBACK_GENERIC_PALETTE[1],
-    rawPalette[2] ?? FALLBACK_GENERIC_PALETTE[2],
-    rawPalette[3] ?? FALLBACK_GENERIC_PALETTE[3],
+  if (!Array.isArray(parsed.subjects)
+    || parsed.subjects.some((subject: unknown) => typeof subject !== "string" || !subject.trim())) return null;
+  const subjects = Array.from(new Set<string>(parsed.subjects.map((subject: string) => subject.trim())));
+  const cues = [label, ...subjects, "Event-specific setting", "Recognizable visual world"].slice(0, 4);
+  // Classification supplies identity only. Palette and treatment remain the
+  // host's choice; the neutral direction-card palette is not an image brief.
+  const palette: [string, string, string, string] = [...FALLBACK_GENERIC_PALETTE];
+  const requirements = [
+    `The ${label} identity is unmistakable through its real, recognizable visual details—not a generic adjacent category`,
+    ...subjects.map((subject) => `${subject} is independently recognizable through canonical face, hair, costume and silhouette, with no substituted or invented identity`),
+    "The requested event setting and activities remain visibly present alongside the named identity",
   ];
-
-  const rawRequirements = Array.isArray(parsed.requirements)
-    ? parsed.requirements.filter((r: unknown): r is string => typeof r === "string" && r.trim().length > 0)
-    : [];
-  const requirements = rawRequirements.length > 0
-    ? rawRequirements.slice(0, 3)
-    : [
-        `The ${label} identity is unmistakable through its real, recognizable visual details—not a generic adjacent category`,
-        "The requested event setting and activities remain visibly present alongside the named identity",
-      ];
 
   return {
     id: slugifyLabel(label),
@@ -382,6 +369,7 @@ async function detectGeneralNamedCreativeReference(
   }
 
   let result: NamedCreativeReference | null = null;
+  const startedAt = Date.now();
   try {
     // Client construction itself can throw (missing/invalid key, disallowed
     // runtime, SDK misconfiguration) — that must fail closed too, not bubble
@@ -389,8 +377,9 @@ async function detectGeneralNamedCreativeReference(
     const client = dependencies.client ?? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const response = await client.messages.create({
       model: NAMED_THEME_DETECTION_MODEL,
-      max_tokens: 500,
+      max_tokens: 350,
       system: NAMED_THEME_DETECTION_SYSTEM,
+      output_config: { format: NAMED_THEME_DETECTION_FORMAT },
       messages: [{ role: "user", content: text }],
     }, { signal: dependencies.signal,
       ...(dependencies.requireResolvedClassification ? { maxRetries: 0 } : {}) });
@@ -398,9 +387,18 @@ async function detectGeneralNamedCreativeReference(
     const parsed = extractJsonObject(raw) as LlmNamedThemeResult | null;
     result = coerceLlmDetection(parsed);
     if (response.stop_reason === "max_tokens" || response.stop_reason === "refusal"
-      || !(parsed?.named === false || (parsed?.named === true && result !== null))) {
+      || !(parsed?.named === false && parsed.label === "" && Array.isArray(parsed.subjects) && parsed.subjects.length === 0
+        || parsed?.named === true && result !== null)) {
       throw new Error("Named-theme recognition did not return a complete classification");
     }
+    console.info("[prepayment-preview] named-theme recognition completed", JSON.stringify({
+      model: NAMED_THEME_DETECTION_MODEL, durationMs: Date.now() - startedAt,
+      named: result !== null,
+      // maxRetries=0 makes this exact for the customer path. Legacy callers
+      // can still have SDK retries, so their physical request count is unknown.
+      requestCount: dependencies.requireResolvedClassification ? 1 : null,
+      inputTokens: response.usage?.input_tokens ?? null, outputTokens: response.usage?.output_tokens ?? null,
+    }));
   } catch (error) {
     // An unavailable classifier is not evidence that the host requested an
     // original theme. Customer jobs stop before image spend; legacy read-only

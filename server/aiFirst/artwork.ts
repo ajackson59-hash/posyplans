@@ -12,6 +12,7 @@
 // three places would be the same work done three times.
 
 import { decode as decodeJpeg } from "jpeg-js";
+import { createHash } from "node:crypto";
 import { encodePng } from "./png";
 
 export type ArtworkModel = "gpt-image-1" | "gpt-image-1.5" | "gpt-image-2";
@@ -79,6 +80,59 @@ export class ArtworkNormalizationError extends Error {
     // Logging the error must not dump private image bytes or its data URL.
     Object.defineProperty(this, "result", { value: result });
   }
+}
+
+export interface ArtworkProviderDiagnostics {
+  status: number;
+  code: string | null;
+  type: string | null;
+  requestId: string | null;
+  moderationStage: "input" | "output" | "unknown";
+  moderationCategories: string[];
+  model: ArtworkModel;
+  quality: ArtworkQuality;
+  size: ArtworkSize;
+  outputFormat: "png" | "jpeg";
+  operation: "edit" | "request";
+  providerRequestCount: number;
+  providerDurationMs: number;
+  promptSha256: string;
+}
+
+/** Provider messages can echo private prompts. Retain identifiers and coarse
+ * diagnostics, never the raw response body, prompt, credentials or image data. */
+export class ArtworkProviderError extends Error {
+  constructor(readonly diagnostics: ArtworkProviderDiagnostics) {
+    super(`${diagnostics.model} ${diagnostics.operation} failed (${diagnostics.status}): ${diagnostics.code ?? diagnostics.type ?? "provider_error"}${diagnostics.requestId ? `; request ${diagnostics.requestId}` : ""}`);
+    this.name = "ArtworkProviderError";
+  }
+}
+
+function providerFailure(
+  response: Response, body: string, request: ArtworkRequest,
+  context: Pick<ArtworkProviderDiagnostics, "model" | "quality" | "size" | "operation" | "providerRequestCount" | "providerDurationMs">,
+): ArtworkProviderError {
+  let error: Record<string, any> = {};
+  try {
+    const parsed = JSON.parse(body);
+    if (parsed?.error && typeof parsed.error === "object") error = parsed.error;
+  } catch { /* Non-JSON provider failures still have HTTP and request identity. */ }
+  const identifier = (value: unknown): string | null =>
+    typeof value === "string" && /^[a-z][a-z0-9_]{0,79}$/.test(value) ? value : null;
+  const requestId = [response.headers.get("x-request-id"), error.request_id,
+    typeof error.message === "string" ? error.message.match(/\breq_[a-zA-Z0-9]{8,128}\b/)?.[0] : null,
+  ].find((value) => typeof value === "string" && /^req_[a-zA-Z0-9]{8,128}$/.test(value)) ?? null;
+  const details = error.moderation_details;
+  const stage = details?.moderation_stage;
+  const allowedCategories = new Set(["harassment", "self-harm", "sexual", "violence"]);
+  return new ArtworkProviderError({
+    ...context, status: response.status, code: identifier(error.code), type: identifier(error.type), requestId,
+    moderationStage: stage === "input" || stage === "output" ? stage : "unknown",
+    moderationCategories: Array.isArray(details?.categories)
+      ? Array.from(new Set<string>(details.categories.filter((value: unknown): value is string => typeof value === "string" && allowedCategories.has(value)))) : [],
+    outputFormat: request.outputFormat ?? "png",
+    promptSha256: createHash("sha256").update(request.prompt).digest("hex"),
+  });
 }
 
 const SIZE_FOR_ASPECT: Record<ArtworkAspectRatio, ArtworkSize> = {
@@ -302,14 +356,21 @@ export async function generateArtwork(request: ArtworkRequest): Promise<ArtworkR
     }
 
     const body = await response.text().catch(() => "");
-    if (attempt < maxRetries && TRANSIENT_STATUS_CODES.has(response.status)) {
+    const failure = providerFailure(response, body, request, {
+      model, quality, size, operation, providerRequestCount: attempt + 1,
+      providerDurationMs: Date.now() - started,
+    });
+    console.warn("[ai-first-artwork] provider failure", JSON.stringify(failure.diagnostics));
+    const isGenerationRejection = failure.diagnostics.type === "image_generation_user_error"
+      || failure.diagnostics.code === "moderation_block" || failure.diagnostics.code === "moderation_blocked";
+    if (attempt < maxRetries && TRANSIENT_STATUS_CODES.has(response.status) && !isGenerationRejection) {
       const delayMs = retryDelayMs(response, body);
       console.warn(`[ai-first-artwork] ${model} ${operation} returned ${response.status}; retrying once in ${delayMs}ms`);
       await waitForRetry(delayMs, request.signal);
       continue;
     }
 
-    throw new Error(`${model} ${operation} failed (${response.status}): ${body.slice(0, 300)}`);
+    throw failure;
   }
 
   throw new Error(`${model} ${operation} failed without a response`);
