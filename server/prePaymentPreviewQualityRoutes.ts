@@ -78,7 +78,7 @@ export interface PrePaymentPreviewQualityRouteDependencies {
   isUnlocked?: (event: Event) => Promise<boolean>;
   mode?: () => PrePaymentPreviewMode;
   autoNamedEnabled?: () => boolean;
-  classifyNamedReference?: (text: string) => Promise<NamedCreativeReference | null>;
+  classifyNamedReference?: (text: string, signal?: AbortSignal) => Promise<NamedCreativeReference | null>;
   resolveNamedReference?: typeof resolveNamedCreativeReference;
   generate?: (
     event: Event,
@@ -510,15 +510,19 @@ async function runAutomaticClassifiedPreviewJob({
 }: AutomaticClassifiedJobDependencies): Promise<void> {
   const startedAt = Date.now();
   const remainingMs = () => Math.max(1, jobTimeoutMs - (Date.now() - startedAt));
+  const recognitionController = new AbortController();
   let namedReference: NamedCreativeReference | null = null;
   try {
     namedReference = await withPreviewDeadline(
-      classifyNamedReference(eventNamedReferenceBrief(event)),
+      classifyNamedReference(eventNamedReferenceBrief(event), recognitionController.signal),
       Math.min(GENERAL_CLASSIFIER_TIMEOUT_MS, remainingMs()),
       "Named-theme recognition",
+      (error) => recognitionController.abort(error),
     );
   } catch (error) {
     console.warn("[prepayment-preview] one-shot background named-theme recognition failed closed:", error);
+    await persistDirectionCard(store, event, now());
+    return;
   }
 
   if (namedReference) {
@@ -604,7 +608,9 @@ export function registerPrePaymentPreviewQualityRoutes(
   const autoNamedEnabled = dependencies.autoNamedEnabled
     ?? (() => namedReferenceAutoResolutionEnabled());
   const classifyNamedReference = dependencies.classifyNamedReference
-    ?? ((text: string) => detectNamedCreativeReference(text));
+    ?? ((text: string, signal?: AbortSignal) => detectNamedCreativeReference(text, {
+      signal, requireResolvedClassification: true,
+    }));
   const resolveNamedReference = dependencies.resolveNamedReference
     ?? resolveNamedCreativeReference;
   const generate = dependencies.generate ?? generateQualityLockedPreview;

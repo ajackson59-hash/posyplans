@@ -353,6 +353,38 @@ describe("prepayment preview quality lock", () => {
     expect(detectNamedCreativeReferenceSync("")).toBeNull();
   });
 
+  it("uses an abortable single classifier request and requires an explicit original-theme verdict", async () => {
+    const client = fakeAnthropicClient('{"named":false}');
+    const controller = new AbortController();
+    expect(await detectNamedCreativeReference("An original moonlit gallery", {
+      client, signal: controller.signal, requireResolvedClassification: true,
+    })).toBeNull();
+    expect(client.messages.create).toHaveBeenCalledTimes(1);
+    expect(client.messages.create).toHaveBeenCalledWith(expect.anything(), {
+      signal: controller.signal, maxRetries: 0,
+    });
+  });
+
+  it.each(['{}', '{"named":true}', 'unparseable'])
+    ("does not cache unresolved recognition as an original theme: %s", async (invalid) => {
+      const client = fakeAnthropicClient(invalid);
+      expect(await detectNamedCreativeReference("An unfamiliar property celebration", { client })).toBeNull();
+      await expect(detectNamedCreativeReference("An unfamiliar property celebration", {
+        client, requireResolvedClassification: true,
+      })).rejects.toThrow("complete classification");
+      expect(client.messages.create).toHaveBeenCalledTimes(2);
+    });
+
+  it("does not route a truncated classifier response as an original theme", async () => {
+    const client = { messages: { create: vi.fn(async () => ({
+      content: [{ type: "text", text: '{"named":false}' }], stop_reason: "max_tokens",
+    })) } } as unknown as Anthropic;
+    await expect(detectNamedCreativeReference("An unfamiliar art world", {
+      client, requireResolvedClassification: true,
+    })).rejects.toThrow("complete classification");
+    expect(client.messages.create).toHaveBeenCalledTimes(1);
+  });
+
   it("buildDirectionCard and directionCardDataUrl are synchronous and never invoke the general classifier by default", () => {
     // Regression test for the read-path latency/cost bug: these are called
     // from readiness polling (every 2.5s) and asset delivery. They must not

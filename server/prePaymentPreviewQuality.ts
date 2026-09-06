@@ -271,6 +271,9 @@ Only ever output that one JSON object.`;
 
 interface NamedThemeDetectionDependencies {
   client?: Anthropic;
+  signal?: AbortSignal;
+  /** Customer routing must distinguish an explicit original theme from unavailable recognition. */
+  requireResolvedClassification?: boolean;
 }
 
 interface LlmNamedThemeResult {
@@ -373,7 +376,10 @@ async function detectGeneralNamedCreativeReference(
   const cached = namedThemeDetectionCache.get(key);
   if (cached && cached.expiresAt > Date.now()) return cached.value;
 
-  if (!process.env.ANTHROPIC_API_KEY && !dependencies.client) return null;
+  if (!process.env.ANTHROPIC_API_KEY && !dependencies.client) {
+    if (dependencies.requireResolvedClassification) throw new Error("Named-theme recognition is not configured");
+    return null;
+  }
 
   let result: NamedCreativeReference | null = null;
   try {
@@ -386,14 +392,21 @@ async function detectGeneralNamedCreativeReference(
       max_tokens: 500,
       system: NAMED_THEME_DETECTION_SYSTEM,
       messages: [{ role: "user", content: text }],
-    });
+    }, { signal: dependencies.signal,
+      ...(dependencies.requireResolvedClassification ? { maxRetries: 0 } : {}) });
     const raw = response.content.map((b) => (b.type === "text" ? b.text : "")).join("");
     const parsed = extractJsonObject(raw) as LlmNamedThemeResult | null;
     result = coerceLlmDetection(parsed);
+    if (response.stop_reason === "max_tokens" || response.stop_reason === "refusal"
+      || !(parsed?.named === false || (parsed?.named === true && result !== null))) {
+      throw new Error("Named-theme recognition did not return a complete classification");
+    }
   } catch (error) {
-    // Fail closed to "no named theme detected" rather than breaking the
-    // preview flow — same fail-open-to-safe-default posture as visionGate.
+    // An unavailable classifier is not evidence that the host requested an
+    // original theme. Customer jobs stop before image spend; legacy read-only
+    // callers can still use null as their safe display fallback.
     console.warn("[prepayment-preview] named-theme detection call failed:", error);
+    if (dependencies.requireResolvedClassification) throw error;
     return null;
   }
 

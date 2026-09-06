@@ -1,10 +1,51 @@
-# Launch readiness — Preview closeout, 2026-09-05
+# Launch readiness — Preview closeout, 2026-09-06
 
 Release status: **HOLD**. Green automated checks establish software contracts,
 not superior generated artwork, payment settlement or message delivery.
-PR #44 remains draft, unmerged and Preview-only. No Production changes.
+PR #44 remains draft, unmerged and Preview-only. The owner redeployed the
+existing Production commit `db829a1` during environment setup; that did not
+publish PR #44. This work has not changed main or Production.
 
-## Changes in this closeout
+## Latest general-direction diagnostic evidence
+
+The complete frozen briefs, request caps, results and remaining work are in
+[PR #44](https://github.com/ajackson59-hash/posyplans/pull/44). Preserve failed
+and missing cases; do not replace them with easier prompts or reset events.
+
+- On `c8d0bb1`, vector Event 35 / attempt 136 and Blippi-Meekah Event 36 /
+  attempts 137–138 passed all six 5/5 dimensions. Reviewed/delivered teaser
+  hashes and protected full-resolution sources matched. Named first-approved
+  publication took 132.655 seconds, failing the existing 90-second target.
+- `76ab931` preserves render quality, dimensions and every review check while
+  requesting maximum-quality JPEG transport and concise critic evidence.
+  Decoded source pixels are normalized losslessly to PNG for exact teaser
+  review and full-resolution retention. JPEG itself remains lossy; the actual
+  decoded pixels must pass. Added request-count and processing-time evidence.
+- Frozen Event 37 failed before image review: recognition exceeded its
+  7.5-second deadline, then the old route incorrectly attempted one generic
+  medium image request. The provider returned HTTP 400 `moderation_block`.
+  No image or critic verdict exists. The two failures are observed separately;
+  their causal relationship is unknown. No speed improvement is demonstrated.
+- The follow-up correction stops image spending on unavailable recognition,
+  aborts the classifier at its deadline, disables its hidden transport retries,
+  and rejects incomplete answers without caching them as original themes.
+  This protects every unfamiliar theme; it is not a successful live rerun or a
+  resolution of the provider refusal. Local verification: 66 files / 782 tests,
+  TypeScript and production bundles.
+
+Paid diagnostics are paused. Three of eight events were submitted, four image
+requests attempted, and three critic verdicts completed (at most six physical
+critic calls including possible earlier format repair). The five untouched
+cases retain a combined cap of seven image calls. Eight calls remain under the
+overall twelve-image cap, but the unused second Frozen call does not authorize
+a resubmission or larger per-case cap. Failed-request/classifier costs remain
+unreconciled. No checkout or email delivery occurred in this batch.
+
+Reliable recognition, provider acceptance, cross-direction visual quality and
+approved-image delivery within the existing target remain launch blockers.
+The small diagnostic sample cannot establish the required reliability rate.
+
+## Preserved September 5 closeout
 
 - First-approved delivery: publish the first fully reviewed named-theme source
   immediately, while the sibling continues only for private review/evidence.

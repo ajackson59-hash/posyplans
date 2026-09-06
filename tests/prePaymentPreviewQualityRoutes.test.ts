@@ -630,6 +630,32 @@ describe("quality-locked prepayment preview routes", () => {
     expect(ready.body.kind).toBe("approved-image");
   });
 
+  it.each(["timeout", "error"])("never spends on generic artwork after recognition %s", async (failure) => {
+    stored = { ...genericEvent(), eventName: "Frozen Fifth Birthday",
+      vibeDescription: "Disney Frozen with Elsa and Anna, cel-shaded illustration" };
+    let receivedSignal: AbortSignal | undefined;
+    let resolveLate: ((value: null) => void) | undefined;
+    classifyNamedReference.mockImplementation((_text: string, signal: AbortSignal) => {
+      receivedSignal = signal;
+      if (failure === "error") return Promise.reject(new Error("recognition unavailable"));
+      return new Promise(resolve => { resolveLate = resolve; });
+    });
+    const app = makeApp({ mode: "quality-image", jobTimeoutMs: 20 });
+    const response = await request(app).post(`/api/events/owner/${OWNER}/prepayment-preview`)
+      .send({ email: "qa@example.com" });
+    expect(response.status).toBe(202);
+    await runScheduledTask();
+    expect(receivedSignal).toBeInstanceOf(AbortSignal);
+    expect(receivedSignal!.aborted).toBe(failure === "timeout");
+    resolveLate?.(null);
+    await Promise.resolve();
+    expect(generate).not.toHaveBeenCalled();
+    expect(resolveNamedReference).not.toHaveBeenCalled();
+    const ready = await request(app).get(`/api/events/owner/${OWNER}/prepayment-preview/readiness`);
+    expect(ready.body).toMatchObject({ kind: "direction-card", generationState: "fallback" });
+    expect(classifyNamedReference).toHaveBeenCalledTimes(1);
+  });
+
   it("never serves an ordinary PNG left by an older preview experiment", async () => {
     stored = {
       ...stored,
