@@ -40,7 +40,7 @@ function critic(override: Record<string, unknown> = {}) {
     return { stop_reason: "end_turn", usage: { input_tokens: 30, output_tokens: 20 }, content: [{ type: "text", text: JSON.stringify({
       ...allFive, requiredPresent: required.map((requirement: string) => ({ requirement, present: true, evidence: "Fixture observation" })),
       excludedFound: [], notes: "Scripted fixture, not real art approval",
-      dimensionEvidence: Object.fromEntries(Object.keys(allFive).map((key) => [key, "Fixture observation"])),
+      dimensionAssessments: Object.fromEntries(Object.keys(allFive).map((key) => [key, { status: "clear", criterion: "none", location: "Full canvas", observation: "Fixture observation" }])),
       teaserChecks: { milestone: { correct: true, evidence: "No candles" },
         identity: { accurate: true, evidence: "Fixture identities" },
         purchase: { wouldCreatePurchaseDesire: true, evidence: "Fixture purchase label" } },
@@ -82,7 +82,7 @@ describe("private composed-scene final-pixel review", () => {
 
   it.each([
     { premiumFinish: 4 }, { requiredPresent: [] }, { excludedFound: ["invented child"] },
-    { dimensionEvidence: {} }, { teaserChecks: {} }, { artifactFree: 6 },
+    { dimensionAssessments: {} }, { teaserChecks: {} }, { artifactFree: 6 },
   ])("rejects a flawed verdict without generating a repair: %j", async (override) => {
     const input = await fixture(), store = new InMemoryArtworkAttemptStore(), review = critic(override);
     const result = await reviewSceneComposition(input, { environment: "preview", attemptStore: store, client: review.client, runTier1: clearTier1 });

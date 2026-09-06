@@ -371,6 +371,9 @@ const passingDimensionEvidence = {
   ageAppropriate: "Playful family-audience treatment without mature content.",
 };
 
+const passingDimensionAssessments = Object.fromEntries(Object.entries(passingDimensionEvidence).map(([key, observation]) =>
+  [key, { status: "clear", criterion: "none", location: "Full canvas", observation }]));
+
 const passingTeaserChecks = {
   milestone: { evidence: "No exact count is required.", correct: true },
   identity: { evidence: "The requested event world is specific and accurate.", accurate: true },
@@ -418,7 +421,7 @@ describe("tier 2 — acceptance", () => {
       brief: brief({ requirements: { required: ["[VISIBLE HOST DETAIL] bubbles"], preferred: [], excluded: [] } }),
       client: critic({ ...allFive, excludedFound: [], notes: "",
         requiredPresent: [{ requirement: "bubbles", present: true, evidence: missing === "requirement" ? " " : "Visible in the upper foreground" }],
-        dimensionEvidence: missing === "dimensionEvidence" ? {} : passingDimensionEvidence,
+        dimensionAssessments: missing === "dimensionEvidence" ? {} : passingDimensionAssessments,
         teaserChecks: { ...passingTeaserChecks,
           ...(missing === "identity" ? { identity: { accurate: true, evidence: " " } } : {}),
           ...(missing === "purchase" ? { purchase: { wouldCreatePurchaseDesire: true, evidence: " " } } : {}),
@@ -621,7 +624,7 @@ describe("tier 2 — acceptance", () => {
                 requiredPresent: [],
                 excludedFound: [],
                 teaserChecks: passingTeaserChecks,
-                dimensionEvidence: passingDimensionEvidence,
+                dimensionAssessments: passingDimensionAssessments,
                 notes: "",
               }),
             }],
@@ -677,8 +680,8 @@ describe("tier 2 — acceptance", () => {
               teaserChecks: { ...passingTeaserChecks,
                 identity: { evidence: "The supplied turquoise cuff cannot be resolved on the visible figure.", accurate: false },
               },
-              dimensionEvidence: { ...passingDimensionEvidence,
-                briefFidelity: "The supplied turquoise cuff cannot be resolved on the visible figure.",
+              dimensionAssessments: { ...passingDimensionAssessments,
+                briefFidelity: { status: "uncertain", criterion: "identity-mismatch", location: "Figure wrist", observation: "The turquoise cuff cannot be resolved." },
               },
               notes: "Reference context does not establish matching pixels.",
             }) }],
@@ -712,7 +715,7 @@ describe("tier 2 — acceptance", () => {
         requiredPresent: [],
         excludedFound: [],
         teaserChecks: passingTeaserChecks,
-        dimensionEvidence: passingDimensionEvidence,
+        dimensionAssessments: passingDimensionAssessments,
         notes: "Professional, but not exceptional.",
       }),
       reviewMode: "teaser",
@@ -786,7 +789,7 @@ describe("tier 2 — acceptance", () => {
     });
 
     expect(verdict.passed).toBe(false);
-    expect(verdict.failureCodes).toEqual(expect.arrayContaining(["brief-fidelity", "premium-feel"]));
+    expect(verdict.failureCodes).toEqual(expect.arrayContaining(["brief-fidelity", "purchase-desire"]));
     expect(verdict.teaserChecks?.identity.required).toBe(true);
   });
 

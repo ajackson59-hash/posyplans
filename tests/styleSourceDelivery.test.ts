@@ -30,7 +30,7 @@ function critic(override: Record<string, unknown> = {}) {
       requiredPresent: (body.output_config.format.schema.properties.requiredPresent.items.properties.requirement.enum ?? [])
         .map((requirement: string) => ({ requirement, present: true, evidence: "Scripted fixture observation" })),
       excludedFound: [], notes: "Test only",
-      dimensionEvidence: Object.fromEntries(Object.keys(allFive).map((k) => [k, "Scripted fixture observation"])),
+      dimensionAssessments: Object.fromEntries(Object.keys(allFive).map((k) => [k, { status: "clear", criterion: "none", location: "Full canvas", observation: "Scripted fixture observation" }])),
       teaserChecks: { milestone: { correct: true, evidence: "No age props" },
         identity: { accurate: true, evidence: "Original construction" },
         purchase: { wouldCreatePurchaseDesire: true, evidence: "Fixture only" } }, ...override,

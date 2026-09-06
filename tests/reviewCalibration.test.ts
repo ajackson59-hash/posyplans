@@ -3,7 +3,7 @@ import express from "express";
 import request from "supertest";
 import type Anthropic from "@anthropic-ai/sdk";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { CALIBRATION_CASES, calibrationProfile, runReviewCalibration, type CalibrationCaseId } from "../server/aiFirst/reviewCalibration";
+import { CALIBRATION_CASES, CONSISTENCY_CASES, calibrationProfile, runReviewCalibration, type CalibrationCaseId } from "../server/aiFirst/reviewCalibration";
 import { registerReviewCalibrationRoutes } from "../server/aiFirst/reviewCalibrationRoutes";
 import { InMemoryArtworkAttemptStore } from "../server/aiFirst/artworkAttemptStore";
 import { encodePng } from "../server/aiFirst/png";
@@ -13,10 +13,12 @@ import { encodePng } from "../server/aiFirst/png";
 const bytes = encodePng({ width: 120, height: 60, rgb: new Uint8Array(120 * 60 * 3).fill(150) });
 const hash = createHash("sha256").update(bytes).digest("hex");
 const originalControls = structuredClone(CALIBRATION_CASES);
+const originalConsistency = structuredClone(CONSISTENCY_CASES);
 beforeEach(() => {
-  for (const control of Object.values(CALIBRATION_CASES)) Object.assign(control, { sourceHash: hash, reviewedHash: hash });
+  for (const control of [...Object.values(CALIBRATION_CASES), ...Object.values(CONSISTENCY_CASES)]) Object.assign(control, { sourceHash: hash, reviewedHash: hash });
 });
 afterEach(() => {
+  for (const key of Object.keys(CONSISTENCY_CASES)) Object.assign(CONSISTENCY_CASES[key], originalConsistency[key]);
   for (const key of Object.keys(CALIBRATION_CASES) as CalibrationCaseId[]) Object.assign(CALIBRATION_CASES[key], originalControls[key]);
 });
 const owner = { id: 41, ownerToken: "private-calibration-owner" };
@@ -29,7 +31,7 @@ function critic(accurate: boolean, malformed = false) {
       requiredPresent: (body.output_config.format.schema.properties.requiredPresent.items.properties.requirement.enum ?? [])
         .map((requirement: string) => ({ requirement, present: accurate, evidence: "Located identity fixture evidence" })),
       excludedFound: [], notes: "",
-      dimensionEvidence: Object.fromEntries(Object.keys(scores).map(k => [k, "Located fixture observation"])),
+      dimensionAssessments: Object.fromEntries(Object.keys(scores).map(k => [k, { status: "clear", criterion: "none", location: "Full canvas", observation: "Located fixture observation" }])),
       teaserChecks: { milestone: { correct: true, evidence: "No count required" },
         identity: { accurate, evidence: "Visible hair, face and costume fixture observations" },
         purchase: { wouldCreatePurchaseDesire: true, evidence: "Fixture only" } },
@@ -50,6 +52,28 @@ const root = `/api/events/owner/${owner.ownerToken}/ai-first/review/calibration`
 const body = () => ({ sourceBase64: bytes.toString("base64"), confirmOneVisionCall: true });
 
 describe("private fixed reviewer calibration", () => {
+  it("caps the new calibration at eight physical calls across repeat requests and redeploys", async () => {
+    const store = new InMemoryArtworkAttemptStore(), c = critic(true);
+    expect(Object.keys(CONSISTENCY_CASES)).toHaveLength(8);
+    for (const caseId of Object.keys(CONSISTENCY_CASES)) {
+      const args = { ...input(store, c.client), dataset: "consistency-v1" as const, caseId };
+      expect(await runReviewCalibration(args)).toMatchObject({ kind: "calibrated", criticRequests: 1, imageProviderCalls: 0 });
+      expect(await runReviewCalibration({ ...args, environment: { ...environment, VERCEL_GIT_COMMIT_SHA: "redeployed" } }))
+        .toMatchObject({ kind: "blocked", reason: "case-already-claimed" });
+    }
+    expect(await runReviewCalibration({ ...input(store, c.client), dataset: "consistency-v1", caseId: "rumi-matched-3" }))
+      .toMatchObject({ kind: "blocked" });
+    expect(c.create).toHaveBeenCalledTimes(8);
+    expect(store.all).toHaveLength(16);
+    expect(store.all.every(row => row.status === "rejected" && row.previewId === null)).toBe(true);
+    const modelBodies = c.create.mock.calls.map(([body]) => JSON.stringify(body));
+    expect(modelBodies[0]).toBe(modelBodies[1]); // Repetitions cannot leak a repetition label or prior result.
+    expect(modelBodies[0]).toContain("REQUESTED TREATMENT: photographic + 3d");
+    expect(modelBodies[0]).toContain("intentional portrait framing");
+    expect(modelBodies[0]).not.toContain("expectedIdentity");
+    expect(modelBodies[0]).not.toContain("located-review-controls");
+  });
+
   it.each([["rumi-matched", true], ["rumi-mismatched", false]] as const)(
     "retains %s evidence without promoting even a passing verdict", async (caseId, accurate) => {
       const store = new InMemoryArtworkAttemptStore(), c = critic(accurate);

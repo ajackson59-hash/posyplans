@@ -1003,6 +1003,8 @@ const weightedVisionScore = (scores: VisionVerdict["scores"]): number =>
 function isTargetedCorrectionCandidate(review: PreviewQualityReview): boolean {
   const { tier1, vision } = review;
   if (!tier1.passed || !vision || vision.unavailable || vision.passed) return false;
+  // An invalid reviewer report is not evidence for spending on a new image.
+  if (vision.reviewIntegrity?.valid === false || vision.failureCodes.includes("review-inconsistent")) return false;
   if (vision.requiredPresent.some((item) => !item.present)) return false;
   if (vision.excludedFound.length > 0) return false;
 

@@ -1,5 +1,6 @@
 /** Fixed reference controls. No generation, customer approval or event mutation. */
 import { createHash, randomUUID } from "node:crypto";
+import { REVIEW_EVIDENCE_VERSION } from "./reviewEvidence";
 import type Anthropic from "@anthropic-ai/sdk";
 import type { Event } from "@shared/schema";
 import { buildQualityLockedPreviewBrief, customerVisiblePreviewBytes } from "../prePaymentPreviewQuality";
@@ -28,6 +29,10 @@ export const CALIBRATION_CASES = {
   "zoey-mismatched": { ...assets.zoey, requested: "Rumi", expectedIdentity: false },
 } as const;
 export type CalibrationCaseId = keyof typeof CALIBRATION_CASES;
+export const CONSISTENCY_DATASET = "located-review-controls-20260906-v1";
+// Eight immutable global claims: two repetitions of four identical-pixel controls.
+export const CONSISTENCY_CASES = Object.fromEntries(Object.entries(CALIBRATION_CASES).flatMap(([baseCaseId, control]) =>
+  [1, 2].map(repetition => [`${baseCaseId}-${repetition}`, { ...control, baseCaseId: baseCaseId as CalibrationCaseId }])));
 const REFERENCE_NOTES = `Character descriptions established from Netflix's official cast article and its labeled animated stills. Rumi: swept-up purple hair continuing into a long, thick braid; sharply defined dark eyebrows; a yellow performance jacket with contrasting dark trim. Zoey: dark hair with short blunt bangs and gathered braided sections; a turquoise cropped stage top with dark patterned trim; dangling earrings. Both are distinct animated members of HUNTR/X in KPop Demon Hunters. These descriptions identify the characters, not which character is present in the submitted pixels. Source provenance: ${CALIBRATION_SOURCE}`;
 
 export async function calibrationProfile(caseId: CalibrationCaseId) {
@@ -43,7 +48,9 @@ export async function calibrationProfile(caseId: CalibrationCaseId) {
 }
 
 export async function runReviewCalibration(input: {
-  caseId: CalibrationCaseId;
+  caseId: CalibrationCaseId | string;
+  /** Only the separately bounded eight-call experiment uses this mode. */
+  dataset?: "consistency-v1";
   bytes: Buffer;
   owner: { id: number; ownerToken: string };
   environment: NodeJS.ProcessEnv;
@@ -53,7 +60,9 @@ export async function runReviewCalibration(input: {
   timeoutMs?: number;
 }) {
   const { owner, store, environment } = input;
-  const control = CALIBRATION_CASES[input.caseId];
+  const consistency = input.dataset === "consistency-v1";
+  const caseSet = consistency ? CONSISTENCY_CASES : CALIBRATION_CASES;
+  const control = Object.hasOwn(caseSet, input.caseId) ? caseSet[input.caseId as keyof typeof caseSet] : undefined;
   if (environment.VERCEL_ENV !== "preview" || environment.VERCEL_GIT_COMMIT_REF !== "codex/launch-blockers" ||
       owner.id !== CALIBRATION_OWNER_EVENT || !owner.ownerToken || !store.recordOnce || !control || input.signal?.aborted) {
     return { kind: "blocked" as const, reason: "calibration-not-authorized" };
@@ -61,24 +70,31 @@ export async function runReviewCalibration(input: {
   if (hash(input.bytes) !== control.sourceHash) return { kind: "blocked" as const, reason: "source-integrity" };
   const reviewed = customerVisiblePreviewBytes(input.bytes);
   if (hash(reviewed) !== control.reviewedHash) return { kind: "blocked" as const, reason: "reviewed-pixel-integrity" };
-  const { brief, concept, requiredIdentity } = await calibrationProfile(input.caseId);
+  const baseCaseId = consistency ? CONSISTENCY_CASES[input.caseId].baseCaseId : input.caseId as CalibrationCaseId;
+  const { brief, concept, requiredIdentity } = await calibrationProfile(baseCaseId);
+  if (consistency) {
+    // The old fixture override contained only a name, so the shared art contract
+    // could lose the explicit photographic/animated diptych. Freeze full intent.
+    brief.visualIdentityOverride = `An intentional editorial diptych: a photographic adult portrait on the left and a stylized 3D animated portrait of ${control.requested} from KPop Demon Hunters on the right. Preserve this mixed photographic and animated treatment and the intentional portrait framing.`;
+  }
   const profileDigest = sceneBriefDigest(brief);
   const runId = `review-calibration-${randomUUID()}`;
-  const key = `${CALIBRATION_DATASET}:${input.caseId}`;
-  const calibration = { datasetId: CALIBRATION_DATASET, caseId: input.caseId, stage: "claimed" as const,
+  const datasetId = consistency ? CONSISTENCY_DATASET : CALIBRATION_DATASET;
+  const key = `${datasetId}:${input.caseId}`;
+  const calibration = { datasetId, caseId: input.caseId, stage: "claimed" as const,
     profileDigest, sourceUrl: CALIBRATION_SOURCE, expectedIdentity: control.expectedIdentity,
     identityCorrect: null, deploymentSha: environment.VERCEL_GIT_COMMIT_SHA ?? null,
-    reviewerVersion: REVIEWER_VERSION, imageProviderCalls: 0 as const, criticRequests: null,
+    reviewerVersion: consistency ? REVIEW_EVIDENCE_VERSION : REVIEWER_VERSION, imageProviderCalls: 0 as const, criticRequests: null,
     criticCostUsdMicrosFromUsage: null, customerActivation: "disabled" as const };
   const base: ArtworkAttemptInput = { eventId: owner.id, ownerToken: owner.ownerToken, runId,
-    directionIndex: Object.keys(CALIBRATION_CASES).indexOf(input.caseId), attempt: 0,
+    directionIndex: Object.keys(caseSet).indexOf(input.caseId), attempt: 0,
     status: "rejected", previewId: null, bytes: input.bytes, concept,
     model: REVIEW_CALIBRATION_MODEL, quality: "not-applicable", size: null, costUsdMicros: 0,
     failureCodes: ["calibration-only-no-customer-approval"], tier1Findings: [], visionScores: null };
   const evidence = { version: 1 as const, reviewedAssetHash: control.reviewedHash,
     verdict: null, generationDurationMs: 0, calibration };
-  // Four fixed global keys, claimed before dispatch. Restarts, another owner,
-  // timeouts and redeployments cannot reset the four-call authorization.
+  // Fixed global keys, claimed before dispatch. Restarts, another owner,
+  // timeouts and redeployments cannot reset either experiment authorization.
   const claim = await store.recordOnce({ ...base, idempotencyKey: `${key}:claim`, reviewEvidence: evidence });
   if (!claim.created) return { kind: "blocked" as const, reason: "case-already-claimed" };
   if (!claim.record || claim.record.runId !== runId || claim.record.assetHash !== control.sourceHash ||

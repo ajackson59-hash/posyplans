@@ -833,6 +833,19 @@ describe("prepayment preview quality lock", () => {
     expect(JSON.stringify(result)).not.toContain("data:image");
   });
 
+  it("does not spend a correction on an inconsistent review even when targeted corrections are enabled", async () => {
+    const generateImage = vi.fn(async () => ({ bytes: generatedPng(7), dataUrl: "ignored", durationMs: 100 }));
+    const invalid = nearPassVision("Clean balanced composition contradicts a reduced score");
+    invalid.reviewIntegrity = { version: "located-medium-review-v1", valid: false, issues: ["compositionQuality:clear-score-conflict"] };
+    invalid.failureCodes.push("review-inconsistent");
+    const result = await generateQualityLockedPreview(event, {
+      generateImage, runTier1: () => tier1(true), runVision: async () => invalid,
+      maxCandidates: 2, parallelCandidates: true, allowTargetedCorrection: true,
+    });
+    expect(result.kind).toBe("rejected");
+    expect(generateImage).toHaveBeenCalledTimes(2);
+  });
+
   it("does not spend a correction call when a named identity is inaccurate", async () => {
     const generateImage = vi.fn(async () => {
       const bytes = generatedPng(7);
