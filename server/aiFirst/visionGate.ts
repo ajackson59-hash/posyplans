@@ -35,6 +35,8 @@ export interface VisionVerdict {
   /** True when the vision pass could not run — never silently a pass. */
   unavailable: boolean;
   durationMs: number;
+  /** SDK dispatches, including format repair; teaser transport retries are disabled. */
+  requestCount?: number;
   usage: { inputTokens: number; outputTokens: number };
   /** Extra fail-closed facts required only for standalone first-look artwork. */
   teaserChecks?: {
@@ -79,6 +81,8 @@ Judge BRIEF REQUIREMENTS holistically through briefFidelity and ageAppropriate. 
 Then make three explicit teaser checks. For milestone, describe and count the visible physical cue; never infer the requested age from the prompt. For identity, every specifically named subject must be independently recognizable through canonical face, hair, costume, silhouette and world details—palette-only or adjacent generic characters are false. For purchase, false means the artwork has concrete shortcomings within the requested treatment that prevent purchase desire, such as a generic stock-promo substitution or careless synthetic finish. Requested 3D or photography is not itself a failure. Missing check fields are failures.
 
 EVIDENCE BEFORE SCORING: inspect the supplied pixels, not an imagined image from the brief. First complete requiredPresent (copy each requirement verbatim and include its visible location/features as evidence), then teaserChecks, then dimensionEvidence for all six dimensions, then assign scores. Before claiming a signature accessory is missing, inspect the named subject's face and costume explicitly; describe what is visible and where. Never infer absence from small size or from a prior candidate: each image is independent. Every sub-5 score needs a concrete visible defect and location in dimensionEvidence; every 5 needs positive observable support. Judge fidelity to the requested medium: intentional flatness, photographic detail, gouache texture, cel shading, collage and stylized depth are not defects merely because they differ from another medium. This does not excuse malformed anatomy, incoherent lighting, unclear identity or synthetic stock-promo finish. Do not invent browser cropping or hidden overlays. When detail genuinely cannot be resolved, say so and keep the image private.
+
+COMPACT REPORT: Give one concise, located visual observation per evidence field (usually 8–20 words). Do not repeat the brief, numeric score or generic praise in evidence. Preserve every required identity, count, detail and defect observation even when it needs more words. Copy requirement strings verbatim. Use notes only for additional defects, otherwise an empty string. Brevity must never remove a check or turn uncertainty into a pass.
 
 Reply with JSON only:
 {"requiredPresent":[{"requirement":"","present":true,"evidence":""}],"excludedFound":[],"teaserChecks":{"milestone":{"evidence":"","correct":true},"identity":{"evidence":"","accurate":true},"purchase":{"evidence":"","wouldCreatePurchaseDesire":true}},"dimensionEvidence":{"textLogoWatermarkFree":"","artifactFree":"","premiumFinish":"","briefFidelity":"","compositionQuality":"","ageAppropriate":""},"textLogoWatermarkFree":0,"artifactFree":0,"premiumFinish":0,"briefFidelity":0,"compositionQuality":0,"ageAppropriate":0,"notes":""}`;
@@ -327,6 +331,7 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
     .join("\n");
 
   let usage = { inputTokens: 0, outputTokens: 0 };
+  let requestCount = 0;
   const reviewSystem = reviewMode === "teaser" ? TEASER_SYSTEM : SYSTEM;
   const reviewContent = [
     {
@@ -336,6 +341,7 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
     { type: "text" as const, text: userText },
   ];
   const reviewOnce = async (jsonRepair: boolean): Promise<Record<string, any> | null> => {
+    requestCount += 1;
     const response = await client.messages.create({
       model: VISION_MODEL,
       // A complete evidence checklist does not fit in the old 950-token cap.
@@ -384,6 +390,7 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
       unavailable: true,
       durationMs: Date.now() - started,
       usage,
+      requestCount,
     };
   }
 
@@ -398,6 +405,7 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
       unavailable: true,
       durationMs: Date.now() - started,
       usage,
+      requestCount,
     };
   }
 
@@ -500,6 +508,7 @@ export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdi
     unavailable: false,
     durationMs: Date.now() - started,
     usage,
+    requestCount,
     teaserChecks,
     dimensionEvidence,
   };

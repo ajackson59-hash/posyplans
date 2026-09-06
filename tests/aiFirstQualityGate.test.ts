@@ -436,6 +436,7 @@ describe("tier 2 — acceptance", () => {
         usage: { input_tokens: 10, output_tokens: 700 } }; } },
     } as unknown as Anthropic });
     expect(calls).toBe(2);
+    expect(verdict.requestCount).toBe(2);
     expect(verdict.unavailable).toBe(true);
     expect(verdict.passed).toBe(false);
     expect(verdict.usage.outputTokens).toBe(1400);
@@ -639,6 +640,8 @@ describe("tier 2 — acceptance", () => {
     });
 
     expect(verdict.passed).toBe(true);
+    expect(verdict.requestCount).toBe(1);
+    expect(systemText).toContain("COMPACT REPORT");
     expect(systemText).toContain("exact final pixels");
     expect(systemText).toContain("no browser crop");
     expect(systemText).toContain("exact count must match the stated number exactly");
@@ -844,6 +847,7 @@ describe("tier 2 — acceptance", () => {
       } } } as unknown as Anthropic,
     });
     expect(calls).toBe(2);
+    expect(verdict.requestCount).toBe(2);
     expect(verdict.unavailable).toBe(true);
     expect(verdict.passed).toBe(false);
   });
@@ -870,6 +874,7 @@ describe("tier 2 — acceptance", () => {
     });
 
     expect(calls).toBe(2);
+    expect(verdict.requestCount).toBe(2);
     expect(verdict.unavailable).toBe(false);
     expect(verdict.passed).toBe(true);
     expect(verdict.notes).toBe("clean repair");

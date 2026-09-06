@@ -9,6 +9,7 @@ import {
 } from "@shared/aiFirstInvite";
 import { OVERLAY_COVERAGE } from "@shared/aiFirstLayout";
 import {
+  ArtworkNormalizationError,
   DEFAULT_ARTWORK_MODEL,
   REFERENCE_ARTWORK_MODEL,
   estimateImageCostUsdMicros,
@@ -1087,6 +1088,7 @@ export async function generateQualityLockedPreview(
         reviewEvidence: {
           version: 1, reviewedAssetHash: reviewedBytes ? createHash("sha256").update(reviewedBytes).digest("hex") : null,
           verdict: null, generationDurationMs: generated.durationMs,
+          generationTelemetry: generated.telemetry,
           reviewError: (error instanceof Error ? error.message : String(error)).slice(0, 1200),
         },
       });
@@ -1180,6 +1182,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
       let generated: Awaited<ReturnType<ArtworkGenerator>>;
       try {
         generated = await generateImage({
+          outputFormat: "jpeg",
           prompt: prompts[candidate - 1],
           aspectRatio: aspectRatioForLayout(concept.layoutStyle),
           model,
@@ -1189,6 +1192,9 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
           signal: dependencies.signal,
         });
       } catch (error) {
+        if (error instanceof ArtworkNormalizationError) {
+          await retainUnreviewable(error.result, candidate, model, quality, error);
+        }
         return {
           candidate,
           model,
@@ -1286,6 +1292,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
             reviewEvidence: {
               version: 1, reviewedAssetHash: createHash("sha256").update(reviewedBytes).digest("hex"),
               verdict: vision ?? null, generationDurationMs: generated.durationMs,
+              generationTelemetry: generated.telemetry,
             },
             model,
             quality,
@@ -1352,6 +1359,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
       let repaired: Awaited<ReturnType<ArtworkGenerator>> | undefined;
       try {
         repaired = await generateImage({
+          outputFormat: "jpeg",
           maxTransientRetries: 0,
           prompt: buildTargetedCorrectionPrompt(
             basePrompt,
@@ -1373,6 +1381,9 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
           signal: dependencies.signal,
         });
       } catch (error) {
+        if (error instanceof ArtworkNormalizationError) {
+          await retainUnreviewable(error.result, 3, repairModel, repairQuality, error);
+        }
         console.warn("[prepayment-preview] targeted near-pass correction unavailable; using safe fallback:", error);
       }
 
@@ -1439,6 +1450,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
                 reviewEvidence: {
                   version: 1, reviewedAssetHash: createHash("sha256").update(reviewedBytes).digest("hex"),
                   verdict: vision ?? null, generationDurationMs: repaired.durationMs,
+                  generationTelemetry: repaired.telemetry,
                 },
                 model: repairModel,
                 quality: repairQuality,
@@ -1515,6 +1527,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
     let generated: Awaited<ReturnType<ArtworkGenerator>>;
     try {
       generated = await generateImage({
+        outputFormat: "jpeg",
         prompt,
         maxTransientRetries: 0,
         aspectRatio: aspectRatioForLayout(concept.layoutStyle),
@@ -1525,6 +1538,9 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
         signal: dependencies.signal,
       });
     } catch (error) {
+      if (error instanceof ArtworkNormalizationError) {
+        await retainUnreviewable(error.result, candidate, model, quality, error);
+      }
       return {
         kind: "unavailable",
         attempts: candidate - 1,
@@ -1621,6 +1637,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
           reviewEvidence: {
             version: 1, reviewedAssetHash: createHash("sha256").update(reviewedBytes).digest("hex"),
             verdict: vision ?? null, generationDurationMs: generated.durationMs,
+            generationTelemetry: generated.telemetry,
           },
           model,
           quality,

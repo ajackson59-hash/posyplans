@@ -11,6 +11,9 @@
 // pixels and the preview store hashes bytes. Re-decoding a base64 string in
 // three places would be the same work done three times.
 
+import { decode as decodeJpeg } from "jpeg-js";
+import { encodePng } from "./png";
+
 export type ArtworkModel = "gpt-image-1" | "gpt-image-1.5" | "gpt-image-2";
 /** Current quality-first default for text-only generation. */
 export const DEFAULT_ARTWORK_MODEL: ArtworkModel = "gpt-image-2";
@@ -37,6 +40,8 @@ export interface ArtworkRequest {
   aspectRatio: ArtworkAspectRatio;
   model?: ArtworkModel;
   quality?: ArtworkQuality;
+  /** Provider transport only; returned bytes are always full-resolution PNG. */
+  outputFormat?: "png" | "jpeg";
   /**
    * High-fidelity visual references for named characters or entertainment
    * worlds. When present, the provider's image-edits endpoint generates a new
@@ -57,6 +62,23 @@ export interface ArtworkResult {
   bytes: Buffer;
   dataUrl: string;
   durationMs: number;
+  telemetry?: {
+    outputFormat: "png" | "jpeg";
+    providerRequestCount: number;
+    providerDurationMs: number;
+    normalizationDurationMs: number;
+  };
+}
+
+/** Keep an unreviewable provider response available to private attempt retention. */
+export class ArtworkNormalizationError extends Error {
+  readonly result!: ArtworkResult;
+  constructor(message: string, result: ArtworkResult) {
+    super(message);
+    this.name = "ArtworkNormalizationError";
+    // Logging the error must not dump private image bytes or its data URL.
+    Object.defineProperty(this, "result", { value: result });
+  }
 }
 
 const SIZE_FOR_ASPECT: Record<ArtworkAspectRatio, ArtworkSize> = {
@@ -116,7 +138,8 @@ function imageEditBody(
   form.append("quality", quality);
   form.append("n", "1");
   form.append("background", "opaque");
-  form.append("output_format", "png");
+  form.append("output_format", request.outputFormat ?? "png");
+  if (request.outputFormat === "jpeg") form.append("output_compression", "100");
   if (request.inputFidelity) {
     form.append("input_fidelity", request.inputFidelity);
   }
@@ -162,6 +185,8 @@ function requestInit(
           // Without this an image model can return a fully transparent alpha
           // channel, which composites to an invisible card.
           background: "opaque",
+          output_format: request.outputFormat ?? "png",
+          ...(request.outputFormat === "jpeg" ? { output_compression: 100 } : {}),
         }),
         signal: request.signal,
       };
@@ -235,10 +260,44 @@ export async function generateArtwork(request: ArtworkRequest): Promise<ArtworkR
       const b64 = data.data?.[0]?.b64_json;
       if (!b64) throw new Error(`${model} returned no image data`);
 
+      const providerDurationMs = Date.now() - started;
+      const normalizationStarted = Date.now();
+      const outputFormat = request.outputFormat ?? "png";
+      let bytes = Buffer.from(b64, "base64");
+      if (outputFormat === "jpeg") {
+        try {
+          // Decode once, without resizing or another lossy encoding. The existing
+          // PNG review/store paths now see precisely these decoded source pixels.
+          // Bound allocation and reject malformed or unexpectedly sized output.
+          const decoded = decodeJpeg(bytes, {
+            useTArray: true, formatAsRGBA: false, tolerantDecoding: false,
+            maxResolutionInMP: 2, maxMemoryUsageInMB: 64,
+          });
+          const [width, height] = size.split("x").map(Number);
+          if (decoded.width !== width || decoded.height !== height) {
+            throw new Error(`${model} returned unexpected JPEG dimensions: ${decoded.width}x${decoded.height}; expected ${size}`);
+          }
+          bytes = encodePng({ width, height, rgb: decoded.data });
+        } catch (error) {
+          throw new ArtworkNormalizationError(
+            `JPEG normalization failed: ${error instanceof Error ? error.message : String(error)}`,
+            {
+              bytes, dataUrl: `data:image/jpeg;base64,${b64}`, durationMs: Date.now() - started,
+              telemetry: { outputFormat, providerRequestCount: attempt + 1, providerDurationMs,
+                normalizationDurationMs: Date.now() - normalizationStarted },
+            },
+          );
+        }
+      }
+
       return {
-        bytes: Buffer.from(b64, "base64"),
-        dataUrl: `data:image/png;base64,${b64}`,
+        bytes,
+        dataUrl: `data:image/png;base64,${bytes.toString("base64")}`,
         durationMs: Date.now() - started,
+        telemetry: {
+          outputFormat, providerRequestCount: attempt + 1, providerDurationMs,
+          normalizationDurationMs: Date.now() - normalizationStarted,
+        },
       };
     }
 

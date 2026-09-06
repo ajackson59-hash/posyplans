@@ -32,7 +32,7 @@ import { createHash } from "node:crypto";
 import type { AiFirstConcept } from "@shared/aiFirstInvite";
 import type { Tier1Finding } from "./tier1";
 import type { VisionVerdict } from "./visionGate";
-import { DEFAULT_ARTWORK_MODEL, type ArtworkModel, type ArtworkQuality, type ArtworkSize } from "./artwork";
+import { DEFAULT_ARTWORK_MODEL, type ArtworkResult, type ArtworkModel, type ArtworkQuality, type ArtworkSize } from "./artwork";
 
 export type ArtworkAttemptStatus = "accepted" | "rejected";
 /** A compositor is not an image model and must never be sent to a provider. */
@@ -47,6 +47,7 @@ export interface ArtworkReviewEvidence {
   reviewedAssetHash: string | null;
   verdict: VisionVerdict | null;
   generationDurationMs: number;
+  generationTelemetry?: ArtworkResult["telemetry"];
   reviewError?: string;
   styleSource?: {
     sourceId: string;
