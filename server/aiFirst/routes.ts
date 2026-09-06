@@ -12,7 +12,6 @@
 
 import type { Express, Request, Response } from "express";
 import { registerStyleSourceRoutes } from "./styleSourceRoutes";
-import { registerReviewCalibrationRoutes } from "./reviewCalibrationRoutes";
 import { readFeatureFlags } from "@shared/featureFlags";
 import { AI_FIRST_CONCEPT_KEY, themeFromSnapshot, type AiFirstSnapshot } from "@shared/aiFirstTheme";
 import { OVERLAY_COVERAGE, validateLayoutBeforeGeneration } from "@shared/aiFirstLayout";
@@ -136,7 +135,6 @@ export function abortOnUnexpectedResponseClose(res: Response, controller: AbortC
 
 export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
   registerStyleSourceRoutes(app, deps);
-  registerReviewCalibrationRoutes(app, deps, "references-v1");
   const env = () => deps.env ?? process.env;
   const flags = () => readFeatureFlags(env());
 

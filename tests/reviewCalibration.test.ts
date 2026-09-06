@@ -5,6 +5,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CALIBRATION_CASES, CONSISTENCY_CASES, REFERENCE_COMPARISON_CASES, calibrationProfile, runReviewCalibration, type CalibrationCaseId } from "../server/aiFirst/reviewCalibration";
 import { registerReviewCalibrationRoutes } from "../server/aiFirst/reviewCalibrationRoutes";
+import { registerAiFirstRoutes } from "../server/aiFirst/routes";
 import { InMemoryArtworkAttemptStore } from "../server/aiFirst/artworkAttemptStore";
 import { encodePng } from "../server/aiFirst/png";
 
@@ -54,6 +55,17 @@ const root = `/api/events/owner/${owner.ownerToken}/ai-first/review/calibration`
 const body = () => ({ sourceBase64: bytes.toString("base64"), confirmOneVisionCall: true });
 
 describe("private fixed reviewer calibration", () => {
+  it("keeps completed diagnostic POST routes absent from the application, even for the authorized owner", async () => {
+    const server = express(); server.use(express.json());
+    const getEventByOwnerToken = vi.fn(async () => owner);
+    registerAiFirstRoutes(server, { env: environment, artworkAttemptStore: new InMemoryArtworkAttemptStore(),
+      storage: { getEventByOwnerToken } } as any);
+    for (const path of ["calibration", "consistency-calibration", "reference-comparison"]) {
+      const response = await request(server).post(`/api/events/owner/${owner.ownerToken}/ai-first/review/${path}/rumi-matched-1-text`).send({});
+      expect(response.status).toBe(404);
+    }
+    expect(getEventByOwnerToken).not.toHaveBeenCalled();
+  });
   it("compares reference pixels with a simultaneous text baseline under sixteen non-replayable claims", async () => {
     const store = new InMemoryArtworkAttemptStore(), c = critic(true);
     expect(Object.keys(REFERENCE_COMPARISON_CASES)).toHaveLength(16);

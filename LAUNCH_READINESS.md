@@ -6,20 +6,38 @@ PR #44 remains draft, unmerged and Preview-only. The owner redeployed the
 existing Production commit `db829a1` during environment setup; that did not
 publish PR #44. This work has not changed main or Production.
 
-## Reference architecture comparison prepared
+## Reference architecture comparison completed — do not adopt this review mode
 
-The [registered reference comparison](tools/qa/REFERENCE_ARCHITECTURE.md) adds
-verified reference pixels to the shared reviewer, with explicit identity and
-independently assessed craft-example roles. Sixteen fixed calls compare current
-rubric v2 with and without two official identity images. Exact inputs, negative
-controls, repetitions and durable owner-private claims are fixed before dispatch.
-No fresh images or customer policy changes are included. Results are pending;
-neither reviewer reliability nor faster artwork delivery is asserted.
+After the owner's explicit payload/destination/spend approval, all sixteen
+[registered reviews](tools/qa/REFERENCE_ARCHITECTURE.md) ran once on exact
+`206db2d14be875339de9681e0ceb63f966107ede`. Current rubric v2 with written context
+scored **8/8 identity decisions correctly**; adding two verified official images
+scored **6/8**, falsely rejecting Zoey twice. The latter reports confused reference
+identities despite correct source hashes and labels. All sixteen structural
+integrity checks passed, so that validator does not establish factual truth.
+No customer adoption of this combined reference-image review is justified.
+
+There were sixteen physical Sonnet calls, zero image calls and zero retries.
+Returned usage was 97,928 input / 11,346 output tokens: **$0.463974** at the
+recorded token rates, not invoice reconciliation. Owner readback reconciled all
+sixteen claims and sixteen complete verdicts; all remain rejected without
+preview IDs. All 26 earlier records, including generated rejects 141/142, are
+unchanged. The temporary diagnostic registration is now removed; consumed keys
+remain durable on old deployments. No model or rubric tweak followed this run.
+
+Text/reference critic medians were 16.661 / 16.491 seconds. These are review-only
+measurements on two reused official images, not fresh artwork delivery or
+held-out reliability. High generation still has the measured 113.546-second
+failure; medium premium quality is unconfirmed. Next evidence is independent
+human assessment of retained artwork and examples across the promised media,
+followed by a separately registered rendering cohort with a reliable reviewer.
+The prior proposal to use identical reference-image review for both rendering
+arms is withdrawn pending validation; another paid prompt tweak is not implied.
 
 The release scorecard now requires all eight promised directions and measured
 browser image load within 90 seconds. Server approval alone cannot count as
 successful delivery. GPT Image 2 reference requests omit the unsupported explicit
-input-fidelity parameter. Local checks: TypeScript, 70 files / 869 tests,
+input-fidelity parameter. Local closeout checks: TypeScript, 70 files / 870 tests,
 production frontend and function bundle pass. Independent human premium labels
 remain pending; existing generated rejects are not promoted or re-reviewed.
 
@@ -31,7 +49,12 @@ The new located, medium-aware assessments kept craft and composition scores stab
 
 Both false identity failures demanded a franchise identity for an unnamed photographic subject beside the requested animated character. The follow-up now binds identity review to the explicit named targets and their roles, replacing the broader full-scene identity target. Redundant named-cast fallback rows no longer compete with exact targets; independent scene checks and all host details/exclusions remain. Structural contradictions stay private and cannot trigger image regeneration. The six 5/5 teaser floor is unchanged.
 
-The frozen paid results use rubric v1. The follow-up is rubric v2 and **has no new live critic or artwork proof**. The calibration registration is removed. Local verification: TypeScript, 69 files / 857 tests, production build and function bundle. Tests verify request/persistence contracts; they do not prove semantic identity accuracy.
+The frozen paid results in this earlier section use rubric v1. At that closeout,
+rubric v2 had no new live critic or artwork proof; the completed comparison
+above now supplies only its narrow reference-control evidence. The earlier
+calibration registration was removed. Local verification then: TypeScript,
+69 files / 857 tests, production build and function bundle. Tests verify
+request/persistence contracts; they do not prove semantic identity accuracy.
 
 Reviewer duration was 16.8–29.6 seconds; observed HTTP duration was 23.2–45.0 seconds. No fresh generation timing was measured. The earlier 113.5-second high render remains a separate blocker. Launch is **HOLD** pending fixed-control revalidation, independently assessed examples across media and the representative customer-flow cohort. No checkout, message delivery, merge or Production change occurred.
 
