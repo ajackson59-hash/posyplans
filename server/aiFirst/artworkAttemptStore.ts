@@ -38,7 +38,8 @@ export type ArtworkAttemptStatus = "accepted" | "rejected";
 /** A compositor is not an image model and must never be sent to a provider. */
 export const SCENE_COMPOSITION_MODEL = "posy-scene-compositor-v1";
 export const STYLE_SOURCE_MODEL = "posy-style-source-v1";
-export type ArtworkAttemptModel = ArtworkModel | typeof SCENE_COMPOSITION_MODEL | typeof STYLE_SOURCE_MODEL;
+export const REVIEW_CALIBRATION_MODEL = "posy-review-calibration-v1";
+export type ArtworkAttemptModel = ArtworkModel | typeof SCENE_COMPOSITION_MODEL | typeof STYLE_SOURCE_MODEL | typeof REVIEW_CALIBRATION_MODEL;
 export type ArtworkAttemptQuality = ArtworkQuality | "not-applicable";
 
 export interface ArtworkReviewEvidence {
@@ -49,6 +50,21 @@ export interface ArtworkReviewEvidence {
   generationDurationMs: number;
   generationTelemetry?: ArtworkResult["telemetry"];
   reviewError?: string;
+  calibration?: {
+    datasetId: string;
+    caseId: string;
+    stage: "claimed" | "completed";
+    profileDigest: string;
+    sourceUrl: string;
+    expectedIdentity: boolean;
+    identityCorrect: boolean | null;
+    deploymentSha: string | null;
+    reviewerVersion: string;
+    imageProviderCalls: 0;
+    criticRequests: number | null;
+    criticCostUsdMicrosFromUsage: number | null;
+    customerActivation: "disabled";
+  };
   styleSource?: {
     sourceId: string;
     scope: "source-profile-only";

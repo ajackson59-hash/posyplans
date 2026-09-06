@@ -1260,7 +1260,7 @@ describe("retained rejected artwork can be re-reviewed without another image gen
     expect(wrongOwner.status).toBe(404);
   });
 
-  it.each(["posy-scene-compositor-v1", "posy-style-source-v1"] as const)("never promotes private research through retained-image recheck: %s", async (model) => {
+  it.each(["posy-scene-compositor-v1", "posy-style-source-v1", "posy-review-calibration-v1"] as const)("never promotes private research through retained-image recheck: %s", async (model) => {
     const stores = await seedRetainedAttempt();
     stores.attempt.model = model;
     stores.attempt.quality = "not-applicable";
@@ -1273,6 +1273,13 @@ describe("retained rejected artwork can be re-reviewed without another image gen
       styleSource: { sourceId: "fixture", scope: "source-profile-only", stage: "stored", profileDigest: "a".repeat(64),
         imageProviderCalls: 0, criticRequests: 0, customerActivation: "disabled" },
     };
+    if (model === "posy-review-calibration-v1") stores.attempt.reviewEvidence = {
+      version: 1, reviewedAssetHash: null, verdict: null, generationDurationMs: 0,
+      calibration: { datasetId: "fixture", caseId: "fixed", stage: "completed", profileDigest: "a".repeat(64),
+        sourceUrl: "https://example.com/reference", expectedIdentity: true, identityCorrect: true,
+        deploymentSha: "fixture", reviewerVersion: "fixture", imageProviderCalls: 0, criticRequests: 1,
+        criticCostUsdMicrosFromUsage: 1, customerActivation: "disabled" },
+    };
     let reviews = 0;
     const app = appFor({ ...stores, reviewRetainedArtwork: async () => { reviews++; return passingReview; } });
     const response = await request(app)
@@ -1282,7 +1289,8 @@ describe("retained rejected artwork can be re-reviewed without another image gen
     expect(response.body.denial).toBe("scene-promotion-disabled");
     expect(reviews).toBe(0);
     const listing = await request(app).get(`/api/events/owner/${OWNER}/ai-first/review/attempts`);
-    expect(listing.body.attempts[0].costEstimateStatus).toBe(model === "posy-style-source-v1"
+    expect(listing.body.attempts[0].costEstimateStatus).toBe(model === "posy-review-calibration-v1"
+      ? "review-only-cost-in-calibration-evidence" : model === "posy-style-source-v1"
       ? "source-review-excludes-original-art-and-critic-cost" : "composition-only-excludes-source-art-and-review");
     expect(listing.body.attempts[0].previewId).toBeNull();
     expect(listing.body.attempts[0].assetBytesBase64).toBeUndefined();

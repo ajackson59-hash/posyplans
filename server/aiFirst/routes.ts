@@ -12,6 +12,7 @@
 
 import type { Express, Request, Response } from "express";
 import { registerStyleSourceRoutes } from "./styleSourceRoutes";
+import { registerReviewCalibrationRoutes } from "./reviewCalibrationRoutes";
 import { readFeatureFlags } from "@shared/featureFlags";
 import { AI_FIRST_CONCEPT_KEY, themeFromSnapshot, type AiFirstSnapshot } from "@shared/aiFirstTheme";
 import { OVERLAY_COVERAGE, validateLayoutBeforeGeneration } from "@shared/aiFirstLayout";
@@ -135,6 +136,7 @@ export function abortOnUnexpectedResponseClose(res: Response, controller: AbortC
 
 export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
   registerStyleSourceRoutes(app, deps);
+  registerReviewCalibrationRoutes(app, deps);
   const env = () => deps.env ?? process.env;
   const flags = () => readFeatureFlags(env());
 
@@ -906,7 +908,9 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
           quality: row.quality,
           size: row.size,
           costUsdMicros: row.costUsdMicros,
-          costEstimateStatus: row.reviewEvidence?.styleSource
+          costEstimateStatus: row.reviewEvidence?.calibration
+            ? "review-only-cost-in-calibration-evidence"
+            : row.reviewEvidence?.styleSource
             ? "source-review-excludes-original-art-and-critic-cost"
             : row.reviewEvidence?.composition
             ? "composition-only-excludes-source-art-and-review"
@@ -996,7 +1000,8 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
       }
       // Private compositor research must not become customer artwork through
       // the older retained-image promotion route, even after a critic pass.
-      if (row.model === "posy-scene-compositor-v1" || row.reviewEvidence?.composition ||
+      if (row.model === "posy-review-calibration-v1" || row.reviewEvidence?.calibration ||
+          row.model === "posy-scene-compositor-v1" || row.reviewEvidence?.composition ||
           row.model === "posy-style-source-v1" || row.reviewEvidence?.styleSource) {
         res.status(409).json({
           error: "Composed scenes are private research and are not enabled for customer use.",
