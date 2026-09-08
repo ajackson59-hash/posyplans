@@ -333,7 +333,8 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
   let artworkOpacity = repair.artworkOpacity;
 
   // Reuse before spend. This is what makes restyling free.
-  const reusable = await lookupReusablePreview(input.previewStore, input.eventId, concept);
+  const artworkContext = buildArtworkConstraints(input.brief);
+  const reusable = await lookupReusablePreview(input.previewStore, input.eventId, concept, undefined, artworkContext);
   if (reusable) {
     summary.reusedImages += 1;
     await input.usageStore.record({
@@ -351,7 +352,7 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
     return finish(ctx, concept, reusable, "ai-generated", attempts, artworkOpacity, true);
   }
 
-  const basePrompt = `${buildArtworkPrompt(concept)}\n\n${buildArtworkConstraints(input.brief)}`;
+  const basePrompt = `${buildArtworkPrompt(concept)}\n\n${artworkContext}`;
   let failureCodes: string[] = [];
 
   // The next-proof safety setting: when set, a direction gets exactly one
@@ -545,6 +546,7 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
 
     if (passed) {
       const saved = await savePreview({
+        artworkContext,
         store: input.previewStore,
         eventId: input.eventId,
         concept,
@@ -635,6 +637,7 @@ async function resolveDirection(ctx: ResolveInput): Promise<FinishedDirection> {
   // call is made here or on apply.
   const studioBytes = await loadStudioArtwork(adapted.theme);
   const savedStudio = await savePreview({
+    artworkContext,
     store: input.previewStore,
     eventId: input.eventId,
     concept: adapted.concept,

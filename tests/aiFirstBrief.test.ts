@@ -196,11 +196,11 @@ describe("brief — requirements the server owns, not the model", () => {
     const effective = briefForHostDirection(constructionBrief, direction);
     const prompt = buildUserPrompt({ brief: effective, direction });
 
-    expect(effective.visualIdentityOverride).toBe("KPop Demon Hunters");
+    expect(effective.visualIdentityOverride).toBe(direction);
     expect(effective.colors).toEqual([]);
     expect(effective.requirements.required.join(" ")).not.toContain("colour family");
     expect(subjectFamiliesForBrief(effective).map((family) => family.id)).toEqual(["kpop-demon-hunters"]);
-    expect(prompt).toContain("Visual identity for this generation: KPop Demon Hunters");
+    expect(prompt).toContain(`Visual identity for this generation: ${direction}`);
     expect(prompt).toContain(direction);
     expect(prompt).not.toContain("Construction subject map");
   });
@@ -226,7 +226,7 @@ describe("brief — requirements the server owns, not the model", () => {
     });
 
     const effective = briefForHostDirection(constructionBrief);
-    expect(effective.visualIdentityOverride).toBe("KPop Demon Hunters");
+    expect(effective.visualIdentityOverride).toBe(constructionBrief.inspirationNotes);
     expect(subjectFamiliesForBrief(effective).map((family) => family.id)).toEqual(["kpop-demon-hunters"]);
   });
 

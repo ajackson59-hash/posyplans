@@ -55,8 +55,12 @@ function sha256(input: string | Buffer): string {
 }
 
 /** Stable over restyling: only the fields that change pixels feed the hash. */
-export function conceptFingerprint(concept: AiFirstConcept): string {
-  return sha256(conceptImageFingerprintInput(concept));
+export function conceptFingerprint(concept: AiFirstConcept, artworkContext?: string): string {
+  const conceptInput = conceptImageFingerprintInput(concept);
+  // Legacy records remain addressable/applicable. They cannot satisfy a new
+  // generation lookup that requires the complete current artwork contract.
+  return sha256(artworkContext === undefined ? conceptInput
+    : JSON.stringify(["brief-bound-artwork-v1", conceptInput, artworkContext]));
 }
 
 export function assetHashOf(bytes: Buffer): string {
@@ -77,6 +81,8 @@ export interface SavePreviewInput {
   store: AiFirstPreviewStore;
   eventId: number;
   concept: AiFirstConcept;
+  /** Exact server-owned constraints appended to the image-provider request. */
+  artworkContext?: string;
   bytes: Buffer;
   assetUrl: string;
   source: ConceptSource;
@@ -91,7 +97,7 @@ export interface SavePreviewResult {
 
 export async function savePreview(input: SavePreviewInput): Promise<SavePreviewResult> {
   const now = input.now ?? Date.now();
-  const fingerprint = conceptFingerprint(input.concept);
+  const fingerprint = conceptFingerprint(input.concept, input.artworkContext);
   const assetHash = assetHashOf(input.bytes);
   const previewId = previewIdFor(input.eventId, fingerprint, assetHash);
 
@@ -126,8 +132,9 @@ export async function lookupReusablePreview(
   eventId: number,
   concept: AiFirstConcept,
   now = Date.now(),
+  artworkContext?: string,
 ): Promise<PreviewRecord | undefined> {
-  const hit = await store.findByFingerprint(eventId, conceptFingerprint(concept));
+  const hit = await store.findByFingerprint(eventId, conceptFingerprint(concept, artworkContext));
   if (!hit) return undefined;
   await store.touch(hit.previewId, now);
   return { ...hit, lastAccessedAt: now };

@@ -9,7 +9,7 @@
 import { buildArtworkPrompt, type AiFirstConcept, type FocalStrategy } from "@shared/aiFirstInvite";
 import { validateLayoutBeforeGeneration } from "@shared/aiFirstLayout";
 import type { EventBrief } from "./brief";
-import { preflightConceptForBrief, subjectFamiliesForBrief } from "./conceptPreflight";
+import { hasRequestedConstructionMachine, preflightConceptForBrief, subjectFamiliesForBrief } from "./conceptPreflight";
 import { buildArtworkConstraints } from "./prompt";
 import { conflictsWithRequestedMedium, resolveArtDirection } from "./artDirection";
 
@@ -163,6 +163,7 @@ export function preflightConceptQuartet(
   const explicitBackyardCelebration = BACKYARD_CUE.test(identity);
   const milestone = milestonePattern(brief.milestone);
   const construction = subjectFamiliesForBrief(brief).some((family) => family.id === "construction");
+  const requestedMachine = construction && hasRequestedConstructionMachine(brief);
 
   if (candidates.length !== REQUIRED_CONCEPT_QUARTET_SIZE) {
     errors.push(
@@ -201,7 +202,7 @@ export function preflightConceptQuartet(
     }
 
     if (construction && concept.focalStrategy) {
-      if (!CONSTRUCTION_STRATEGY_CUES[concept.focalStrategy].test(artBrief)) {
+      if (!requestedMachine && !CONSTRUCTION_STRATEGY_CUES[concept.focalStrategy].test(artBrief)) {
         addPerConceptError(index, `${label} does not deliver its ${concept.focalStrategy} construction strategy`);
       }
       const cueGroups = CONSTRUCTION_CUE_GROUPS.filter((pattern) => pattern.test(artBrief)).length;
@@ -226,7 +227,7 @@ export function preflightConceptQuartet(
     addUniquenessError(errors, "concept names", concepts.map((concept) => concept.conceptName));
     addUniquenessError(errors, "layouts", concepts.map((concept) => concept.layoutStyle), 3);
 
-    if (construction) {
+    if (construction && !requestedMachine) {
       const machineLed = concepts.map(dominantMachine).filter((machine): machine is string => Boolean(machine));
       if (machineLed.length > 2) errors.push("quartet repeats machine-led construction artwork in more than two directions");
       for (const machine of Array.from(new Set(machineLed))) {

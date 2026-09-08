@@ -1321,7 +1321,8 @@ describe("retained rejected artwork can be re-reviewed without another image gen
     });
     expect(first.body.previewId).toBeTruthy();
     expect(visionCalls).toBe(1);
-    expect(reviewedBrief?.visualIdentityOverride).toBe("KPop Demon Hunters");
+    expect(reviewedBrief?.visualIdentityOverride).toContain("KPop Demon Hunters");
+    expect(reviewedBrief?.visualIdentityOverride).toContain("Rumi, Mira and Zoey");
     expect(await stores.previewStore.listForEvent(EVENT_ID)).toHaveLength(1);
 
     const replay = await request(app).post(endpoint).send(confirmedBody);

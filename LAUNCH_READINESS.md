@@ -1,4 +1,23 @@
-# Launch readiness — Preview closeout, 2026-09-06
+# Launch readiness — shared pipeline repair, 2026-09-08
+
+## Current: correct the shared generator before more paid samples
+
+The owner clarified that generating and saving additional artwork is not the
+solution. The [shared pipeline repair](tools/qa/ARTWORK_PIPELINE_REPAIR.md) fixes
+reproduced brief/checklist loss, art-text truncation, theme-replacement detail
+loss, contradictory medium wording, construction preset overrides, missing
+generation reference context, and reuse under a stale brief. All customer
+generation paths use the shared brief interpretation. The full software suite
+passes: 72 files / 900 tests, TypeScript, frontend and function build.
+
+This work makes zero image, critic or classifier calls. It does not establish
+premium generation or reviewer visual accuracy. The approved medium study
+stopped at Frozen output moderation after two image requests and one retained
+Blippi/Meekah result; six directions were unrun. Its paid switch remains off,
+claims remain consumed, and no historical evidence or human label is changed.
+The provider block/billing and possible shoe-logo review miss remain unresolved.
+Release remains HOLD, PR #44 draft/unmerged, and Production unchanged. Earlier
+sections below are preserved historical records.
 
 Release status: **HOLD**. Green automated checks establish software contracts,
 not superior generated artwork, payment settlement or message delivery.

@@ -12,6 +12,7 @@
 
 import type { Event } from "@shared/schema";
 import { DNA_AXES, type DnaAxis } from "@shared/eventDna";
+import { explicitSceneExclusions, explicitSceneRequirements } from "./hostVisualRequirements";
 
 export interface BriefRequirements {
   /** Must be visibly present. Audited against the finished artwork. */
@@ -191,6 +192,7 @@ export function classifyRequirements(input: {
 
   const themeIdentity = input.themeName.trim() || input.vibe.trim();
   if (themeIdentity) required.push(`the ${themeIdentity} visual identity, unmistakably present`);
+  required.push(...explicitSceneRequirements(input.vibe));
   if (input.colors.length > 0) required.push(`the stated colour family: ${input.colors.join(", ")}`);
   if (input.milestone) {
     required.push(
@@ -205,7 +207,7 @@ export function classifyRequirements(input: {
   }
   preferred.push(`${input.formality} styling`, "modern stationery finish");
 
-  const excluded = [...UNIVERSAL_EXCLUSIONS];
+  const excluded = [...UNIVERSAL_EXCLUSIONS, ...explicitSceneExclusions(input.vibe)];
   if (age !== null && age <= 12) excluded.push(...CHILD_EXCLUSIONS);
   else if (age !== null) excluded.push(...ADULT_EXCLUSIONS);
 

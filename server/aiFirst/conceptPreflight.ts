@@ -8,6 +8,7 @@
 
 import type { AiFirstConcept } from "@shared/aiFirstInvite";
 import { classifyRequirements, type EventBrief } from "./brief";
+import { targetIsNegated } from "./hostVisualRequirements";
 
 export interface SubjectFamily {
   id: string;
@@ -63,7 +64,7 @@ const SUBJECT_FAMILIES: readonly SubjectFamily[] = [
       /\b(construction|builder|building site|job ?site|digging|digger|excavator|bulldozer|dump truck|backhoe|front loader|cement mixer|crane|hard hat)\b/i,
     bindingRequirements: [
       "The construction / little-builder identity must be unmistakable through at least two coherent builder cues suited to the direction — machinery, machine details, jobsite materials, tools, safety gear, or blueprint/site-plan language",
-      "Do not make a full construction machine mandatory unless the direction's focal strategy is narrative-scene or iconic-detail",
+      "Do not make a full construction machine mandatory unless the host explicitly requests one or the direction's focal strategy is narrative-scene or iconic-detail",
       "Keep every important builder and celebration cue fully visible within the central 70% of the frame so the invitation layout cannot crop it away",
       "Flowers, botanicals, abstract geometry, paper texture and colour alone do not satisfy or replace the construction identity",
     ],
@@ -202,6 +203,13 @@ export function subjectFamiliesForBrief(brief: EventBrief): SubjectFamily[] {
   return matchingFamilies(briefIdentity(brief));
 }
 
+/** Creative variety cannot remove a concrete subject the host actually named. */
+export function hasRequestedConstructionMachine(brief: EventBrief): boolean {
+  const source = brief.visualIdentityOverride || `${brief.themeName}. ${brief.vibe}`;
+  const machines = /\b(?:dump trucks?|excavators?|diggers?|bulldozers?|dozers?|backhoes?|(?:front|wheel)\s+loaders?|loaders?|cranes?|(?:cement|concrete) mixers?)\b/gi;
+  return Array.from(source.matchAll(machines)).some(match => !targetIsNegated(source, match.index ?? 0));
+}
+
 /**
  * Turns a newly named concrete subject into the binding visual identity for
  * this generation. Generic refinements ("more elegant", "less literal")
@@ -222,10 +230,14 @@ export function briefForHostDirection(brief: EventBrief, direction?: string): Ev
   const inheritedIds = new Set(subjectFamiliesForBrief(brief).map((family) => family.id));
   if (explicitFamilies.every((family) => inheritedIds.has(family.id))) return brief;
 
-  const visualIdentityOverride = explicitFamilies.map((family) => family.label).join(" + ");
+  // Families detect a theme change; their labels must not replace the host's
+  // actual medium, cast, setting, counts, palette or exclusions.
+  const visualIdentityOverride = directionFamilies.length > 0
+    ? currentDirection : brief.inspirationNotes.trim();
   return {
     ...brief,
     themeName: visualIdentityOverride,
+    vibe: visualIdentityOverride,
     // Event palettes are derived from the inherited theme. Once the host
     // replaces that identity, carrying its old colours forward turns them
     // into a contradictory pass/fail requirement (for example construction

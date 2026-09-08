@@ -121,16 +121,16 @@ const REQUIRED_PRESENT_SCHEMA = {
 const visionOutputSchema = (reviewMode: "invitation" | "teaser", requirements: string[]) => ({
   type: "object",
   properties: {
-    requiredPresent: reviewMode === "teaser" ? {
+    requiredPresent: {
       ...REQUIRED_PRESENT_SCHEMA,
       items: {
         ...REQUIRED_PRESENT_SCHEMA.items,
         properties: { ...REQUIRED_PRESENT_SCHEMA.items.properties,
           requirement: requirements.length ? { type: "string", enum: requirements } : { type: "string" },
-          evidence: { type: "string" } },
-        required: ["requirement", "present", "evidence"],
+          ...(reviewMode === "teaser" ? { evidence: { type: "string" } } : {}) },
+        required: ["requirement", "present", ...(reviewMode === "teaser" ? ["evidence"] : [])],
       },
-    } : REQUIRED_PRESENT_SCHEMA,
+    },
     excludedFound: { type: "array", items: { type: "string" } },
     ...(reviewMode === "teaser"
       ? {
@@ -390,7 +390,8 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
       model: VISION_MODEL,
       // A complete evidence checklist does not fit in the old 950-token cap.
       // Bounded headroom scales with actual requirements, never unbounded prose.
-      max_tokens: reviewMode === "teaser" ? Math.min(4000, 2000 + reviewRequirements.length * 100) : 700,
+      max_tokens: reviewMode === "teaser" ? Math.min(4000, 2000 + reviewRequirements.length * 100)
+        : Math.min(4000, 700 + reviewRequirements.reduce((tokens, requirement) => tokens + 40 + Math.ceil(requirement.length / 3), 0)),
       system: jsonRepair
         ? `${reviewSystem}\n\nOUTPUT REPAIR: Return one complete valid JSON object matching the required schema. No prose, markdown fence or trailing commentary. Do not omit any field.`
         : reviewSystem,

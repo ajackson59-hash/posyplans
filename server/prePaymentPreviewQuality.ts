@@ -27,6 +27,7 @@ import { boxDownsampleRgb, decodePng, encodePng } from "./aiFirst/png";
 import { ageFromMilestone, buildEventBrief, type EventBrief } from "./aiFirst/brief";
 import { buildArtworkConstraints, buildRetryPrompt } from "./aiFirst/prompt";
 import { resolveArtDirection } from "./aiFirst/artDirection";
+import { hostExplicitlyRequestsCandles, targetIsNegated } from "./aiFirst/hostVisualRequirements";
 import {
   retryCodesFor,
   runTier1Checks,
@@ -649,123 +650,13 @@ const CHILD_AGE_WORDS: Readonly<Record<number, string>> = {
   7: "seven", 8: "eight", 9: "nine",
 };
 
-const VISUAL_DIRECTIVE_PATTERN =
-  /\b(do\s+not(?:\s+ever)?(?:\s+(?:include|show|depict|feature|add|use|have))?|don't(?:\s+ever)?(?:\s+(?:include|show|depict|feature|add|use|have))?|must\s+not(?:\s+(?:include|show|depict|feature|add|use|have))?|should\s+not(?:\s+(?:include|show|depict|feature|add|use|have))?|never(?:\s+(?:include|show|depict|feature|add|use|have))?|without(?:\s+(?:including|showing|depicting|featuring|adding|using|having))?|avoid(?:ing)?(?:\s+(?:including|showing|depicting|featuring|adding|using))?|exclude|excluding|omit(?:ting)?|skip(?:ping)?|no|free\s+of|include|including|show|showing|depict|depicting|feature|features|featuring|add|adding|use|using|with|have|having)\b/gi;
-
-const NEGATIVE_VISUAL_DIRECTIVE_PATTERN =
-  /^(?:do\s+not|don't|must\s+not|should\s+not|never|without|avoid(?:ing)?|exclude|excluding|omit(?:ting)?|skip(?:ping)?|no|free\s+of)\b/i;
-
-function cleanVisualClause(value: string): string {
-  return value
-    .replace(/\s+/g, " ")
-    .replace(/^[,;:\-–—\s]+|[,;:\-–—\s]+$/g, "")
-    .trim();
-}
-
-/**
- * Resolve the closest host directive in the current sentence. A negative
- * directive owns the following target until the host explicitly changes
- * direction (for example, "avoid fake candles but include four real ones").
- */
-function targetIsNegated(source: string, targetIndex: number): boolean {
-  const boundary = Math.max(
-    source.lastIndexOf(".", targetIndex - 1),
-    source.lastIndexOf("!", targetIndex - 1),
-    source.lastIndexOf("?", targetIndex - 1),
-    source.lastIndexOf(";", targetIndex - 1),
-    source.lastIndexOf("\n", targetIndex - 1),
-  );
-  const prefix = source.slice(boundary + 1, targetIndex);
-  const directives = Array.from(prefix.matchAll(VISUAL_DIRECTIVE_PATTERN));
-  const closest = directives.at(-1)?.[1] ?? "";
-  return NEGATIVE_VISUAL_DIRECTIVE_PATTERN.test(closest);
-}
-
-function explicitPreviewSceneExclusions(brief: EventBrief): string[] {
-  const source = brief.vibe.trim();
-  if (!source) return [];
-
-  const clauses: string[] = [];
-  const patterns = [
-    /\b(?:do\s+not(?:\s+ever)?|don't(?:\s+ever)?|must\s+not|should\s+not|never)\s+(?:(?:include|including|show|showing|depict|depicting|feature|featuring|add|adding|use|using|have|having)\s+)?([^.!?]{2,220})/gi,
-    /\b(?:avoid(?:ing)?|exclude|excluding|omit(?:ting)?|skip(?:ping)?)\s+(?:(?:include|including|show|showing|depict|depicting|feature|featuring|add|adding|use|using)\s+)?([^.!?]{2,220})/gi,
-    /\b(?:without|free\s+of)\s+([^.!?]{2,220})/gi,
-    /\bno\s+([^.!?]{2,220})/gi,
-  ];
-
-  for (const pattern of patterns) {
-    for (const match of Array.from(source.matchAll(pattern))) {
-      const clause = cleanVisualClause(match[1] || "");
-      if (!clause) continue;
-      if (clauses.some((existing) => existing.toLowerCase().includes(clause.toLowerCase()))) continue;
-      const contained = clauses.findIndex((existing) => clause.toLowerCase().includes(existing.toLowerCase()));
-      if (contained >= 0) clauses.splice(contained, 1);
-      clauses.push(clause.slice(0, 220));
-      if (clauses.length >= 4) break;
-    }
-    if (clauses.length >= 4) break;
-  }
-
-  return unique(clauses.map((clause) => `[HOST EXCLUSION] ${clause}`));
-}
-
-function hostExplicitlyRequestsCandles(source: string): boolean {
-  return Array.from(source.matchAll(/\bcandles?\b/gi)).some((match) =>
-    !targetIsNegated(source, match.index ?? 0),
-  );
-}
-
-/**
- * The general event brief deliberately keeps ambiguous vibe words soft. A
- * pre-purchase image has a stricter job: prove Posy heard the host. Clauses the
- * host explicitly framed as scene contents or setting are therefore binding
- * for this quality-locked preview and are audited against the final pixels.
- *
- * This stays deterministic/network-free and intentionally conservative. It
- * captures strong visual constructions ("include…", "featuring…", "set inside…",
- * and concrete "at …" setting clauses) rather than turning every adjective in
- * a vibe sentence into a must-have object.
- */
-function explicitPreviewSceneRequirements(brief: EventBrief): string[] {
-  const source = brief.vibe.trim();
-  if (!source) return [];
-
-  const clauses: string[] = [];
-  const patterns = [
-    /\b(?:include|including|features?|featuring|show|showing|depict|depicting)\s+([^.!?]{4,220})/gi,
-    /\b(?:set|stage|staged|held)\s+(?:the\s+(?:celebration|party|scene)\s+)?(?:inside|within|in|at)\s+([^.!?]{4,220})/gi,
-    /\b(?:inside|within)\s+([^.!?]{4,180})/gi,
-    /\bat\s+([^.!?]{4,180})/gi,
-  ];
-
-  for (const pattern of patterns) {
-    for (const match of Array.from(source.matchAll(pattern))) {
-      if (targetIsNegated(source, match.index ?? 0)) continue;
-      const clause = cleanVisualClause(match[1] || "");
-      if (!clause) continue;
-      // Do not turn clock times or meta/style instructions into visual objects.
-      if (/^(?:\d{1,2}(?::\d{2})?\s*(?:a\.?m\.?|p\.?m\.?)|noon|midnight)\b/i.test(clause)) continue;
-      if (/^(?:make|keep|feel|should|please|try)\b/i.test(clause)) continue;
-      // A broader match can contain a narrower one; keep the most specific
-      // useful clause once rather than multiplying near-duplicate requirements.
-      if (clauses.some((existing) => existing.toLowerCase().includes(clause.toLowerCase()))) continue;
-      const contained = clauses.findIndex((existing) => clause.toLowerCase().includes(existing.toLowerCase()));
-      if (contained >= 0) clauses.splice(contained, 1);
-      clauses.push(clause.slice(0, 220));
-      if (clauses.length >= 4) break;
-    }
-    if (clauses.length >= 4) break;
-  }
-
-  const required = clauses.map((clause) => `[VISIBLE HOST DETAIL] ${clause}`);
+/** Physical age counts are a teaser rule; explicit scene facts live in brief.ts. */
+function explicitPreviewMilestoneRequirements(brief: EventBrief): string[] {
   const age = ageFromMilestone(brief.milestone);
-  const hostExplicitlyRequestedCandles = hostExplicitlyRequestsCandles(source);
-  if (hostExplicitlyRequestedCandles && age !== null && age >= 1 && age <= 9 && CHILD_AGE_WORDS[age]) {
-    required.push(
-      `[VISIBLE MILESTONE] exactly ${CHILD_AGE_WORDS[age]} separate unnumbered birthday candles or another unmistakable physical count of exactly ${CHILD_AGE_WORDS[age]}`,
-    );
+  if (hostExplicitlyRequestsCandles(brief.vibe) && age !== null && age >= 1 && age <= 9 && CHILD_AGE_WORDS[age]) {
+    return [`[VISIBLE MILESTONE] exactly ${CHILD_AGE_WORDS[age]} separate unnumbered birthday candles or another unmistakable physical count of exactly ${CHILD_AGE_WORDS[age]}`];
   }
-  return unique(required);
+  return [];
 }
 
 function enrichBriefForNamedReference(brief: EventBrief, named: NamedCreativeReference | null): EventBrief {
@@ -777,7 +668,7 @@ function enrichBriefForNamedReference(brief: EventBrief, named: NamedCreativeRef
     requirements: {
       required: unique([
         ...brief.requirements.required,
-        ...explicitPreviewSceneRequirements(brief),
+        ...explicitPreviewMilestoneRequirements(brief),
         ...(named?.requirements.map((requirement) => `[VISIBLE NAMED IDENTITY] ${requirement}`) ?? []),
       ]),
       // Standalone teaser pixels are not stationery. Carry event mood but
@@ -787,7 +678,6 @@ function enrichBriefForNamedReference(brief: EventBrief, named: NamedCreativeRef
       preferred: brief.requirements.preferred.filter((item) => !/stationery/i.test(item)),
       excluded: unique([
         ...brief.requirements.excluded,
-        ...explicitPreviewSceneExclusions(brief),
         ...(named
           ? [
               `a generic adjacent aesthetic standing in for ${named.label}`,
