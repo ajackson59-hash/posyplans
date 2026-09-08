@@ -1,3 +1,4 @@
+import Anthropic from "@anthropic-ai/sdk";
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
 import type { AiFirstDeps } from "./routes";
@@ -6,6 +7,28 @@ import { FEASIBILITY_DATASET, FEASIBILITY_OWNER_EVENT, FEASIBILITY_PAID_ENABLED,
   feasibilityPreflight, feasibilityTeaser, runMediumFeasibility } from "./mediumFeasibility";
 
 const bodySchema = z.object({ confirmBoundedFeasibility: z.literal(true), policyHash: z.literal(FEASIBILITY_POLICY_HASH) }).strict();
+/** Provider metadata only: no generation, messages, reservations or attempt writes. */
+async function modelAccess(env: Record<string, string | undefined>) {
+  const checks = [
+    { provider: "openai", model: "gpt-image-2", configured: Boolean(env.OPENAI_API_KEY?.trim()) },
+    { provider: "anthropic", model: "claude-sonnet-4-6", configured: Boolean(env.ANTHROPIC_API_KEY?.trim()) },
+    { provider: "anthropic", model: "claude-haiku-4-5-20251001", configured: Boolean(env.ANTHROPIC_API_KEY?.trim()) },
+  ];
+  return Promise.all(checks.map(async check => {
+    if (!check.configured) return { ...check, accessible: false };
+    try {
+      if (check.provider === "openai") {
+        const response = await fetch(`https://api.openai.com/v1/models/${check.model}`, {
+          headers: { Authorization: `Bearer ${env.OPENAI_API_KEY}` }, signal: AbortSignal.timeout(10_000), redirect: "error" });
+        const model = response.ok ? await response.json() : null;
+        return { ...check, accessible: response.ok && model?.id === check.model, httpStatus: response.status };
+      }
+      const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, maxRetries: 0, timeout: 10_000 });
+      const model = await client.models.retrieve(check.model);
+      return { ...check, accessible: model.id === check.model, httpStatus: 200 };
+    } catch { return { ...check, accessible: false }; }
+  }));
+}
 /** Owner 41 on the existing draft Preview branch only. No customer preview store is supplied. */
 export function registerMediumFeasibilityRoutes(app: Express, deps: Pick<AiFirstDeps, "storage" | "artworkAttemptStore" | "env">) {
   const root = "/api/events/owner/:ownerToken/ai-first/review/medium-feasibility";
@@ -47,8 +70,9 @@ export function registerMediumFeasibilityRoutes(app: Express, deps: Pick<AiFirst
   }));
   app.get(root, protect(async (_req, res, owner, env) => {
     const preflight = await feasibilityPreflight(deps.artworkAttemptStore, owner, env.VERCEL_GIT_COMMIT_SHA ?? "unknown");
-    res.json({ ...preflight, providerKeysConfigured: { openai: Boolean(env.OPENAI_API_KEY?.trim()),
-      anthropic: Boolean(env.ANTHROPIC_API_KEY?.trim()) }, modelAccess: "requires-separate-non-generative-model-check" });
+    const models = await modelAccess(env);
+    res.json({ ...preflight, models, providerKeysConfigured: { openai: Boolean(env.OPENAI_API_KEY?.trim()),
+      anthropic: Boolean(env.ANTHROPIC_API_KEY?.trim()) }, modelAccess: models.every(model => model.accessible) ? "verified-by-non-generative-metadata" : "unavailable" });
   }));
   app.post(`${root}/:caseId`, protect(async (req, res, owner, env) => {
     const parsed = bodySchema.safeParse(req.body);
