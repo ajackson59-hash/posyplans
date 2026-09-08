@@ -296,6 +296,8 @@ interface NamedThemeDetectionDependencies {
   signal?: AbortSignal;
   /** Customer routing must distinguish an explicit original theme from unavailable recognition. */
   requireResolvedClassification?: boolean;
+  /** Private bounded studies need fresh, countable recognition without changing customer caching. */
+  bypassCache?: boolean;
 }
 
 interface LlmNamedThemeResult {
@@ -379,7 +381,7 @@ async function detectGeneralNamedCreativeReference(
 ): Promise<NamedCreativeReference | null> {
   const key = cacheKeyFor(text);
   const cached = namedThemeDetectionCache.get(key);
-  if (cached && cached.expiresAt > Date.now()) return cached.value;
+  if (!dependencies.bypassCache && cached && cached.expiresAt > Date.now()) return cached.value;
 
   if (!process.env.ANTHROPIC_API_KEY && !dependencies.client) {
     if (dependencies.requireResolvedClassification) throw new Error("Named-theme recognition is not configured");
@@ -426,7 +428,7 @@ async function detectGeneralNamedCreativeReference(
     return null;
   }
 
-  namedThemeDetectionCache.set(key, { expiresAt: Date.now() + NAMED_THEME_DETECTION_CACHE_TTL_MS, value: result });
+  if (!dependencies.bypassCache) namedThemeDetectionCache.set(key, { expiresAt: Date.now() + NAMED_THEME_DETECTION_CACHE_TTL_MS, value: result });
   return result;
 }
 

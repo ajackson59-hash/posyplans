@@ -50,6 +50,7 @@ export interface ArtworkReviewEvidence {
   generationDurationMs: number;
   generationTelemetry?: ArtworkResult["telemetry"];
   reviewError?: string;
+  feasibility?: import("./mediumFeasibility").FeasibilityEvidence;
   calibration?: {
     datasetId: string;
     caseId: string;

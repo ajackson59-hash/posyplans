@@ -11,6 +11,7 @@
 // working exactly as before whether the flag is on or off.
 
 import type { Express, Request, Response } from "express";
+import { registerMediumFeasibilityRoutes } from "./mediumFeasibilityRoutes";
 import { registerStyleSourceRoutes } from "./styleSourceRoutes";
 import { readFeatureFlags } from "@shared/featureFlags";
 import { AI_FIRST_CONCEPT_KEY, themeFromSnapshot, type AiFirstSnapshot } from "@shared/aiFirstTheme";
@@ -135,6 +136,7 @@ export function abortOnUnexpectedResponseClose(res: Response, controller: AbortC
 
 export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
   registerStyleSourceRoutes(app, deps);
+  registerMediumFeasibilityRoutes(app, deps);
   const env = () => deps.env ?? process.env;
   const flags = () => readFeatureFlags(env());
 
@@ -906,7 +908,9 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
           quality: row.quality,
           size: row.size,
           costUsdMicros: row.costUsdMicros,
-          costEstimateStatus: row.reviewEvidence?.calibration
+          costEstimateStatus: row.reviewEvidence?.feasibility
+            ? "private-feasibility-accounting-in-evidence"
+            : row.reviewEvidence?.calibration
             ? "review-only-cost-in-calibration-evidence"
             : row.reviewEvidence?.styleSource
             ? "source-review-excludes-original-art-and-critic-cost"
@@ -998,7 +1002,7 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
       }
       // Private compositor research must not become customer artwork through
       // the older retained-image promotion route, even after a critic pass.
-      if (row.model === "posy-review-calibration-v1" || row.reviewEvidence?.calibration ||
+      if (row.reviewEvidence?.feasibility || row.model === "posy-review-calibration-v1" || row.reviewEvidence?.calibration ||
           row.model === "posy-scene-compositor-v1" || row.reviewEvidence?.composition ||
           row.model === "posy-style-source-v1" || row.reviewEvidence?.styleSource) {
         res.status(409).json({
