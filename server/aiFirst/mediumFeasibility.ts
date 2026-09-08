@@ -5,14 +5,14 @@ import { MEDIUM_FEASIBILITY_CASES } from "./mediumFeasibilityCases";
 import type { AiFirstArtworkAttemptStore, ArtworkAttemptRecord } from "./artworkAttemptStore";
 import { ArtworkNormalizationError, generateArtwork, sizeForAspect, type ArtworkGenerator, type ArtworkResult } from "./artwork";
 import { readPngSize } from "./png";
-import type { runTier1Checks } from "./tier1";
+import { runTier1Checks, type Tier1Finding } from "./tier1";
 import { runVisionGate, type VisionVerdict } from "./visionGate";
 import { buildQualityLockedPreviewBrief, customerVisiblePreviewBytes, detectNamedCreativeReference,
   detectNamedCreativeReferenceSync, generateQualityLockedPreview, type NamedCreativeReference } from "../prePaymentPreviewQuality";
 
 export const FEASIBILITY_DATASET = "medium-feasibility-20260906-v1";
-/** Deliberately disabled until the owner approves a new, concrete paid allowance. */
-export const FEASIBILITY_PAID_ENABLED = false;
+/** Owner approved the fixed 8-image / 8-review / 2-classification Preview scope on 2026-09-08. */
+export const FEASIBILITY_PAID_ENABLED = true;
 export const FEASIBILITY_OWNER_EVENT = 41;
 export const feasibilityHash = (value: string | Buffer) => createHash("sha256").update(value).digest("hex");
 export const FEASIBILITY_POLICY = {
@@ -65,7 +65,10 @@ export async function feasibilityPreflight(store: AiFirstArtworkAttemptStore, ow
   return { datasetId: FEASIBILITY_DATASET, policyHash: FEASIBILITY_POLICY_HASH, deploymentSha,
     paidEnabled: FEASIBILITY_PAID_ENABLED, physicalImageRequests: 0, physicalCriticRequests: 0, physicalClassifierRequests: 0,
     customerActivation: "disabled", inputs, records: rows.filter(r => r.reviewEvidence?.feasibility?.datasetId === FEASIBILITY_DATASET)
-      .map(r => ({ id: r.id, assetHash: r.assetHash, evidence: r.reviewEvidence?.feasibility })) };
+      .map(r => ({ id: r.id, assetHash: r.assetHash, sourceBytes: Buffer.from(r.assetBytesBase64, "base64").length,
+        reviewedAssetHash: r.reviewEvidence?.reviewedAssetHash ?? null, verdict: r.reviewEvidence?.verdict ?? null,
+        failureCodes: r.failureCodes, tier1Findings: r.tier1Findings, visionScores: r.visionScores, status: r.status, previewId: r.previewId,
+        generationTelemetry: r.reviewEvidence?.generationTelemetry, evidence: r.reviewEvidence?.feasibility })) };
 }
 function assertRequest(request: Parameters<ArtworkGenerator>[0], hostBrief: string) {
   if (!request.prompt.includes(hostBrief) || request.model !== "gpt-image-2" || request.quality !== "medium" ||
@@ -104,6 +107,7 @@ export async function runMediumFeasibility(input: FeasibilityDependencies) {
   let prepared = await buildQualityLockedPreviewBrief(event);
   let original = Buffer.alloc(0), reviewedHash: string | null = null, verdict: VisionVerdict | null = null;
   let generation: ArtworkResult | undefined;
+  let deterministicFindings: Tier1Finding[] = [];
   const evidence: FeasibilityEvidence = { datasetId: FEASIBILITY_DATASET, caseId: item.trialId, policyHash: FEASIBILITY_POLICY_HASH,
     briefHash: item.hostBriefSha256, deploymentSha: input.deploymentSha, stage: "claimed", customerActivation: "disabled",
     humanReview: "pending", outcome: "pending", prompt: null, promptHash: null, resolvedIdentity: null,
@@ -116,7 +120,7 @@ export async function runMediumFeasibility(input: FeasibilityDependencies) {
     const saved = await input.store.recordOnce!({ eventId: input.owner.id, ownerToken: input.owner.ownerToken,
       idempotencyKey: `${FEASIBILITY_DATASET}:${item.trialId}:${stage}`, runId: FEASIBILITY_DATASET,
       directionIndex: index, attempt: 1, status: "rejected", previewId: null, bytes: original,
-      concept: prepared.concept, failureCodes, tier1Findings: [], visionScores: verdict?.scores ?? null,
+      concept: prepared.concept, failureCodes, tier1Findings: deterministicFindings, visionScores: verdict?.scores ?? null,
       model: "gpt-image-2", quality: "medium", size: "1024x1536", costUsdMicros: 0,
       reviewEvidence: { version: 1, reviewedAssetHash: reviewedHash, verdict,
         generationDurationMs: generation?.durationMs ?? 0, generationTelemetry: generation?.telemetry,
@@ -160,7 +164,9 @@ export async function runMediumFeasibility(input: FeasibilityDependencies) {
       await persist("classified");
     } else evidence.resolvedIdentity = named?.label ?? null;
     const result = await generateQualityLockedPreview(event, {
-      quality: "medium", maxCandidates: 1, parallelCandidates: false, allowTargetedCorrection: false, namedReference: named, signal, runTier1: input.runTier1,
+      quality: "medium", maxCandidates: 1, parallelCandidates: false, allowTargetedCorrection: false, namedReference: named, signal, runTier1: request => {
+        const result = (input.runTier1 ?? runTier1Checks)(request); deterministicFindings = result.findings; return result;
+      },
       generateImage: async request => {
         assertRequest(request, item.hostBrief);
         if (evidence.imageProviderRequests !== 0) throw new Error("image-request-limit");

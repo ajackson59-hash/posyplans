@@ -55,7 +55,7 @@ describe("bounded private medium feasibility", () => {
     const s = setup(); const result = await feasibilityPreflight(s.store, owner, env.VERCEL_GIT_COMMIT_SHA);
     expect(result.inputs).toHaveLength(8); expect(result.inputs.filter(i => !i.finalPrompt)).toHaveLength(2);
     for (const i of result.inputs) { expect(i.prompt).toContain(i.hostBrief); expect(feasibilityHash(i.hostBrief)).toBe(i.hostBriefSha256); }
-    expect(result.paidEnabled).toBe(false); expect(s.store.all).toHaveLength(0);
+    expect(result.paidEnabled).toBe(FEASIBILITY_PAID_ENABLED); expect(s.store.all).toHaveLength(0);
     expect(s.create).not.toHaveBeenCalled(); expect(s.generateImage).not.toHaveBeenCalled();
   });
   it("completes exactly eight sequential trials with eight renders, eight single reviews and two classifications", async () => {
@@ -113,18 +113,23 @@ describe("bounded private medium feasibility", () => {
   it("keeps quality failures in the cohort, without buying a replacement or blocking the next scheduled case", async () => {
     const s = setup(); const args = s.args(); args.runTier1 = () => ({ passed: false, findings: [{ code: "text-detected", critical: true, message: "fixture lettering" }], salientRegions: [], durationMs: 0 });
     const failed = await runMediumFeasibility(args); expect(failed.kind).toBe("completed");
-    if (failed.kind === "completed") expect(failed.evidence.outcome).toBe("quality-fail");
+    if (failed.kind === "completed") {
+      expect(failed.evidence.outcome).toBe("quality-fail");
+      const row = await s.store.findById(owner.id, owner.ownerToken, failed.recordId);
+      expect(row?.tier1Findings).toEqual([{ code: "text-detected", critical: true, message: "fixture lettering" }]);
+    }
     expect((await runMediumFeasibility(args)).kind).toBe("blocked"); expect((await runMediumFeasibility(s.args(1))).kind).toBe("completed");
     expect(s.generateImage).toHaveBeenCalledTimes(2);
   });
-  it("keeps paid HTTP operations disabled and hides all routes from Production and other owners", async () => {
-    const s = setup(); expect(FEASIBILITY_PAID_ENABLED).toBe(false);
+  it("blocks disabled execution, enforces the exact HTTP scope and hides routes from Production and other owners", async () => {
+    const s = setup();
+    expect((await runMediumFeasibility({ ...s.args(), paidEnabled: false }))).toEqual({ kind: "blocked", reason: "fresh-paid-allowance-required" });
     const build = (environment = env) => { const app = express(); app.use(express.json());
       registerMediumFeasibilityRoutes(app, { env: environment, artworkAttemptStore: s.store,
         storage: { getEventByOwnerToken: async (token: string) => token === owner.ownerToken ? owner : { id: 42, ownerToken: token } } as any }); return app; };
     const root = `/api/events/owner/${owner.ownerToken}/ai-first/review/medium-feasibility`;
     expect((await request(build()).get(root)).status).toBe(200);
-    expect((await request(build()).post(`${root}/${MEDIUM_FEASIBILITY_CASES[0].trialId}`).send({ confirmBoundedFeasibility: true, policyHash: FEASIBILITY_POLICY_HASH })).body.reason).toBe("fresh-paid-allowance-required");
+    expect((await request(build()).post(`${root}/${MEDIUM_FEASIBILITY_CASES[0].trialId}`).send({ confirmBoundedFeasibility: true, policyHash: FEASIBILITY_POLICY_HASH, arbitraryExtraRequest: true })).status).toBe(400);
     expect((await request(build({ ...env, VERCEL_ENV: "production" })).get(root)).status).toBe(404);
     expect((await request(build()).get(root.replace(owner.ownerToken, "other-owner"))).status).toBe(404);
     expect(s.store.all).toHaveLength(0);
