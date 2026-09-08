@@ -1,4 +1,5 @@
 import express from "express";
+import { ArtworkProviderError } from "../server/aiFirst/artwork";
 import { Script } from "node:vm";
 import { mediumFeasibilityPage } from "../server/aiFirst/mediumFeasibilityPage";
 import request from "supertest";
@@ -91,6 +92,22 @@ describe("bounded private medium feasibility", () => {
     expect(s.store.all.some(r => r.assetHash === feasibilityHash(bytes))).toBe(true);
     expect(s.create).not.toHaveBeenCalled(); expect((await runMediumFeasibility(s.args(1))).kind).toBe("blocked");
     expect((await runMediumFeasibility(s.args())).kind).toBe("blocked");
+  });
+  it("retains provider output-moderation diagnostics and one dispatch without inventing zero billing", async () => {
+    const s = setup(); const diagnostics = { status: 400, code: "moderation_blocked", type: "image_generation_user_error",
+      requestId: "req_fixture12345678", moderationStage: "output" as const, moderationCategories: [],
+      model: "gpt-image-2" as const, quality: "medium" as const, size: "1024x1536" as const,
+      outputFormat: "jpeg" as const, operation: "request" as const, providerRequestCount: 1,
+      providerDurationMs: 54_884, promptSha256: "b".repeat(64) };
+    const generateImage = vi.fn(async () => { throw new ArtworkProviderError(diagnostics); });
+    const result = await runMediumFeasibility({ ...s.args(), generateImage });
+    expect(result).toMatchObject({ kind: "stopped", reason: "image-output-moderation-blocked" });
+    const row = s.store.all.find(r => r.reviewEvidence?.feasibility?.stage === "completed")!;
+    expect(row.reviewEvidence?.feasibility).toMatchObject({ providerFailure: diagnostics, imageProviderRequests: 1,
+      imageUsage: null, imageCostUsdMicrosUpperEstimate: null, criticRequests: 0 });
+    expect(s.store.all.some(r => r.reviewEvidence?.feasibility?.stage === "provider-failed")).toBe(true);
+    expect((await runMediumFeasibility(s.args(1))).kind).toBe("blocked");
+    expect(generateImage).toHaveBeenCalledTimes(1); expect(s.create).not.toHaveBeenCalled();
   });
   it("makes no JSON repair request and stops after malformed review", async () => {
     const s = setup({ malformedCritic: true }); expect((await runMediumFeasibility(s.args())).kind).toBe("stopped");

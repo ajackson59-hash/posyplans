@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import type { Event } from "@shared/schema";
 import { MEDIUM_FEASIBILITY_CASES } from "./mediumFeasibilityCases";
 import type { AiFirstArtworkAttemptStore, ArtworkAttemptRecord } from "./artworkAttemptStore";
-import { ArtworkNormalizationError, generateArtwork, sizeForAspect, type ArtworkGenerator, type ArtworkResult } from "./artwork";
+import { ArtworkProviderError, type ArtworkProviderDiagnostics, ArtworkNormalizationError, generateArtwork, sizeForAspect, type ArtworkGenerator, type ArtworkResult } from "./artwork";
 import { readPngSize } from "./png";
 import { runTier1Checks, type Tier1Finding } from "./tier1";
 import { runVisionGate, type VisionVerdict } from "./visionGate";
@@ -11,8 +11,8 @@ import { buildQualityLockedPreviewBrief, customerVisiblePreviewBytes, detectName
   detectNamedCreativeReferenceSync, generateQualityLockedPreview, type NamedCreativeReference } from "../prePaymentPreviewQuality";
 
 export const FEASIBILITY_DATASET = "medium-feasibility-20260906-v1";
-/** Owner approved the fixed 8-image / 8-review / 2-classification Preview scope on 2026-09-08. */
-export const FEASIBILITY_PAID_ENABLED = true;
+/** The approved study stopped after a provider output-moderation block. No retries or further spending enabled. */
+export const FEASIBILITY_PAID_ENABLED = false;
 export const FEASIBILITY_OWNER_EVENT = 41;
 export const feasibilityHash = (value: string | Buffer) => createHash("sha256").update(value).digest("hex");
 export const FEASIBILITY_POLICY = {
@@ -26,12 +26,14 @@ export const FEASIBILITY_POLICY = {
 } as const;
 export const FEASIBILITY_POLICY_HASH = feasibilityHash(JSON.stringify(FEASIBILITY_POLICY));
 
-type Stage = "claimed" | "classification-claimed" | "classified" | "image-claimed" | "generated" | "review-claimed" | "completed" | "browser-observed";
+type Stage = "claimed" | "classification-claimed" | "classified" | "image-claimed" | "generated" | "review-claimed" | "completed" | "browser-observed" | "provider-failed";
 type Usage = { inputTokens: number; outputTokens: number };
 export interface FeasibilityEvidence {
   datasetId: string; caseId: string; policyHash: string; briefHash: string;
   deploymentSha: string; stage: Stage; customerActivation: "disabled"; humanReview: "pending";
   outcome: "pending" | "automated-pass" | "quality-fail" | "stopped";
+  /** Safe provider identifiers/counts only; never the raw provider body or credentials. */
+  providerFailure?: ArtworkProviderDiagnostics;
   prompt: string | null; promptHash: string | null; resolvedIdentity: string | null;
   classifierRequests: number | null; imageProviderRequests: number | null; criticRequests: number | null;
   classifierUsage: Usage | null; criticUsage: Usage | null;
@@ -175,6 +177,14 @@ export async function runMediumFeasibility(input: FeasibilityDependencies) {
         await persist("image-claimed"); signal.throwIfAborted();
         try { generation = await (input.generateImage ?? generateArtwork)(request); }
         catch (error) {
+          if (error instanceof ArtworkProviderError) {
+            evidence.providerFailure = error.diagnostics;
+            evidence.imageProviderRequests = error.diagnostics.providerRequestCount;
+            evidence.generationMs = error.diagnostics.providerDurationMs;
+            // An HTTP error identifies its dispatch count, not whether that request was billed.
+            evidence.imageUsage = null; evidence.imageCostUsdMicrosUpperEstimate = null;
+            await persist("provider-failed", [error.diagnostics.code ?? "image-provider-error"]);
+          }
           if (error instanceof ArtworkNormalizationError) { generation = error.result; original = generation.bytes; await persist("generated", ["normalization-unavailable"]); }
           throw new Error("image-provider-or-normalization-unavailable");
         }
@@ -218,7 +228,10 @@ export async function runMediumFeasibility(input: FeasibilityDependencies) {
     return { kind: "completed" as const, recordId: final.id, assetHash: final.assetHash, reviewedAssetHash: reviewedHash,
       evidence: final.reviewEvidence!.feasibility!, durationThroughFinalPersistenceMs: Date.now() - started };
   } catch {
-    stopReason = signal.aborted ? "deadline-or-disconnect" : "provider-accounting-classification-or-retention-failure";
+    stopReason = signal.aborted ? "deadline-or-disconnect"
+      : evidence.providerFailure?.moderationStage === "output" && ["moderation_blocked", "moderation_block"].includes(evidence.providerFailure.code ?? "")
+      ? "image-output-moderation-blocked"
+      : evidence.providerFailure ? "image-provider-error" : "provider-accounting-classification-or-retention-failure";
     evidence.outcome = "stopped"; evidence.stopReason = stopReason;
     // A failed retention attempt cannot unlock the next case. If this also fails the prior claim stays incomplete.
     try { await persist("completed", [stopReason]); } catch { /* fail closed; claimed case remains consumed */ }
