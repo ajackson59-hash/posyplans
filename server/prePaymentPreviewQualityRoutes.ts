@@ -6,6 +6,7 @@ import { storage } from "./storage";
 import { DbArtworkAttemptStore } from "./aiFirst/dbStore";
 import type { AiFirstArtworkAttemptStore } from "./aiFirst/artworkAttemptStore";
 import { canGenerateDraft } from "./masterPlannerEntitlement";
+import { CUSTOMER_PREVIEW_POLICY } from "./customerPreviewPolicy";
 import {
   type ArtworkReferenceImage,
   type ArtworkReferenceMimeType,
@@ -407,14 +408,9 @@ async function runAutomaticNamedPreviewJob({
         // A failed external image download must not suppress a valid named
         // brief. Canonical identity remains mandatory in the final pixel gate.
         inspirationNotes: namedReferenceIdentityNotes(namedReference),
-        // Preview comparison: the faster candidate can publish only after the
-        // same six-5/5 and binary checks. Keep a parallel high-tier candidate;
-        // never accept a weaker verdict to meet the latency target.
-        quality: "high",
-        candidateQualities: ["medium", "high"],
-        maxCandidates: 2,
-        parallelCandidates: true,
-        allowTargetedCorrection: false,
+        // Named and original themes use the same bounded customer policy.
+        // Medium must still clear every existing quality and binary check.
+        ...CUSTOMER_PREVIEW_POLICY,
         onApproved: publishApproved,
         namedReference,
         attemptRetention: { store: artworkAttemptStore, eventId: event.id, ownerToken: event.ownerToken },
@@ -449,6 +445,7 @@ async function runAutomaticNamedPreviewJob({
       namedReference: namedReference.id,
       generationStrategy: "text-first",
       error: result.kind === "unavailable" ? result.error : undefined,
+      providerFailures: result.kind !== "approved-image" ? result.providerFailures : undefined,
       // Full per-candidate tier1/vision evidence is durably retained in
       // artworkAttemptStore (see /ai-first/review/attempts); this compact
       // summary just keeps the last candidate's reason legible inline.
@@ -521,8 +518,7 @@ async function runAutomaticClassifiedPreviewJob({
   try {
     const result = await withPreviewDeadline(
       generate(event, {
-        quality: "medium",
-        maxCandidates: 1,
+        ...CUSTOMER_PREVIEW_POLICY,
         namedReference: null,
         attemptRetention: { store: artworkAttemptStore, eventId: event.id, ownerToken: event.ownerToken },
         signal: abortController.signal,
@@ -532,7 +528,7 @@ async function runAutomaticClassifiedPreviewJob({
       (error) => abortController.abort(error),
     );
 
-    if (result.kind === "approved-image"
+    if (result.kind === "approved-image" && !abortController.signal.aborted
       && await persistApprovedImage(store, event, result.dataUrl, now())) {
       return;
     }
@@ -543,6 +539,7 @@ async function runAutomaticClassifiedPreviewJob({
       model: result.model,
       privateCandidates: result.attempts,
       error: result.kind === "unavailable" ? result.error : undefined,
+      providerFailures: result.kind !== "approved-image" ? result.providerFailures : undefined,
       rejectionSummary: summarizeRejectionForLog(result.reviews),
     })}`);
   } catch (error) {

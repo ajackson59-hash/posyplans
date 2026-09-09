@@ -1,4 +1,19 @@
-# Launch readiness — shared pipeline repair, 2026-09-08
+# Launch readiness — customer dispatch repair, 2026-09-09
+
+## Current: customer generation budget and cancellation corrected
+
+The [customer dispatch repair](tools/qa/ARTWORK_PIPELINE_REPAIR.md) applies one
+medium image and at most one critic call to named and original first looks.
+It fixes extra review work and late approval after cancellation, retains
+provider failures without inventing image assets, and reports failed-request
+billing as unknown. The five reproduction failures now pass; full software
+verification is 72 files / 909 tests plus TypeScript. Existing visual thresholds
+remain unchanged. This is a candidate for Preview validation, not proof that
+one medium image meets the visual-quality or 90-second delivery target.
+
+No paid image/classifier/critic calls, study reset, human relabeling, merge or
+Production changes occurred. Release remains **HOLD**. Earlier entries below
+are historical and retain their original test counts and configuration.
 
 ## Current: correct the shared generator before more paid samples
 

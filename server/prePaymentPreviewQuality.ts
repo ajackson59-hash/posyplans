@@ -10,12 +10,14 @@ import {
 import { OVERLAY_COVERAGE } from "@shared/aiFirstLayout";
 import {
   ArtworkNormalizationError,
+  ArtworkProviderError,
   DEFAULT_ARTWORK_MODEL,
   REFERENCE_ARTWORK_MODEL,
   estimateImageCostUsdMicros,
   generateArtwork,
   sizeForAspect,
   type ArtworkGenerator,
+  type ArtworkProviderDiagnostics,
   type ArtworkModel,
   type ArtworkQuality,
   type ArtworkReferenceImage,
@@ -837,12 +839,16 @@ export type QualityLockedPreviewResult =
       model: ArtworkModel;
       reviews: PreviewQualityReview[];
       error?: string;
+      providerFailures?: Array<{ attempt: number; diagnostics: ArtworkProviderDiagnostics }>;
     };
 
 export interface PreviewQualityDependencies {
   generateImage?: ArtworkGenerator;
   runTier1?: typeof runTier1Checks;
   runVision?: typeof runVisionGate;
+  /** Customer previews allow one critic dispatch. Research can explicitly
+   * budget one format repair without changing the customer policy. */
+  maxFormatRepairs?: 0 | 1;
   inspirationNotes?: string;
   /** Original uploaded pixels used as high-fidelity identity anchors. */
   referenceImages?: ArtworkReferenceImage[];
@@ -992,16 +998,42 @@ export async function generateQualityLockedPreview(
   const modelForCandidate = (candidate: number): ArtworkModel =>
     referenceLed && candidate > 1 ? REFERENCE_ARTWORK_MODEL : DEFAULT_ARTWORK_MODEL;
   let lastModel: ArtworkModel = modelForCandidate(1);
+  // Count calls entering the image generator, including failures. Physical
+  // HTTP dispatch counts, when known, are in provider diagnostics/telemetry.
+  let attempts = 0;
+  const providerFailures: Array<{ attempt: number; diagnostics: ArtworkProviderDiagnostics }> = [];
   const { brief, concept, namedReference } = await buildQualityLockedPreviewBrief(
     event,
     dependencies.inspirationNotes ?? "",
     dependencies.namedReference,
   );
-  // Named entertainment worlds are the hardest pre-payment images: identity,
-  // scene fidelity and artifact-free character integration all have to pass at
-  // once. Spend the higher render tier only there; generic previews remain on
-  // medium. Customer named previews allow two candidates, without serial repair.
+  // Legacy/research callers retain their selected render tier. Customer routes
+  // explicitly supply CUSTOMER_PREVIEW_POLICY for both named and original art.
   const quality = dependencies.quality ?? (referenceLed || namedReference ? "high" : "medium");
+  const retainProviderFailure = async (error: unknown, attempt: number): Promise<void> => {
+    if (!(error instanceof ArtworkProviderError)) return;
+    const diagnostics = error.diagnostics;
+    providerFailures.push({ attempt, diagnostics });
+    if (!dependencies.attemptRetention) return;
+    const { store, eventId, ownerToken, runId } = dependencies.attemptRetention;
+    try {
+      await store.record({
+        eventId, ownerToken, runId, directionIndex: 0, attempt, status: "rejected",
+        bytes: Buffer.alloc(0), concept, previewId: null,
+        failureCodes: [diagnostics.code ?? "image-provider-error"], tier1Findings: [], visionScores: null,
+        model: diagnostics.model, quality: diagnostics.quality, size: diagnostics.size,
+        // Required legacy column. The review API exposes null/unknown for
+        // provider failures rather than representing this placeholder as free.
+        costUsdMicros: 0,
+        reviewEvidence: {
+          version: 1, reviewedAssetHash: null, verdict: null,
+          generationDurationMs: diagnostics.providerDurationMs, providerFailure: diagnostics,
+        },
+      });
+    } catch {
+      console.error("[prepayment-preview] failed to retain provider failure", { eventId, attempt });
+    }
+  };
   const retainUnreviewable = async (
     generated: Awaited<ReturnType<ArtworkGenerator>>, attempt: number, model: ArtworkModel,
     renderQuality: ArtworkQuality, error: unknown, reviewedBytes?: Buffer,
@@ -1063,7 +1095,7 @@ export async function generateQualityLockedPreview(
         await dependencies.onApproved?.({
           kind: "approved-image",
           dataUrl: `data:image/png;base64,${outcome.sourceBytes.toString("base64")}`,
-          attempts: 2,
+          attempts,
           model: outcome.model,
           reviews: outcome.review ? [outcome.review] : [],
         });
@@ -1112,6 +1144,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
 
       let generated: Awaited<ReturnType<ArtworkGenerator>>;
       try {
+        attempts += 1;
         generated = await generateImage({
           outputFormat: "jpeg",
           prompt: prompts[candidate - 1],
@@ -1123,6 +1156,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
           signal: dependencies.signal,
         });
       } catch (error) {
+        await retainProviderFailure(error, candidate);
         if (error instanceof ArtworkNormalizationError) {
           await retainUnreviewable(error.result, candidate, model, candidateQuality, error);
         }
@@ -1136,6 +1170,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
 
       let reviewedBytes: Buffer;
       try {
+        dependencies.signal?.throwIfAborted();
         reviewedBytes = customerVisiblePreviewBytes(generated.bytes);
       } catch (error) {
         await retainUnreviewable(generated, candidate, model, candidateQuality, error);
@@ -1159,6 +1194,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
           ocr: true,
         });
         if (tier1.passed) {
+          dependencies.signal?.throwIfAborted();
           vision = await runVision({
             // Review exactly the deterministic pixels an unpaid customer can
             // receive. The full source is retained privately for paid reuse,
@@ -1168,9 +1204,11 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
             concept,
             brief,
             reviewMode: "teaser",
+            maxFormatRepairs: dependencies.maxFormatRepairs ?? 0,
             referenceImages: dependencies.reviewReferenceImages,
             signal: dependencies.signal,
           });
+          dependencies.signal?.throwIfAborted();
         }
       } catch (error) {
         await retainUnreviewable(generated, candidate, model, candidateQuality, error, reviewedBytes);
@@ -1263,7 +1301,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
         // The gate inspected the exact 560px teaser transform, but paid reuse
         // and protected evidence retain the original provider resolution.
         dataUrl: `data:image/png;base64,${approved.sourceBytes.toString("base64")}`,
-        attempts: outcomes.filter((outcome) => outcome.sourceBytes || outcome.review).length,
+        attempts,
         model: approved.model,
         reviews,
       };
@@ -1290,6 +1328,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
       const repairQuality: ArtworkQuality = "high";
       let repaired: Awaited<ReturnType<ArtworkGenerator>> | undefined;
       try {
+        attempts += 1;
         repaired = await generateImage({
           outputFormat: "jpeg",
           maxTransientRetries: 0,
@@ -1313,6 +1352,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
           signal: dependencies.signal,
         });
       } catch (error) {
+        await retainProviderFailure(error, 3);
         if (error instanceof ArtworkNormalizationError) {
           await retainUnreviewable(error.result, 3, repairModel, repairQuality, error);
         }
@@ -1322,6 +1362,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
       if (repaired) {
         let repairReview: PreviewQualityReview | undefined;
         try {
+          dependencies.signal?.throwIfAborted();
           const reviewedBytes = customerVisiblePreviewBytes(repaired.bytes);
           const tier1 = runTier1({
             bytes: reviewedBytes,
@@ -1332,16 +1373,19 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
             layoutApplied: false,
             ocr: true,
           });
+          dependencies.signal?.throwIfAborted();
           const vision = tier1.passed
             ? await runVision({
                 bytes: reviewedBytes,
                 concept,
                 brief,
                 reviewMode: "teaser",
+                maxFormatRepairs: dependencies.maxFormatRepairs ?? 0,
                 referenceImages: dependencies.reviewReferenceImages,
                 signal: dependencies.signal,
               })
             : undefined;
+          dependencies.signal?.throwIfAborted();
           const passed = tier1.passed && vision?.passed === true;
           const repairFailureCodes = tier1.passed
             ? (vision?.unavailable ? ["vision-unavailable"] : (vision?.failureCodes ?? ["vision-unavailable"]))
@@ -1395,11 +1439,11 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
             }
           }
 
-          if (passed) {
+          if (passed && !dependencies.signal?.aborted) {
             return {
               kind: "approved-image",
               dataUrl: `data:image/png;base64,${repaired.bytes.toString("base64")}`,
-              attempts: reviews.length,
+              attempts,
               model: repairModel,
               reviews,
             };
@@ -1412,7 +1456,8 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
         if (repairReview) {
           return {
             kind: "rejected",
-            attempts: reviews.length,
+            providerFailures,
+            attempts,
             model: repairModel,
             reviews,
           };
@@ -1424,7 +1469,8 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
     if (reviewedCount === 0) {
       return {
         kind: "unavailable",
-        attempts: 0,
+        providerFailures,
+        attempts,
         model: DEFAULT_ARTWORK_MODEL,
         reviews,
         error: outcomes.map((outcome) => outcome.error).filter(Boolean).join(" | ") || "Both private preview candidates were unavailable.",
@@ -1433,7 +1479,8 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
 
     return {
       kind: "rejected",
-      attempts: reviewedCount,
+      providerFailures,
+      attempts,
       model: DEFAULT_ARTWORK_MODEL,
       reviews,
     };
@@ -1443,7 +1490,8 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
     if (dependencies.signal?.aborted) {
       return {
         kind: "unavailable",
-        attempts: candidate - 1,
+        providerFailures,
+        attempts,
         model: lastModel,
         reviews,
         error: dependencies.signal.reason instanceof Error
@@ -1459,6 +1507,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
 
     let generated: Awaited<ReturnType<ArtworkGenerator>>;
     try {
+      attempts += 1;
       generated = await generateImage({
         outputFormat: "jpeg",
         prompt,
@@ -1471,12 +1520,14 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
         signal: dependencies.signal,
       });
     } catch (error) {
+      await retainProviderFailure(error, candidate);
       if (error instanceof ArtworkNormalizationError) {
         await retainUnreviewable(error.result, candidate, model, quality, error);
       }
       return {
         kind: "unavailable",
-        attempts: candidate - 1,
+        providerFailures,
+        attempts,
         model,
         reviews,
         error: error instanceof Error ? error.message : String(error),
@@ -1485,12 +1536,14 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
 
     let reviewedBytes: Buffer;
     try {
+      dependencies.signal?.throwIfAborted();
       reviewedBytes = customerVisiblePreviewBytes(generated.bytes);
     } catch (error) {
       await retainUnreviewable(generated, candidate, model, quality, error);
       return {
         kind: "unavailable",
-        attempts: candidate,
+        providerFailures,
+        attempts,
         model,
         reviews,
         error: `Generated artwork could not be prepared for customer review: ${error instanceof Error ? error.message : String(error)}`,
@@ -1509,20 +1562,24 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
         ocr: true,
       });
       if (tier1.passed) {
+        dependencies.signal?.throwIfAborted();
         vision = await runVision({
           bytes: reviewedBytes,
           concept,
           brief,
           reviewMode: "teaser",
+          maxFormatRepairs: dependencies.maxFormatRepairs ?? 0,
           referenceImages: dependencies.reviewReferenceImages,
           signal: dependencies.signal,
         });
+        dependencies.signal?.throwIfAborted();
       }
     } catch (error) {
       await retainUnreviewable(generated, candidate, model, quality, error, reviewedBytes);
       return {
         kind: "unavailable",
-        attempts: candidate,
+        providerFailures,
+        attempts,
         model,
         reviews,
         error: error instanceof Error ? error.message : String(error),
@@ -1583,14 +1640,14 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
       }
     }
 
-    if (passed) {
+    if (passed && !dependencies.signal?.aborted) {
       return {
         kind: "approved-image",
         // Persist the full provider result. The private unpaid asset route
         // derives the exact reviewed 560px pixels from these bytes; after an
         // unlock the same approved artwork remains available at full quality.
         dataUrl: `data:image/png;base64,${generated.bytes.toString("base64")}`,
-        attempts: candidate,
+        attempts,
         model,
         reviews,
       };
@@ -1599,7 +1656,8 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
 
   return {
     kind: "rejected",
-    attempts: maxCandidates,
+    providerFailures,
+    attempts,
     model: lastModel,
     reviews,
   };

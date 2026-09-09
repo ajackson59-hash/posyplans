@@ -4,7 +4,8 @@ import type Anthropic from "@anthropic-ai/sdk";
 import type { Event } from "@shared/schema";
 import type { Tier1Result } from "../server/aiFirst/tier1";
 import type { VisionVerdict } from "../server/aiFirst/visionGate";
-import type { ArtworkRequest } from "../server/aiFirst/artwork";
+import { ArtworkProviderError, type ArtworkRequest } from "../server/aiFirst/artwork";
+import { runVisionGate } from "../server/aiFirst/visionGate";
 import { InMemoryArtworkAttemptStore } from "../server/aiFirst/artworkAttemptStore";
 import { decodePng, encodePng, readPngSize } from "../server/aiFirst/png";
 import { concreteSubjectRequirementsForBrief, concreteSubjectReviewRequirementsForBrief } from "../server/aiFirst/conceptPreflight";
@@ -54,6 +55,72 @@ function generatedPng(fill: number, width = 630, height = 1120): Buffer {
   rgb.fill(fill);
   return encodePng({ width, height, rgb });
 }
+
+describe("customer preview dispatch and failure boundaries", () => {
+  it.each([false, true])("retains blocked dispatches without invented pixels or reviews (parallel=%s)", async (parallel) => {
+    const store = new InMemoryArtworkAttemptStore();
+    const diagnostics = {
+      status: 400, code: "moderation_blocked", type: "image_generation_user_error",
+      requestId: "req_fixture12345", moderationStage: "output" as const, moderationCategories: [],
+      model: "gpt-image-2" as const, quality: "medium" as const, size: "1024x1536" as const,
+      outputFormat: "jpeg" as const, operation: "request" as const,
+      providerRequestCount: 1, providerDurationMs: 54884, promptSha256: "a".repeat(64),
+    };
+    const generateImage = vi.fn(async () => { throw new ArtworkProviderError(diagnostics); });
+    const runVision = vi.fn(async () => vision(true));
+    const result = await generateQualityLockedPreview(event, {
+      generateImage, runTier1: () => tier1(true), runVision,
+      maxCandidates: parallel ? 2 : 1, parallelCandidates: parallel, quality: "medium",
+      attemptRetention: { store, eventId: event.id, ownerToken: "fixture-owner" },
+    });
+    const expected = parallel ? 2 : 1;
+    expect(result.kind).toBe("unavailable");
+    expect(result.attempts).toBe(expected);
+    expect(generateImage).toHaveBeenCalledTimes(expected);
+    expect(runVision).not.toHaveBeenCalled();
+    expect(store.all).toHaveLength(expected);
+    for (const row of store.all) {
+      expect(row.assetBytesBase64).toBe("");
+      expect(row.previewId).toBeNull();
+      expect(row.status).toBe("rejected");
+      expect(row.failureCodes).toEqual(["moderation_blocked"]);
+      expect(row.reviewEvidence).toMatchObject({ providerFailure: diagnostics, verdict: null, reviewedAssetHash: null });
+    }
+  });
+
+  it("does not pay for a format repair or a replacement image when the customer reviewer returns invalid JSON", async () => {
+    const generateImage = vi.fn(async () => ({ bytes: generatedPng(1), dataUrl: "unused", durationMs: 1 }));
+    const create = vi.fn(async (_body: unknown, _options: unknown) => ({ content: [{ type: "text", text: "looks great" }], usage: {} }));
+    const result = await generateQualityLockedPreview(event, {
+      generateImage, maxCandidates: 1, runTier1: () => tier1(true),
+      runVision: input => runVisionGate({ ...input, client: { messages: { create } } as unknown as Anthropic }),
+    });
+    expect(generateImage).toHaveBeenCalledTimes(1);
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(create.mock.calls[0][1]).toMatchObject({ maxRetries: 0 });
+    expect(result.kind).toBe("rejected");
+    expect(result.reviews[0].vision).toMatchObject({ passed: false, unavailable: true, requestCount: 1 });
+  });
+
+  it.each(["render", "review"])("cannot review or approve late pixels after cancellation during %s", async (stage) => {
+    const controller = new AbortController();
+    const runVision = vi.fn(async () => {
+      if (stage === "review") controller.abort(new Error("preview deadline"));
+      return vision(true);
+    });
+    const result = await generateQualityLockedPreview(event, {
+      maxCandidates: 1, signal: controller.signal, runTier1: () => tier1(true), runVision,
+      generateImage: async () => {
+        if (stage === "render") controller.abort(new Error("preview deadline"));
+        return { bytes: generatedPng(1), dataUrl: "unused", durationMs: 1 };
+      },
+    });
+    expect(runVision).toHaveBeenCalledTimes(stage === "render" ? 0 : 1);
+    expect(result.kind).toBe("unavailable");
+    expect(result.attempts).toBe(1);
+    expect(result).not.toHaveProperty("dataUrl");
+  });
+});
 
 function tier1(passed = true): Tier1Result {
   return {
@@ -1015,7 +1082,7 @@ describe("prepayment preview quality lock", () => {
     });
 
     expect(result.kind).toBe("unavailable");
-    expect(result.attempts).toBe(0);
+    expect(result.attempts).toBe(1);
     expect(JSON.stringify(result)).not.toContain("data:image");
   });
 

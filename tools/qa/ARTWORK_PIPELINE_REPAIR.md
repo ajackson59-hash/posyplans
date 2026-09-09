@@ -1,4 +1,42 @@
-# Shared artwork pipeline repair — 8 September 2026
+# Shared artwork pipeline repair — 9 September 2026
+
+## Customer dispatch repair — 9 September
+
+The remaining customer first-look route still ran medium/high candidates in
+parallel and inherited a critic JSON-repair request. `CUSTOMER_PREVIEW_POLICY`
+now selects one medium render, zero image retries, at most one critic call,
+and no targeted correction for both named and original themes. All existing
+visual acceptance thresholds remain in force. This configuration is a bounded
+candidate for validation: removing the second render can reduce the chance of
+finding an acceptable image, and medium quality across all directions is not
+proven. This change is Preview-only, with no new paid execution.
+
+Five new reproduction cases failed before the repair: blocked dispatches were
+counted as zero attempts in both serial/parallel paths; malformed review output
+triggered a second critic request; a cancelled render could start review; and
+a late reviewer pass could be returned as approved. Those cases now pass.
+Returned late source bytes remain private evidence, without further review or
+customer approval. Attempts now count calls into the image generator, including
+failures; exact HTTP dispatch counts are retained where the provider supplies
+them. Cancellation cannot retract a request already received by a provider.
+
+Provider errors retain sanitized status, code, type, request ID, output/input
+moderation stage, duration and prompt hash in the protected attempt store.
+No-image failures have no asset URL, no scores or approval, and cannot trigger
+a paid retained-image recheck. The review API reports billing as unknown/null;
+the legacy required integer database column is not a zero-cost assertion.
+No database migration or historical-row rewrite is required.
+
+Verification: **72 files / 909 tests** and TypeScript passed. Customer route
+tests for both named and original themes exercise the real pipeline with fake
+providers, including the exact reviewed teaser response, identical full source
+after unlock, one dispatch, blocked-request recovery and duplicate-submission
+protection. These are software tests; no fresh artwork was generated or scored.
+Production, the stopped medium study and all existing human judgments remain
+unchanged. Premium quality, truthful reviewer judgments and real-browser 90s
+delivery remain unproven; this is not closure of the artwork launch blockers.
+
+## Prior shared brief repair — 8 September
 
 Owner direction: fix artwork generation as a whole. Additional saved samples
 are not a substitute for correcting the customer pipeline. This pass changes

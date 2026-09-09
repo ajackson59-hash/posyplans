@@ -4,6 +4,7 @@ import request from "supertest";
 import type { Event } from "@shared/schema";
 import { isReferenceBoardDataUrl } from "../server/prePaymentReferenceBoard";
 import { generateQualityLockedPreview } from "../server/prePaymentPreviewQuality";
+import { ArtworkProviderError } from "../server/aiFirst/artwork";
 import { InMemoryArtworkAttemptStore } from "../server/aiFirst/artworkAttemptStore";
 import { decodePng, encodePng, readPngSize } from "../server/aiFirst/png";
 
@@ -132,52 +133,66 @@ beforeEach(() => {
 afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
 
 describe("quality-locked prepayment preview routes", () => {
-  it("serves the exact reviewed teaser and paid full source while the second candidate is still private", async () => {
-    const app = makeApp();
+  it.each([true, false])("retains a blocked customer dispatch and completes without review, retry or exposed diagnostics (named=%s)", async (named) => {
+    if (!named) stored = genericEvent();
+    const app = makeApp({ mode: "quality-image" });
     const attempts = new InMemoryArtworkAttemptStore();
-    let releaseSibling!: () => void;
-    const sibling = new Promise<void>((resolve) => { releaseSibling = resolve; });
-    let published!: () => void;
-    const firstPublished = new Promise<void>((resolve) => { published = resolve; });
-    let count = 0;
-    const runVision = vi.fn(async () => ({
+    const runVision = vi.fn();
+    const generateImage = vi.fn(async () => { throw new ArtworkProviderError({
+      status: 400, code: "moderation_blocked", type: "image_generation_user_error",
+      requestId: "req_routefixture123", moderationStage: "output", moderationCategories: [],
+      model: "gpt-image-2", quality: "medium", size: "1024x1536", outputFormat: "jpeg",
+      operation: "request", providerRequestCount: 1, providerDurationMs: 54884, promptSha256: "a".repeat(64),
+    }); });
+    generate.mockImplementation((event, options) => generateQualityLockedPreview(event, {
+      ...options, attemptRetention: { store: attempts, eventId: EVENT_ID, ownerToken: OWNER },
+      generateImage, runVision,
+    }));
+    await request(app).post(`/api/events/owner/${OWNER}/prepayment-preview`).send({ email: "qa@example.com" });
+    await runScheduledTask();
+    const ready = await request(app).get(`/api/events/owner/${OWNER}/prepayment-preview/readiness`);
+    expect(ready.body).toMatchObject({ kind: "direction-card", generationState: "fallback" });
+    expect(JSON.stringify(ready.body)).not.toContain("req_routefixture123");
+    expect(attempts.all).toHaveLength(1);
+    expect(attempts.all[0].reviewEvidence?.providerFailure).toMatchObject({ providerRequestCount: 1, moderationStage: "output" });
+    expect(attempts.all[0].assetBytesBase64).toBe("");
+    await request(app).post(`/api/events/owner/${OWNER}/prepayment-preview`).send({ email: "qa@example.com" });
+    expect(scheduledTasks).toHaveLength(0);
+    expect(generateImage).toHaveBeenCalledTimes(1);
+    expect(runVision).not.toHaveBeenCalled();
+  });
+
+  it.each([true, false])("serves the exact reviewed teaser and preserves its paid source with one dispatch (named=%s)", async (named) => {
+    if (!named) stored = genericEvent();
+    const app = makeApp({ mode: "quality-image" });
+    const attempts = new InMemoryArtworkAttemptStore();
+    const sourceBytes = encodePng({ width: 630, height: 1120, rgb: new Uint8Array(630 * 1120 * 3).fill(1) });
+    const generateImage = vi.fn(async (_input: unknown) => ({ bytes: sourceBytes, dataUrl: "not served", durationMs: 1 }));
+    const runVision = vi.fn(async (_input: unknown) => ({
       passed: true, unavailable: false, failureCodes: [], requiredPresent: [], excludedFound: [], notes: "Fixture review, not real art QA",
       scores: { textLogoWatermarkFree: 5, artifactFree: 5, premiumFinish: 5, briefFidelity: 5, compositionQuality: 5, ageAppropriate: 5 },
       durationMs: 1, usage: { inputTokens: 0, outputTokens: 0 },
     }));
     generate.mockImplementation((event, options) => generateQualityLockedPreview(event, {
-      ...options,
-      attemptRetention: { store: attempts, eventId: EVENT_ID, ownerToken: OWNER },
-      onApproved: async (result) => { await options.onApproved(result); published(); },
-      generateImage: async () => {
-        const fill = ++count;
-        if (fill === 2) await sibling;
-        const bytes = encodePng({ width: 630, height: 1120, rgb: new Uint8Array(630 * 1120 * 3).fill(fill) });
-        return { bytes, dataUrl: "not served", durationMs: 1 };
-      },
-      runTier1: () => ({ passed: true, findings: [], salientRegions: [], durationMs: 1 }), runVision,
+      ...options, attemptRetention: { store: attempts, eventId: EVENT_ID, ownerToken: OWNER },
+      generateImage, runTier1: () => ({ passed: true, findings: [], salientRegions: [], durationMs: 1 }), runVision,
     }));
     await request(app).post(`/api/events/owner/${OWNER}/prepayment-preview`).send({ email: "qa@example.com" });
-    const job = runScheduledTask();
-    try {
-      await firstPublished;
-      const ready = await request(app).get(`/api/events/owner/${OWNER}/prepayment-preview/readiness`);
-      expect(ready.body.kind).toBe("approved-image");
-      const teaser = await request(app).get(`/api/events/owner/${OWNER}/prepayment-preview/asset`);
-      expect(teaser.headers["cache-control"]).toBe("private, no-store");
-      expect(readPngSize(teaser.body)).toEqual({ width: 315, height: 560 });
-      expect(teaser.body.equals(runVision.mock.calls[0][0].bytes)).toBe(true);
-      const paid = await request(makeApp({ unlocked: true })).get(`/api/events/owner/${OWNER}/prepayment-preview/asset`);
-      expect(readPngSize(paid.body)).toEqual({ width: 630, height: 1120 });
-      expect(decodePng(paid.body).rgb[0]).toBe(1);
-      expect(attempts.all).toHaveLength(1);
-    } finally {
-      releaseSibling();
-      await job;
-    }
-    expect(count).toBe(2);
-    expect(attempts.all).toHaveLength(2);
-    expect(decodePng(Buffer.from(stored.prePaymentPreviewUrl.split(",")[1], "base64")).rgb[0]).toBe(1);
+    await runScheduledTask();
+    const ready = await request(app).get(`/api/events/owner/${OWNER}/prepayment-preview/readiness`);
+    expect(ready.body.kind).toBe("approved-image");
+    const teaser = await request(app).get(`/api/events/owner/${OWNER}/prepayment-preview/asset`);
+    expect(teaser.headers["cache-control"]).toBe("private, no-store");
+    expect(readPngSize(teaser.body)).toEqual({ width: 315, height: 560 });
+    expect(teaser.body.equals((runVision.mock.calls[0][0] as { bytes: Buffer }).bytes)).toBe(true);
+    const paid = await request(makeApp({ unlocked: true })).get(`/api/events/owner/${OWNER}/prepayment-preview/asset`);
+    expect(paid.body.equals(sourceBytes)).toBe(true);
+    expect(generateImage).toHaveBeenCalledTimes(1);
+    expect(generateImage.mock.calls[0][0]).toMatchObject({ quality: "medium", maxTransientRetries: 0 });
+    expect(runVision).toHaveBeenCalledTimes(1);
+    expect(runVision.mock.calls[0][0]).toMatchObject({ maxFormatRepairs: 0 });
+    expect(attempts.all).toHaveLength(1);
+    expect(stored.prePaymentPreviewAttempts).toBe(1);
   });
 
   it.each([true, false])("reserves only one paid job across simultaneous stale reads (named=%s)", async (named) => {
@@ -244,10 +259,10 @@ describe("quality-locked prepayment preview routes", () => {
     expect(generate).toHaveBeenCalledTimes(1);
     expect(generate.mock.calls[0][1]).toEqual(expect.objectContaining({
       inspirationNotes: expect.stringContaining("orange glasses"),
-      quality: "high",
-      candidateQualities: ["medium", "high"],
-      maxCandidates: 2,
-      parallelCandidates: true,
+      quality: "medium",
+      maxCandidates: 1,
+      parallelCandidates: false,
+      maxFormatRepairs: 0,
       allowTargetedCorrection: false,
       onApproved: expect.any(Function),
       namedReference: expect.objectContaining({ id: "blippi-meekah" }),
@@ -339,7 +354,7 @@ describe("quality-locked prepayment preview routes", () => {
 
     expect(generate).toHaveBeenCalledTimes(1);
     expect(fetchSpy).not.toHaveBeenCalled();
-    expect(generate.mock.calls[0][1]).toMatchObject({ quality: "high", maxCandidates: 2, parallelCandidates: true });
+    expect(generate.mock.calls[0][1]).toMatchObject({ quality: "medium", maxCandidates: 1, parallelCandidates: false, maxFormatRepairs: 0 });
     expect(stored.prePaymentPreviewAttempts).toBe(1);
     expect(stored.prePaymentPreviewUrl).toMatch(/^data:image\/svg\+xml;base64,/);
 
@@ -565,7 +580,7 @@ describe("quality-locked prepayment preview routes", () => {
     expect(generate).toHaveBeenCalledTimes(1);
     expect(generate.mock.calls[0][0].vibeDescription).toBe(stored.vibeDescription);
     expect(generate.mock.calls[0][1]).toMatchObject({ namedReference, inspirationNotes: expect.stringContaining(namedReference.requirements[0]),
-      quality: "high", maxCandidates: 2, parallelCandidates: true, allowTargetedCorrection: false });
+      quality: "medium", maxCandidates: 1, parallelCandidates: false, allowTargetedCorrection: false, maxFormatRepairs: 0 });
     expect(generate.mock.calls[0][1].inspirationNotes).toContain("They do not add cast members");
     expect(generate.mock.calls[0][1].referenceImages).toBeUndefined();
     const ready = await request(app).get(`/api/events/owner/${OWNER}/prepayment-preview/readiness`);

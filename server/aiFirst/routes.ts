@@ -897,7 +897,8 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
           assetHash: row.assetHash,
           // The binary route below serves the actual bytes; this listing
           // never does, however small or large the underlying image is.
-          assetUrl: `/api/events/owner/${ownerToken}/ai-first/review/attempts/${row.id}/asset`,
+          assetUrl: row.assetBytesBase64
+            ? `/api/events/owner/${ownerToken}/ai-first/review/attempts/${row.id}/asset` : null,
           previewId: row.previewId,
           conceptName: row.concept.conceptName,
           failureCodes: row.failureCodes,
@@ -907,8 +908,10 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
           model: row.model,
           quality: row.quality,
           size: row.size,
-          costUsdMicros: row.costUsdMicros,
-          costEstimateStatus: row.reviewEvidence?.feasibility
+          costUsdMicros: row.reviewEvidence?.providerFailure ? null : row.costUsdMicros,
+          costEstimateStatus: row.reviewEvidence?.providerFailure
+            ? "provider-failure-billing-unknown"
+            : row.reviewEvidence?.feasibility
             ? "private-feasibility-accounting-in-evidence"
             : row.reviewEvidence?.calibration
             ? "review-only-cost-in-calibration-evidence"
@@ -945,6 +948,10 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
         return;
       }
       const bytes = Buffer.from(row.assetBytesBase64, "base64");
+      if (!bytes.length) {
+        res.status(404).json({ error: "No image was returned for this attempt." });
+        return;
+      }
       res.writeHead(200, {
         "Content-Type": "image/png",
         // Owner-private: content-addressed by id, so long-lived caching is
@@ -997,6 +1004,13 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
           denial: "attempt-not-rejected",
           imageProviderCalls: 0,
           billedArtworkAttempts: 0,
+        });
+        return;
+      }
+      if (row.reviewEvidence?.providerFailure || !row.assetBytesBase64) {
+        res.status(409).json({
+          error: "This attempt has no artwork to review.", denial: "no-retained-image",
+          imageProviderCalls: 0, billedArtworkAttempts: 0,
         });
         return;
       }

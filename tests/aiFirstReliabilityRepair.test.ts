@@ -1239,6 +1239,33 @@ describe("retained rejected artwork can be re-reviewed without another image gen
     usage: { inputTokens: 100, outputTokens: 20 },
   };
 
+  it("reports unknown billing and prevents asset access or paid review for a provider failure with no image", async () => {
+    const stores = await seedRetainedAttempt(Buffer.alloc(0));
+    stores.attempt.reviewEvidence = {
+      version: 1, reviewedAssetHash: null, verdict: null, generationDurationMs: 54884,
+      providerFailure: {
+        status: 400, code: "moderation_blocked", type: "image_generation_user_error",
+        requestId: "req_fixture12345", moderationStage: "output", moderationCategories: [],
+        model: "gpt-image-2", quality: "medium", size: "1024x1536", outputFormat: "jpeg",
+        operation: "request", providerRequestCount: 1, providerDurationMs: 54884, promptSha256: "a".repeat(64),
+      },
+    };
+    let reviews = 0;
+    const app = appFor({ ...stores, reviewRetainedArtwork: async () => { reviews++; return passingReview; } });
+    const root = `/api/events/owner/${OWNER}/ai-first/review/attempts`;
+    const listing = await request(app).get(root);
+    expect(listing.body.attempts[0]).toMatchObject({
+      assetUrl: null, costUsdMicros: null, costEstimateStatus: "provider-failure-billing-unknown", previewId: null,
+    });
+    const asset = await request(app).get(`${root}/${stores.attempt.id}/asset`);
+    expect(asset.status).toBe(404);
+    const recheck = await request(app).post(`${root}/${stores.attempt.id}/recheck`)
+      .send({ confirmRetainedReview: true, expectedAssetHash: stores.attempt.assetHash });
+    expect(recheck.status).toBe(409);
+    expect(recheck.body.denial).toBe("no-retained-image");
+    expect(reviews).toBe(0);
+  });
+
   it("requires exact confirmation, owner scope and the retained asset hash", async () => {
     const stores = await seedRetainedAttempt();
     const app = appFor({ ...stores, reviewRetainedArtwork: async () => passingReview });
