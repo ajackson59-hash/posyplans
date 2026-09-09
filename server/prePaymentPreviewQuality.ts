@@ -12,6 +12,7 @@ import {
   ArtworkNormalizationError,
   ArtworkProviderError,
   DEFAULT_ARTWORK_MODEL,
+  GOOGLE_ARTWORK_MODEL,
   REFERENCE_ARTWORK_MODEL,
   estimateImageCostUsdMicros,
   generateArtwork,
@@ -843,6 +844,8 @@ export type QualityLockedPreviewResult =
     };
 
 export interface PreviewQualityDependencies {
+  /** Explicit provider qualification only; normal customer selection is unchanged. */
+  artworkModel?: ArtworkModel;
   generateImage?: ArtworkGenerator;
   runTier1?: typeof runTier1Checks;
   runVision?: typeof runVisionGate;
@@ -994,9 +997,13 @@ export async function generateQualityLockedPreview(
   const runTier1 = dependencies.runTier1 ?? runTier1Checks;
   const runVision = dependencies.runVision ?? runVisionGate;
   const maxCandidates = dependencies.maxCandidates ?? 2;
+  if (dependencies.artworkModel === GOOGLE_ARTWORK_MODEL &&
+      (maxCandidates !== 1 || dependencies.parallelCandidates !== false || dependencies.allowTargetedCorrection !== false)) {
+    throw new Error("Google preview qualification requires one serial render without corrections");
+  }
   const referenceLed = Boolean(dependencies.referenceImages?.length);
   const modelForCandidate = (candidate: number): ArtworkModel =>
-    referenceLed && candidate > 1 ? REFERENCE_ARTWORK_MODEL : DEFAULT_ARTWORK_MODEL;
+    dependencies.artworkModel ?? (referenceLed && candidate > 1 ? REFERENCE_ARTWORK_MODEL : DEFAULT_ARTWORK_MODEL);
   let lastModel: ArtworkModel = modelForCandidate(1);
   // Count calls entering the image generator, including failures. Physical
   // HTTP dispatch counts, when known, are in provider diagnostics/telemetry.
@@ -1040,7 +1047,7 @@ export async function generateQualityLockedPreview(
   ): Promise<void> => {
     if (!dependencies.attemptRetention) return;
     const { store, eventId, ownerToken, runId } = dependencies.attemptRetention;
-    const size = sizeForAspect(aspectRatioForLayout(concept.layoutStyle));
+    const size = sizeForAspect(aspectRatioForLayout(concept.layoutStyle), model);
     try {
       await store.record({
         eventId, ownerToken, runId, directionIndex: 0, attempt, status: "rejected",
@@ -1609,7 +1616,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
     // customer-visible result or mask the real approve/reject outcome.
     if (dependencies.attemptRetention) {
       const { store: attemptStore, eventId, ownerToken, runId } = dependencies.attemptRetention;
-      const size: ArtworkSize = sizeForAspect(aspectRatioForLayout(concept.layoutStyle));
+      const size: ArtworkSize = sizeForAspect(aspectRatioForLayout(concept.layoutStyle), model);
       try {
         await attemptStore.record({
           eventId,

@@ -15,7 +15,9 @@ import { decode as decodeJpeg } from "jpeg-js";
 import { createHash } from "node:crypto";
 import { encodePng } from "./png";
 
-export type ArtworkModel = "gpt-image-1" | "gpt-image-1.5" | "gpt-image-2";
+export type OpenAiArtworkModel = "gpt-image-1" | "gpt-image-1.5" | "gpt-image-2";
+export const GOOGLE_ARTWORK_MODEL = "gemini-3.1-flash-image" as const;
+export type ArtworkModel = OpenAiArtworkModel | typeof GOOGLE_ARTWORK_MODEL;
 /** Current quality-first default for text-only generation. */
 export const DEFAULT_ARTWORK_MODEL: ArtworkModel = "gpt-image-2";
 /**
@@ -26,7 +28,8 @@ export const DEFAULT_ARTWORK_MODEL: ArtworkModel = "gpt-image-2";
 export const REFERENCE_ARTWORK_MODEL: ArtworkModel = "gpt-image-1.5";
 export type ArtworkQuality = "high" | "medium" | "low";
 export type ArtworkAspectRatio = "16:9" | "1:1" | "9:16";
-export type ArtworkSize = "1536x1024" | "1024x1024" | "1024x1536";
+type OpenAiArtworkSize = "1536x1024" | "1024x1024" | "1024x1536";
+export type ArtworkSize = OpenAiArtworkSize | "1376x768" | "768x1376";
 export type ArtworkReferenceMimeType = "image/png" | "image/jpeg" | "image/webp";
 export type ArtworkInputFidelity = "high" | "low";
 
@@ -68,6 +71,12 @@ export interface ArtworkResult {
     providerRequestCount: number;
     providerDurationMs: number;
     normalizationDurationMs: number;
+    /** Provider-specific metadata; Google usage is never priced as OpenAI tokens. */
+    google?: {
+      model: typeof GOOGLE_ARTWORK_MODEL; interactionId: string | null;
+      imageSize: "1K"; aspectRatio: ArtworkAspectRatio; size: ArtworkSize;
+      usage: Record<string, number | Array<{ modality: string; tokens: number }>> | null;
+    };
     /** Usage from this successful response only, when supplied. Failed earlier
      * requests and missing fields must not be represented as free usage. */
     responseUsage?: {
@@ -149,7 +158,7 @@ const SIZE_FOR_ASPECT: Record<ArtworkAspectRatio, ArtworkSize> = {
 };
 
 /** OpenAI image-output pricing, in USD micros. Input tokens are additional. */
-const IMAGE_COST_USD_MICROS: Record<ArtworkModel, Record<ArtworkQuality, Record<ArtworkSize, number>>> = {
+const IMAGE_COST_USD_MICROS: Record<OpenAiArtworkModel, Record<ArtworkQuality, Record<OpenAiArtworkSize, number>>> = {
   "gpt-image-1": {
     low: { "1024x1024": 11_000, "1024x1536": 16_000, "1536x1024": 16_000 },
     medium: { "1024x1024": 42_000, "1024x1536": 63_000, "1536x1024": 63_000 },
@@ -172,7 +181,10 @@ const MAX_TRANSIENT_RETRIES = 1;
 const MAX_RETRY_DELAY_MS = 30_000;
 const DEFAULT_RETRY_DELAY_MS = 1_500;
 
-export function sizeForAspect(aspectRatio: ArtworkAspectRatio): ArtworkSize {
+export function sizeForAspect(aspectRatio: ArtworkAspectRatio, model?: ArtworkModel): ArtworkSize {
+  if (model === GOOGLE_ARTWORK_MODEL) {
+    return ({ "16:9": "1376x768", "1:1": "1024x1024", "9:16": "768x1376" } as const)[aspectRatio];
+  }
   return SIZE_FOR_ASPECT[aspectRatio];
 }
 
@@ -181,7 +193,11 @@ export function estimateImageCostUsdMicros(
   quality: ArtworkQuality,
   size: ArtworkSize,
 ): number {
-  return IMAGE_COST_USD_MICROS[model][quality][size];
+  // Google 1K output: 1,120 image tokens at $60/M; excludes input/thinking.
+  if (model === GOOGLE_ARTWORK_MODEL) return 67_200;
+  const estimate = IMAGE_COST_USD_MICROS[model][quality][size as OpenAiArtworkSize];
+  if (estimate === undefined) throw new Error("Unsupported image size for model");
+  return estimate;
 }
 
 export type ArtworkGenerator = (request: ArtworkRequest) => Promise<ArtworkResult>;
@@ -312,6 +328,9 @@ async function waitForRetry(delayMs: number, signal?: AbortSignal): Promise<void
 }
 
 export async function generateArtwork(request: ArtworkRequest): Promise<ArtworkResult> {
+  if (request.model === GOOGLE_ARTWORK_MODEL) {
+    return (await import("./googleArtwork")).generateGoogleArtwork(request);
+  }
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     throw new Error("OPENAI_API_KEY is not configured — illustration generation is unavailable.");

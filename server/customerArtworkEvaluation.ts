@@ -5,7 +5,9 @@ import { createHash } from "node:crypto";
 import type { Event } from "@shared/schema";
 import type { AiFirstArtworkAttemptStore } from "./aiFirst/artworkAttemptStore";
 import { MEDIUM_FEASIBILITY_CASES } from "./aiFirst/mediumFeasibilityCases";
-import { ArtworkProviderError, ArtworkNormalizationError, generateArtwork, type ArtworkResult } from "./aiFirst/artwork";
+import { ArtworkProviderError, ArtworkNormalizationError, generateArtwork, GOOGLE_ARTWORK_MODEL, sizeForAspect,
+  type ArtworkModel, type ArtworkResult } from "./aiFirst/artwork";
+import { googleArtworkConfigured } from "./aiFirst/googleArtwork";
 import { runVisionGate, type VisionVerdict } from "./aiFirst/visionGate";
 import { buildQualityLockedPreviewBrief, customerVisiblePreviewBytes, detectNamedCreativeReference,
   generateQualityLockedPreview, type PreviewQualityDependencies } from "./prePaymentPreviewQuality";
@@ -19,15 +21,31 @@ const hash = (value: string | Buffer) => createHash("sha256").update(value).dige
 export function customerArtworkEvaluation(event: Event, store: AiFirstArtworkAttemptStore) {
   const index = CUSTOMER_EVALUATION_EVENTS.indexOf(event.id);
   if (process.env.VERCEL_ENV !== "preview" || index < 0) return null;
+  return fixedCustomerEvaluation(event, store, index, "gpt-image-2", CUSTOMER_EVALUATION_DATASET);
+}
+
+// Fresh Frozen fixture; the GPT dataset and its unused allowance remain closed.
+// User requested this provider test on 2026-09-09. Expand only after inspecting
+// this result; each fixture can claim one render and one independent review.
+export const GOOGLE_CUSTOMER_EVALUATION_EVENT = 50;
+export const GOOGLE_CUSTOMER_EVALUATION_DATASET = "google-customer-artwork-20260909";
+export function googleCustomerArtworkEvaluation(event: Event, store: AiFirstArtworkAttemptStore) {
+  if (process.env.VERCEL_ENV !== "preview" || event.id !== GOOGLE_CUSTOMER_EVALUATION_EVENT) return null;
+  return { ...fixedCustomerEvaluation(event, store, 1, GOOGLE_ARTWORK_MODEL, GOOGLE_CUSTOMER_EVALUATION_DATASET),
+    available: googleArtworkConfigured() };
+}
+
+function fixedCustomerEvaluation(event: Event, store: AiFirstArtworkAttemptStore, index: number,
+  model: ArtworkModel, datasetId: string) {
   const item = MEDIUM_FEASIBILITY_CASES[index];
   if (event.eventName !== "Artwork evaluation" || event.eventType !== "Artwork evaluation" ||
       event.inviteStatus !== "draft" || event.themeName !== "" || event.paletteColors !== "[]" ||
       hash(event.vibeDescription) !== item.hostBriefSha256 || !store.recordOnce) {
     throw new Error("customer-evaluation-fixture-or-retention-drift");
   }
-  const caseId = `${CUSTOMER_EVALUATION_DATASET}-${String(index + 1).padStart(2, "0")}`;
+  const caseId = `${datasetId}-${String(index + 1).padStart(2, "0")}`;
   const evidence: Record<string, unknown> = {
-    datasetId: CUSTOMER_EVALUATION_DATASET, caseId, deploymentSha: process.env.VERCEL_GIT_COMMIT_SHA,
+    datasetId, caseId, deploymentSha: process.env.VERCEL_GIT_COMMIT_SHA, imageModel: model,
     hostBriefSha256: item.hostBriefSha256, humanReview: "pending", customerRoute: true,
     imageRequests: 0, criticRequests: 0, classifierRequests: 0, stage: "registered",
   };
@@ -40,11 +58,11 @@ export function customerArtworkEvaluation(event: Event, store: AiFirstArtworkAtt
     try { if (source.length) reviewedAssetHash = hash(customerVisiblePreviewBytes(source)); } catch { /* retain undecodable source */ }
     evidence.stage = stage; evidence.recordedAt = Date.now();
     const saved = await store.recordOnce!({
-      eventId: event.id, ownerToken: event.ownerToken, runId: CUSTOMER_EVALUATION_DATASET,
+      eventId: event.id, ownerToken: event.ownerToken, runId: datasetId,
       idempotencyKey: `${caseId}:${stage}`, directionIndex: index, attempt: 1,
       status: "rejected", bytes: source, previewId: null, concept,
       failureCodes: [], tier1Findings: [], visionScores: verdict?.scores ?? null,
-      model: "gpt-image-2", quality: "medium", size: "1024x1536", costUsdMicros: 0,
+      model, quality: "medium", size: sizeForAspect("9:16", model), costUsdMicros: 0,
       reviewEvidence: { version: 1, reviewedAssetHash,
         verdict, generationDurationMs: generation?.durationMs ?? 0, generationTelemetry: generation?.telemetry,
         customerEvaluation: structuredClone(evidence) },
@@ -96,9 +114,9 @@ export function customerArtworkEvaluation(event: Event, store: AiFirstArtworkAtt
       if (options.quality !== "medium" || options.maxCandidates !== 1 || options.parallelCandidates !== false ||
           options.maxFormatRepairs !== 0 || options.allowTargetedCorrection !== false) throw new Error("customer-evaluation-policy-drift");
       evidence.classification ??= options.namedReference ? { ...options.namedReference, trigger: options.namedReference.trigger.source } : null;
-      const result = await generateQualityLockedPreview(input, { ...options,
+      const result = await generateQualityLockedPreview(input, { ...options, artworkModel: model,
         generateImage: async request => {
-          if (evidence.imageRequests !== 0 || !request.prompt.includes(item.hostBrief) || request.model !== "gpt-image-2" ||
+          if (evidence.imageRequests !== 0 || !request.prompt.includes(item.hostBrief) || request.model !== model ||
               request.quality !== "medium" || request.maxTransientRetries !== 0 || request.referenceImages?.length || request.outputFormat !== "jpeg") {
             throw new Error("customer-evaluation-image-request-drift");
           }
@@ -114,9 +132,10 @@ export function customerArtworkEvaluation(event: Event, store: AiFirstArtworkAtt
             evidence.stopReason = "image-provider-unavailable"; await save("image-failed"); throw error;
           }
           source = generation.bytes; evidence.imageRequests = generation.telemetry?.providerRequestCount ?? null;
-          evidence.generationMs = generation.durationMs; evidence.imageUsage = generation.telemetry?.responseUsage ?? null;
+          evidence.generationMs = generation.durationMs;
+          evidence.imageUsage = model === GOOGLE_ARTWORK_MODEL ? generation.telemetry?.google?.usage ?? null : generation.telemetry?.responseUsage ?? null;
           await save("generated");
-          if (evidence.imageRequests !== 1 || !evidence.imageUsage) throw new Error("customer-evaluation-image-accounting");
+          if (evidence.imageRequests !== 1 || (model !== GOOGLE_ARTWORK_MODEL && !evidence.imageUsage)) throw new Error("customer-evaluation-image-accounting");
           return generation;
         },
         runVision: async request => {

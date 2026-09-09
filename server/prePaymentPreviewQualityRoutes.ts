@@ -7,7 +7,7 @@ import { DbArtworkAttemptStore } from "./aiFirst/dbStore";
 import type { AiFirstArtworkAttemptStore } from "./aiFirst/artworkAttemptStore";
 import { canGenerateDraft } from "./masterPlannerEntitlement";
 import { CUSTOMER_PREVIEW_POLICY } from "./customerPreviewPolicy";
-import { customerArtworkEvaluation, CUSTOMER_EVALUATION_PAID_ENABLED } from "./customerArtworkEvaluation";
+import { customerArtworkEvaluation, googleCustomerArtworkEvaluation, CUSTOMER_EVALUATION_PAID_ENABLED } from "./customerArtworkEvaluation";
 import {
   type ArtworkReferenceImage,
   type ArtworkReferenceMimeType,
@@ -658,8 +658,17 @@ export function registerPrePaymentPreviewQualityRoutes(
     if (evaluation && (!CUSTOMER_EVALUATION_PAID_ENABLED || mode !== "quality-image" || !namedAutoEnabled)) {
       return res.status(409).json({ error: "This customer evaluation is closed; no further requests are authorized." });
     }
-    const generate = evaluation?.generate ?? defaultGenerate;
-    const classifyNamedReference = evaluation?.classify ?? defaultClassifyNamedReference;
+    const googleEvaluation = googleCustomerArtworkEvaluation(event, artworkAttemptStore);
+    if (googleEvaluation && !googleEvaluation.available) {
+      // Before reservation, classification or image dispatch; missing access
+      // never consumes this fresh fixture or silently falls back to OpenAI.
+      return res.status(503).json({ code: "google_api_key_missing", error: "Google artwork test requires GEMINI_API_KEY in Preview." });
+    }
+    if (googleEvaluation && (mode !== "quality-image" || !namedAutoEnabled)) {
+      return res.status(409).json({ code: "google_evaluation_mode_disabled", error: "Google artwork test requires quality-image mode with named generation." });
+    }
+    const generate = googleEvaluation?.generate ?? evaluation?.generate ?? defaultGenerate;
+    const classifyNamedReference = googleEvaluation?.classify ?? evaluation?.classify ?? defaultClassifyNamedReference;
 
     if (namedReference) {
       if (!namedAutoEnabled) {

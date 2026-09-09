@@ -10,7 +10,7 @@ vi.mock("../server/aiFirst/artwork", async original => ({ ...await original<type
 vi.mock("@anthropic-ai/sdk", () => ({ default: class { messages = { create: providers.classify }; } }));
 vi.mock("../server/storage", () => ({ storage: {} }));
 vi.mock("../server/masterPlannerEntitlement", () => ({ canGenerateDraft: vi.fn() }));
-import { customerArtworkEvaluation } from "../server/customerArtworkEvaluation";
+import { customerArtworkEvaluation, googleCustomerArtworkEvaluation, GOOGLE_CUSTOMER_EVALUATION_EVENT } from "../server/customerArtworkEvaluation";
 import { registerPrePaymentPreviewQualityRoutes } from "../server/prePaymentPreviewQualityRoutes";
 const fixture = (index = 0) => ({ id: 42 + index, ownerToken: `fixture-${index}`, eventName: "Artwork evaluation",
   eventType: "Artwork evaluation", inviteStatus: "draft", themeName: "", paletteColors: "[]",
@@ -59,4 +59,36 @@ it("closes unrun customer fixtures before reservation, scheduling or paid provid
   const response = await request(app).post(`/api/events/owner/${event.ownerToken}/prepayment-preview`).send({ email: "fixture@example.com" });
   expect(response.status).toBe(409);
   for (const boundary of [reserve, schedule, generate, classify, providers.image, providers.classify]) expect(boundary).not.toHaveBeenCalled();
+});
+
+it("does not spend or consume the Google fixture when its Preview key is missing", async () => {
+  vi.stubEnv("GEMINI_API_KEY", "");
+  const event = { ...fixture(1), id: GOOGLE_CUSTOMER_EVALUATION_EVENT, prePaymentPreviewAttempts: 0, prePaymentPreviewUrl: "", prePaymentPreviewUsedAt: null };
+  const reserve = vi.fn(), schedule = vi.fn(), generate = vi.fn(), classify = vi.fn();
+  const app = express(); app.use(express.json());
+  const store = new InMemoryArtworkAttemptStore();
+  registerPrePaymentPreviewQualityRoutes(app, { store: {
+    getEventByOwnerToken: async () => event, updateEventById: vi.fn(),
+    reservePrePaymentPreview: reserve, completePrePaymentPreview: vi.fn(),
+  }, isUnlocked: async () => false, mode: () => "quality-image", autoNamedEnabled: () => true,
+    generate, classifyNamedReference: classify, schedule, artworkAttemptStore: store });
+  const response = await request(app).post(`/api/events/owner/${event.ownerToken}/prepayment-preview`).send({ email: "fixture@example.com" });
+  expect(response.status).toBe(503); expect(response.body.code).toBe("google_api_key_missing");
+  for (const boundary of [reserve, schedule, generate, classify, providers.image, providers.classify]) expect(boundary).not.toHaveBeenCalled();
+  expect(store.all).toHaveLength(0);
+});
+
+it("isolates Google claims from the closed GPT cohort and retains the selected provider", async () => {
+  vi.stubEnv("GEMINI_API_KEY", "test-key");
+  const event = { ...fixture(1), id: GOOGLE_CUSTOMER_EVALUATION_EVENT }, store = new InMemoryArtworkAttemptStore();
+  expect(customerArtworkEvaluation(event, store)).toBeNull();
+  expect(googleCustomerArtworkEvaluation(fixture(1), store)).toBeNull();
+  providers.image.mockRejectedValue(new Error("offline test provider stop"));
+  await googleCustomerArtworkEvaluation(event, store)!.generate(event, CUSTOMER_PREVIEW_POLICY);
+  expect(providers.image).toHaveBeenCalledWith(expect.objectContaining({ model: "gemini-3.1-flash-image", prompt: expect.stringContaining(event.vibeDescription) }));
+  expect(store.all.every(row => row.model === "gemini-3.1-flash-image" && row.size === "768x1376")).toBe(true);
+  await expect(googleCustomerArtworkEvaluation(event, store)!.generate(event, CUSTOMER_PREVIEW_POLICY)).rejects.toThrow("claim-conflict");
+  expect(providers.image).toHaveBeenCalledTimes(1);
+  vi.stubEnv("VERCEL_ENV", "production");
+  expect(googleCustomerArtworkEvaluation(event, store)).toBeNull();
 });
