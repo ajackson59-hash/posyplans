@@ -908,9 +908,11 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
           model: row.model,
           quality: row.quality,
           size: row.size,
-          costUsdMicros: row.reviewEvidence?.providerFailure ? null : row.costUsdMicros,
+          costUsdMicros: row.reviewEvidence?.providerFailure || row.reviewEvidence?.customerEvaluation ? null : row.costUsdMicros,
           costEstimateStatus: row.reviewEvidence?.providerFailure
             ? "provider-failure-billing-unknown"
+            : row.reviewEvidence?.customerEvaluation
+            ? "customer-evaluation-usage-in-evidence-not-invoice"
             : row.reviewEvidence?.feasibility
             ? "private-feasibility-accounting-in-evidence"
             : row.reviewEvidence?.calibration

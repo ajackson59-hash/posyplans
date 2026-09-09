@@ -7,6 +7,7 @@ import { DbArtworkAttemptStore } from "./aiFirst/dbStore";
 import type { AiFirstArtworkAttemptStore } from "./aiFirst/artworkAttemptStore";
 import { canGenerateDraft } from "./masterPlannerEntitlement";
 import { CUSTOMER_PREVIEW_POLICY } from "./customerPreviewPolicy";
+import { customerArtworkEvaluation } from "./customerArtworkEvaluation";
 import {
   type ArtworkReferenceImage,
   type ArtworkReferenceMimeType,
@@ -572,11 +573,11 @@ export function registerPrePaymentPreviewQualityRoutes(
   const readMode = dependencies.mode ?? (() => readPrePaymentPreviewMode());
   const autoNamedEnabled = dependencies.autoNamedEnabled
     ?? (() => namedReferenceAutoResolutionEnabled());
-  const classifyNamedReference = dependencies.classifyNamedReference
+  const defaultClassifyNamedReference = dependencies.classifyNamedReference
     ?? ((text: string, signal?: AbortSignal) => detectNamedCreativeReference(text, {
       signal, requireResolvedClassification: true,
     }));
-  const generate = dependencies.generate ?? generateQualityLockedPreview;
+  const defaultGenerate = dependencies.generate ?? generateQualityLockedPreview;
   const schedule = dependencies.schedule ?? defaultSchedule;
   const now = dependencies.now ?? Date.now;
   const jobTimeoutMs = dependencies.jobTimeoutMs ?? PREPAYMENT_PREVIEW_JOB_TIMEOUT_MS;
@@ -652,6 +653,13 @@ export function registerPrePaymentPreviewQualityRoutes(
     }
 
     const namedReference = namedReferenceForEventSync(event);
+
+    const evaluation = customerArtworkEvaluation(event, artworkAttemptStore);
+    if (evaluation && (mode !== "quality-image" || !namedAutoEnabled)) {
+      return res.status(409).json({ error: "Customer evaluation requires the approved preview configuration." });
+    }
+    const generate = evaluation?.generate ?? defaultGenerate;
+    const classifyNamedReference = evaluation?.classify ?? defaultClassifyNamedReference;
 
     if (namedReference) {
       if (!namedAutoEnabled) {

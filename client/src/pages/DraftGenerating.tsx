@@ -116,6 +116,8 @@ export default function DraftGenerating() {
   const startedGenerationRef = useRef(false);
   const confirmedRef = useRef(false);
   const previewTriggeredRef = useRef(false);
+  const previewSubmittedAtRef = useRef<number | null>(null);
+  const [previewDecodedMs, setPreviewDecodedMs] = useState<number | null>(null);
   const previewCardRef = useRef<HTMLDivElement>(null);
   const [email, setEmail] = useState("");
   const [plusEmail, setPlusEmail] = useState("");
@@ -331,6 +333,8 @@ export default function DraftGenerating() {
     const candidateEmail = email.trim();
     if (!EMAIL_LOOKS_VALID.test(candidateEmail) || previewTriggeredRef.current) return;
     previewTriggeredRef.current = true;
+    previewSubmittedAtRef.current = performance.now();
+    setPreviewDecodedMs(null);
     setPreviewImageLoaded(false);
     setPreviewImageFailed(false);
     bringPreviewIntoView("smooth");
@@ -581,7 +585,19 @@ export default function DraftGenerating() {
                   alt={previewIsDirectionOnly ? "Your personalized event direction" : "Your quality-approved personalized artwork"}
                   className="block w-full h-auto"
                   data-testid="img-prepayment-preview"
-                  onLoad={() => setPreviewImageLoaded(true)}
+                  data-preview-kind={readinessKind}
+                  data-submission-to-decoded-ms={previewDecodedMs ?? undefined}
+                  onLoad={async (event) => {
+                    const image = event.currentTarget;
+                    setPreviewImageLoaded(true);
+                    if (typeof image.decode !== "function") return;
+                    try {
+                      await image.decode();
+                      if (previewSubmittedAtRef.current !== null) {
+                        setPreviewDecodedMs(performance.now() - previewSubmittedAtRef.current);
+                      }
+                    } catch { setPreviewImageFailed(true); }
+                  }}
                   onError={() => setPreviewImageFailed(true)}
                 />
                 {!previewImageLoaded && (

@@ -1,6 +1,13 @@
 # Customer artwork evaluation — prepared 9 September 2026
 
-Status: **prepared; no new paid allowance, provider calls or live results**.
+Status: **fresh allowance approved by the owner; live execution being recorded**.
+Approval: 8 GPT Image 2 medium requests, up to 8 Sonnet reviews and 6 Haiku
+classifications, $2 planning reserve (not an enforced dollar cap), no retries
+or replacements. Eight new private draft fixture events are registered.
+Preview-only instrumentation preserves dispatch claims, full prompts, provider
+usage and exact reviewed hashes in the existing owner-private attempt store.
+Customer image timing starts at the normal button submission and ends after
+the image element's decode promise; ordinary polling and transfer are included.
 Customer implementation: `c66b9c49d83e5ff95dfc61cbf426c788f7d79e6e`.
 Preview: https://posy-ek3l5jue3-poseplans.vercel.app
 

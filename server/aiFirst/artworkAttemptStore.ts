@@ -53,6 +53,8 @@ export interface ArtworkReviewEvidence {
   /** No image or review exists for this dispatch. Billing is unknown; the
    * legacy required integer cost column is not a zero-cost assertion. */
   providerFailure?: ArtworkProviderDiagnostics;
+  /** Fixed owner-private customer evaluation; dispatch claims are never images. */
+  customerEvaluation?: Record<string, unknown>;
   feasibility?: import("./mediumFeasibility").FeasibilityEvidence;
   calibration?: {
     datasetId: string;
