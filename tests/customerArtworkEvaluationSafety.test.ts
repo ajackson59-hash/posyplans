@@ -74,6 +74,9 @@ it("does not spend or consume the Google fixture when its Preview key is missing
     generate, classifyNamedReference: classify, schedule, artworkAttemptStore: store });
   const response = await request(app).post(`/api/events/owner/${event.ownerToken}/prepayment-preview`).send({ email: "fixture@example.com" });
   expect(response.status).toBe(503); expect(response.body.code).toBe("google_api_key_missing");
+  const readOnly = await request(app).get(`/api/events/owner/${event.ownerToken}/prepayment-preview/readiness`);
+  expect(readOnly.status).toBe(200);
+  expect(readOnly.body.providerEvaluation).toEqual({ provider: "google", model: "gemini-3.1-flash-image", configured: false, namedGenerationEnabled: true });
   for (const boundary of [reserve, schedule, generate, classify, providers.image, providers.classify]) expect(boundary).not.toHaveBeenCalled();
   expect(store.all).toHaveLength(0);
 });

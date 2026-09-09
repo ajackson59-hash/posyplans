@@ -593,7 +593,13 @@ export function registerPrePaymentPreviewQualityRoutes(
     }
 
     res.setHeader("Cache-Control", "private, no-store");
-    return res.json(await readiness(event, readMode(), autoNamedEnabled(), timestamp));
+    const googleEvaluation = googleCustomerArtworkEvaluation(event, artworkAttemptStore);
+    return res.json({ ...await readiness(event, readMode(), autoNamedEnabled(), timestamp),
+      // Owner-private, fixed Preview fixture only. Presence flags are sufficient
+      // to diagnose setup without submitting a paid request or exposing a key.
+      ...(googleEvaluation ? { providerEvaluation: { provider: "google", model: "gemini-3.1-flash-image",
+        configured: googleEvaluation.available, namedGenerationEnabled: autoNamedEnabled() } } : {}),
+    });
   });
 
   app.post("/api/events/owner/:ownerToken/prepayment-preview", async (req, res) => {

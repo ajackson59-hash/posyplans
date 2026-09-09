@@ -2,7 +2,13 @@
 
 The user requested a live test of Google's Nano Banana 2 after the GPT Image 2
 customer cohort stopped on Frozen. This is a fresh test, not a reopened GPT run.
-No Google quality or delivery-time result exists at this commit.
+No Google quality or delivery-time result exists at this commit. The first
+customer submission on Preview `f2e096f` returned the customer error state;
+readback confirmed zero preview reservations and zero retained paid stages.
+An automatic approval review rejected a proposed diagnostic POST because it
+could dispatch an additional paid render. That diagnostic POST did not run.
+The owner-private readiness GET now exposes configuration-presence flags only
+for this isolated fixture, allowing diagnosis without another submission.
 
 ## Configuration
 
