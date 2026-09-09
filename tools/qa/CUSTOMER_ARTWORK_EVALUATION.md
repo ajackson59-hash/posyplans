@@ -1,6 +1,12 @@
 # Customer artwork evaluation — prepared 9 September 2026
 
-Status: **fresh allowance approved by the owner; live execution being recorded**.
+Status: **stopped at case 2 on 9 September 2026: provider output-moderation block**.
+Execution SHA: `93b107fa0d1c8c5629e0357d730c0e7f08fe9141`.
+Execution Preview: https://posy-adnh9qf8n-poseplans.vercel.app
+Full result: [CUSTOMER_ARTWORK_RESULTS.md](CUSTOMER_ARTWORK_RESULTS.md).
+Actual calls: 2 images, 1 critic, 1 classifier. Cases 3–8 remain unrun.
+The customer evaluation's paid switch is now closed. This does not change
+Production or the earlier stopped medium study.
 Approval: 8 GPT Image 2 medium requests, up to 8 Sonnet reviews and 6 Haiku
 classifications, $2 planning reserve (not an enforced dollar cap), no retries
 or replacements. Eight new private draft fixture events are registered.

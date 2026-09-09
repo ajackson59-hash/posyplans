@@ -7,7 +7,7 @@ import { DbArtworkAttemptStore } from "./aiFirst/dbStore";
 import type { AiFirstArtworkAttemptStore } from "./aiFirst/artworkAttemptStore";
 import { canGenerateDraft } from "./masterPlannerEntitlement";
 import { CUSTOMER_PREVIEW_POLICY } from "./customerPreviewPolicy";
-import { customerArtworkEvaluation } from "./customerArtworkEvaluation";
+import { customerArtworkEvaluation, CUSTOMER_EVALUATION_PAID_ENABLED } from "./customerArtworkEvaluation";
 import {
   type ArtworkReferenceImage,
   type ArtworkReferenceMimeType,
@@ -655,8 +655,8 @@ export function registerPrePaymentPreviewQualityRoutes(
     const namedReference = namedReferenceForEventSync(event);
 
     const evaluation = customerArtworkEvaluation(event, artworkAttemptStore);
-    if (evaluation && (mode !== "quality-image" || !namedAutoEnabled)) {
-      return res.status(409).json({ error: "Customer evaluation requires the approved preview configuration." });
+    if (evaluation && (!CUSTOMER_EVALUATION_PAID_ENABLED || mode !== "quality-image" || !namedAutoEnabled)) {
+      return res.status(409).json({ error: "This customer evaluation is closed; no further requests are authorized." });
     }
     const generate = evaluation?.generate ?? defaultGenerate;
     const classifyNamedReference = evaluation?.classify ?? defaultClassifyNamedReference;

@@ -12,6 +12,8 @@ import { buildQualityLockedPreviewBrief, customerVisiblePreviewBytes, detectName
 
 export const CUSTOMER_EVALUATION_EVENTS: readonly number[] = [42, 43, 44, 45, 46, 47, 48, 49];
 export const CUSTOMER_EVALUATION_DATASET = "customer-artwork-20260909";
+/** Closed after case 2 returned an output-moderation block. No remaining cases may run. */
+export const CUSTOMER_EVALUATION_PAID_ENABLED = false;
 const hash = (value: string | Buffer) => createHash("sha256").update(value).digest("hex");
 
 export function customerArtworkEvaluation(event: Event, store: AiFirstArtworkAttemptStore) {

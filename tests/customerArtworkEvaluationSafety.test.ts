@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import express from "express";
+import request from "supertest";
 import type { Event } from "@shared/schema";
 import { InMemoryArtworkAttemptStore } from "../server/aiFirst/artworkAttemptStore";
 import { MEDIUM_FEASIBILITY_CASES } from "../server/aiFirst/mediumFeasibilityCases";
@@ -6,7 +8,10 @@ import { CUSTOMER_PREVIEW_POLICY } from "../server/customerPreviewPolicy";
 const providers = vi.hoisted(() => ({ image: vi.fn(), classify: vi.fn() }));
 vi.mock("../server/aiFirst/artwork", async original => ({ ...await original<typeof import("../server/aiFirst/artwork")>(), generateArtwork: providers.image }));
 vi.mock("@anthropic-ai/sdk", () => ({ default: class { messages = { create: providers.classify }; } }));
+vi.mock("../server/storage", () => ({ storage: {} }));
+vi.mock("../server/masterPlannerEntitlement", () => ({ canGenerateDraft: vi.fn() }));
 import { customerArtworkEvaluation } from "../server/customerArtworkEvaluation";
+import { registerPrePaymentPreviewQualityRoutes } from "../server/prePaymentPreviewQualityRoutes";
 const fixture = (index = 0) => ({ id: 42 + index, ownerToken: `fixture-${index}`, eventName: "Artwork evaluation",
   eventType: "Artwork evaluation", inviteStatus: "draft", themeName: "", paletteColors: "[]",
   vibeDescription: MEDIUM_FEASIBILITY_CASES[index].hostBrief } as Event);
@@ -41,4 +46,17 @@ it("does not activate for production or other events and fails closed on edited 
   expect(customerArtworkEvaluation({ ...fixture(), id: 9000 }, store)).toBeNull();
   expect(() => customerArtworkEvaluation({ ...fixture(), vibeDescription: "changed brief" }, store)).toThrow("fixture-or-retention-drift");
   vi.stubEnv("VERCEL_ENV", "production"); expect(customerArtworkEvaluation(fixture(), store)).toBeNull();
+});
+it("closes unrun customer fixtures before reservation, scheduling or paid providers", async () => {
+  const event = { ...fixture(2), prePaymentPreviewAttempts: 0, prePaymentPreviewUrl: "", prePaymentPreviewUsedAt: null };
+  const reserve = vi.fn(), schedule = vi.fn(), generate = vi.fn(), classify = vi.fn();
+  const app = express(); app.use(express.json());
+  registerPrePaymentPreviewQualityRoutes(app, { store: {
+    getEventByOwnerToken: async () => event, updateEventById: vi.fn(),
+    reservePrePaymentPreview: reserve, completePrePaymentPreview: vi.fn(),
+  }, isUnlocked: async () => false, mode: () => "quality-image", autoNamedEnabled: () => true,
+    generate, classifyNamedReference: classify, schedule, artworkAttemptStore: new InMemoryArtworkAttemptStore() });
+  const response = await request(app).post(`/api/events/owner/${event.ownerToken}/prepayment-preview`).send({ email: "fixture@example.com" });
+  expect(response.status).toBe(409);
+  for (const boundary of [reserve, schedule, generate, classify, providers.image, providers.classify]) expect(boundary).not.toHaveBeenCalled();
 });
