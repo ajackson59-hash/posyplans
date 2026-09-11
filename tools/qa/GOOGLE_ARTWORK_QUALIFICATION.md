@@ -1,5 +1,24 @@
 # Google artwork qualification — 9 September 2026
 
+## Billing-activated test — 11 September 2026
+
+The configured-key test on event 50 returned Google HTTP 429 without an image.
+It made one image dispatch and one Haiku classification, with no critic or
+retry. Preserve those records and the consumed fixture.
+
+The user subsequently confirmed billing activation and explicitly approved a
+new test. Fresh draft event **51**, dataset
+`google-customer-artwork-billing-20260911`, case `-02`, selects Google only in
+Preview. Its Frozen brief and hash are unchanged. One image, at most one critic
+and one classifier, no retries. Each case has independent durable claims; no
+old fixture is reset. Inspect this result before expanding the evaluation.
+
+The original setup notes below are dated history. Google key presence is now
+confirmed; account billing activation is user-reported, with actual image
+access still to be tested. Production remains unchanged.
+
+## Original setup history
+
 The user requested a live test of Google's Nano Banana 2 after the GPT Image 2
 customer cohort stopped on Frozen. This is a fresh test, not a reopened GPT run.
 No Google quality or delivery-time result exists at this commit. The first

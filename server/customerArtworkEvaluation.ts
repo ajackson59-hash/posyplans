@@ -24,14 +24,18 @@ export function customerArtworkEvaluation(event: Event, store: AiFirstArtworkAtt
   return fixedCustomerEvaluation(event, store, index, "gpt-image-2", CUSTOMER_EVALUATION_DATASET);
 }
 
-// Fresh Frozen fixture; the GPT dataset and its unused allowance remain closed.
-// User requested this provider test on 2026-09-09. Expand only after inspecting
-// this result; each fixture can claim one render and one independent review.
+// Preserve event 50's consumed 429 result. The user activated billing and
+// approved a fresh Frozen test on 2026-09-11; each case keeps its own one-use
+// durable claims. The GPT cohort and its unused allowance remain closed.
 export const GOOGLE_CUSTOMER_EVALUATION_EVENT = 50;
 export const GOOGLE_CUSTOMER_EVALUATION_DATASET = "google-customer-artwork-20260909";
+export const GOOGLE_BILLING_EVALUATION_EVENT = 51;
+export const GOOGLE_BILLING_EVALUATION_DATASET = "google-customer-artwork-billing-20260911";
 export function googleCustomerArtworkEvaluation(event: Event, store: AiFirstArtworkAttemptStore) {
-  if (process.env.VERCEL_ENV !== "preview" || event.id !== GOOGLE_CUSTOMER_EVALUATION_EVENT) return null;
-  return { ...fixedCustomerEvaluation(event, store, 1, GOOGLE_ARTWORK_MODEL, GOOGLE_CUSTOMER_EVALUATION_DATASET),
+  const datasetId = event.id === GOOGLE_CUSTOMER_EVALUATION_EVENT ? GOOGLE_CUSTOMER_EVALUATION_DATASET
+    : event.id === GOOGLE_BILLING_EVALUATION_EVENT ? GOOGLE_BILLING_EVALUATION_DATASET : null;
+  if (process.env.VERCEL_ENV !== "preview" || !datasetId) return null;
+  return { ...fixedCustomerEvaluation(event, store, 1, GOOGLE_ARTWORK_MODEL, datasetId),
     available: googleArtworkConfigured() };
 }
 
