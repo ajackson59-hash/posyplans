@@ -1193,6 +1193,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
       try {
         tier1 = runTier1({
           bytes: reviewedBytes,
+          artworkModel: model,
           concept,
           brief,
           overlayCoverage: OVERLAY_COVERAGE[concept.minOverlay],
@@ -1373,6 +1374,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
           const reviewedBytes = customerVisiblePreviewBytes(repaired.bytes);
           const tier1 = runTier1({
             bytes: reviewedBytes,
+            artworkModel: repairModel,
             concept,
             brief,
             overlayCoverage: OVERLAY_COVERAGE[concept.minOverlay],
@@ -1561,6 +1563,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
     try {
       tier1 = runTier1({
         bytes: reviewedBytes,
+        artworkModel: model,
         concept,
         brief,
         overlayCoverage: OVERLAY_COVERAGE[concept.minOverlay],

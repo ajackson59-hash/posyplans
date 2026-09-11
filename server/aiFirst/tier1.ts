@@ -32,6 +32,7 @@ import { aspectRatioForLayout } from "@shared/aiFirstInvite";
 import { LOCAL_TYPE_SURFACE_ALPHA } from "@shared/themeCatalog";
 import { resolveArtDirection } from "./artDirection";
 import type { EventBrief } from "./brief";
+import { sizeForAspect, DEFAULT_ARTWORK_MODEL, type ArtworkModel } from "./artwork";
 
 export type Tier1Code =
   | "file-integrity"
@@ -108,12 +109,6 @@ const OCR_PHRASE_MIN_ALNUM = 8;
 export const MAX_RENDERED_TYPE_REGION_LUMA_SPREAD = 21;
 const MAX_UNPROTECTED_TYPE_REGION_LUMA_SPREAD = 90;
 
-const EXPECTED_ASPECT: Record<"16:9" | "1:1" | "9:16", number> = {
-  "16:9": 1536 / 1024,
-  "1:1": 1,
-  "9:16": 1024 / 1536,
-};
-
 /* ── The gate ────────────────────────────────────────────────────────── */
 
 export interface Tier1Input {
@@ -121,6 +116,8 @@ export interface Tier1Input {
   concept: AiFirstConcept;
   /** Host intent makes ambiguous style heuristics advisory; vision remains mandatory. */
   brief?: EventBrief;
+  /** Validate against the dimensions actually requested from this provider. */
+  artworkModel?: ArtworkModel;
   /** Overlay actually applied, for the coverage check. */
   overlayCoverage: number;
   /** Artwork opacity actually applied by the layout. */
@@ -181,7 +178,10 @@ export function runTier1Checks(input: Tier1Input): Tier1Result {
       message: "compact artwork is below the 560px minimum customer teaser resolution",
       measured: Math.max(image.width, image.height), limit: 560 });
   }
-  const expected = EXPECTED_ASPECT[aspectRatioForLayout(concept.layoutStyle)];
+  const [requestedWidth, requestedHeight] = sizeForAspect(
+    aspectRatioForLayout(concept.layoutStyle), input.artworkModel ?? DEFAULT_ARTWORK_MODEL,
+  ).split("x").map(Number);
+  const expected = requestedWidth / requestedHeight;
   const actual = image.width / image.height;
   if (Math.abs(actual - expected) / expected > ASPECT_TOLERANCE) {
     findings.push({

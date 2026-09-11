@@ -9,6 +9,8 @@ import { InMemoryArtworkAttemptStore } from "../server/aiFirst/artworkAttemptSto
 import { customerVisiblePreviewBytes, generateQualityLockedPreview } from "../server/prePaymentPreviewQuality";
 import { CUSTOMER_PREVIEW_POLICY } from "../server/customerPreviewPolicy";
 import { MEDIUM_FEASIBILITY_CASES } from "../server/aiFirst/mediumFeasibilityCases";
+import { runTier1Checks } from "../server/aiFirst/tier1";
+import { buildQualityLockedPreviewBrief } from "../server/prePaymentPreviewQuality";
 
 let jpeg: Buffer;
 const fetchMock = vi.fn();
@@ -54,6 +56,18 @@ it("passes supplied reference pixels through the same provider adapter for edits
   const payload = JSON.parse(fetchMock.mock.calls[0][1].body);
   expect(payload.input[1]).toEqual({ type: "image", mime_type: "image/jpeg", data: jpeg.toString("base64") });
   expect(payload).not.toHaveProperty("input_fidelity");
+});
+
+it("validates native Google teaser dimensions and still rejects a mismatched provider ratio", async () => {
+  const event = { eventName: "Construction", eventType: "Birthday", themeName: "", paletteColors: "[]",
+    vibeDescription: MEDIUM_FEASIBILITY_CASES[4].hostBrief } as Event;
+  const { brief, concept } = await buildQualityLockedPreviewBrief(event, "", null);
+  const generated = await generateArtwork(input);
+  const teaser = customerVisiblePreviewBytes(generated.bytes);
+  const checks = { bytes: teaser, concept, brief, overlayCoverage: 0, artworkOpacity: 1, layoutApplied: false, ocr: false };
+  const google = runTier1Checks({ ...checks, artworkModel: GOOGLE_ARTWORK_MODEL });
+  expect(google.findings.filter(f => f.code === "dimensions" && f.critical)).toEqual([]);
+  expect(runTier1Checks({ ...checks, artworkModel: "gpt-image-2" }).findings.some(f => f.code === "dimensions" && f.critical)).toBe(true);
 });
 
 it.each([400, 401, 429, 503])("does not retry or switch provider after HTTP %s and sanitizes private error text", async status => {

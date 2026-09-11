@@ -8,6 +8,7 @@ import type { AiFirstArtworkAttemptStore } from "./aiFirst/artworkAttemptStore";
 import { canGenerateDraft } from "./masterPlannerEntitlement";
 import { CUSTOMER_PREVIEW_POLICY } from "./customerPreviewPolicy";
 import { customerArtworkEvaluation, googleCustomerArtworkEvaluation, CUSTOMER_EVALUATION_PAID_ENABLED } from "./customerArtworkEvaluation";
+import { ORIGINAL_CONTROL_REVIEW, reviewRetainedCustomerArtwork } from "./customerArtworkRetainedReview";
 import {
   type ArtworkReferenceImage,
   type ArtworkReferenceMimeType,
@@ -582,6 +583,22 @@ export function registerPrePaymentPreviewQualityRoutes(
   const now = dependencies.now ?? Date.now;
   const jobTimeoutMs = dependencies.jobTimeoutMs ?? PREPAYMENT_PREVIEW_JOB_TIMEOUT_MS;
   const artworkAttemptStore = dependencies.artworkAttemptStore ?? new DbArtworkAttemptStore();
+
+  app.post("/api/events/owner/:ownerToken/prepayment-preview/retained-review", async (req, res) => {
+    if (process.env.VERCEL_ENV !== "preview" || process.env.VERCEL_GIT_COMMIT_REF !== "codex/launch-blockers") {
+      return res.status(404).json({ error: "Not found" });
+    }
+    const event = await store.getEventByOwnerToken(req.params.ownerToken);
+    if (!event || event.id !== ORIGINAL_CONTROL_REVIEW.eventId) return res.status(404).json({ error: "Not found" });
+    if (req.body?.expectedAssetHash !== ORIGINAL_CONTROL_REVIEW.sourceHash) return res.status(409).json({ error: "Retained source mismatch" });
+    const result = await reviewRetainedCustomerArtwork(event, artworkAttemptStore, ORIGINAL_CONTROL_REVIEW);
+    if (result.kind === "approved-image") {
+      const persisted = await persistApprovedImage(store, event, result.dataUrl, now());
+      return res.status(persisted ? 200 : 503).json({ kind: result.kind, persisted, attemptId: result.attemptId,
+        imageProviderCalls: 0, criticRequests: result.criticRequests, verdict: result.verdict });
+    }
+    return res.status(result.kind === "blocked" ? 409 : result.kind === "unavailable" ? 503 : 422).json(result);
+  });
 
   app.get("/api/events/owner/:ownerToken/prepayment-preview/readiness", async (req, res) => {
     let event = await store.getEventByOwnerToken(req.params.ownerToken);
