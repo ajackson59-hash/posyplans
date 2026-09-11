@@ -14,7 +14,8 @@ import { customerArtworkEvaluation, googleCustomerArtworkEvaluation, GOOGLE_CUST
   GOOGLE_BILLING_EVALUATION_EVENT, GOOGLE_BILLING_EVALUATION_DATASET,
   GOOGLE_DIAGNOSTIC_EVALUATION_EVENT, GOOGLE_DIAGNOSTIC_EVALUATION_DATASET,
   GOOGLE_ORIGINAL_CONTROL_EVENT, GOOGLE_ORIGINAL_CONTROL_DATASET,
-  GOOGLE_REPAIRED_FLOW_EVENT, GOOGLE_REPAIRED_FLOW_DATASET } from "../server/customerArtworkEvaluation";
+  GOOGLE_REPAIRED_FLOW_EVENT, GOOGLE_REPAIRED_FLOW_DATASET,
+  GOOGLE_SCREENING_CASE_INDICES, GOOGLE_SCREENING_DATASET } from "../server/customerArtworkEvaluation";
 import { registerPrePaymentPreviewQualityRoutes } from "../server/prePaymentPreviewQualityRoutes";
 const fixture = (index = 0) => ({ id: 42 + index, ownerToken: `fixture-${index}`, eventName: "Artwork evaluation",
   eventType: "Artwork evaluation", inviteStatus: "draft", themeName: "", paletteColors: "[]",
@@ -105,6 +106,7 @@ it.each([
   [GOOGLE_DIAGNOSTIC_EVALUATION_EVENT, GOOGLE_DIAGNOSTIC_EVALUATION_DATASET, 1],
   [GOOGLE_ORIGINAL_CONTROL_EVENT, GOOGLE_ORIGINAL_CONTROL_DATASET, 4],
   [GOOGLE_REPAIRED_FLOW_EVENT, GOOGLE_REPAIRED_FLOW_DATASET, 4],
+  ...Object.entries(GOOGLE_SCREENING_CASE_INDICES).map(([eventId, index]) => [Number(eventId), GOOGLE_SCREENING_DATASET, index]),
 ])("isolates fresh Google case %s without reopening the consumed case", async (eventId, datasetId, index) => {
   vi.stubEnv("GEMINI_API_KEY", "test-key");
   const store = new InMemoryArtworkAttemptStore();
@@ -127,4 +129,20 @@ it.each([
   expect(() => googleCustomerArtworkEvaluation({ ...newEvent, vibeDescription: "edited brief" }, store)).toThrow("fixture-or-retention-drift");
   vi.stubEnv("VERCEL_ENV", "production");
   expect(googleCustomerArtworkEvaluation(newEvent, store)).toBeNull();
+});
+
+it("blocks screening outside its Preview branch before reservation or paid providers", async () => {
+  vi.stubEnv("VERCEL_GIT_COMMIT_REF", "another-preview");
+  const event = { ...fixture(), id: 55, prePaymentPreviewAttempts: 0, prePaymentPreviewUrl: "", prePaymentPreviewUsedAt: null };
+  const reserve = vi.fn(), schedule = vi.fn(), generate = vi.fn(), classify = vi.fn();
+  const app = express(); app.use(express.json());
+  registerPrePaymentPreviewQualityRoutes(app, { store: {
+    getEventByOwnerToken: async () => event, updateEventById: vi.fn(),
+    reservePrePaymentPreview: reserve, completePrePaymentPreview: vi.fn(),
+  }, isUnlocked: async () => false, mode: () => "quality-image", autoNamedEnabled: () => true,
+    generate, classifyNamedReference: classify, schedule, artworkAttemptStore: new InMemoryArtworkAttemptStore() });
+  const response = await request(app).post(`/api/events/owner/${event.ownerToken}/prepayment-preview`).send({ email: "fixture@example.com" });
+  expect(response.status).toBe(409);
+  expect(response.body.code).toBe("google_evaluation_closed");
+  for (const boundary of [reserve, schedule, generate, classify, providers.image, providers.classify]) expect(boundary).not.toHaveBeenCalled();
 });

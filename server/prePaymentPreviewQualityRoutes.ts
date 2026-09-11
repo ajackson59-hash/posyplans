@@ -697,6 +697,9 @@ export function registerPrePaymentPreviewQualityRoutes(
       return res.status(409).json({ error: "This customer evaluation is closed; no further requests are authorized." });
     }
     const googleEvaluation = googleCustomerArtworkEvaluation(event, artworkAttemptStore);
+    if (googleEvaluation && !googleEvaluation.paidEnabled) {
+      return res.status(409).json({ code: "google_evaluation_closed", error: "This artwork evaluation is closed; no further requests are authorized." });
+    }
     if (googleEvaluation && !googleEvaluation.available) {
       // Before reservation, classification or image dispatch; missing access
       // never consumes this fresh fixture or silently falls back to OpenAI.

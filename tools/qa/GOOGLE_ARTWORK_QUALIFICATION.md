@@ -1,3 +1,53 @@
+# Current qualification status — 11 September 2026
+
+Event 54 completed the ordinary customer flow automatically on `cf7fcac06ccbabc1beafb9d89ec77190137119b9`:
+Google generation, deterministic validation, one Sonnet review, persistence and browser decode in **30,033.9 ms**.
+No refresh, retained-image recovery, retry or alternate-provider dispatch. One Google image (8,394 ms including normalization),
+one Haiku classification (1,545 ms), one Sonnet review (15,123 ms). CI Verify Posy #425 succeeded.
+All six automated review dimensions scored 5/5. Agent inspection found the requested construction subjects,
+bunting, garden and watercolor treatment; independent human approval remains pending.
+
+- Unchanged construction host SHA: `008fe295df6ecfebdf3d065f56f08e66c112c506c44eb7aac5f9db5485dee1a9`.
+- Actual final prompt SHA: `52ce7874ae029a30d65021d12719477ec7cba8036ee7f1f54f4bf9ccb9c4f667`; 6,131 characters; full host brief occurs once.
+- Source SHA: `b5a4ceda85b089467e3b2294e4d90777eec13b046aac3ab52c503a40a400a3f3`.
+- Exact reviewed and delivered PNG SHA: `c6d06c22a2fe9c31005ca900dcbac9e9df120d104d01272919c5ef20e82096ef`.
+- Private retained records 259–268 include accepted record 267. Dataset `google-repaired-flow-20260911` is consumed.
+
+This supersedes the historical no-success status below. Event 53 required manual recovery after fixing
+hardcoded OpenAI dimensions; its recovery remains excluded from uninterrupted delivery results.
+The shared repairs also remove invented keyword preferences and duplicate prompt requirements, preserve
+the complete host brief, and show truthful customer failures. No critic threshold was lowered.
+
+## Next bounded screening
+
+After the user requested proceeding with the launch plan, six fresh synthetic draft fixtures were created
+from the unchanged public benchmark briefs. Dataset `google-screening-20260911`, Preview branch
+`codex/launch-blockers` only. Maximum six Google images, six Sonnet reviews and four Haiku classifications;
+zero retries, replacements or alternate-provider dispatches. A $2 planning reserve is an estimate,
+**not** a provider-enforced dollar cap. Inspect every result before the next case and close the cohort
+on the first quality, classification, integrity, accounting, provider or 90-second delivery failure.
+
+| Event | Original case | Direction |
+| --- | --- | --- |
+| 55 | 1 | Blippi/Meekah gouache |
+| 56 | 3 | Rumi/Mira/Zoey anime |
+| 57 | 4 | Moana/Maui stylized 3D |
+| 58 | 6 | Exactly-six-place garden dinner photography |
+| 59 | 7 | Abstract gallery vector |
+| 60 | 8 | Moon-garden lacquer inlay |
+
+The Frozen brief is held after event 52's explicit content-policy refusal. Trigger unknown;
+no rewording, replay or provider hopping to evade the refusal. Account access is demonstrably working
+for original construction artwork, so do not repeat billing setup as a proposed resolution.
+
+One successful original direction does not qualify the provider universally. Ordinary customers still use
+GPT Image 2; Google selection remains confined to these registered Preview fixtures. Retain all eight
+release directions, at least 20 independent trials per direction, and at least 95% human-approved exact
+artwork decoded within 90 seconds in each direction. Spark/Plus, recovery, paid source reuse, refinement,
+invitation/RSVP, planner and operational launch gates remain open. Production is unchanged.
+
+---
+
 # Google artwork qualification — 9 September 2026
 
 ## Billing-activated test — 11 September 2026

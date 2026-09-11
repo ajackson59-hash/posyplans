@@ -43,15 +43,27 @@ export const GOOGLE_ORIGINAL_CONTROL_DATASET = "google-original-control-20260911
 // One newly authorized request; event 53 and its retained review remain consumed.
 export const GOOGLE_REPAIRED_FLOW_EVENT = 54;
 export const GOOGLE_REPAIRED_FLOW_DATASET = "google-repaired-flow-20260911";
+// Independent, unchanged directions after event 54's uninterrupted 30.034s pass.
+// The blocked Frozen brief is deliberately absent. Stop/close this screening
+// at the first failed result; never replenish a consumed fixture or retry it.
+export const GOOGLE_SCREENING_DATASET = "google-screening-20260911";
+export const GOOGLE_SCREENING_PAID_ENABLED = true;
+export const GOOGLE_SCREENING_CASE_INDICES: Readonly<Record<number, number>> = Object.freeze({
+  55: 0, 56: 2, 57: 3, 58: 5, 59: 6, 60: 7,
+});
 export function googleCustomerArtworkEvaluation(event: Event, store: AiFirstArtworkAttemptStore) {
+  const screeningIndex = GOOGLE_SCREENING_CASE_INDICES[event.id];
   const datasetId = event.id === GOOGLE_CUSTOMER_EVALUATION_EVENT ? GOOGLE_CUSTOMER_EVALUATION_DATASET
     : event.id === GOOGLE_BILLING_EVALUATION_EVENT ? GOOGLE_BILLING_EVALUATION_DATASET
     : event.id === GOOGLE_DIAGNOSTIC_EVALUATION_EVENT ? GOOGLE_DIAGNOSTIC_EVALUATION_DATASET
     : event.id === GOOGLE_ORIGINAL_CONTROL_EVENT ? GOOGLE_ORIGINAL_CONTROL_DATASET
-    : event.id === GOOGLE_REPAIRED_FLOW_EVENT ? GOOGLE_REPAIRED_FLOW_DATASET : null;
+    : event.id === GOOGLE_REPAIRED_FLOW_EVENT ? GOOGLE_REPAIRED_FLOW_DATASET
+    : screeningIndex !== undefined ? GOOGLE_SCREENING_DATASET : null;
   if (process.env.VERCEL_ENV !== "preview" || !datasetId) return null;
-  const index = event.id === GOOGLE_ORIGINAL_CONTROL_EVENT || event.id === GOOGLE_REPAIRED_FLOW_EVENT ? 4 : 1;
+  const index = screeningIndex ?? (event.id === GOOGLE_ORIGINAL_CONTROL_EVENT || event.id === GOOGLE_REPAIRED_FLOW_EVENT ? 4 : 1);
   return { ...fixedCustomerEvaluation(event, store, index, GOOGLE_ARTWORK_MODEL, datasetId),
+    paidEnabled: datasetId !== GOOGLE_SCREENING_DATASET ||
+      (GOOGLE_SCREENING_PAID_ENABLED && process.env.VERCEL_GIT_COMMIT_REF === "codex/launch-blockers"),
     available: googleArtworkConfigured() };
 }
 
