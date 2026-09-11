@@ -13,7 +13,8 @@ vi.mock("../server/masterPlannerEntitlement", () => ({ canGenerateDraft: vi.fn()
 import { customerArtworkEvaluation, googleCustomerArtworkEvaluation, GOOGLE_CUSTOMER_EVALUATION_EVENT,
   GOOGLE_BILLING_EVALUATION_EVENT, GOOGLE_BILLING_EVALUATION_DATASET,
   GOOGLE_DIAGNOSTIC_EVALUATION_EVENT, GOOGLE_DIAGNOSTIC_EVALUATION_DATASET,
-  GOOGLE_ORIGINAL_CONTROL_EVENT, GOOGLE_ORIGINAL_CONTROL_DATASET } from "../server/customerArtworkEvaluation";
+  GOOGLE_ORIGINAL_CONTROL_EVENT, GOOGLE_ORIGINAL_CONTROL_DATASET,
+  GOOGLE_REPAIRED_FLOW_EVENT, GOOGLE_REPAIRED_FLOW_DATASET } from "../server/customerArtworkEvaluation";
 import { registerPrePaymentPreviewQualityRoutes } from "../server/prePaymentPreviewQualityRoutes";
 const fixture = (index = 0) => ({ id: 42 + index, ownerToken: `fixture-${index}`, eventName: "Artwork evaluation",
   eventType: "Artwork evaluation", inviteStatus: "draft", themeName: "", paletteColors: "[]",
@@ -103,6 +104,7 @@ it.each([
   [GOOGLE_BILLING_EVALUATION_EVENT, GOOGLE_BILLING_EVALUATION_DATASET, 1],
   [GOOGLE_DIAGNOSTIC_EVALUATION_EVENT, GOOGLE_DIAGNOSTIC_EVALUATION_DATASET, 1],
   [GOOGLE_ORIGINAL_CONTROL_EVENT, GOOGLE_ORIGINAL_CONTROL_DATASET, 4],
+  [GOOGLE_REPAIRED_FLOW_EVENT, GOOGLE_REPAIRED_FLOW_DATASET, 4],
 ])("isolates fresh Google case %s without reopening the consumed case", async (eventId, datasetId, index) => {
   vi.stubEnv("GEMINI_API_KEY", "test-key");
   const store = new InMemoryArtworkAttemptStore();

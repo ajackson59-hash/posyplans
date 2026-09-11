@@ -39,13 +39,18 @@ export const GOOGLE_DIAGNOSTIC_EVALUATION_DATASET = "google-customer-artwork-dia
 // Preserve the original construction brief; do not replay or rewrite that block.
 export const GOOGLE_ORIGINAL_CONTROL_EVENT = 53;
 export const GOOGLE_ORIGINAL_CONTROL_DATASET = "google-original-control-20260911";
+// Fresh customer-flow verification after the shared dimension/prompt repairs.
+// One newly authorized request; event 53 and its retained review remain consumed.
+export const GOOGLE_REPAIRED_FLOW_EVENT = 54;
+export const GOOGLE_REPAIRED_FLOW_DATASET = "google-repaired-flow-20260911";
 export function googleCustomerArtworkEvaluation(event: Event, store: AiFirstArtworkAttemptStore) {
   const datasetId = event.id === GOOGLE_CUSTOMER_EVALUATION_EVENT ? GOOGLE_CUSTOMER_EVALUATION_DATASET
     : event.id === GOOGLE_BILLING_EVALUATION_EVENT ? GOOGLE_BILLING_EVALUATION_DATASET
     : event.id === GOOGLE_DIAGNOSTIC_EVALUATION_EVENT ? GOOGLE_DIAGNOSTIC_EVALUATION_DATASET
-    : event.id === GOOGLE_ORIGINAL_CONTROL_EVENT ? GOOGLE_ORIGINAL_CONTROL_DATASET : null;
+    : event.id === GOOGLE_ORIGINAL_CONTROL_EVENT ? GOOGLE_ORIGINAL_CONTROL_DATASET
+    : event.id === GOOGLE_REPAIRED_FLOW_EVENT ? GOOGLE_REPAIRED_FLOW_DATASET : null;
   if (process.env.VERCEL_ENV !== "preview" || !datasetId) return null;
-  const index = event.id === GOOGLE_ORIGINAL_CONTROL_EVENT ? 4 : 1;
+  const index = event.id === GOOGLE_ORIGINAL_CONTROL_EVENT || event.id === GOOGLE_REPAIRED_FLOW_EVENT ? 4 : 1;
   return { ...fixedCustomerEvaluation(event, store, index, GOOGLE_ARTWORK_MODEL, datasetId),
     available: googleArtworkConfigured() };
 }
