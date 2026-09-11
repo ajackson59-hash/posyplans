@@ -115,12 +115,15 @@ export interface ArtworkProviderDiagnostics {
   promptSha256: string;
 }
 
-/** Provider messages can echo private prompts. Retain identifiers and coarse
- * diagnostics, never the raw response body, prompt, credentials or image data. */
+/** Provider messages can echo private prompts. Public/loggable diagnostics
+ * contain only identifiers. An optional credential-redacted message is
+ * non-enumerable and may be retained only by owner-private evaluation storage. */
 export class ArtworkProviderError extends Error {
-  constructor(readonly diagnostics: ArtworkProviderDiagnostics) {
+  declare readonly privateProviderMessage?: string;
+  constructor(readonly diagnostics: ArtworkProviderDiagnostics, privateProviderMessage?: string) {
     super(`${diagnostics.model} ${diagnostics.operation} failed (${diagnostics.status}): ${diagnostics.code ?? diagnostics.type ?? "provider_error"}${diagnostics.requestId ? `; request ${diagnostics.requestId}` : ""}`);
     this.name = "ArtworkProviderError";
+    if (privateProviderMessage) Object.defineProperty(this, "privateProviderMessage", { value: privateProviderMessage });
   }
 }
 

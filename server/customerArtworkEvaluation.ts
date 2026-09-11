@@ -132,6 +132,9 @@ function fixedCustomerEvaluation(event: Event, store: AiFirstArtworkAttemptStore
             if (error instanceof ArtworkNormalizationError) { generation = error.result; source = generation.bytes; }
             if (error instanceof ArtworkProviderError) {
               evidence.providerFailure = error.diagnostics; evidence.imageRequests = error.diagnostics.providerRequestCount;
+              // Evaluation records are owner-private. This message is omitted
+              // from ordinary diagnostics/logs and may echo the host's prompt.
+              if (error.privateProviderMessage) evidence.privateProviderMessage = error.privateProviderMessage;
             }
             evidence.stopReason = "image-provider-unavailable"; await save("image-failed"); throw error;
           }

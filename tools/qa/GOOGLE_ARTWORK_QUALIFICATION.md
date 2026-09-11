@@ -2,6 +2,24 @@
 
 ## Billing-activated test — 11 September 2026
 
+**Result:** event 51 made one Google image request (HTTP 400 after 8,856 ms),
+one correct Haiku cast classification and zero critics/retries. No image was
+returned. Retained records 233–240 and the consumed event remain intact.
+The customer saw a direction card, whose 11,244.7 ms decode is not successful
+artwork delivery. Original Frozen host words were preserved in the request.
+
+The request shape matches Google's documented Interactions request fields.
+The precise cause of the 400 remains unknown: the adapter incorrectly read
+`error.status` while the Interactions API specifies string `error.code`.
+The adapter now reads the documented code and preserves a bounded,
+credential-redacted error explanation only in owner-private evaluation
+records. The explanation is non-enumerable on the error and is never included
+in ordinary diagnostics/logs. The fix cannot recover the discarded historical
+message and has no live image-success result yet. No further request ran.
+
+Error schema checked 2026-09-11:
+https://ai.google.dev/static/api/interactions.openapi.json
+
 The configured-key test on event 50 returned Google HTTP 429 without an image.
 It made one image dispatch and one Haiku classification, with no critic or
 retry. Preserve those records and the consumed fixture.

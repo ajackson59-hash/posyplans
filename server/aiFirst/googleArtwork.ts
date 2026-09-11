@@ -42,14 +42,18 @@ export async function generateGoogleArtwork(request: ArtworkRequest): Promise<Ar
   const size = sizeForAspect(request.aspectRatio, GOOGLE_ARTWORK_MODEL);
   const started = Date.now();
   const safeIdentifier = (value: unknown): string | null =>
-    typeof value === "string" && /^[A-Za-z0-9_.:-]{1,200}$/.test(value) ? value : null;
-  const failure = (status: number, code: string | null, requestId: string | null) => new ArtworkProviderError({
+    typeof value === "string" && !value.includes(apiKey) && !/AIza[0-9A-Za-z_-]{30,}/.test(value)
+      && /^[A-Za-z0-9_.:-]{1,200}$/.test(value) ? value : null;
+  const privateMessage = (value: unknown): string | undefined => typeof value === "string"
+    ? value.split(apiKey).join("[REDACTED_API_KEY]").replace(/AIza[0-9A-Za-z_-]{30,}/g, "[REDACTED_API_KEY]").slice(0,8192)
+    : undefined;
+  const failure = (status: number, code: string | null, requestId: string | null, message?: unknown) => new ArtworkProviderError({
     model: GOOGLE_ARTWORK_MODEL, quality: request.quality ?? "medium", size,
     status, code, type: "google_image_error", requestId,
     moderationStage: "unknown", moderationCategories: [], outputFormat: request.outputFormat ?? "jpeg",
     operation: request.referenceImages?.length ? "edit" : "request", providerRequestCount: 1,
     providerDurationMs: Date.now() - started, promptSha256: createHash("sha256").update(request.prompt).digest("hex"),
-  });
+  }, privateMessage(message));
   let response: Response;
   try {
     response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
@@ -71,7 +75,11 @@ export async function generateGoogleArtwork(request: ArtworkRequest): Promise<Ar
   const requestId = safeIdentifier(response.headers.get("x-request-id"));
   let body: any;
   try { body = await response.json(); } catch { throw failure(response.status, "invalid_json", requestId); }
-  if (!response.ok) throw failure(response.status, safeIdentifier(body?.error?.status) ?? "http_error", requestId);
+  // Interactions errors use a string error.code (not the numeric code/status
+  // envelope of the older generateContent API). Keep the code and an explicitly
+  // owner-private, credential-redacted explanation; never log the message.
+  const errorCode = safeIdentifier(body?.error?.code) ?? safeIdentifier(body?.error?.status);
+  if (!response.ok) throw failure(response.status, errorCode ?? "http_error", requestId, body?.error?.message);
   // Only final model output counts. Thought summaries may contain unbilled
   // intermediate images and must never become the customer source.
   const images = Array.isArray(body.steps) ? body.steps

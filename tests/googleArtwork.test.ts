@@ -74,6 +74,20 @@ it("requires credentials and a live deadline before dispatch", async () => {
   expect(fetchMock).not.toHaveBeenCalled();
 });
 
+it("retains the documented Interactions error code and keeps its redacted explanation out of logs", async () => {
+  fetchMock.mockResolvedValue(new Response(JSON.stringify({ error: {
+    code: "invalid_argument", message: "Invalid parameter response_format; private prompt test-google-key",
+  } }), { status: 400 }));
+  const error = await generateArtwork(input).catch(e => e);
+  expect(error).toBeInstanceOf(ArtworkProviderError);
+  expect(error.diagnostics).toMatchObject({ status: 400, code: "invalid_argument", providerRequestCount: 1 });
+  expect(error.privateProviderMessage).toBe("Invalid parameter response_format; private prompt [REDACTED_API_KEY]");
+  expect(Object.keys(error)).not.toContain("privateProviderMessage");
+  expect(JSON.stringify(error)).not.toMatch(/private prompt|test-google-key|Invalid parameter/);
+  expect(String(error)).not.toMatch(/private prompt|test-google-key|Invalid parameter/);
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+});
+
 it("never promotes a text-only reply or a thought image to artwork", async () => {
   const body = response(); body.steps = [body.steps[0]];
   fetchMock.mockResolvedValue(new Response(JSON.stringify(body), { status: 200 }));
