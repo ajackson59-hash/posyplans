@@ -190,8 +190,9 @@ export function classifyRequirements(input: {
   const preferred: string[] = [];
   const age = ageFromMilestone(input.milestone);
 
-  const themeIdentity = input.themeName.trim() || input.vibe.trim();
+  const themeIdentity = input.themeName.trim();
   if (themeIdentity) required.push(`the ${themeIdentity} visual identity, unmistakably present`);
+  else if (input.vibe.trim()) required.push("the complete host direction, including every requested subject and scene detail");
   required.push(...explicitSceneRequirements(input.vibe));
   if (input.colors.length > 0) required.push(`the stated colour family: ${input.colors.join(", ")}`);
   if (input.milestone) {
@@ -202,9 +203,9 @@ export function classifyRequirements(input: {
     );
   }
 
-  for (const motif of motifsFrom(input.vibe, input.themeName)) {
-    preferred.push(`a restrained interpretation of "${motif}"`);
-  }
+  // Free prose is not a bag of motifs. Words such as "third", "original",
+  // or an excluded subject must not become additional visual preferences.
+  // The full host text stays binding in HOST WORDS and in the review brief.
   preferred.push(`${input.formality} styling`, "modern stationery finish");
 
   const excluded = [...UNIVERSAL_EXCLUSIONS, ...explicitSceneExclusions(input.vibe)];

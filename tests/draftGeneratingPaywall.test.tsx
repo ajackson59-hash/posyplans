@@ -195,6 +195,30 @@ describe("DraftGenerating pre-payment preview", () => {
     await waitFor(() => expect(callsTo("/api/checkout/create-session")).toHaveLength(1));
   });
 
+  it.each(["provider-blocked", "quality-rejected", "preview-unavailable"])("shows a persisted %s failure without an artwork-ready claim or another generation", async failureReason => {
+    const savedBrief = "Watercolor construction party. Yellow excavator, crane and sand play. No people.";
+    apiRequestJson.mockImplementation((method: string, url: string) => {
+      if (method === "GET" && url.endsWith("/prepayment-preview/readiness")) return Promise.resolve({
+        ready: true, generationState: "fallback", kind: "direction-card", pollAfterMs: null,
+        namedReference: null, failureReason, savedBrief,
+      });
+      if (method === "GET" && url.endsWith("/master-planner/entitlement")) return Promise.resolve({
+        eventId: 53, freeDraftState: "none", emailCaptured: false, planTier: "spark", sparkUnlocked: false, canGenerate: false,
+      });
+      throw new Error(`Unexpected request: ${method} ${url}`);
+    });
+    renderPaywall();
+    const failure = await screen.findByTestId("prepayment-preview-failure");
+    expect(failure.textContent).toContain(savedBrief);
+    expect(failure.textContent).toContain("Purchasing a plan does not guarantee");
+    expect(screen.queryByTestId("img-prepayment-preview")).toBeNull();
+    expect(screen.queryByTestId("button-view-personalized-preview")).toBeNull();
+    expect(screen.getByTestId("button-unlock-spark").textContent).toContain("Continue to checkout");
+    fireEvent(window, new Event("pageshow"));
+    expect(callsTo(`/api/events/owner/${OWNER}/prepayment-preview`)).toHaveLength(0);
+    expect(callsTo("/api/checkout/create-session")).toHaveLength(0);
+  });
+
   it("allows checkout after a preview-provider failure instead of trapping the host", async () => {
     const checkout = deferred<{ url: string }>();
 

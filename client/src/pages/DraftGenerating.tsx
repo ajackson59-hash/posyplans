@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CheckCircle2, Loader2, CircleDashed, Check, Play } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import AIDemoShowcase from "@/components/AIDemoShowcase";
+import { previewFailureMessage, type PreviewFailureReason } from "@shared/previewFailure";
 
 // Loading screen shown right after intake finishes, while the AI Master
 // Planner drafts the whole first pass (theme, budget, menu, shopping,
@@ -56,6 +57,8 @@ interface PrePaymentPreviewReadiness {
   automaticReferenceResolutionEnabled?: boolean;
   automaticReferenceAttempted?: boolean;
   directionCard?: PreviewDirectionCard;
+  failureReason?: PreviewFailureReason | null;
+  savedBrief?: string;
 }
 
 type PrePaymentPreviewStart = PrePaymentPreviewReadiness;
@@ -343,6 +346,7 @@ export default function DraftGenerating() {
 
   const readinessKind = previewReadiness.data?.kind ?? "none";
   const readinessState = previewReadiness.data?.generationState ?? "idle";
+  const previewGenerationFailed = readinessState === "fallback";
   const previewIsDirectionOnly = readinessKind === "direction-card" || readinessKind === "reference-board";
   const directionCard =
     startPrePaymentPreview.data?.directionCard
@@ -416,9 +420,9 @@ export default function DraftGenerating() {
     };
   }, [bringPreviewIntoView, ownerToken, previewReadiness.refetch, previewImageLoaded, previewInProgress, previewReady]);
 
-  const previewIsVisible = previewReady && previewImageLoaded;
-  const previewCouldNotBeShown = startPrePaymentPreview.isError || (previewReady && previewImageFailed);
-  const previewAssetLoading = previewReady && !previewImageLoaded && !previewImageFailed;
+  const previewIsVisible = previewReady && previewImageLoaded && !previewGenerationFailed;
+  const previewCouldNotBeShown = previewGenerationFailed || startPrePaymentPreview.isError || (previewReady && previewImageFailed);
+  const previewAssetLoading = previewReady && !previewGenerationFailed && !previewImageLoaded && !previewImageFailed;
   const checkoutPending = startSparkCheckout.isPending || startPlusCheckout.isPending;
 
   const continueCheckoutLabel =
@@ -569,7 +573,19 @@ export default function DraftGenerating() {
             data-testid="prepayment-preview-card"
             aria-live="polite"
           >
-            {previewReady && !previewImageFailed ? (
+            {previewGenerationFailed ? (
+              <div className="px-6 py-6 text-left" role="status" data-testid="prepayment-preview-failure">
+                <p className="font-semibold text-foreground">Artwork preview unavailable</p>
+                <p className="mt-2 text-sm text-muted-foreground">{previewFailureMessage(previewReadiness.data?.failureReason)}</p>
+                {previewReadiness.data?.savedBrief && (
+                  <details className="mt-4 text-sm">
+                    <summary className="cursor-pointer font-medium text-primary">View your saved brief</summary>
+                    <p className="mt-2 whitespace-pre-wrap text-muted-foreground">{previewReadiness.data.savedBrief}</p>
+                  </details>
+                )}
+                <p className="mt-4 text-xs text-muted-foreground">Purchasing a plan does not guarantee this artwork can be generated.</p>
+              </div>
+            ) : previewReady && !previewImageFailed ? (
               // The generated illustration's aspect ratio depends on the AI-chosen
               // concept's layoutStyle (currently always full-bleed => native 9:16
               // portrait, but this must stay correct even if that changes). A fixed
@@ -647,7 +663,7 @@ export default function DraftGenerating() {
               </div>
             ) : previewCouldNotBeShown ? (
               <div className="flex aspect-[9/16] items-center justify-center px-6 text-center text-sm text-muted-foreground">
-                Posy couldn't complete the first look this time. You can still continue—your full invitation is included once unlocked.
+                Posy couldn't complete the first look this time. Your event details are saved. Purchasing a plan does not guarantee this artwork can be generated.
               </div>
             ) : (
               <div className="flex aspect-[9/16] flex-col items-center justify-center gap-2 px-6 text-center text-sm text-muted-foreground">

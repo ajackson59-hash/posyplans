@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import type { Event } from "@shared/schema";
+import type { PreviewFailureReason } from "@shared/previewFailure";
 import { waitUntil } from "@vercel/functions";
 import { z } from "zod";
 import { storage } from "./storage";
@@ -103,6 +104,13 @@ export interface PrePaymentPreviewQualityRouteDependencies {
 
 export type PreviewAssetKind = "direction-card" | "reference-board" | "approved-image" | "none";
 type PreviewGenerationState = "idle" | "generating" | "ready" | "fallback";
+const FAILURE_MARKER = /;posy-preview-failure=(provider-blocked|quality-rejected|preview-unavailable);base64,/;
+
+function resultFailureReason(result: Awaited<ReturnType<typeof generateQualityLockedPreview>>): PreviewFailureReason {
+  if (result.kind !== "approved-image" && result.providerFailures?.some(({ diagnostics }) =>
+    diagnostics.contentPolicyBlocked || ["moderation_blocked", "content_policy_violation"].includes(diagnostics.code ?? ""))) return "provider-blocked";
+  return result.kind === "rejected" ? "quality-rejected" : "preview-unavailable";
+}
 
 const QUALITY_APPROVED_PNG_PREFIX = "data:image/png;posy-quality-approved;base64,";
 const STANDARD_PNG_PREFIX = "data:image/png;base64,";
@@ -149,7 +157,7 @@ function withPreviewDeadline<T>(
 
 function isSvgDataUrl(value: string | null | undefined): boolean {
   return Boolean(
-    value?.startsWith("data:image/svg+xml;base64,")
+    (value && /^data:image\/svg\+xml(?:;posy-preview-failure=(?:provider-blocked|quality-rejected|preview-unavailable))?;base64,/.test(value))
       || isReferenceBoardDataUrl(value),
   );
 }
@@ -257,12 +265,14 @@ async function persistDirectionCard(
   event: Event,
   timestamp: number,
   resolvedNamed?: NamedCreativeReference | null,
+  failureReason?: PreviewFailureReason,
 ): Promise<Event> {
   // directionCardDataUrl is synchronous/network-free by default (curated-only
   // detection). resolvedNamed lets the background job pass an already-paid,
   // already-awaited general-classifier result so the card correctly reflects
   // it instead of silently falling back to the generic card.
-  const dataUrl = directionCardDataUrl(event, resolvedNamed);
+  const dataUrl = directionCardDataUrl(event, resolvedNamed).replace(";base64,",
+    failureReason ? `;posy-preview-failure=${failureReason};base64,` : ";base64,");
   const updated = await store.completePrePaymentPreview(event, {
     prePaymentPreviewUrl: dataUrl,
     prePaymentPreviewUsedAt: timestamp,
@@ -297,6 +307,8 @@ interface ReadinessResponse {
   automaticReferenceResolutionEnabled: boolean;
   automaticReferenceAttempted: boolean;
   directionCard: DirectionCard;
+  failureReason: PreviewFailureReason | null;
+  savedBrief: string;
 }
 
 async function readiness(
@@ -326,6 +338,9 @@ async function readiness(
     automaticReferenceResolutionEnabled: hasNamedReference && autoNamedEnabled,
     automaticReferenceAttempted: hasNamedReference && event.prePaymentPreviewAttempts > 0,
     directionCard: card,
+    failureReason: state === "fallback"
+      ? (FAILURE_MARKER.exec(event.prePaymentPreviewUrl)?.[1] as PreviewFailureReason | undefined) ?? "preview-unavailable" : null,
+    savedBrief: event.vibeDescription,
   };
 }
 
@@ -438,7 +453,7 @@ async function runAutomaticNamedPreviewJob({
       return;
     }
 
-    await persistDirectionCard(store, event, now(), namedReference);
+    await persistDirectionCard(store, event, now(), namedReference, resultFailureReason(result));
     console.warn(`[prepayment-preview] ${JSON.stringify({
       eventId: event.id,
       kind: result.kind,
@@ -489,7 +504,7 @@ async function runAutomaticClassifiedPreviewJob({
     );
   } catch (error) {
     console.warn("[prepayment-preview] one-shot background named-theme recognition failed closed:", error);
-    await persistDirectionCard(store, event, now());
+    await persistDirectionCard(store, event, now(), undefined, "preview-unavailable");
     return;
   }
 
@@ -534,7 +549,7 @@ async function runAutomaticClassifiedPreviewJob({
       && await persistApprovedImage(store, event, result.dataUrl, now())) {
       return;
     }
-    await persistDirectionCard(store, event, now());
+    await persistDirectionCard(store, event, now(), undefined, resultFailureReason(result));
     console.warn(`[prepayment-preview] ${JSON.stringify({
       eventId: event.id,
       kind: result.kind,

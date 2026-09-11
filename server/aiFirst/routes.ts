@@ -61,6 +61,7 @@ import { customerVisiblePreviewBytes } from "../prePaymentPreviewQuality";
 import { runTier1Checks } from "./tier1";
 import { runVisionGate, type VisionGateInput, type VisionVerdict } from "./visionGate";
 import { briefForHostDirection } from "./conceptPreflight";
+import { GOOGLE_ARTWORK_MODEL } from "./artwork";
 
 /** One breaker and one limiter per process, shared by every event. */
 const breaker = new CircuitBreaker();
@@ -1095,6 +1096,7 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
         // Match the pre-payment path exactly: judge the standalone 560px
         // teaser customers receive, without invitation text-placement rules.
         bytes: reviewedBytes,
+        artworkModel: row.model === GOOGLE_ARTWORK_MODEL ? GOOGLE_ARTWORK_MODEL : undefined,
         concept: row.concept,
         brief: effectiveBrief,
         overlayCoverage: OVERLAY_COVERAGE[row.concept.minOverlay],

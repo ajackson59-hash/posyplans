@@ -754,13 +754,17 @@ export async function buildQualityLockedPreviewBrief(
     artDirection.requestedTreatment
       ? "NO DESIGN SURFACES: no placeholder card, sign, mockup or text box. A host-requested collage is intentional artwork, not an accidental pasted cutout."
       : "NO DESIGN SURFACES: no card, panel, sign, frame, collage, poster, mockup or text box.",
-    namedReference
+    artDirection.requestedTreatment
+      ? "STORY: portray only the requested subjects and their stated interactions or arrangement."
+      : namedReference
       ? "STORY: candid named-character interaction; do not invent any child in the foreground or central hero plane without a supplied celebrant reference."
       : "STORY: asymmetric candid interaction and varied poses, not a front-facing catalog or character-promo pose.",
     artDirection.requestedTreatment
       ? "MEDIUM/CRAFT: precise shapes, clean subject anatomy and coherent treatment. Preserve requested flatness, dimensionality, texture, density and prominence. No accidental composite seams or malformed required details."
       : "DEPTH/MATERIAL DEFAULT: directional key + subtle rim light, natural depth falloff, contact/cast shadows, controlled saturation/color bounce; correct hands, joints, scale, gravity/perspective. No waxy skin, plastic food, repeated object clusters, stamped bubbles or composite seams.",
-    "HANDS/PROPS: unless required, no food or small props in hands; use natural hands and stable surfaces at believable scale.",
+    artDirection.requestedTreatment
+      ? "PROPS: preserve the requested object count, placement, scale and connections. Do not add people or poses to an object-only or abstract brief."
+      : "HANDS/PROPS: unless required, no food or small props in hands; use natural hands and stable surfaces at believable scale.",
     milestoneDirection,
     "COMPOSITION: fully frame faces, hands and required objects with breathing room; avoid dense repeated foreground clutter.",
   ].join(" ");
@@ -1065,9 +1069,6 @@ export async function generateQualityLockedPreview(
       console.error("[prepayment-preview] failed to retain unreviewable provider result", { eventId, attempt });
     }
   };
-  const referenceIdentityNotes = dependencies.inspirationNotes?.trim()
-    ? `AUTHORITATIVE IDENTITY NOTES: ${dependencies.inspirationNotes.trim()}`
-    : "";
   const referenceImageRule = dependencies.referenceImages?.length
     ? "ATTACHED REFERENCE IMAGES ARE IDENTITY ANCHORS ONLY. Preserve the defining face, hair, outfit, creature markings, proportions, silhouette and world details that make the requested subjects recognizable. Integrate them naturally into a new event-specific environment. Do not copy the source background, pose, crop, wording, logo, watermark, card, poster or layout; do not paste cutout characters onto an unrelated scene."
     : "";
@@ -1076,7 +1077,6 @@ export async function generateQualityLockedPreview(
     buildArtworkConstraints(brief),
     buildPhysicalStagingConstraints(brief),
     buildNamedWorldArtConstraints(brief, namedReference),
-    referenceIdentityNotes,
     referenceImageRule,
   ].filter(Boolean).join("\n\n");
   const reviews: PreviewQualityReview[] = [];

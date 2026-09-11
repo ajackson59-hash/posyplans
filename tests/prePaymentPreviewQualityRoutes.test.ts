@@ -151,7 +151,7 @@ describe("quality-locked prepayment preview routes", () => {
     await request(app).post(`/api/events/owner/${OWNER}/prepayment-preview`).send({ email: "qa@example.com" });
     await runScheduledTask();
     const ready = await request(app).get(`/api/events/owner/${OWNER}/prepayment-preview/readiness`);
-    expect(ready.body).toMatchObject({ kind: "direction-card", generationState: "fallback" });
+    expect(ready.body).toMatchObject({ kind: "direction-card", generationState: "fallback", failureReason: "provider-blocked", savedBrief: stored.vibeDescription });
     expect(JSON.stringify(ready.body)).not.toContain("req_routefixture123");
     expect(attempts.all).toHaveLength(1);
     expect(attempts.all[0].reviewEvidence?.providerFailure).toMatchObject({ providerRequestCount: 1, moderationStage: "output" });
@@ -356,7 +356,7 @@ describe("quality-locked prepayment preview routes", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
     expect(generate.mock.calls[0][1]).toMatchObject({ quality: "medium", maxCandidates: 1, parallelCandidates: false, maxFormatRepairs: 0 });
     expect(stored.prePaymentPreviewAttempts).toBe(1);
-    expect(stored.prePaymentPreviewUrl).toMatch(/^data:image\/svg\+xml;base64,/);
+    expect(stored.prePaymentPreviewUrl).toMatch(/^data:image\/svg\+xml;posy-preview-failure=quality-rejected;base64,/);
 
     const ready = await request(makeApp())
       .get(`/api/events/owner/${OWNER}/prepayment-preview/readiness`);
@@ -402,7 +402,7 @@ describe("quality-locked prepayment preview routes", () => {
 
     expect(response.status).toBe(202);
     await runScheduledTask();
-    expect(stored.prePaymentPreviewUrl).toMatch(/^data:image\/svg\+xml;base64,/);
+    expect(stored.prePaymentPreviewUrl).toMatch(/^data:image\/svg\+xml;posy-preview-failure=quality-rejected;base64,/);
     expect(JSON.stringify(response.body)).not.toContain("data:image");
   });
 

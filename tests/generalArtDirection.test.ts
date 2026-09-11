@@ -9,6 +9,7 @@ import { buildQualityLockedPreviewBrief, generateQualityLockedPreview, type Name
 import { encodePng } from "../server/aiFirst/png";
 import { runVisionGate } from "../server/aiFirst/visionGate";
 import { runTier1Checks } from "../server/aiFirst/tier1";
+import { MEDIUM_FEASIBILITY_CASES } from "../server/aiFirst/mediumFeasibilityCases";
 
 const cases = [
   ["Original construction", "watercolor", false],
@@ -46,6 +47,18 @@ function named(label: string): NamedCreativeReference {
 }
 
 describe("general artwork direction contract", () => {
+  it.each(MEDIUM_FEASIBILITY_CASES)("preserves the complete fixed brief once without invented keyword preferences: $trialId", async item => {
+    const input = { ...event("", item.requestedMedium), vibeDescription: item.hostBrief, paletteColors: "[]" };
+    const generateImage = vi.fn(async () => { throw new Error("offline prompt inspection"); });
+    await generateQualityLockedPreview(input, { generateImage, maxCandidates: 1, namedReference: null });
+    const prompt = (generateImage.mock.calls[0] as any)[0].prompt as string;
+    expect(prompt.split(item.hostBrief)).toHaveLength(2);
+    expect(prompt).not.toContain("a restrained interpretation of");
+    const { brief } = await buildQualityLockedPreviewBrief(input, "", null);
+    expect(brief.vibe).toBe(item.hostBrief);
+    expect(brief.requirements.required).not.toContain(`the ${item.hostBrief} visual identity, unmistakably present`);
+  });
+
   it.each(cases)("preserves %s in %s across both candidates and review input", async (theme, treatment, isNamed) => {
     const input = event(theme, treatment);
     const generateImage = vi.fn(async () => ({ bytes: png, dataUrl: "", durationMs: 1 }));

@@ -132,7 +132,9 @@ export default function PaywallPreviewGuide() {
     };
   }, [card, readiness?.kind]);
 
-  if (!card) return null;
+  // DraftGenerating owns the failed state and the saved brief. Do not add a
+  // second message claiming artwork passed review or inviting another submit.
+  if (!card || readiness?.generationState === "fallback") return null;
 
   const namedLabel = readiness?.namedReference?.label;
   const automaticNamedResearch = Boolean(

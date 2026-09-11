@@ -51,6 +51,8 @@ export async function generateGoogleArtwork(request: ArtworkRequest): Promise<Ar
     model: GOOGLE_ARTWORK_MODEL, quality: request.quality ?? "medium", size,
     status, code, type: "google_image_error", requestId,
     moderationStage: "unknown", moderationCategories: [], outputFormat: request.outputFormat ?? "jpeg",
+    ...(status === 400 && message === "Request blocked due to prohibited content guidelines. Please modify your input and retry."
+      ? { contentPolicyBlocked: true } : {}),
     operation: request.referenceImages?.length ? "edit" : "request", providerRequestCount: 1,
     providerDurationMs: Date.now() - started, promptSha256: createHash("sha256").update(request.prompt).digest("hex"),
   }, privateMessage(message));

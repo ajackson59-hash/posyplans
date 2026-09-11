@@ -105,6 +105,8 @@ export interface ArtworkProviderDiagnostics {
   requestId: string | null;
   moderationStage: "input" | "output" | "unknown";
   moderationCategories: string[];
+  /** A confirmed refusal, without exposing the provider's private message. */
+  contentPolicyBlocked?: boolean;
   model: ArtworkModel;
   quality: ArtworkQuality;
   size: ArtworkSize;

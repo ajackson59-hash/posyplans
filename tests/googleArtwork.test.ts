@@ -109,6 +109,15 @@ it("never promotes a text-only reply or a thought image to artwork", async () =>
   expect(fetchMock).toHaveBeenCalledTimes(1);
 });
 
+it("distinguishes an explicit content refusal without exposing the private explanation", async () => {
+  fetchMock.mockResolvedValue(new Response(JSON.stringify({ error: { code: "invalid_request",
+    message: "Request blocked due to prohibited content guidelines. Please modify your input and retry." } }), { status: 400 }));
+  const error = await generateArtwork(input).catch(e => e);
+  expect(error.diagnostics.contentPolicyBlocked).toBe(true);
+  expect(JSON.stringify(error)).not.toContain("Please modify your input");
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+});
+
 it("retains undecodable final output without another paid dispatch", async () => {
   const body = response(); body.steps[1].content![0].data = Buffer.from("broken JPEG").toString("base64");
   fetchMock.mockResolvedValue(new Response(JSON.stringify(body), { status: 200 }));
