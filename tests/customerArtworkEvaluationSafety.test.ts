@@ -12,7 +12,8 @@ vi.mock("../server/storage", () => ({ storage: {} }));
 vi.mock("../server/masterPlannerEntitlement", () => ({ canGenerateDraft: vi.fn() }));
 import { customerArtworkEvaluation, googleCustomerArtworkEvaluation, GOOGLE_CUSTOMER_EVALUATION_EVENT,
   GOOGLE_BILLING_EVALUATION_EVENT, GOOGLE_BILLING_EVALUATION_DATASET,
-  GOOGLE_DIAGNOSTIC_EVALUATION_EVENT, GOOGLE_DIAGNOSTIC_EVALUATION_DATASET } from "../server/customerArtworkEvaluation";
+  GOOGLE_DIAGNOSTIC_EVALUATION_EVENT, GOOGLE_DIAGNOSTIC_EVALUATION_DATASET,
+  GOOGLE_ORIGINAL_CONTROL_EVENT, GOOGLE_ORIGINAL_CONTROL_DATASET } from "../server/customerArtworkEvaluation";
 import { registerPrePaymentPreviewQualityRoutes } from "../server/prePaymentPreviewQualityRoutes";
 const fixture = (index = 0) => ({ id: 42 + index, ownerToken: `fixture-${index}`, eventName: "Artwork evaluation",
   eventType: "Artwork evaluation", inviteStatus: "draft", themeName: "", paletteColors: "[]",
@@ -99,13 +100,14 @@ it("isolates Google claims from the closed GPT cohort and retains the selected p
 });
 
 it.each([
-  [GOOGLE_BILLING_EVALUATION_EVENT, GOOGLE_BILLING_EVALUATION_DATASET],
-  [GOOGLE_DIAGNOSTIC_EVALUATION_EVENT, GOOGLE_DIAGNOSTIC_EVALUATION_DATASET],
-])("isolates fresh Google case %s without reopening the consumed case", async (eventId, datasetId) => {
+  [GOOGLE_BILLING_EVALUATION_EVENT, GOOGLE_BILLING_EVALUATION_DATASET, 1],
+  [GOOGLE_DIAGNOSTIC_EVALUATION_EVENT, GOOGLE_DIAGNOSTIC_EVALUATION_DATASET, 1],
+  [GOOGLE_ORIGINAL_CONTROL_EVENT, GOOGLE_ORIGINAL_CONTROL_DATASET, 4],
+])("isolates fresh Google case %s without reopening the consumed case", async (eventId, datasetId, index) => {
   vi.stubEnv("GEMINI_API_KEY", "test-key");
   const store = new InMemoryArtworkAttemptStore();
   const oldEvent = { ...fixture(1), id: GOOGLE_CUSTOMER_EVALUATION_EVENT };
-  const newEvent = { ...fixture(1), id: eventId as number, ownerToken: "billing-fixture" };
+  const newEvent = { ...fixture(index as number), id: eventId as number, ownerToken: "isolated-fixture" };
   providers.image.mockRejectedValue(new Error("offline provider stop"));
   await googleCustomerArtworkEvaluation(oldEvent, store)!.generate(oldEvent, CUSTOMER_PREVIEW_POLICY);
   const oldRows = structuredClone(await store.listForOwner(oldEvent.id, oldEvent.ownerToken));

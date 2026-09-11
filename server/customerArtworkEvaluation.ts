@@ -35,12 +35,18 @@ export const GOOGLE_BILLING_EVALUATION_DATASET = "google-customer-artwork-billin
 // error capture. Events 50 and 51 stay consumed; no case is reset or retried.
 export const GOOGLE_DIAGNOSTIC_EVALUATION_EVENT = 52;
 export const GOOGLE_DIAGNOSTIC_EVALUATION_DATASET = "google-customer-artwork-diagnostic-20260911";
+// Independent original-theme control approved after the named request's block.
+// Preserve the original construction brief; do not replay or rewrite that block.
+export const GOOGLE_ORIGINAL_CONTROL_EVENT = 53;
+export const GOOGLE_ORIGINAL_CONTROL_DATASET = "google-original-control-20260911";
 export function googleCustomerArtworkEvaluation(event: Event, store: AiFirstArtworkAttemptStore) {
   const datasetId = event.id === GOOGLE_CUSTOMER_EVALUATION_EVENT ? GOOGLE_CUSTOMER_EVALUATION_DATASET
     : event.id === GOOGLE_BILLING_EVALUATION_EVENT ? GOOGLE_BILLING_EVALUATION_DATASET
-    : event.id === GOOGLE_DIAGNOSTIC_EVALUATION_EVENT ? GOOGLE_DIAGNOSTIC_EVALUATION_DATASET : null;
+    : event.id === GOOGLE_DIAGNOSTIC_EVALUATION_EVENT ? GOOGLE_DIAGNOSTIC_EVALUATION_DATASET
+    : event.id === GOOGLE_ORIGINAL_CONTROL_EVENT ? GOOGLE_ORIGINAL_CONTROL_DATASET : null;
   if (process.env.VERCEL_ENV !== "preview" || !datasetId) return null;
-  return { ...fixedCustomerEvaluation(event, store, 1, GOOGLE_ARTWORK_MODEL, datasetId),
+  const index = event.id === GOOGLE_ORIGINAL_CONTROL_EVENT ? 4 : 1;
+  return { ...fixedCustomerEvaluation(event, store, index, GOOGLE_ARTWORK_MODEL, datasetId),
     available: googleArtworkConfigured() };
 }
 
