@@ -15,7 +15,8 @@ import { customerArtworkEvaluation, googleCustomerArtworkEvaluation, GOOGLE_CUST
   GOOGLE_DIAGNOSTIC_EVALUATION_EVENT, GOOGLE_DIAGNOSTIC_EVALUATION_DATASET,
   GOOGLE_ORIGINAL_CONTROL_EVENT, GOOGLE_ORIGINAL_CONTROL_DATASET,
   GOOGLE_REPAIRED_FLOW_EVENT, GOOGLE_REPAIRED_FLOW_DATASET,
-  GOOGLE_SCREENING_CASE_INDICES, GOOGLE_SCREENING_DATASET } from "../server/customerArtworkEvaluation";
+  GOOGLE_SCREENING_CASE_INDICES, GOOGLE_SCREENING_DATASET,
+  GOOGLE_MEDIUM_EXECUTION_EVENT, GOOGLE_MEDIUM_EXECUTION_DATASET } from "../server/customerArtworkEvaluation";
 import { registerPrePaymentPreviewQualityRoutes } from "../server/prePaymentPreviewQualityRoutes";
 const fixture = (index = 0) => ({ id: 42 + index, ownerToken: `fixture-${index}`, eventName: "Artwork evaluation",
   eventType: "Artwork evaluation", inviteStatus: "draft", themeName: "", paletteColors: "[]",
@@ -106,6 +107,7 @@ it.each([
   [GOOGLE_DIAGNOSTIC_EVALUATION_EVENT, GOOGLE_DIAGNOSTIC_EVALUATION_DATASET, 1],
   [GOOGLE_ORIGINAL_CONTROL_EVENT, GOOGLE_ORIGINAL_CONTROL_DATASET, 4],
   [GOOGLE_REPAIRED_FLOW_EVENT, GOOGLE_REPAIRED_FLOW_DATASET, 4],
+  [GOOGLE_MEDIUM_EXECUTION_EVENT, GOOGLE_MEDIUM_EXECUTION_DATASET, 0],
   ...Object.entries(GOOGLE_SCREENING_CASE_INDICES).map(([eventId, index]) => [Number(eventId), GOOGLE_SCREENING_DATASET, index]),
 ])("isolates fresh Google case %s without reopening the consumed case", async (eventId, datasetId, index) => {
   vi.stubEnv("GEMINI_API_KEY", "test-key");

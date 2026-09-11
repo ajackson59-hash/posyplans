@@ -1,3 +1,33 @@
+# Screening stopped; shared medium-execution correction — 11 September 2026
+
+The first screening case, event 55 (Blippi/Meekah), generated an image in 8,691 ms,
+then failed its single 28,611 ms Sonnet review. Zero classifier calls or retries.
+Records 269–275 retain the complete request and rejected pixels. Identities, scene,
+composition and age appropriateness passed; gouache was replaced with smooth
+cel/vector-style illustration. Premium finish and brief fidelity scored 2/5;
+medium requiredPresent=false and purchase desire=false. Agent inspection agrees
+with the medium mismatch. No approved artwork was delivered; fallback has no
+successful artwork latency. The full original brief remained present.
+
+The screening is now CLOSED. Events 56–60 are unrun; their unused allowance is
+closed, not carried into another round. Frozen remains held separately.
+
+The shared prompt previously listed several alternative treatments even when a
+specific medium was selected. The correction removes those competing examples
+and describes visible medium execution throughout characters, props and scenery.
+Material hints depend on positive host selections, preserve explicit variations,
+keep unfamiliar/mixed-media descriptions and do not import a named property's
+usual rendering style. No critic thresholds, host details or provider filters change.
+This is a testable prompt improvement, not an established causal explanation or
+proof of quality before a new live result.
+
+Fresh event 61, dataset `google-medium-execution-20260911`, uses the unchanged
+Blippi/Meekah brief for one validation of that correction: one Google image,
+one Sonnet critic, zero classifiers/retries/alternate providers. It does not
+reset event 55 or reopen the six-case screening.
+
+---
+
 # Current qualification status — 11 September 2026
 
 Event 54 completed the ordinary customer flow automatically on `cf7fcac06ccbabc1beafb9d89ec77190137119b9`:

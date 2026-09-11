@@ -31,6 +31,7 @@ export default function PaywallPreviewGuide() {
   const [card, setCard] = useState<HTMLElement | null>(null);
   const [previewReady, setPreviewReady] = useState(false);
   const [previewBusy, setPreviewBusy] = useState(false);
+  const [previewFailed, setPreviewFailed] = useState(false);
   const [readiness, setReadiness] = useState<PreviewReadiness | null>(null);
 
   const ownerToken = ownerTokenFromLocation(location);
@@ -72,11 +73,13 @@ export default function PaywallPreviewGuide() {
       const cta = document.querySelector<HTMLButtonElement>("[data-testid='button-unlock-spark']");
       const image = document.querySelector<HTMLImageElement>("[data-testid='img-prepayment-preview']");
       const text = cta?.textContent ?? "";
-      const busy = /Creating your (?:personal preview|personalized first look)|Revealing your (?:personal preview|personalized first look)/i.test(text);
+      const busy = Boolean(nextCard?.querySelector("[data-testid='prepayment-preview-progress-proof']"))
+        || /Creating your (?:personal preview|personalized first look)|Revealing your (?:personal preview|personalized first look)/i.test(text);
 
       setCard(nextCard);
       setPreviewReady(Boolean(image?.complete && image.naturalWidth > 0));
       setPreviewBusy(busy);
+      setPreviewFailed(Boolean(nextCard?.querySelector("[data-testid='prepayment-preview-failure']")));
 
       const placeholder = nextCard?.firstElementChild as HTMLElement | null;
       if (placeholder) {
@@ -134,7 +137,7 @@ export default function PaywallPreviewGuide() {
 
   // DraftGenerating owns the failed state and the saved brief. Do not add a
   // second message claiming artwork passed review or inviting another submit.
-  if (!card || readiness?.generationState === "fallback") return null;
+  if (!card || previewFailed || readiness?.generationState === "fallback") return null;
 
   const namedLabel = readiness?.namedReference?.label;
   const automaticNamedResearch = Boolean(

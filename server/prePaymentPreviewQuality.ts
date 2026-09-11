@@ -77,7 +77,7 @@ function buildTeaserArtworkPrompt(concept: AiFirstConcept): string {
 function buildPhysicalStagingConstraints(brief: EventBrief): string {
   const direction = resolveArtDirection(brief);
   if (direction.requestedTreatment) {
-    return "BINDING MEDIUM-AWARE STAGING — Honor the host's requested treatment, quantities, density, placement and prominence. Keep every required element readable at 560px. Use coherent anatomy, mechanical connections and perspective appropriate to the chosen medium. Deliberate flat shapes do not require photographic shadows or lens effects; requested glossy 3D may use intentional specular highlights. Do not impose a serving station, rear placement, matte texture or sparse bubble count when the host asked for something else.";
+    return "BINDING MEDIUM-AWARE STAGING — Honor the host's requested treatment, quantities, density, placement and prominence. Keep every required element readable at 560px. Use coherent anatomy, mechanical connections and perspective appropriate to the chosen medium. Keep all scene elements in that same requested treatment. Preserve explicit host placement and density; do not invent a serving station or move requested foreground subjects.";
   }
   const scene = [
     brief.vibe,

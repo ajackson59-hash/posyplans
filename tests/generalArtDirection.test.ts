@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type Anthropic from "@anthropic-ai/sdk";
 import type { Event } from "@shared/schema";
 import { buildEventBrief } from "../server/aiFirst/brief";
-import { buildArtDirectionContract, conflictsWithRequestedMedium, resolveArtDirection } from "../server/aiFirst/artDirection";
+import { buildArtDirectionContract, buildMediumExecutionContract, conflictsWithRequestedMedium, resolveArtDirection } from "../server/aiFirst/artDirection";
 import { buildArtworkConstraints, buildUserPrompt } from "../server/aiFirst/prompt";
 import { preflightConceptQuartet } from "../server/aiFirst/conceptQuartet";
 import { buildQualityLockedPreviewBrief, generateQualityLockedPreview, type NamedCreativeReference } from "../server/prePaymentPreviewQuality";
@@ -47,6 +47,35 @@ function named(label: string): NamedCreativeReference {
 }
 
 describe("general artwork direction contract", () => {
+  it("sends medium-specific construction to named artwork without advertising alternate treatments", async () => {
+    const item = MEDIUM_FEASIBILITY_CASES[0];
+    const input = { ...event("", "gouache"), vibeDescription: item.hostBrief, paletteColors: "[]" };
+    const generateImage = vi.fn(async () => { throw new Error("offline prompt inspection"); });
+    await generateQualityLockedPreview(input, { generateImage, maxCandidates: 1 });
+    const prompt = (generateImage.mock.calls[0] as any)[0].prompt as string;
+    expect(prompt).toContain("opaque matte pigment");
+    expect(prompt).toContain("every named character, prop and background");
+    expect(prompt).toContain("Identity references specify who or what is depicted");
+    expect(prompt).not.toContain("clean flat vector, deliberate negative space, stylized 3D, photographic realism");
+    expect(prompt).not.toContain("Do not impose a serving station, rear placement, matte texture");
+    expect(prompt.split(item.hostBrief)).toHaveLength(2);
+    expect(generateImage).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps medium hints conditional and preserves mixed, negated and unfamiliar host directions", () => {
+    const contract = (vibe: string) => buildMediumExecutionContract({ themeName: "", vibe });
+    expect(contract("No gouache; use flat vector.")).toContain("intentional crisp paths");
+    expect(contract("No gouache; use flat vector.")).not.toContain("opaque matte pigment");
+    expect(contract("Photographic dinner scene.")).toContain("coherent illumination");
+    expect(contract("Photographic dinner scene.")).not.toContain("opaque matte pigment");
+    expect(contract("Gouache characters over cut-paper collage scenery.")).toContain("region assignments exactly");
+    const unusual = "Medium: lacquer inlay. Polished dark lacquer, embedded silver and shell; no gouache.";
+    const brief = { themeName: "", vibe: unusual };
+    expect(buildArtDirectionContract(brief)).toContain(unusual);
+    expect(contract(unusual)).not.toContain("opaque matte pigment");
+    expect(contract("An original celebration with blue and ivory flowers.")).toBe("");
+  });
+
   it.each(MEDIUM_FEASIBILITY_CASES)("preserves the complete fixed brief once without invented keyword preferences: $trialId", async item => {
     const input = { ...event("", item.requestedMedium), vibeDescription: item.hostBrief, paletteColors: "[]" };
     const generateImage = vi.fn(async () => { throw new Error("offline prompt inspection"); });
