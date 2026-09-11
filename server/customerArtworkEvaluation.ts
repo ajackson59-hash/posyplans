@@ -31,9 +31,14 @@ export const GOOGLE_CUSTOMER_EVALUATION_EVENT = 50;
 export const GOOGLE_CUSTOMER_EVALUATION_DATASET = "google-customer-artwork-20260909";
 export const GOOGLE_BILLING_EVALUATION_EVENT = 51;
 export const GOOGLE_BILLING_EVALUATION_DATASET = "google-customer-artwork-billing-20260911";
+// One follow-up diagnostic in the same user-approved test round, after fixing
+// error capture. Events 50 and 51 stay consumed; no case is reset or retried.
+export const GOOGLE_DIAGNOSTIC_EVALUATION_EVENT = 52;
+export const GOOGLE_DIAGNOSTIC_EVALUATION_DATASET = "google-customer-artwork-diagnostic-20260911";
 export function googleCustomerArtworkEvaluation(event: Event, store: AiFirstArtworkAttemptStore) {
   const datasetId = event.id === GOOGLE_CUSTOMER_EVALUATION_EVENT ? GOOGLE_CUSTOMER_EVALUATION_DATASET
-    : event.id === GOOGLE_BILLING_EVALUATION_EVENT ? GOOGLE_BILLING_EVALUATION_DATASET : null;
+    : event.id === GOOGLE_BILLING_EVALUATION_EVENT ? GOOGLE_BILLING_EVALUATION_DATASET
+    : event.id === GOOGLE_DIAGNOSTIC_EVALUATION_EVENT ? GOOGLE_DIAGNOSTIC_EVALUATION_DATASET : null;
   if (process.env.VERCEL_ENV !== "preview" || !datasetId) return null;
   return { ...fixedCustomerEvaluation(event, store, 1, GOOGLE_ARTWORK_MODEL, datasetId),
     available: googleArtworkConfigured() };

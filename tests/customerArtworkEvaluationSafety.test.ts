@@ -11,7 +11,8 @@ vi.mock("@anthropic-ai/sdk", () => ({ default: class { messages = { create: prov
 vi.mock("../server/storage", () => ({ storage: {} }));
 vi.mock("../server/masterPlannerEntitlement", () => ({ canGenerateDraft: vi.fn() }));
 import { customerArtworkEvaluation, googleCustomerArtworkEvaluation, GOOGLE_CUSTOMER_EVALUATION_EVENT,
-  GOOGLE_BILLING_EVALUATION_EVENT, GOOGLE_BILLING_EVALUATION_DATASET } from "../server/customerArtworkEvaluation";
+  GOOGLE_BILLING_EVALUATION_EVENT, GOOGLE_BILLING_EVALUATION_DATASET,
+  GOOGLE_DIAGNOSTIC_EVALUATION_EVENT, GOOGLE_DIAGNOSTIC_EVALUATION_DATASET } from "../server/customerArtworkEvaluation";
 import { registerPrePaymentPreviewQualityRoutes } from "../server/prePaymentPreviewQualityRoutes";
 const fixture = (index = 0) => ({ id: 42 + index, ownerToken: `fixture-${index}`, eventName: "Artwork evaluation",
   eventType: "Artwork evaluation", inviteStatus: "draft", themeName: "", paletteColors: "[]",
@@ -97,11 +98,14 @@ it("isolates Google claims from the closed GPT cohort and retains the selected p
   expect(googleCustomerArtworkEvaluation(event, store)).toBeNull();
 });
 
-it("gives the authorized billing test a fresh claim without reopening the consumed Google case", async () => {
+it.each([
+  [GOOGLE_BILLING_EVALUATION_EVENT, GOOGLE_BILLING_EVALUATION_DATASET],
+  [GOOGLE_DIAGNOSTIC_EVALUATION_EVENT, GOOGLE_DIAGNOSTIC_EVALUATION_DATASET],
+])("isolates fresh Google case %s without reopening the consumed case", async (eventId, datasetId) => {
   vi.stubEnv("GEMINI_API_KEY", "test-key");
   const store = new InMemoryArtworkAttemptStore();
   const oldEvent = { ...fixture(1), id: GOOGLE_CUSTOMER_EVALUATION_EVENT };
-  const newEvent = { ...fixture(1), id: GOOGLE_BILLING_EVALUATION_EVENT, ownerToken: "billing-fixture" };
+  const newEvent = { ...fixture(1), id: eventId as number, ownerToken: "billing-fixture" };
   providers.image.mockRejectedValue(new Error("offline provider stop"));
   await googleCustomerArtworkEvaluation(oldEvent, store)!.generate(oldEvent, CUSTOMER_PREVIEW_POLICY);
   const oldRows = structuredClone(await store.listForOwner(oldEvent.id, oldEvent.ownerToken));
@@ -109,7 +113,7 @@ it("gives the authorized billing test a fresh claim without reopening the consum
   expect(providers.image).toHaveBeenCalledTimes(2);
   const newRows = await store.listForOwner(newEvent.id, newEvent.ownerToken);
   expect(newRows.length).toBeGreaterThan(0);
-  expect(newRows.every(row => row.runId === GOOGLE_BILLING_EVALUATION_DATASET)).toBe(true);
+  expect(newRows.every(row => row.runId === datasetId)).toBe(true);
   expect(await store.listForOwner(oldEvent.id, oldEvent.ownerToken)).toEqual(oldRows);
   for (const event of [oldEvent, newEvent]) {
     await expect(googleCustomerArtworkEvaluation(event, store)!.generate(event, CUSTOMER_PREVIEW_POLICY)).rejects.toThrow("claim-conflict");

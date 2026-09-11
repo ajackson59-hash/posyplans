@@ -20,6 +20,14 @@ message and has no live image-success result yet. No further request ran.
 Error schema checked 2026-09-11:
 https://ai.google.dev/static/api/interactions.openapi.json
 
+A single follow-up diagnostic uses fresh event 52 and dataset
+`google-customer-artwork-diagnostic-20260911` after the error-capture fix.
+This is the second image request in the billing-activated testing round,
+explicitly disclosed before execution. It retains the unchanged Frozen brief,
+one render/one review/one classifier maximum, and zero automatic retries.
+Events 50 and 51 remain consumed. Stop after this diagnostic and report the
+actual returned result; do not infer a cause from synthetic offline fixtures.
+
 The configured-key test on event 50 returned Google HTTP 429 without an image.
 It made one image dispatch and one Haiku classification, with no critic or
 retry. Preserve those records and the consumed fixture.
