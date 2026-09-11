@@ -1,3 +1,54 @@
+# Current decision: do not launch the Google configuration — 11 September 2026
+
+Three live customer-flow tests ran in this session: one automatic construction
+pass and two rejected Blippi/Meekah images. No automatic retries, alternate
+providers, customer payments, emails, merge or Production deployment occurred.
+Total: three Google images, three Sonnet critics, one Haiku classifier.
+
+| Event | Execution commit | Result |
+| --- | --- | --- |
+| 54 | `cf7fcac06ccbabc1beafb9d89ec77190137119b9` | Watercolor construction delivered automatically in 30,033.9 ms; exact reviewed/displayed bytes match; human approval pending. |
+| 55 | `be452a8c11fa24856e6f95268336f36ced778bda` | Named identities and scene passed; gouache substituted with digital cartoon treatment. Rejected, no approved delivery. |
+| 61 | `248c940124998111a2c5dfa044dd202e6a6ead5d` | Stronger shared medium instructions did not produce a qualifying image. Visible excluded menu lettering; reviewer also rejected medium/finish. No approved delivery. |
+
+Event 61 generated in 9,511 ms and received one 21,919 ms critic review. Retained
+records 276–282, rejected artwork record 281. Source SHA
+`265cfeed3a076ecbf7afde4a9835f67465bde8173cb9334195425c117195b565`;
+exact reviewed teaser SHA `8acc50c91bb5fa446fab488e3fdf1efd32a2183194965673cd09e19bef16ee34`.
+Both requested identities passed. Text-free 2/5, premium 3/5, fidelity 2/5;
+other dimensions 5/5. The visible signage is a definite independent rejection
+reason. Agent inspection finds some painterly texture in background surfaces,
+so the critic's categorical assertion of no brushwork anywhere overstates the
+evidence. Do not treat its detailed wording as independently validated truth.
+The shared medium prompt change remains an unqualified hypothesis, not a proven fix.
+
+The live failed transition also exposed stale duplicate email guidance. Fixed
+`PaywallPreviewGuide` to follow the actual generating/failure elements rather
+than wait for an image to load. The transition regression and customer browser
+verification passed: failure shown, no artwork-ready claim, no duplicate email CTA.
+CI Verify Posy #427 passed on the implementation above.
+
+Events 56–60 are confirmed at zero preview attempts with no artwork; screening
+is closed in code and its unused allowance is not transferable. Events 54,
+55 and 61 are consumed. Do not reset/replay them or reopen older allowances.
+
+The original Frozen request remains held after its separately retained policy
+refusal; today's successful named-character responses do not explain that refusal.
+A credentials-free diagnostic post and exact request body have been prepared
+for owner review, not submitted. Google's official troubleshooting guide directs
+API questions/bugs to its developer forum:
+https://ai.google.dev/gemini-api/docs/troubleshooting#file-a-bug
+
+**Remaining engineering decision:** text-only Google at these settings is not
+qualified as Posy's universal image provider. Further evaluation should test a
+materially different, specified rendering/conditioning approach and independently
+check reviewer findings, rather than keep tweaking adjectives or sampling until
+a pass. Preserve all eight briefs, per-direction repeated quality/90s gates,
+Plus and all remaining product-release checks. Production and ordinary customer
+provider selection are unchanged. No human-reviewed release benchmark exists.
+
+---
+
 # Screening stopped; shared medium-execution correction — 11 September 2026
 
 The first screening case, event 55 (Blippi/Meekah), generated an image in 8,691 ms,
