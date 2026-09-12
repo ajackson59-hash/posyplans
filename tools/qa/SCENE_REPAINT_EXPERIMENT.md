@@ -1,6 +1,7 @@
 # Retained scene repaint — 12 September 2026
 
-Status: registered, unrun. Preview research only; no customer activation.
+Status: completed and closed. Automated quality rejection with an unresolved
+visual-review disagreement. Preview research only; no customer activation.
 
 The last text-only Google candidate preserved Blippi, Meekah and the requested
 scene but added menu lettering and did not consistently deliver the requested
@@ -47,3 +48,55 @@ and image content and lists `gemini-3.1-flash-image`. The existing adapter suppl
 the retained image bytes directly, with `store=false`, `stream=false`, no custom
 safety settings and no provider fallback. Input-image support does not establish
 that the output will meet this host's visual standard.
+
+## Observed result
+
+Executed on `ea7049982a2eb615ce9fdb8a05763fb7d9347e54`, Preview deployment
+`dpl_3CNgfMnrqA9q8dRbH3Sxv3GUjq6w`; required Verify Posy CI #429 succeeded.
+One POST returned HTTP 200 after 39,672ms. Records 283–287 retained the exact
+input and stages; final attempt 287 is rejected. The full event was unchanged
+before/after. No second POST, regeneration, classifier or alternate provider.
+
+- Exactly one Google image edit (10,116ms including normalization) and one
+  unchanged Sonnet review (21,549ms). Experiment stage elapsed 32,720ms. These
+  timings exclude the earlier source generation/review and do not prove a
+  complete customer-flow latency.
+- Google usage: 1,842 input tokens (1,584 text + 258 image), 1,511 output tokens
+  (1,120 itemized as image; 391 not itemized by modality). Sonnet: 6,904 input,
+  933 output. These are measured usage, not an invoice or a dollar cap.
+- Output source 768x1376 SHA-256
+  `f996272faa7870d529b62c798ce11af297e0e81581323082d966fe35505ffb29`.
+  Exact reviewed teaser 313x560 SHA-256
+  `27f88575d373162d89efe9dd3584952747387d9ec914cfc6d1f1943d2f152b8f`.
+- Scores: text-free 5, artifact-free 5, premium finish 2, brief fidelity 3,
+  composition 5, age appropriateness 5. Required named identities and scene
+  elements passed. Medium and purchase checks failed. No exclusion was found.
+- Independent agent inspection of source and exact teaser confirms removal
+  of menu lettering and retention of Blippi, Meekah, bubbles, ball pit, foam
+  play structures and ice-cream counter. Painted mark variation is visible in
+  the ivory floor, blue walls, orange structures and purple foreground block.
+  Strong character contours and simplified shading remain. This supports
+  neither the critic's absolute claim of no painted qualities anywhere nor a
+  claim that the requested gouache standard is consistently satisfied.
+- The critic's premiumFinish generic-execution observation repeats its medium
+  substitution objection without an independent craft flaw, contrary to the
+  existing review instructions. `reviewIntegrity.valid=true` checks structure;
+  it does not validate semantic truth. Do not relabel this result as approved,
+  raise scores automatically or weaken the original fidelity requirement.
+
+## Next engineering decision
+
+No further generation under this registration. Use retained original control,
+failed named scenes and this edit to establish a reviewed standard at the exact
+customer resolution. Resolve medium judgments by named regions and separate
+craft evidence from fidelity evidence before trusting another automated score.
+A corrected reviewer needs independent retained examples and a human quality
+standard; another prompt rewrite alone is not evidence of calibration. No new
+critic call or reviewer change was made in this experiment.
+
+Only after that disagreement is resolved should a separately bounded complete
+customer construction-and-repaint flow be considered. It must include all stages
+in timing/cost and then meet the unchanged independent per-direction launch
+qualification and Plus/payment/reuse/recovery/RSVP/planner/operations gates.
+Google forum moderation remains pending at the last confirmed check; it was not
+rechecked or reposted in this experiment. Production and PR merge remain held.
