@@ -45,12 +45,8 @@ export function buildPrePaymentPreviewConcept(event: PreviewEvent): {
 } {
   const sourceBrief = prePaymentPreviewSourceBrief(event);
   const blippi = isBlippiBrief(sourceBrief);
-  const subjectFocus = blippi
-    ? "recognizable Blippi and Meekah together at a bright indoor soft-play birthday, interacting with children among foam climbing blocks, tunnels and slides, with floating bubbles, bubble wands, dancing and ice-cream treats"
-    : `the literal people, characters, setting, activities and defining objects requested in this host brief: ${sourceBrief}`;
-  const identityDirection = blippi
-    ? "Show Blippi and Meekah as full, recognizable lead characters—not merely an orange bow tie, glasses, colors or dots. Blippi should read through his blue-and-orange play-and-learn outfit, orange glasses and bow tie; Meekah should read as his bright, energetic co-host."
-    : "When the host names a specific show, film, game, character universe, performer or cultural property, preserve that exact named identity and recognizable visual world. A generic category substitute is a failed result.";
+  const subjectFocus = `the literal people, characters, setting, activities and defining objects requested in this host brief: ${sourceBrief}`;
+  const identityDirection = "When the host names a specific show, film, game, character universe, performer or cultural property, preserve that exact named identity and every positively requested character. Follow the host's cast scope and exclusions; recognizing a property does not add cast, activities, locations or props. A generic category substitute is a failed result.";
   const medium = blippi ? "polished children's character illustration" : "premium narrative editorial illustration";
   const palette = blippi
     ? ["#1769C2", "#FF7A00", "#F8F3E8", "#8B55C7"]

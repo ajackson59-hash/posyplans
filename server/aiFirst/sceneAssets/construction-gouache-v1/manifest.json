@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "id": "construction-gouache-v1",
+  "sourceFile": "source.png",
+  "sourceSha256": "6119db74a3cce3140e1c9ca72fadcb3fb2ed41df6220dd012870100feaf1f0d6",
+  "width": 1024,
+  "height": 1536,
+  "origin": "built-in-image-generation",
+  "approval": {
+    "scope": "art-direction-only",
+    "approvedBy": "project-owner",
+    "evidence": "The owner answered Yes when asked whether this construction illustration met the visual standard for Posy's original children's themes."
+  },
+  "subjectScope": "original-children-construction",
+  "namedThemeId": null,
+  "qualityReview": "pending",
+  "requirementCertification": "pending",
+  "commercialReview": "pending",
+  "customerActivation": "disabled"
+}

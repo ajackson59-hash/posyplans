@@ -1,8 +1,13 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import express from "express";
 import request from "supertest";
 import type { Event } from "@shared/schema";
 import { isReferenceBoardDataUrl } from "../server/prePaymentReferenceBoard";
+import { generateQualityLockedPreview } from "../server/prePaymentPreviewQuality";
+import { ArtworkProviderError } from "../server/aiFirst/artwork";
+import { InMemoryArtworkAttemptStore } from "../server/aiFirst/artworkAttemptStore";
+import { RETAINED_LIKENESS_REVIEW } from "../server/retainedLikenessReview";
+import { decodePng, encodePng, readPngSize } from "../server/aiFirst/png";
 
 process.env.DATABASE_URL = "postgres://test/test";
 
@@ -16,6 +21,35 @@ const { registerPrePaymentPreviewQualityRoutes } = await import(
 );
 
 const OWNER = "owner-token-quality-lock";
+
+it("bounds the retained likeness review route to Preview, the fixed owner and exact confirmation body", async () => {
+  const body = { confirmOneVisionCall: true, expectedAssetHash: RETAINED_LIKENESS_REVIEW.sourceHash,
+    expectedIdentityHash: RETAINED_LIKENESS_REVIEW.referenceHash };
+  const path = `/api/events/owner/${OWNER}/prepayment-preview/likeness-review`;
+  try {
+    vi.stubEnv("VERCEL_ENV", "production");
+    vi.stubEnv("VERCEL_GIT_COMMIT_REF", "codex/launch-blockers");
+    expect((await request(makeApp()).post(path).send(body)).status).toBe(404);
+    vi.stubEnv("VERCEL_ENV", "preview");
+    expect((await request(makeApp()).post(path).send({ ...body, expectedAssetHash: "wrong" })).status).toBe(400);
+    expect((await request(makeApp()).post(path).send({ ...body, registration: {} })).status).toBe(400);
+    // This ordinary fixture event is not the authorized research event61.
+    stored = { ...baseEvent };
+    expect((await request(makeApp()).post(path).send(body)).status).toBe(404);
+    expect(generate).not.toHaveBeenCalled();
+    const controlPath = `/api/events/owner/${OWNER}/prepayment-preview/feature-comparison/`;
+    expect((await request(makeApp()).post(controlPath + "unknown").send(body)).status).toBe(404);
+    expect((await request(makeApp()).post(controlPath + "matched").send(body)).status).toBe(400);
+    expect((await request(makeApp()).post(controlPath + "mismatched").send({ ...body, expectedIdentity: false })).status).toBe(400);
+    expect((await request(makeApp()).post(controlPath + "mismatched").send(body)).status).toBe(404);
+    const v2Path = controlPath.replace("feature-comparison/", "feature-comparison-v2/");
+    expect((await request(makeApp()).post(v2Path + "unknown").send(body)).status).toBe(404);
+    expect((await request(makeApp()).post(v2Path + "mismatched").send({ ...body, expectedIdentity: false })).status).toBe(400);
+    expect((await request(makeApp()).post(v2Path + "mismatched").send(body)).status).toBe(404);
+    vi.stubEnv("VERCEL_ENV", "production");
+    expect((await request(makeApp()).post(v2Path + "mismatched").send(body)).status).toBe(404);
+  } finally { vi.unstubAllEnvs(); }
+});
 const EVENT_ID = 410;
 const NOW = 1_800_000_000_000;
 const OLD_PNG = `data:image/png;base64,${Buffer.from("old unreviewed pixels").toString("base64")}`;
@@ -46,8 +80,24 @@ const updateEventById = vi.fn(async (id: number, data: Partial<Event>) => {
   stored = { ...stored, ...data };
   return stored;
 });
+const completePrePaymentPreview = vi.fn(async (event: Event, data: Pick<Event, "prePaymentPreviewUrl" | "prePaymentPreviewUsedAt">) => {
+  const fields = ["id", "ownerToken", "prePaymentPreviewAttempts", "prePaymentPreviewUrl", "prePaymentPreviewUsedAt",
+    "eventName", "eventType", "eventDate", "themeName", "vibeDescription", "paletteColors", "location", "venueName", "estimatedGuestCount"] as const;
+  if (fields.some((field) => stored[field] !== event[field])) return undefined;
+  return updateEventById(event.id, data);
+});
 const generate = vi.fn();
-const resolveNamedReference = vi.fn();
+const reservePrePaymentPreview = vi.fn(async (event: Event, startedAt: number) => {
+  if (stored.id !== event.id || stored.ownerToken !== event.ownerToken || stored.sparkUnlockedAt ||
+      stored.prePaymentPreviewAttempts >= 3 ||
+      stored.prePaymentPreviewAttempts !== event.prePaymentPreviewAttempts ||
+      stored.prePaymentPreviewUsedAt !== event.prePaymentPreviewUsedAt ||
+      stored.prePaymentPreviewUrl !== event.prePaymentPreviewUrl) return undefined;
+  stored = { ...stored, prePaymentPreviewAttempts: stored.prePaymentPreviewAttempts + 1,
+    prePaymentPreviewUrl: "", prePaymentPreviewUsedAt: startedAt };
+  return stored;
+});
+const classifyNamedReference = vi.fn();
 const scheduledTasks: Array<() => Promise<void>> = [];
 const schedule = vi.fn((task: () => Promise<void>) => {
   scheduledTasks.push(task);
@@ -57,18 +107,20 @@ function makeApp(options: {
   mode?: "off" | "direction-card" | "quality-image";
   autoNamed?: boolean;
   unlocked?: boolean;
+  jobTimeoutMs?: number;
 } = {}) {
   const app = express();
   app.use(express.json({ limit: "6mb" }));
   registerPrePaymentPreviewQualityRoutes(app, {
-    store: { getEventByOwnerToken, updateEventById },
+    store: { getEventByOwnerToken, updateEventById, reservePrePaymentPreview, completePrePaymentPreview },
     isUnlocked: async () => options.unlocked ?? false,
     mode: () => options.mode ?? "direction-card",
     autoNamedEnabled: () => options.autoNamed ?? true,
-    resolveNamedReference,
+    classifyNamedReference,
     generate,
     schedule,
     now: () => NOW,
+    jobTimeoutMs: options.jobTimeoutMs,
   });
   return app;
 }
@@ -95,44 +147,117 @@ function decodedStoredSvg(): string {
   return Buffer.from(encoded, "base64").toString("utf8");
 }
 
-function automaticResolution() {
-  return {
-    images: [{
-      bytes: Buffer.from("official Blippi and Meekah reference pixels"),
-      mimeType: "image/png" as const,
-      filename: "automatic-reference-1.png",
-    }],
-    notes: "Official Blippi and Meekah identity references",
-    strategy: "curated" as const,
-    sourcePages: ["https://www.blippi.com/about"],
-  };
-}
-
 beforeEach(() => {
   stored = { ...baseEvent };
   getEventByOwnerToken.mockClear();
   updateEventById.mockClear();
+  completePrePaymentPreview.mockClear();
+  reservePrePaymentPreview.mockClear();
   generate.mockReset();
-  resolveNamedReference.mockReset();
+  classifyNamedReference.mockReset();
+  classifyNamedReference.mockResolvedValue(null);
   schedule.mockClear();
   scheduledTasks.length = 0;
 });
 
+afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
+
 describe("quality-locked prepayment preview routes", () => {
+  it.each([true, false])("retains a blocked customer dispatch and completes without review, retry or exposed diagnostics (named=%s)", async (named) => {
+    if (!named) stored = genericEvent();
+    const app = makeApp({ mode: "quality-image" });
+    const attempts = new InMemoryArtworkAttemptStore();
+    const runVision = vi.fn();
+    const generateImage = vi.fn(async () => { throw new ArtworkProviderError({
+      status: 400, code: "moderation_blocked", type: "image_generation_user_error",
+      requestId: "req_routefixture123", moderationStage: "output", moderationCategories: [],
+      model: "gpt-image-2", quality: "medium", size: "1024x1536", outputFormat: "jpeg",
+      operation: "request", providerRequestCount: 1, providerDurationMs: 54884, promptSha256: "a".repeat(64),
+    }); });
+    generate.mockImplementation((event, options) => generateQualityLockedPreview(event, {
+      ...options, attemptRetention: { store: attempts, eventId: EVENT_ID, ownerToken: OWNER },
+      generateImage, runVision,
+    }));
+    await request(app).post(`/api/events/owner/${OWNER}/prepayment-preview`).send({ email: "qa@example.com" });
+    await runScheduledTask();
+    const ready = await request(app).get(`/api/events/owner/${OWNER}/prepayment-preview/readiness`);
+    expect(ready.body).toMatchObject({ kind: "direction-card", generationState: "fallback", failureReason: "provider-blocked", savedBrief: stored.vibeDescription });
+    expect(JSON.stringify(ready.body)).not.toContain("req_routefixture123");
+    expect(attempts.all).toHaveLength(1);
+    expect(attempts.all[0].reviewEvidence?.providerFailure).toMatchObject({ providerRequestCount: 1, moderationStage: "output" });
+    expect(attempts.all[0].assetBytesBase64).toBe("");
+    await request(app).post(`/api/events/owner/${OWNER}/prepayment-preview`).send({ email: "qa@example.com" });
+    expect(scheduledTasks).toHaveLength(0);
+    expect(generateImage).toHaveBeenCalledTimes(1);
+    expect(runVision).not.toHaveBeenCalled();
+  });
+
+  it.each([true, false])("serves the exact reviewed teaser and preserves its paid source with one dispatch (named=%s)", async (named) => {
+    if (!named) stored = genericEvent();
+    const app = makeApp({ mode: "quality-image" });
+    const attempts = new InMemoryArtworkAttemptStore();
+    const sourceBytes = encodePng({ width: 630, height: 1120, rgb: new Uint8Array(630 * 1120 * 3).fill(1) });
+    const generateImage = vi.fn(async (_input: unknown) => ({ bytes: sourceBytes, dataUrl: "not served", durationMs: 1 }));
+    const runVision = vi.fn(async (_input: unknown) => ({
+      passed: true, unavailable: false, failureCodes: [], requiredPresent: [], excludedFound: [], notes: "Fixture review, not real art QA",
+      scores: { textLogoWatermarkFree: 5, artifactFree: 5, premiumFinish: 5, briefFidelity: 5, compositionQuality: 5, ageAppropriate: 5 },
+      durationMs: 1, usage: { inputTokens: 0, outputTokens: 0 },
+    }));
+    generate.mockImplementation((event, options) => generateQualityLockedPreview(event, {
+      ...options, attemptRetention: { store: attempts, eventId: EVENT_ID, ownerToken: OWNER },
+      generateImage, runTier1: () => ({ passed: true, findings: [], salientRegions: [], durationMs: 1 }), runVision,
+    }));
+    await request(app).post(`/api/events/owner/${OWNER}/prepayment-preview`).send({ email: "qa@example.com" });
+    await runScheduledTask();
+    const ready = await request(app).get(`/api/events/owner/${OWNER}/prepayment-preview/readiness`);
+    expect(ready.body.kind).toBe("approved-image");
+    const teaser = await request(app).get(`/api/events/owner/${OWNER}/prepayment-preview/asset`);
+    expect(teaser.headers["cache-control"]).toBe("private, no-store");
+    expect(readPngSize(teaser.body)).toEqual({ width: 315, height: 560 });
+    expect(teaser.body.equals((runVision.mock.calls[0][0] as { bytes: Buffer }).bytes)).toBe(true);
+    const paid = await request(makeApp({ unlocked: true })).get(`/api/events/owner/${OWNER}/prepayment-preview/asset`);
+    expect(paid.body.equals(sourceBytes)).toBe(true);
+    expect(generateImage).toHaveBeenCalledTimes(1);
+    expect(generateImage.mock.calls[0][0]).toMatchObject({ quality: "medium", maxTransientRetries: 0 });
+    expect(runVision).toHaveBeenCalledTimes(1);
+    expect(runVision.mock.calls[0][0]).toMatchObject({ maxFormatRepairs: 0 });
+    expect(attempts.all).toHaveLength(1);
+    expect(stored.prePaymentPreviewAttempts).toBe(1);
+  });
+
+  it.each([true, false])("reserves only one paid job across simultaneous stale reads (named=%s)", async (named) => {
+    if (!named) stored = genericEvent();
+    const snapshot = { ...stored };
+    getEventByOwnerToken.mockResolvedValueOnce({ ...snapshot }).mockResolvedValueOnce({ ...snapshot });
+    const results = await Promise.all([makeApp({ mode: "quality-image" }), makeApp({ mode: "quality-image" })]
+      .map((app) => request(app).post(`/api/events/owner/${OWNER}/prepayment-preview`)
+        .send({ email: "qa@example.com" })));
+    expect(results.map((result) => result.status)).toEqual([202, 202]);
+    expect(reservePrePaymentPreview).toHaveBeenCalledTimes(2);
+    expect(schedule).toHaveBeenCalledTimes(1);
+    expect(stored.prePaymentPreviewAttempts).toBe(1);
+  });
+
+  it("never starts paid work when the durable reservation fails", async () => {
+    reservePrePaymentPreview.mockResolvedValueOnce(undefined);
+    await request(makeApp()).post(`/api/events/owner/${OWNER}/prepayment-preview`)
+      .send({ email: "qa@example.com" });
+    expect(schedule).not.toHaveBeenCalled();
+    expect(generate).not.toHaveBeenCalled();
+  });
+
   it("rejects an invalid email before any resolution, generation or write", async () => {
     const response = await request(makeApp())
       .post(`/api/events/owner/${OWNER}/prepayment-preview`)
       .send({ email: "not-an-email" });
 
     expect(response.status).toBe(400);
-    expect(resolveNamedReference).not.toHaveBeenCalled();
     expect(generate).not.toHaveBeenCalled();
     expect(schedule).not.toHaveBeenCalled();
     expect(updateEventById).not.toHaveBeenCalled();
   });
 
-  it("returns immediately, then automatically resolves and privately approves a named-theme first look", async () => {
-    resolveNamedReference.mockResolvedValue(automaticResolution());
+  it("returns immediately, then privately approves a text-first named-theme first look", async () => {
     generate.mockResolvedValue({
       kind: "approved-image",
       dataUrl: APPROVED_PNG,
@@ -154,7 +279,6 @@ describe("quality-locked prepayment preview routes", () => {
       automaticReferenceAttempted: true,
     }));
     expect(schedule).toHaveBeenCalledTimes(1);
-    expect(resolveNamedReference).not.toHaveBeenCalled();
     expect(generate).not.toHaveBeenCalled();
     expect(stored.prePaymentPreviewAttempts).toBe(1);
     expect(stored.prePaymentPreviewUsedAt).toBe(NOW);
@@ -162,14 +286,19 @@ describe("quality-locked prepayment preview routes", () => {
 
     await runScheduledTask();
 
-    expect(resolveNamedReference).toHaveBeenCalledTimes(1);
     expect(generate).toHaveBeenCalledTimes(1);
     expect(generate.mock.calls[0][1]).toEqual(expect.objectContaining({
-      inspirationNotes: "Official Blippi and Meekah identity references",
-      quality: "high",
-      maxCandidates: 2,
+      inspirationNotes: expect.stringContaining("orange glasses"),
+      quality: "medium",
+      maxCandidates: 1,
+      parallelCandidates: false,
+      maxFormatRepairs: 0,
+      allowTargetedCorrection: false,
+      onApproved: expect.any(Function),
+      namedReference: expect.objectContaining({ id: "blippi-meekah" }),
+      signal: expect.any(AbortSignal),
     }));
-    expect(generate.mock.calls[0][1].referenceImages).toHaveLength(1);
+    expect(generate.mock.calls[0][1].referenceImages).toBeUndefined();
     expect(stored.prePaymentPreviewUrl).toBe(`${QUALITY_PREFIX}${APPROVED_BYTES.toString("base64")}`);
 
     const ready = await request(makeApp())
@@ -181,8 +310,69 @@ describe("quality-locked prepayment preview routes", () => {
     }));
   });
 
-  it("fails closed to the direction card when automatic reference resolution is unavailable", async () => {
-    resolveNamedReference.mockResolvedValue(null);
+  it.each(["rejected", "timeout"])("keeps the early approved image when its sibling ends with %s", async (ending) => {
+    const app = makeApp({ jobTimeoutMs: 1000 });
+    let release!: () => void;
+    const sibling = new Promise<void>((resolve) => { release = resolve; });
+    let published!: () => void;
+    const firstPass = new Promise<void>((resolve) => { published = resolve; });
+    generate.mockImplementation(async (_event, options) => {
+      await options.onApproved({ kind: "approved-image", dataUrl: APPROVED_PNG, attempts: 2, model: "gpt-image-2", reviews: [] });
+      published();
+      await sibling;
+      return { kind: "rejected", attempts: 2, model: "gpt-image-2", reviews: [] };
+    });
+    await request(app).post(`/api/events/owner/${OWNER}/prepayment-preview`).send({ email: "qa@example.com" });
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
+    const running = runScheduledTask();
+    await firstPass;
+    const winner = stored.prePaymentPreviewUrl;
+    expect(winner).toBe(`${QUALITY_PREFIX}${APPROVED_BYTES.toString("base64")}`);
+    if (ending === "timeout") await vi.advanceTimersByTimeAsync(1001);
+    release();
+    await running;
+    expect(stored.prePaymentPreviewUrl).toBe(winner);
+    expect(updateEventById.mock.calls.filter(([, data]) => data.prePaymentPreviewUrl)).toHaveLength(1);
+    vi.useRealTimers();
+    const ready = await request(app).get(`/api/events/owner/${OWNER}/prepayment-preview/readiness`);
+    expect(ready.body.kind).toBe("approved-image");
+    expect(ready.body.generationState).toBe("ready");
+    expect(schedule).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["newer-asset", "edited-brief", "rotated-owner", "newer-job"])("rejects stale job writes after %s", async (change) => {
+    const app = makeApp();
+    generate.mockImplementation(async (_event, options) => {
+      if (change === "newer-asset") stored = { ...stored, prePaymentPreviewUrl: "newer-protected-asset" };
+      if (change === "edited-brief") stored = { ...stored, vibeDescription: "Host changed the theme" };
+      if (change === "rotated-owner") stored = { ...stored, ownerToken: "rotated-owner" };
+      if (change === "newer-job") stored = { ...stored, prePaymentPreviewUsedAt: NOW + 1 };
+      await options.onApproved({ kind: "approved-image", dataUrl: APPROVED_PNG, attempts: 2, model: "gpt-image-2", reviews: [] });
+      return { kind: "rejected", attempts: 2, model: "gpt-image-2", reviews: [] };
+    });
+    await request(app).post(`/api/events/owner/${OWNER}/prepayment-preview`).send({ email: "qa@example.com" });
+    await runScheduledTask();
+    expect(updateEventById.mock.calls.filter(([, data]) => data.prePaymentPreviewUrl)).toHaveLength(0);
+  });
+
+  it("rejects late approval callbacks after timeout without replacing the fallback", async () => {
+    const app = makeApp({ jobTimeoutMs: 1000 });
+    let options: any;
+    generate.mockImplementation(async (_event, deps) => { options = deps; return new Promise(() => {}); });
+    await request(app).post(`/api/events/owner/${OWNER}/prepayment-preview`).send({ email: "qa@example.com" });
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
+    const running = runScheduledTask();
+    await vi.advanceTimersByTimeAsync(1001);
+    await running;
+    const fallback = stored.prePaymentPreviewUrl;
+    expect(fallback).toMatch(/^data:image\/svg/);
+    await options.onApproved({ kind: "approved-image", dataUrl: APPROVED_PNG, attempts: 2, model: "gpt-image-2", reviews: [] });
+    expect(stored.prePaymentPreviewUrl).toBe(fallback);
+  });
+
+  it("still requires private quality approval when external reference downloads are unavailable", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("reference sites unavailable"));
+    generate.mockResolvedValue({ kind: "rejected", attempts: 2, model: "gpt-image-2", reviews: [] });
 
     const response = await request(makeApp())
       .post(`/api/events/owner/${OWNER}/prepayment-preview`)
@@ -192,9 +382,11 @@ describe("quality-locked prepayment preview routes", () => {
     expect(response.body.generationState).toBe("generating");
     await runScheduledTask();
 
-    expect(generate).not.toHaveBeenCalled();
+    expect(generate).toHaveBeenCalledTimes(1);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(generate.mock.calls[0][1]).toMatchObject({ quality: "medium", maxCandidates: 1, parallelCandidates: false, maxFormatRepairs: 0 });
     expect(stored.prePaymentPreviewAttempts).toBe(1);
-    expect(stored.prePaymentPreviewUrl).toMatch(/^data:image\/svg\+xml;base64,/);
+    expect(stored.prePaymentPreviewUrl).toMatch(/^data:image\/svg\+xml;posy-preview-failure=quality-rejected;base64,/);
 
     const ready = await request(makeApp())
       .get(`/api/events/owner/${OWNER}/prepayment-preview/readiness`);
@@ -207,8 +399,26 @@ describe("quality-locked prepayment preview routes", () => {
     }));
   });
 
+  it("falls back at the bounded deadline and aborts the active provider work", async () => {
+    let providerSignal: AbortSignal | undefined;
+    generate.mockImplementation((_event: Event, dependencies?: { signal?: AbortSignal }) => {
+      providerSignal = dependencies?.signal;
+      return new Promise(() => undefined);
+    });
+
+    const response = await request(makeApp({ jobTimeoutMs: 5 }))
+      .post(`/api/events/owner/${OWNER}/prepayment-preview`)
+      .send({ email: "host@example.com" });
+
+    expect(response.status).toBe(202);
+    await runScheduledTask();
+    expect(providerSignal).toBeDefined();
+    expect(providerSignal?.aborted).toBe(true);
+    expect((providerSignal?.reason as Error | undefined)?.message).toContain("preview deadline");
+    expect(stored.prePaymentPreviewUrl).toMatch(/^data:image\/svg\+xml;base64,/);
+  });
+
   it("keeps rejected named-theme candidates private and shows the reliable direction", async () => {
-    resolveNamedReference.mockResolvedValue(automaticResolution());
     generate.mockResolvedValue({
       kind: "rejected",
       attempts: 2,
@@ -222,7 +432,7 @@ describe("quality-locked prepayment preview routes", () => {
 
     expect(response.status).toBe(202);
     await runScheduledTask();
-    expect(stored.prePaymentPreviewUrl).toMatch(/^data:image\/svg\+xml;base64,/);
+    expect(stored.prePaymentPreviewUrl).toMatch(/^data:image\/svg\+xml;posy-preview-failure=quality-rejected;base64,/);
     expect(JSON.stringify(response.body)).not.toContain("data:image");
   });
 
@@ -280,7 +490,6 @@ describe("quality-locked prepayment preview routes", () => {
       generationState: "fallback",
       automaticReferenceAttempted: true,
     }));
-    expect(resolveNamedReference).not.toHaveBeenCalled();
     expect(generate).not.toHaveBeenCalled();
     expect(schedule).not.toHaveBeenCalled();
   });
@@ -301,7 +510,6 @@ describe("quality-locked prepayment preview routes", () => {
       referenceCaptured: true,
       generationState: "ready",
     }));
-    expect(resolveNamedReference).not.toHaveBeenCalled();
     expect(generate).not.toHaveBeenCalled();
     expect(schedule).not.toHaveBeenCalled();
     expect(stored.prePaymentPreviewAttempts).toBe(0);
@@ -309,7 +517,7 @@ describe("quality-locked prepayment preview routes", () => {
     expect(decodedStoredSvg()).toContain(`data:image/png;base64,${referenceBytes.toString("base64")}`);
   });
 
-  it("uses the safe direction card when automatic named research is disabled", async () => {
+  it("uses the safe direction card when automatic named generation is disabled", async () => {
     const response = await request(makeApp({ autoNamed: false }))
       .post(`/api/events/owner/${OWNER}/prepayment-preview`)
       .send({ email: "host@example.com" });
@@ -319,31 +527,121 @@ describe("quality-locked prepayment preview routes", () => {
       kind: "direction-card",
       automaticReferenceAttempted: false,
     }));
-    expect(resolveNamedReference).not.toHaveBeenCalled();
     expect(generate).not.toHaveBeenCalled();
     expect(schedule).not.toHaveBeenCalled();
     expect(stored.prePaymentPreviewAttempts).toBe(0);
   });
 
-  it("keeps original themes behind the separate quality-image release gate", async () => {
+  it("returns immediately, then classifies an original theme once in the scheduled job", async () => {
     stored = genericEvent();
 
     const response = await request(makeApp({ mode: "direction-card" }))
       .post(`/api/events/owner/${OWNER}/prepayment-preview`)
       .send({ email: "host@example.com" });
 
-    expect(response.status).toBe(200);
-    expect(response.body.kind).toBe("direction-card");
-    expect(resolveNamedReference).not.toHaveBeenCalled();
+    expect(response.status).toBe(202);
+    expect(response.body.kind).toBe("none");
+    expect(response.body.directionCard.headline).toContain("Candlelit");
+    expect(classifyNamedReference).not.toHaveBeenCalled();
+    expect(schedule).toHaveBeenCalledTimes(1);
+
+    await runScheduledTask();
+    expect(classifyNamedReference).toHaveBeenCalledTimes(1);
     expect(generate).not.toHaveBeenCalled();
+    expect(stored.prePaymentPreviewAttempts).toBe(1);
+    expect(stored.prePaymentPreviewUrl).toMatch(/^data:image\/svg\+xml;base64,/);
   });
 
-  it("stores original-theme artwork only after the private quality function approves it", async () => {
+  it("recognizes an arbitrary named world once on POST and never reclassifies it from GET polling", async () => {
+    stored = {
+      ...stored,
+      eventName: "Ella's Sesame Street Party",
+      themeName: "Sesame Street",
+      vibeDescription: "Sesame Street characters at a neighborhood block party with bubbles",
+    } as unknown as Event;
+    const sesame = {
+      id: "named-theme-sesame-street",
+      label: "Sesame Street",
+      trigger: /sesame street/i,
+      cues: ["Sesame Street", "Neighborhood friends", "Playful learning", "Block-party joy"],
+      palette: ["#1b5e9b", "#f2c230", "#f7f1e5", "#d84f45"],
+      requirements: ["The Sesame Street identity is unmistakable through its recognizable neighborhood character world."],
+    };
+    classifyNamedReference.mockResolvedValue(sesame);
+    generate.mockResolvedValue({ kind: "rejected", attempts: 2, model: "gpt-image-2", reviews: [] });
+
+    const response = await request(makeApp())
+      .post(`/api/events/owner/${OWNER}/prepayment-preview`)
+      .send({ email: "host@example.com" });
+
+    expect(response.status).toBe(202);
+    expect(response.body.directionCard.headline).toBe("Sesame Street");
+    expect(classifyNamedReference).not.toHaveBeenCalled();
+
+    const pollingBeforeWork = await request(makeApp())
+      .get(`/api/events/owner/${OWNER}/prepayment-preview/readiness`);
+    expect(pollingBeforeWork.status).toBe(200);
+    expect(classifyNamedReference).not.toHaveBeenCalled();
+
+    await runScheduledTask();
+    expect(classifyNamedReference).toHaveBeenCalledTimes(1);
+    expect(decodedStoredSvg()).toContain("Sesame Street");
+
+    const ready = await request(makeApp())
+      .get(`/api/events/owner/${OWNER}/prepayment-preview/readiness`);
+    expect(ready.status).toBe(200);
+    expect(classifyNamedReference).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["Moana and Maui", "Unfamiliar Star Academy"])("does not make %s depend on an unused external image download", async (label) => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("external images unavailable"));
+    stored = { ...genericEvent(), eventName: "General named QA", themeName: "",
+      vibeDescription: `${label}. Medium: lacquer inlay. Silver foliage and a crescent moon. No extra characters.` };
+    const namedReference = { id: "named-theme-test", label, trigger: /unused/, cues: [label],
+      palette: ["#112233", "#223344", "#334455", "#445566"],
+      requirements: [`${label} must each be independently recognizable`] };
+    classifyNamedReference.mockResolvedValue(namedReference);
+    generate.mockResolvedValue({ kind: "approved-image", attempts: 2, model: "gpt-image-2", reviews: [], dataUrl: APPROVED_PNG });
+    const app = makeApp({ mode: "quality-image" });
+    await request(app).post(`/api/events/owner/${OWNER}/prepayment-preview`).send({ email: "qa@example.com" });
+    await runScheduledTask();
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(classifyNamedReference).toHaveBeenCalledTimes(1);
+    expect(generate).toHaveBeenCalledTimes(1);
+    expect(generate.mock.calls[0][0].vibeDescription).toBe(stored.vibeDescription);
+    expect(generate.mock.calls[0][1]).toMatchObject({ namedReference, inspirationNotes: expect.stringContaining(namedReference.requirements[0]),
+      quality: "medium", maxCandidates: 1, parallelCandidates: false, allowTargetedCorrection: false, maxFormatRepairs: 0 });
+    expect(generate.mock.calls[0][1].inspirationNotes).toContain("They do not add cast members");
+    expect(generate.mock.calls[0][1].referenceImages).toBeUndefined();
+    const ready = await request(app).get(`/api/events/owner/${OWNER}/prepayment-preview/readiness`);
+    expect(ready.body.kind).toBe("approved-image");
+    expect(classifyNamedReference).toHaveBeenCalledTimes(1);
+  });
+
+  it("serves a quality-approved arbitrary named theme without reclassifying on GET", async () => {
+    stored = {
+      ...genericEvent(),
+      eventName: "Ella's Sesame Street Party",
+      themeName: "Sesame Street",
+      prePaymentPreviewUrl: `${QUALITY_PREFIX}${APPROVED_BYTES.toString("base64")}`,
+      prePaymentPreviewUsedAt: NOW,
+      prePaymentPreviewAttempts: 1,
+    } as unknown as Event;
+
+    const response = await request(makeApp({ mode: "direction-card", unlocked: true }))
+      .get(`/api/events/owner/${OWNER}/prepayment-preview/asset`);
+
+    expect(response.status).toBe(200);
+    expect(Buffer.compare(response.body, APPROVED_BYTES)).toBe(0);
+    expect(classifyNamedReference).not.toHaveBeenCalled();
+  });
+
+  it("stores original-theme artwork only after the scheduled private quality function approves it", async () => {
     stored = genericEvent();
     generate.mockResolvedValue({
       kind: "approved-image",
       dataUrl: APPROVED_PNG,
-      attempts: 2,
+      attempts: 1,
       model: "gpt-image-2",
       reviews: [],
     });
@@ -352,11 +650,53 @@ describe("quality-locked prepayment preview routes", () => {
       .post(`/api/events/owner/${OWNER}/prepayment-preview`)
       .send({ email: "host@example.com" });
 
-    expect(response.status).toBe(200);
-    expect(response.body.kind).toBe("approved-image");
+    expect(response.status).toBe(202);
+    expect(response.body.kind).toBe("none");
+    expect(classifyNamedReference).not.toHaveBeenCalled();
+    expect(generate).not.toHaveBeenCalled();
+
+    await runScheduledTask();
+
+    expect(classifyNamedReference).toHaveBeenCalledTimes(1);
     expect(generate).toHaveBeenCalledTimes(1);
+    expect(generate.mock.calls[0][1]).toEqual(expect.objectContaining({
+      quality: "medium",
+      maxCandidates: 1,
+      namedReference: null,
+      signal: expect.any(AbortSignal),
+    }));
     expect(stored.prePaymentPreviewUrl).toBe(`${QUALITY_PREFIX}${APPROVED_BYTES.toString("base64")}`);
     expect(stored.prePaymentPreviewAttempts).toBe(1);
+
+    const ready = await request(makeApp({ mode: "quality-image" }))
+      .get(`/api/events/owner/${OWNER}/prepayment-preview/readiness`);
+    expect(ready.status).toBe(200);
+    expect(ready.body.kind).toBe("approved-image");
+  });
+
+  it.each(["timeout", "error"])("never spends on generic artwork after recognition %s", async (failure) => {
+    stored = { ...genericEvent(), eventName: "Frozen Fifth Birthday",
+      vibeDescription: "Disney Frozen with Elsa and Anna, cel-shaded illustration" };
+    let receivedSignal: AbortSignal | undefined;
+    let resolveLate: ((value: null) => void) | undefined;
+    classifyNamedReference.mockImplementation((_text: string, signal: AbortSignal) => {
+      receivedSignal = signal;
+      if (failure === "error") return Promise.reject(new Error("recognition unavailable"));
+      return new Promise(resolve => { resolveLate = resolve; });
+    });
+    const app = makeApp({ mode: "quality-image", jobTimeoutMs: 20 });
+    const response = await request(app).post(`/api/events/owner/${OWNER}/prepayment-preview`)
+      .send({ email: "qa@example.com" });
+    expect(response.status).toBe(202);
+    await runScheduledTask();
+    expect(receivedSignal).toBeInstanceOf(AbortSignal);
+    expect(receivedSignal!.aborted).toBe(failure === "timeout");
+    resolveLate?.(null);
+    await Promise.resolve();
+    expect(generate).not.toHaveBeenCalled();
+    const ready = await request(app).get(`/api/events/owner/${OWNER}/prepayment-preview/readiness`);
+    expect(ready.body).toMatchObject({ kind: "direction-card", generationState: "fallback" });
+    expect(classifyNamedReference).toHaveBeenCalledTimes(1);
   });
 
   it("never serves an ordinary PNG left by an older preview experiment", async () => {

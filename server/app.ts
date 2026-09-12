@@ -17,7 +17,6 @@ import { registerEventStartupRoutes } from "./eventStartupRoutes";
 import { registerEmailDiagnosticRoutes } from "./emailDiagnosticRoutes";
 import { registerEventRecoveryRoutes } from "./eventRecoveryRoutes";
 import { registerPrePaymentPreviewQualityRoutes } from "./prePaymentPreviewQualityRoutes";
-import { registerPrePaymentPreviewBenchmarkRoutes } from "./prePaymentPreviewBenchmarkRoutes";
 
 declare module "http" {
   interface IncomingMessage {
@@ -40,15 +39,6 @@ function redactSensitivePath(path: string): string {
   return path
     .replace(/(\/owner\/)[^/]+/g, "$1[REDACTED]")
     .replace(/(\/guest\/)[^/]+/g, "$1[REDACTED]");
-}
-
-function redactSensitiveJson(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(redactSensitiveJson);
-  if (!value || typeof value !== "object") return value;
-  return Object.fromEntries(Object.entries(value as Record<string, unknown>).map(([key, entry]) => {
-    if (/token/i.test(key)) return [key, "[REDACTED]"];
-    return [key, redactSensitiveJson(entry)];
-  }));
 }
 
 // Builds a fresh Express app + companion http.Server, wired with the shared
@@ -87,22 +77,12 @@ export function createExpressApp(): { app: express.Express; httpServer: Server }
   app.use((req, res, next) => {
     const start = Date.now();
     const path = redactSensitivePath(req.path);
-    let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-    const originalResJson = res.json;
-    res.json = function (bodyJson, ...args) {
-      capturedJsonResponse = bodyJson;
-      return originalResJson.apply(res, [bodyJson, ...args]);
-    };
-
     res.on("finish", () => {
       const duration = Date.now() - start;
       if (path.startsWith("/api")) {
-        let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-        if (capturedJsonResponse) {
-          logLine += ` :: ${JSON.stringify(redactSensitiveJson(capturedJsonResponse))}`;
-        }
-
+        // Never copy response bodies into logs: credentials can be nested in
+        // URLs, and bodies also carry email, guest details and artwork bytes.
+        const logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
         log(logLine);
       }
     });
@@ -144,21 +124,6 @@ export function ensureRoutesRegistered(app: express.Express, httpServer: Server)
       // visible: Preview defaults to a deterministic direction card until the
       // strict GPT Image 2 + vision benchmark is explicitly enabled.
       registerPrePaymentPreviewQualityRoutes(app);
-      // Vercel's authenticated connector can inspect protected Previews with
-      // GET requests only. This narrowly scoped method override permits it to
-      // execute one fixed, branch-guarded benchmark case when the private query
-      // flag is present. The benchmark route still accepts no arbitrary prompt
-      // and returns 404 outside this one Preview branch.
-      app.use("/api/qa/prepayment-preview-benchmark", (req, _res, next) => {
-        if (req.method === "GET" && req.query.__posy_run_fixed === "1") {
-          req.method = "POST";
-        }
-        next();
-      });
-      // Fixed-corpus provider QA is exposed only by the quality-lock Preview
-      // branch. The route itself returns 404 everywhere else and accepts no
-      // arbitrary prompts, so it cannot become a public image-generation API.
-      registerPrePaymentPreviewBenchmarkRoutes(app);
       await registerRoutes(httpServer, app);
       registerInitialPreviewRoute(app);
       registerSmsInvitationRoutes(app);

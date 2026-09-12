@@ -163,15 +163,12 @@ export type AiFirstConcept = z.infer<typeof aiFirstConceptSchema>;
 /* ── Recoverable drift ───────────────────────────────────────────────── */
 
 /**
- * Free-text fields, with the cap read off the schema so the two can never
- * disagree. An overrun here is cosmetic — the concept still renders.
+ * Display-only fields may be shortened. Art fields control rendered content:
+ * an overrun must fail validation before image spend, never lose its ending.
  */
 const TEXT_CAPS: [path: readonly string[], max: number][] = [
   [["conceptName"], aiFirstConceptSchema.shape.conceptName.maxLength!],
   [["description"], aiFirstConceptSchema.shape.description.maxLength!],
-  [["art", "medium"], artDirectionSchema.shape.medium.maxLength!],
-  [["art", "composition"], artDirectionSchema.shape.composition.maxLength!],
-  [["art", "prompt"], artDirectionSchema.shape.prompt.maxLength!],
 ];
 
 /** Trims at a word boundary so a shortened sentence still reads as one. */
@@ -410,7 +407,7 @@ export function typographySafetyRequirement(concept: AiFirstConcept): string {
 
 export function buildArtworkPrompt(concept: AiFirstConcept): string {
   return [
-    `${concept.art.medium} illustration.`,
+    `${concept.art.medium}.`,
     `${concept.art.composition}.`,
     concept.art.prompt.trim().replace(/\s+$/, ""),
     safeFramingRequirement(concept.layoutStyle),

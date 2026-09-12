@@ -31,6 +31,7 @@ export default function PaywallPreviewGuide() {
   const [card, setCard] = useState<HTMLElement | null>(null);
   const [previewReady, setPreviewReady] = useState(false);
   const [previewBusy, setPreviewBusy] = useState(false);
+  const [previewFailed, setPreviewFailed] = useState(false);
   const [readiness, setReadiness] = useState<PreviewReadiness | null>(null);
 
   const ownerToken = ownerTokenFromLocation(location);
@@ -72,11 +73,13 @@ export default function PaywallPreviewGuide() {
       const cta = document.querySelector<HTMLButtonElement>("[data-testid='button-unlock-spark']");
       const image = document.querySelector<HTMLImageElement>("[data-testid='img-prepayment-preview']");
       const text = cta?.textContent ?? "";
-      const busy = /Creating your (?:personal preview|personalized first look)|Revealing your (?:personal preview|personalized first look)/i.test(text);
+      const busy = Boolean(nextCard?.querySelector("[data-testid='prepayment-preview-progress-proof']"))
+        || /Creating your (?:personal preview|personalized first look)|Revealing your (?:personal preview|personalized first look)/i.test(text);
 
       setCard(nextCard);
       setPreviewReady(Boolean(image?.complete && image.naturalWidth > 0));
       setPreviewBusy(busy);
+      setPreviewFailed(Boolean(nextCard?.querySelector("[data-testid='prepayment-preview-failure']")));
 
       const placeholder = nextCard?.firstElementChild as HTMLElement | null;
       if (placeholder) {
@@ -132,7 +135,9 @@ export default function PaywallPreviewGuide() {
     };
   }, [card, readiness?.kind]);
 
-  if (!card) return null;
+  // DraftGenerating owns the failed state and the saved brief. Do not add a
+  // second message claiming artwork passed review or inviting another submit.
+  if (!card || previewFailed || readiness?.generationState === "fallback") return null;
 
   const namedLabel = readiness?.namedReference?.label;
   const automaticNamedResearch = Boolean(
@@ -162,9 +167,9 @@ export default function PaywallPreviewGuide() {
       ) : previewReady && readiness?.kind === "direction-card" ? (
         <p className="text-xs leading-relaxed text-muted-foreground" data-testid="text-preview-quality-lock">
           {automaticNamedResearch && automaticAttempted
-            ? `Posy recognized ${namedLabel} and completed the visual research. The generated option did not clear Posy’s standard, so this reliable direction stayed in place instead of showing weak artwork.`
+            ? `Posy recognized ${namedLabel}, but no artwork cleared the private quality review. Your event direction is saved here.`
             : automaticNamedResearch
-              ? `Posy recognized ${namedLabel}. Visual research and private quality review are handled automatically—there is nothing else for you to find or upload.`
+              ? `Posy recognized ${namedLabel}. Your artwork will be reviewed privately before it appears here.`
               : namedLabel
                 ? `Posy recognized ${namedLabel} and captured every defining event detail without showing a generic substitute.`
                 : readiness.imageGenerationEnabled
@@ -178,7 +183,7 @@ export default function PaywallPreviewGuide() {
       ) : (
         <p className="text-xs text-muted-foreground" aria-live="polite">
           {automaticNamedResearch
-            ? `Posy is resolving the right ${namedLabel} visual world and reviewing the artwork privately. Nothing unapproved will be shown.`
+            ? `Posy is creating your ${namedLabel} artwork and reviewing it privately before showing it here.`
             : "Posy is building this from the details you already shared. Unapproved artwork is never shown."}
         </p>
       )}

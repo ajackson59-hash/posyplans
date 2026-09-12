@@ -14,7 +14,10 @@ describe("application token hygiene", () => {
     const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
     const { app } = createExpressApp();
     app.get("/api/events/owner/owner-secret/guest/guest-secret", (_req, res) => {
-      res.json({ ownerToken: "owner-secret", guestToken: "guest-secret", nested: { accessToken: "access-secret" } });
+      res.json({ ownerToken: "owner-secret", guestToken: "guest-secret", nested: {
+        accessToken: "access-secret", assetUrl: "/api/events/owner/nested-url-secret/asset",
+        email: "private-host@example.com", data: "data:image/png;base64,private-pixels",
+      } });
     });
 
     const res = await request(app).get("/api/events/owner/owner-secret/guest/guest-secret");
@@ -28,6 +31,9 @@ describe("application token hygiene", () => {
     expect(logged).not.toContain("owner-secret");
     expect(logged).not.toContain("guest-secret");
     expect(logged).not.toContain("access-secret");
+    expect(logged).not.toContain("nested-url-secret");
+    expect(logged).not.toContain("private-host@example.com");
+    expect(logged).not.toContain("private-pixels");
   });
 });
 
