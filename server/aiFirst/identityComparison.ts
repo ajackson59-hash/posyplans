@@ -1,10 +1,13 @@
 /** Explicit comparisons: structural validity is not proof of visual correctness. */
 import type { ReviewReference } from "./reviewReferences";
-export const IDENTITY_COMPARISON_VERSION = "reference-feature-comparison-v1";
+export const IDENTITY_COMPARISON_VERSION = "reference-feature-comparison-v2";
 export const IDENTITY_FEATURES = ["facialProportions", "eyesAndBrows", "noseAndMouth", "hairStructure"] as const;
 type Decision = "match" | "mismatch" | "unresolved";
 interface FeatureComparison {
   referenceObservation: string; candidateObservation: string; assessment: Decision; explanation: string;
+  candidateLocation: string;
+  candidateVisibility: "clear" | "insufficient" | "absent";
+  referenceVisibility: "clear" | "insufficient";
 }
 export interface IdentityComparisonTarget { key: string; referenceIndex: number; subject: string; requirements: string[] }
 interface IdentityComparison {
@@ -28,22 +31,24 @@ export function identityComparisonTargets(references: readonly ReviewReference[]
     return [{ key: `reference${index + 1}`, referenceIndex: index + 1, subject: reference.subject, requirements: relevant }];
   });
 }
-const featureSchema = {
-  type: "object", properties: { referenceObservation: { type: "string" }, candidateObservation: { type: "string" },
-    assessment: { type: "string", enum: ["match", "mismatch", "unresolved"] }, explanation: { type: "string" } },
-  required: ["referenceObservation", "candidateObservation", "assessment", "explanation"], additionalProperties: false,
-};
+/** One flat item schema, independent of reference count. The former repeated
+ * nested objects hit Anthropic's compiled-grammar size limit on a live request.
+ * Coverage and uniqueness are enforced below, not by expanding the grammar. */
 export function identityComparisonSchema(targets: readonly IdentityComparisonTarget[]) {
-  return { type: "object", properties: Object.fromEntries(targets.map(target => [target.key, {
-    type: "object", properties: { candidateLocation: { type: "string" },
+  const properties = {
+      referenceKey: { type: "string", enum: targets.map(target => target.key) },
+      feature: { type: "string", enum: [...IDENTITY_FEATURES] },
+      candidateLocation: { type: "string" },
       candidateVisibility: { type: "string", enum: ["clear", "insufficient", "absent"] },
       referenceVisibility: { type: "string", enum: ["clear", "insufficient"] },
-      features: { type: "object", properties: Object.fromEntries(IDENTITY_FEATURES.map(key => [key, featureSchema])),
-        required: [...IDENTITY_FEATURES], additionalProperties: false } },
-    required: ["candidateLocation", "candidateVisibility", "referenceVisibility", "features"], additionalProperties: false,
-  }])), required: targets.map(target => target.key), additionalProperties: false };
+      referenceObservation: { type: "string" }, candidateObservation: { type: "string" },
+      assessment: { type: "string", enum: ["match", "mismatch", "unresolved"] }, explanation: { type: "string" },
+  };
+  return { type: "array", items: { type: "object", properties,
+    required: Object.keys(properties), additionalProperties: false } };
 }
 export const IDENTITY_COMPARISON_INSTRUCTION = `REFERENCE FEATURE COMPARISON — complete identityComparisons BEFORE any identity verdict or score.
+Return a flat array with exactly one row for each required referenceKey and each of the four feature values below. Never omit or duplicate a reference/feature pair. Each row includes the candidate feature's location and the visibility of that feature in each image.
 For each required reference key, locate only that requested subject in the CANDIDATE. Independently observe the labeled reference and candidate, then compare them. Do not start with recognition by costume and rationalize a match afterward.
 For every feature supply separate referenceObservation and candidateObservation, assessment (match, mismatch, unresolved), and a short explanation comparing those observations:
 - facialProportions: face length/width, cheek shape, jaw and chin contours and their relative proportions.
@@ -58,27 +63,38 @@ const text = (value: unknown): value is string => typeof value === "string" && v
 export function validateIdentityComparisons(raw: unknown, targets: readonly IdentityComparisonTarget[], facts: {
   identityAccurate?: boolean; requiredPresent: { requirement: string; present: boolean }[];
 }): IdentityComparisonReview {
-  const record = object(raw), issues: string[] = [], comparisons: IdentityComparison[] = [];
-  if (Object.keys(record).some(key => !targets.some(target => target.key === key))) issues.push("unrequested-reference-comparison");
+  const rows = Array.isArray(raw) ? raw.map(object) : [], issues: string[] = [], comparisons: IdentityComparison[] = [];
+  if (rows.some(row => !targets.some(target => target.key === row.referenceKey))) issues.push("unrequested-reference-comparison");
   for (const target of targets) {
-    const row = object(record[target.key]), features = object(row.features);
-    let complete = text(row.candidateLocation) && ["clear", "insufficient", "absent"].includes(row.candidateVisibility) &&
-      ["clear", "insufficient"].includes(row.referenceVisibility);
+    const targetRows = rows.filter(row => row.referenceKey === target.key);
+    const features: Record<string, FeatureComparison> = {};
+    let complete = targetRows.length === IDENTITY_FEATURES.length;
     for (const feature of IDENTITY_FEATURES) {
-      const part = object(features[feature]);
-      if (!text(part.referenceObservation) || !text(part.candidateObservation) || !text(part.explanation) ||
+      const parts = targetRows.filter(row => row.feature === feature), part = parts[0] ?? {};
+      if (parts.length !== 1 || !text(part.candidateLocation) || !text(part.referenceObservation) ||
+          !text(part.candidateObservation) || !text(part.explanation) ||
+          !["clear", "insufficient", "absent"].includes(part.candidateVisibility) ||
+          !["clear", "insufficient"].includes(part.referenceVisibility) ||
           !["match", "mismatch", "unresolved"].includes(part.assessment)) complete = false;
+      else features[feature] = { candidateLocation: part.candidateLocation, candidateVisibility: part.candidateVisibility,
+        referenceVisibility: part.referenceVisibility, referenceObservation: part.referenceObservation,
+        candidateObservation: part.candidateObservation, assessment: part.assessment, explanation: part.explanation };
     }
     if (!complete) { issues.push(`${target.key}:incomplete-feature-comparison`); continue; }
     const observed = features as IdentityComparison["features"];
-    const visible = row.candidateVisibility === "clear" && row.referenceVisibility === "clear";
-    const assessments = IDENTITY_FEATURES.map(key => observed[key].assessment);
+    const parts = IDENTITY_FEATURES.map(key => observed[key]);
+    const candidateVisibility = parts.every(part => part.candidateVisibility === "clear") ? "clear"
+      : parts.every(part => part.candidateVisibility === "absent") ? "absent" : "insufficient";
+    const referenceVisibility = parts.every(part => part.referenceVisibility === "clear") ? "clear" : "insufficient";
+    const visible = candidateVisibility === "clear" && referenceVisibility === "clear";
+    const assessments = parts.map(part => part.assessment);
     const decision: Decision = assessments.includes("mismatch") ? "mismatch"
       : !visible || assessments.includes("unresolved") ? "unresolved" : "match";
     comparisons.push({ referenceIndex: target.referenceIndex, subject: target.subject,
-      candidateLocation: row.candidateLocation.trim(), candidateVisibility: row.candidateVisibility,
-      referenceVisibility: row.referenceVisibility, features: observed, decision });
-    if (!visible && assessments.every(assessment => assessment === "match")) issues.push(`${target.key}:visibility-match-conflict`);
+      candidateLocation: Array.from(new Set(parts.map(part => part.candidateLocation.trim()))).join("; "), candidateVisibility,
+      referenceVisibility, features: observed, decision });
+    if (parts.some(part => part.assessment === "match" &&
+        (part.candidateVisibility !== "clear" || part.referenceVisibility !== "clear"))) issues.push(`${target.key}:visibility-match-conflict`);
     if (decision !== "match") {
       if (facts.identityAccurate === true) issues.push(`${target.key}:identity-verdict-conflict`);
       if (facts.requiredPresent.some(requirement => target.requirements.includes(requirement.requirement) && requirement.present)) {

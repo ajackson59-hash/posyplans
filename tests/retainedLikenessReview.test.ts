@@ -34,13 +34,12 @@ async function fixture(accurate = false) {
     briefFidelity: 3, compositionQuality: 5, ageAppropriate: 5 };
   const create = vi.fn(async (body: any, _options: unknown) => ({ stop_reason: "end_turn",
     usage: { input_tokens: 100, output_tokens: 80 }, content: [{ type: "text", text: JSON.stringify({ ...scores,
-      ...(body.output_config.format.schema.properties.identityComparisons ? { identityComparisons: { reference1: {
-        candidateLocation: "Right figure", candidateVisibility: "clear", referenceVisibility: "clear",
-        features: Object.fromEntries(IDENTITY_FEATURES.map(feature => [feature, {
+      ...(body.output_config.format.schema.properties.identityComparisons ? { identityComparisons: IDENTITY_FEATURES.map(feature => ({
+          referenceKey: "reference1", feature, candidateLocation: "Right figure", candidateVisibility: "clear", referenceVisibility: "clear",
           referenceObservation: "Reference geometry fixture", candidateObservation: "Candidate geometry fixture",
           assessment: feature === "hairStructure" && !accurate ? "mismatch" : "match", explanation: "Offline fixture comparison",
-        }])),
-      } } } : {}),
+        })),
+      } : {}),
       requiredPresent: body.output_config.format.schema.properties.requiredPresent.items.properties.requirement.enum.map(
         (requirement: string) => ({ requirement, present: requirement.startsWith("Meekah ") ? accurate : false,
           evidence: "Fixture observation of differing face and hair, not a real visual judgment" })),
@@ -128,11 +127,12 @@ it("cannot report a detected mismatch without the returned reference proof", asy
   expect(f.create).toHaveBeenCalledTimes(1);
 });
 
-it.each(["matched", "mismatched"] as const)("runs one fixed %s feature control without reopening an old claim", async caseId => {
+it.each(["matched", "mismatched"] as const)("validates a %s feature fixture without reopening an old claim", async caseId => {
   const accurate = caseId === "matched", f = await fixture(accurate);
   await runRetainedLikenessReview(f.event, f.store, f.options);
   const source = accurate ? f.reference : f.source, bytes = accurate ? f.identity : f.bytes;
   const registration = { ...FEATURE_COMPARISON_CONTROLS[caseId], sourceAttemptId: source.id,
+    datasetId: `offline-fixture-${caseId}`,
     referenceAttemptId: f.reference.id, sourceHash: hash(bytes), referenceHash: hash(f.identity),
     reviewedHash: hash(customerVisiblePreviewBytes(bytes)) };
   const options = { ...f.options, registration };
@@ -143,4 +143,22 @@ it.each(["matched", "mismatched"] as const)("runs one fixed %s feature control w
   expect((await runRetainedLikenessReview(f.event, f.store, f.options)).kind).toBe("blocked");
   expect(f.create).toHaveBeenCalledTimes(2); // one old offline fixture and one new control
   expect(JSON.stringify(f.create.mock.calls[1][0])).not.toMatch(/expectedIdentity|expectedMeekahIdentity|feature-comparison-20260912/);
+});
+
+it("retains a provider grammar rejection without retrying or producing a visual verdict", async () => {
+  const f = await fixture();
+  f.create.mockRejectedValue(new Error("400 invalid_request_error: The compiled grammar is too large"));
+  const result = await runRetainedLikenessReview(f.event, f.store, f.options);
+  expect(result).toMatchObject({ kind: "reviewed", evidence: { outcome: "review-unavailable", criticRequests: 1 },
+    verdict: { unavailable: true, passed: false, requiredPresent: [] } });
+  expect((await runRetainedLikenessReview(f.event, f.store, f.options)).kind).toBe("blocked");
+  expect(f.create).toHaveBeenCalledTimes(1);
+});
+
+it.each(["matched", "mismatched"] as const)("keeps the live %s v1 control closed after the first provider error", async caseId => {
+  const f = await fixture();
+  expect(await runRetainedLikenessReview(f.event, f.store, { ...f.options, registration: FEATURE_COMPARISON_CONTROLS[caseId] }))
+    .toMatchObject({ kind: "blocked", reason: "feature-comparison-v1-closed-after-provider-error" });
+  expect(f.create).not.toHaveBeenCalled();
+  expect(f.store.all).toHaveLength(2);
 });

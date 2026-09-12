@@ -32,6 +32,9 @@ export const FEATURE_COMPARISON_CONTROLS: Record<"mismatched" | "matched", Revie
     reviewedHash: "942f52abc84831a9a606df2036a7bbd1d0e600927adfe072e45f6e0833fbb3c6",
     expectedIdentity: true, requireFeatureComparison: true },
 };
+// First v1 dispatch (records296/297) returned a provider schema error. The
+// registered stop rule closes the pair; the unattempted match is not spare budget.
+const CLOSED_FEATURE_COMPARISON_DATASETS = new Set(Object.values(FEATURE_COMPARISON_CONTROLS).map(row => row.datasetId));
 
 export async function runRetainedLikenessReview(event: Event, store: AiFirstArtworkAttemptStore,
   options: { environment?: NodeJS.ProcessEnv; signal?: AbortSignal; review?: typeof runVisionGate;
@@ -39,6 +42,7 @@ export async function runRetainedLikenessReview(event: Event, store: AiFirstArtw
   const registration: ReviewRegistration = options.registration ?? RETAINED_LIKENESS_REVIEW;
   const environment = options.environment ?? process.env;
   const blocked = (reason: string) => ({ kind: "blocked" as const, reason, customerActivation: "disabled" as const });
+  if (CLOSED_FEATURE_COMPARISON_DATASETS.has(registration.datasetId)) return blocked("feature-comparison-v1-closed-after-provider-error");
   if (environment.VERCEL_ENV !== "preview" || environment.VERCEL_GIT_COMMIT_REF !== "codex/launch-blockers" ||
       event.id !== registration.eventId || !event.ownerToken || !store.recordOnce || options.signal?.aborted ||
       event.eventName !== "Artwork evaluation" || event.eventType !== "Artwork evaluation" || event.inviteStatus !== "draft" ||

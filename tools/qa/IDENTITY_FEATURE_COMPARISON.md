@@ -59,3 +59,33 @@ New global claims persist before dispatch and cannot be reset by owner changes,
 restarts, redeployments or duplicate requests. All rows remain private/rejected,
 with customer activation disabled and the event unchanged. No full customer
 latency, artwork quality or broad reviewer consistency claim follows from this pair.
+
+## Actual execution and closure — 12 September 2026
+
+The first control dispatched exactly once on42fb159473510a80aa626863c13aa3085bc1fc1a,
+Verify Posy CI435 success, Preview posy-5b01kbyoo-poseplans.vercel.app.
+Dataset mismatched retained claim296/result297. Anthropic returned400
+invalid_request_error: the compiled grammar was too large. No visual response
+or feature observations were returned. Critic469ms, stages477ms, HTTP8498ms;
+requestCount1, usage zero fallback values (not a billing assertion). The reference
+hash proves adapter attachment, not a completed model comparison. Event unchanged.
+
+The registered unavailable/provider stop rule fired. The matching control was
+NOT dispatched. Both v1 controls are CLOSED in code; no original claim was reset,
+no retry or replacement registration was added, and no image was generated.
+
+The initial response schema repeated a nested object for every feature and
+reference. The v2 correction uses one flat array item schema shared across all
+references/features. Every row supplies referenceKey, feature, candidateLocation,
+candidateVisibility, referenceVisibility, separate observations, assessment and
+explanation. Server validation requires exactly one complete row per registered
+reference/feature pair and rejects unknown, missing or duplicate pairs. Visibility
+is checked per feature. The resulting retained comparison groups these rows and
+preserves the same identity consistency gates without changing scores or artwork.
+
+This follows Anthropic's [schema complexity guidance](https://platform.claude.com/docs/en/build-with-claude/structured-outputs#schema-complexity-limits).
+Simplifying the schema is a corrective implementation, NOT evidence that the
+provider accepts it or that the reviewer detects the known likeness defect.
+Token counting does not compile the schema. No additional live call was made.
+Live schema acceptance and mismatched/matched semantic validation remain open,
+as do medium/craft calibration and all original launch/Plus/customer-flow gates.
