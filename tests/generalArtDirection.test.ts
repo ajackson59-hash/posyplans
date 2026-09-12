@@ -1,3 +1,4 @@
+import { visionRequestRequirements } from "./helpers/visionRequestRequirements";
 import { describe, expect, it, vi } from "vitest";
 import type Anthropic from "@anthropic-ai/sdk";
 import type { Event } from "@shared/schema";
@@ -190,7 +191,7 @@ describe("general artwork direction contract", () => {
   it("holds a style mismatch private even when every object and all numeric scores pass", async () => {
     const { brief, concept } = await buildQualityLockedPreviewBrief(event("Disney Mickey and Minnie", "flat vector"), "", named("Disney Mickey and Minnie"));
     const create = vi.fn(async (body: any) => {
-      const requirements = body.output_config.format.schema.properties.requiredPresent.items.properties.requirement.enum;
+      const requirements = visionRequestRequirements(body);
       return { stop_reason: "end_turn", usage: { input_tokens: 5, output_tokens: 5 }, content: [{ type: "text", text: JSON.stringify({
         ...scores, requiredPresent: requirements.map((requirement: string) => ({ requirement,
           present: !requirement.includes("requested artwork treatment"), evidence: "Fixture: supplied image used a painted treatment" })),

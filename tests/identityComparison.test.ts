@@ -1,3 +1,4 @@
+import { visionRequestRequirements } from "./helpers/visionRequestRequirements";
 import { createHash } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
 import type { Event } from "@shared/schema";
@@ -72,11 +73,11 @@ describe("reference feature comparison contract", () => {
   });
   it("keeps one flat item schema as the reference count grows", () => {
     const moreTargets = [...targets, { ...targets[0], key: "reference2", referenceIndex: 2 }];
-    const schema = identityComparisonSchema(moreTargets);
+    const schema = identityComparisonSchema();
     expect(schema.type).toBe("array");
     expect(Object.values(schema.items.properties).every(property => property.type === "string")).toBe(true);
     expect(schema.items.required).toEqual(Object.keys(schema.items.properties));
-    expect(schema.items.properties.referenceKey.enum).toEqual(["reference1", "reference2"]);
+    expect(schema.items.properties.referenceKey).toEqual({ type: "string" });
     expect(validateIdentityComparisons([...row(), ...row().map(part => ({ ...part, referenceKey: "reference2" }))],
       moreTargets, facts(true))).toMatchObject({ valid: true, allMatched: true });
   });
@@ -90,7 +91,7 @@ it.each(["match", "mismatch", "missing"] as const)("enforces %s evidence through
   const create = vi.fn(async (body: any) => ({ stop_reason: "end_turn", usage: { input_tokens: 100, output_tokens: 100 },
     content: [{ type: "text", text: JSON.stringify({ ...scores,
       ...(assessment === "missing" ? {} : { identityComparisons: row(assessment) }),
-      requiredPresent: body.output_config.format.schema.properties.requiredPresent.items.properties.requirement.enum.map(
+      requiredPresent: visionRequestRequirements(body).map(
         (requirement: string) => ({ requirement, present: true, evidence: "Visible subject in offline fixture" })),
       excludedFound: [], notes: "Offline fixture only", dimensionAssessments: Object.fromEntries(Object.keys(scores).map(key => [key,
         { status: "clear", criterion: "none", location: "Entire canvas", observation: "Positive offline fixture support" }])),

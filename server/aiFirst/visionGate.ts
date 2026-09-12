@@ -7,6 +7,7 @@
 // its own floor and the required/excluded lists are pass/fail.
 
 import Anthropic from "@anthropic-ai/sdk";
+import { createHash } from "node:crypto";
 import { prepareReviewReferences, REVIEW_REFERENCE_INSTRUCTION, type ReviewReference, type ReviewReferenceEvidence } from "./reviewReferences";
 import { ASSESSMENT_SCHEMA, REVIEW_EVIDENCE_INSTRUCTION, validateReviewEvidence, type DimensionAssessments } from "./reviewEvidence";
 import type { EventBrief } from "./brief";
@@ -17,10 +18,11 @@ import { typePlacementFrame } from "@shared/aiFirstLayout";
 import { LOCAL_TYPE_SURFACE_ALPHA } from "@shared/themeCatalog";
 import { artDirectionReviewRequirements, buildArtDirectionContract } from "./artDirection";
 import { identityComparisonTargets, identityComparisonSchema, validateIdentityComparisons,
-  IDENTITY_COMPARISON_INSTRUCTION, type IdentityComparisonReview, type IdentityComparisonTarget } from "./identityComparison";
+  IDENTITY_COMPARISON_INSTRUCTION, type IdentityComparisonReview } from "./identityComparison";
 
 export const VISION_MODEL = "claude-sonnet-4-6";
 export const TEASER_MIN_DIMENSION_SCORE = 5;
+export const VISION_SCHEMA_VERSION = "static-review-schema-v1";
 
 export { MIN_DIMENSION_SCORE };
 export type { VisionScores };
@@ -30,6 +32,7 @@ export interface VisionVerdict {
   referenceEvidence?: ReviewReferenceEvidence[];
   /** Feature observations and consistency checks, independent of the model's overall claim. */
   identityComparison?: IdentityComparisonReview;
+  requestSchema?: { version: string; sha256: string };
   scores: VisionScores;
   /** One entry per REQUIRED item, in the brief's order. */
   requiredPresent: { requirement: string; present: boolean; evidence?: string }[];
@@ -122,16 +125,17 @@ const REQUIRED_PRESENT_SCHEMA = {
   },
 } as const;
 
-const visionOutputSchema = (reviewMode: "invitation" | "teaser", requirements: string[], identities: IdentityComparisonTarget[]) => ({
+// Task requirements and reference keys belong in the message, not a new grammar
+// for every host prompt. Server validation still requires exact, unique coverage.
+const visionOutputSchema = (reviewMode: "invitation" | "teaser", compareIdentities: boolean) => ({
   type: "object",
   properties: {
-    ...(identities.length ? { identityComparisons: identityComparisonSchema(identities) } : {}),
+    ...(compareIdentities ? { identityComparisons: identityComparisonSchema() } : {}),
     requiredPresent: {
       ...REQUIRED_PRESENT_SCHEMA,
       items: {
         ...REQUIRED_PRESENT_SCHEMA.items,
         properties: { ...REQUIRED_PRESENT_SCHEMA.items.properties,
-          requirement: requirements.length ? { type: "string", enum: requirements } : { type: "string" },
           ...(reviewMode === "teaser" ? { evidence: { type: "string" } } : {}) },
         required: ["requirement", "present", ...(reviewMode === "teaser" ? ["evidence"] : [])],
       },
@@ -174,7 +178,7 @@ const visionOutputSchema = (reviewMode: "invitation" | "teaser", requirements: s
     notes: { type: "string" },
   },
   required: [
-    ...(identities.length ? ["identityComparisons"] : []),
+    ...(compareIdentities ? ["identityComparisons"] : []),
     "textLogoWatermarkFree",
     "artifactFree",
     "premiumFinish",
@@ -312,6 +316,9 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
   const namedTargets = namedIdentityReviewTargetsForBrief(brief);
   const comparisonTargets = identityComparisonTargets(input.referenceImages ?? [], namedTargets,
     [brief.visualIdentityOverride, brief.themeName, brief.vibe, ...brief.requirements.required].filter(Boolean).join("\n"));
+  const outputSchema = visionOutputSchema(reviewMode, comparisonTargets.length > 0);
+  const requestSchema = { version: VISION_SCHEMA_VERSION,
+    sha256: createHash("sha256").update(JSON.stringify(outputSchema)).digest("hex") };
   const identityExpectation = reviewMode === "teaser"
     ? (namedTargets.length ? namedTargets.join("; ") : brief.visualIdentityOverride || brief.themeName || "").trim()
     : "";
@@ -412,7 +419,7 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
       output_config: {
         format: {
           type: "json_schema",
-          schema: visionOutputSchema(reviewMode, reviewRequirements, comparisonTargets),
+          schema: outputSchema,
         },
       },
     }, { signal: input.signal, ...(reviewMode === "teaser" ? { maxRetries: 0 } : {}) });
@@ -445,6 +452,7 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
       durationMs: Date.now() - started,
       usage,
       requestCount,
+      requestSchema,
     };
   }
 
@@ -460,6 +468,7 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
       durationMs: Date.now() - started,
       usage,
       requestCount,
+      requestSchema,
     };
   }
 
@@ -538,6 +547,10 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
       })) as Record<keyof VisionScores, string> : undefined;
 
   const failureCodes: string[] = [];
+  if (reportedRequired.some(row => !reviewRequirements.some(requirement =>
+      row.requirement.trim().toLowerCase() === requirement.trim().toLowerCase()))) {
+    failureCodes.push("review-unexpected-requirement", "brief-fidelity");
+  }
   const identityComparison = comparisonTargets.length ? validateIdentityComparisons(parsed.identityComparisons, comparisonTargets,
     { identityAccurate: teaserChecks?.identity.accurate, requiredPresent }) : undefined;
   if (identityComparison) {
@@ -581,6 +594,7 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
     durationMs: Date.now() - started,
     usage,
     requestCount,
+    requestSchema,
     teaserChecks,
     dimensionEvidence,
     dimensionAssessments: reviewEvidence?.assessments,

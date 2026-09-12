@@ -1,3 +1,4 @@
+import { visionRequestRequirements } from "./helpers/visionRequestRequirements";
 import { createHash } from "node:crypto";
 import express from "express";
 import request from "supertest";
@@ -31,7 +32,7 @@ const scores = { textLogoWatermarkFree: 5, artifactFree: 5, premiumFinish: 5,
 function critic(accurate: boolean, malformed = false) {
   const create = vi.fn(async (body: any) => ({ stop_reason: "end_turn", usage: { input_tokens: 100, output_tokens: 80 },
     content: [{ type: "text", text: malformed ? "invalid" : JSON.stringify({ ...scores,
-      requiredPresent: (body.output_config.format.schema.properties.requiredPresent.items.properties.requirement.enum ?? [])
+      requiredPresent: visionRequestRequirements(body)
         .map((requirement: string) => ({ requirement, present: accurate, evidence: "Located identity fixture evidence" })),
       excludedFound: [], notes: "",
       dimensionAssessments: Object.fromEntries(Object.keys(scores).map(k => [k, { status: "clear", criterion: "none", location: "Full canvas", observation: "Located fixture observation" }])),

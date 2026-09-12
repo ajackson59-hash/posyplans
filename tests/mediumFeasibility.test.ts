@@ -1,3 +1,4 @@
+import { visionRequestRequirements } from "./helpers/visionRequestRequirements";
 import express from "express";
 import { ArtworkProviderError } from "../server/aiFirst/artwork";
 import { Script } from "node:vm";
@@ -27,7 +28,7 @@ function setup(options: { malformedCritic?: boolean; badCast?: boolean; unknownU
     const scores = { textLogoWatermarkFree: 5, artifactFree: 5, premiumFinish: 5, briefFidelity: 5, compositionQuality: 5, ageAppropriate: 5 };
     return { stop_reason: "end_turn", usage: { input_tokens: 500, output_tokens: 400 }, content: [{ type: "text", text:
       options.malformedCritic ? "not-json" : JSON.stringify({ ...scores,
-        requiredPresent: (body.output_config.format.schema.properties.requiredPresent.items.properties.requirement.enum ?? [])
+        requiredPresent: visionRequestRequirements(body)
           .map((requirement: string) => ({ requirement, present: true, evidence: "Located local test fixture" })),
         excludedFound: [], notes: "Test fixture only", dimensionAssessments: Object.fromEntries(Object.keys(scores).map(k =>
           [k, { status: "clear", criterion: "none", location: "Full canvas", observation: "Located fixture evidence" }])),

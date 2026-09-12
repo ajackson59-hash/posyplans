@@ -37,3 +37,33 @@ event unchanged. No merge or Production release. Save full returned evidence,
 the actual observations and contradictions, timing/usage without double counting,
 and exact current deployment/CI. Two correct results demonstrate only narrow
 calibration; broad image quality, medium/craft reliability and launch gates remain.
+
+## Actual result: stopped at the critic deadline
+
+Executed mismatched once on5ed75477388aa7ca6e94280ba1a5fa38bc263c99,
+Verify Posy CI437 success, Preview posy-709ecigyr-poseplans.vercel.app.
+Event61 claim298/result299. The local45-second critic deadline aborted the
+request: critic45002ms, stage45006ms, HTTP52325ms, Express route47290ms.
+No visual response, feature observation, usage report or provider request ID
+returned. Token zeros are fallback values, billing unknown. This does not
+establish whether grammar compilation completed or where provider time was spent.
+
+The matching case was not dispatched and is blocked by the server prerequisite.
+Both v2 controls are closed under the registered stop rule. The first claim is
+consumed; no retries, new images, classifiers, or replacement registration.
+The event is unchanged, and both retained rows are rejected/private.
+
+Read-only investigation found host requirement strings and reference keys in
+dynamic schema enums. Anthropic documents additional latency for a new schema
+and reuse of compiled grammars. This is an avoidable cache-variation risk,
+not a proven explanation for the timeout. The corrective shared reviewer uses
+one stable schema per mode/reference-presence combination: exact requirements
+and reference keys remain in the unchanged task message, and server validation
+still enforces complete, unique, in-scope responses. Unknown requirements now
+fail explicitly. Each dispatched verdict retains the schema version and SHA.
+
+No live call of this subsequent correction is authorized by the closed v2
+registration or was made. Provider acceptance, latency, semantic calibration
+and all original artwork/Plus/launch gates remain unproven.
+
+Source: [Anthropic grammar compilation and caching](https://platform.claude.com/docs/en/build-with-claude/structured-outputs#grammar-compilation-and-caching).

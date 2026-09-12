@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { visionRequestRequirements } from "./helpers/visionRequestRequirements";
 import { createHash } from "node:crypto";
 import { expect, it, vi } from "vitest";
 import type { Event } from "@shared/schema";
@@ -40,7 +41,7 @@ async function fixture(accurate = false) {
           assessment: feature === "hairStructure" && !accurate ? "mismatch" : "match", explanation: "Offline fixture comparison",
         })),
       } : {}),
-      requiredPresent: body.output_config.format.schema.properties.requiredPresent.items.properties.requirement.enum.map(
+      requiredPresent: visionRequestRequirements(body).map(
         (requirement: string) => ({ requirement, present: requirement.startsWith("Meekah ") ? accurate : false,
           evidence: "Fixture observation of differing face and hair, not a real visual judgment" })),
       excludedFound: [], notes: "Offline transport fixture",

@@ -1,3 +1,4 @@
+import { visionRequestRequirements } from "./helpers/visionRequestRequirements";
 import { createHash } from "node:crypto";
 import type Anthropic from "@anthropic-ai/sdk";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -36,7 +37,7 @@ async function fixture() {
 
 function critic(override: Record<string, unknown> = {}) {
   const create = vi.fn(async (request: any) => {
-    const required = request.output_config.format.schema.properties.requiredPresent.items.properties.requirement.enum ?? [];
+    const required = visionRequestRequirements(request);
     return { stop_reason: "end_turn", usage: { input_tokens: 30, output_tokens: 20 }, content: [{ type: "text", text: JSON.stringify({
       ...allFive, requiredPresent: required.map((requirement: string) => ({ requirement, present: true, evidence: "Fixture observation" })),
       excludedFound: [], notes: "Scripted fixture, not real art approval",

@@ -1,3 +1,4 @@
+import { visionRequestRequirements } from "./helpers/visionRequestRequirements";
 import { describe, expect, it } from "vitest";
 import type Anthropic from "@anthropic-ai/sdk";
 import type { Event } from "@shared/schema";
@@ -138,7 +139,7 @@ describe("artwork brief continuity across customer generation paths", () => {
     let calls = 0;
     const client = { messages: { create: async (body: any) => {
       calls++;
-      const requirements: string[] = body.output_config.format.schema.properties.requiredPresent.items.properties.requirement.enum;
+      const requirements: string[] = visionRequestRequirements(body);
       expect(requirements).toContain("exactly six lanterns");
       const scores = { textLogoWatermarkFree: 5, artifactFree: 5, premiumFinish: 5,
         briefFidelity: 5, compositionQuality: 5, ageAppropriate: 5 };

@@ -1,3 +1,4 @@
+import { visionRequestRequirements } from "./helpers/visionRequestRequirements";
 import { createHash } from "node:crypto";
 import express from "express";
 import request from "supertest";
@@ -27,7 +28,7 @@ const allFive = { textLogoWatermarkFree: 5, artifactFree: 5, premiumFinish: 5,
 function critic(override: Record<string, unknown> = {}) {
   const create = vi.fn(async (body: any) => ({ stop_reason: "end_turn", usage: { input_tokens: 30, output_tokens: 20 },
     content: [{ type: "text", text: JSON.stringify({ ...allFive,
-      requiredPresent: (body.output_config.format.schema.properties.requiredPresent.items.properties.requirement.enum ?? [])
+      requiredPresent: visionRequestRequirements(body)
         .map((requirement: string) => ({ requirement, present: true, evidence: "Scripted fixture observation" })),
       excludedFound: [], notes: "Test only",
       dimensionAssessments: Object.fromEntries(Object.keys(allFive).map((k) => [k, { status: "clear", criterion: "none", location: "Full canvas", observation: "Scripted fixture observation" }])),

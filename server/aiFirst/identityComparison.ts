@@ -34,9 +34,9 @@ export function identityComparisonTargets(references: readonly ReviewReference[]
 /** One flat item schema, independent of reference count. The former repeated
  * nested objects hit Anthropic's compiled-grammar size limit on a live request.
  * Coverage and uniqueness are enforced below, not by expanding the grammar. */
-export function identityComparisonSchema(targets: readonly IdentityComparisonTarget[]) {
+export function identityComparisonSchema() {
   const properties = {
-      referenceKey: { type: "string", enum: targets.map(target => target.key) },
+      referenceKey: { type: "string" },
       feature: { type: "string", enum: [...IDENTITY_FEATURES] },
       candidateLocation: { type: "string" },
       candidateVisibility: { type: "string", enum: ["clear", "insufficient", "absent"] },
