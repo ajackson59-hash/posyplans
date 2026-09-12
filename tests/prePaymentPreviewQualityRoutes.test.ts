@@ -6,6 +6,7 @@ import { isReferenceBoardDataUrl } from "../server/prePaymentReferenceBoard";
 import { generateQualityLockedPreview } from "../server/prePaymentPreviewQuality";
 import { ArtworkProviderError } from "../server/aiFirst/artwork";
 import { InMemoryArtworkAttemptStore } from "../server/aiFirst/artworkAttemptStore";
+import { RETAINED_LIKENESS_REVIEW } from "../server/retainedLikenessReview";
 import { decodePng, encodePng, readPngSize } from "../server/aiFirst/png";
 
 process.env.DATABASE_URL = "postgres://test/test";
@@ -20,6 +21,24 @@ const { registerPrePaymentPreviewQualityRoutes } = await import(
 );
 
 const OWNER = "owner-token-quality-lock";
+
+it("bounds the retained likeness review route to Preview, the fixed owner and exact confirmation body", async () => {
+  const body = { confirmOneVisionCall: true, expectedAssetHash: RETAINED_LIKENESS_REVIEW.sourceHash,
+    expectedIdentityHash: RETAINED_LIKENESS_REVIEW.referenceHash };
+  const path = `/api/events/owner/${OWNER}/prepayment-preview/likeness-review`;
+  try {
+    vi.stubEnv("VERCEL_ENV", "production");
+    vi.stubEnv("VERCEL_GIT_COMMIT_REF", "codex/launch-blockers");
+    expect((await request(makeApp()).post(path).send(body)).status).toBe(404);
+    vi.stubEnv("VERCEL_ENV", "preview");
+    expect((await request(makeApp()).post(path).send({ ...body, expectedAssetHash: "wrong" })).status).toBe(400);
+    expect((await request(makeApp()).post(path).send({ ...body, registration: {} })).status).toBe(400);
+    // This ordinary fixture event is not the authorized research event61.
+    stored = { ...baseEvent };
+    expect((await request(makeApp()).post(path).send(body)).status).toBe(404);
+    expect(generate).not.toHaveBeenCalled();
+  } finally { vi.unstubAllEnvs(); }
+});
 const EVENT_ID = 410;
 const NOW = 1_800_000_000_000;
 const OLD_PNG = `data:image/png;base64,${Buffer.from("old unreviewed pixels").toString("base64")}`;
