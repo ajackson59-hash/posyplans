@@ -3,6 +3,39 @@
 Status: completed and closed. Automated quality rejection with an unresolved
 visual-review disagreement. Preview research only; no customer activation.
 
+## User feedback — 12 September 2026
+
+On exact preview SHA `27f88575d373162d89efe9dd3584952747387d9ec914cfc6d1f1943d2f152b8f`,
+the user said: **"I think this is an OK option, but more realistic and accurate
+representation of Meekah would be ideal"**.
+
+Record this as an acceptable style option with a likeness improvement requested.
+It is not an excellent-quality label, complete sample approval, approval of every
+gouache output or launch qualification. Do not keep asking whether the user wants
+more brush texture; their stated priority is Meekah's realistic, accurate likeness.
+Keep this feedback outside the original frozen host brief and original verdict.
+
+The old Meekah rule listed curly hair and purple clothes. The retained critic
+called identity accurate using those cues without facial evidence. The shared
+brief now explicitly requires recognizable facial proportions, and generation
+notes and reviewer instructions distinguish likeness from costume and medium.
+They preserve a host-specified version and reject blending versions into a generic
+composite. These are instruction changes, not validated image-quality improvements.
+
+The [official About page](https://www.blippi.com/about) was checked and its labeled
+Meekah portrait inspected. It shows a different facial structure and a gathered,
+asymmetric curl arrangement with a yellow headband, compared with the generated
+image's loose rounded hair silhouette. These are cues of that pictured version,
+not universal requirements for every performer or host-specified version. Exact
+official image URL:
+`https://static.wixstatic.com/media/d70790_9f3656b5950649a0b97994a75c065b84~mv2.png`;
+SHA-256 `9668d4330ec2611c5f2700f55144dcb40e9070f0ddd24e49b7c222d888220c19`.
+Do not use the generated scene as the source of truth for Meekah's face. A future
+likeness test should provide the verified official identity reference separately
+from scene input, preserving the user's acceptable finish and all scene details.
+No new generation or paid review was run for this feedback; the previous
+one-edit/one-review registration stays closed.
+
 The last text-only Google candidate preserved Blippi, Meekah and the requested
 scene but added menu lettering and did not consistently deliver the requested
 gouache treatment. A stronger text prompt did not qualify that result. This

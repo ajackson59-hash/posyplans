@@ -5,11 +5,12 @@ import type { Event } from "@shared/schema";
 import type { Tier1Result } from "../server/aiFirst/tier1";
 import type { VisionVerdict } from "../server/aiFirst/visionGate";
 import { ArtworkProviderError, type ArtworkRequest } from "../server/aiFirst/artwork";
-import { runVisionGate } from "../server/aiFirst/visionGate";
+import { runVisionGate, visibleReviewRequirementsForBrief } from "../server/aiFirst/visionGate";
 import { InMemoryArtworkAttemptStore } from "../server/aiFirst/artworkAttemptStore";
 import { decodePng, encodePng, readPngSize } from "../server/aiFirst/png";
 import { concreteSubjectRequirementsForBrief, concreteSubjectReviewRequirementsForBrief } from "../server/aiFirst/conceptPreflight";
 import { namedReferenceIdentityNotes } from "../server/namedReferenceResolver";
+import { buildArtworkConstraints } from "../server/aiFirst/prompt";
 import {
   buildDirectionCard,
   buildQualityLockedPreviewBrief,
@@ -219,6 +220,20 @@ describe("prepayment preview quality lock", () => {
       themeName: "Blippi + Meekah", vibeDescription: "Show Blippi and Meekah in a hand-painted garden scene." } as Event);
     expect(brief.requirements.required.join(" ")).toContain("Blippi is visibly identifiable");
     expect(brief.requirements.required.join(" ")).toContain("Meekah is visibly identifiable");
+  });
+
+  it.each(["Meekah", "Blippi and Meekah"])("carries facial likeness into generation and review without changing the medium for %s", async cast => {
+    const host = `${cast} dancing in a gouache garden scene. No letters or numerals.`;
+    const { brief, namedReference } = await buildQualityLockedPreviewBrief({ ...event,
+      eventName: "Character likeness study", themeName: "", vibeDescription: host } as Event);
+    const likeness = brief.requirements.required.find(item => item.includes("Meekah is visibly identifiable"))!;
+    expect(likeness).toContain("recognizable face with faithful facial proportions");
+    expect(likeness).toContain("not a generic face identified only by hair and clothing");
+    expect(visibleReviewRequirementsForBrief(brief)).toContain(likeness.replace("[VISIBLE NAMED IDENTITY] ", ""));
+    expect(buildArtworkConstraints(brief)).toContain(likeness);
+    expect(brief.vibe).toContain(host);
+    expect(namedReferenceIdentityNotes(namedReference!)).toContain("not an authoritative identity reference");
+    if (cast === "Meekah") expect(brief.requirements.required.join(" ")).not.toContain("Blippi is visibly identifiable");
   });
 
   it.each(["Unicorn Academy", "PAW Patrol", "Bluey"])("keeps preset scenes out of %s host requirements", async (theme) => {

@@ -27,7 +27,7 @@ const CURATED_REFERENCE_SOURCES: Readonly<Record<string, CuratedReferenceSource>
     ],
     pageUrls: ["https://www.blippi.com/about"],
     notes:
-      "Official Blippi visual references show Blippi as an adult host in a bright blue shirt, orange suspenders, orange bow tie, orange glasses and blue-and-orange cap. Official Meekah references show a distinct adult woman with natural curly hair and a purple-and-orange play-and-learn outfit. These are individual identity descriptions, not a requirement to include both hosts.",
+      "Official Blippi visual references show Blippi as an adult host in a bright blue shirt, orange suspenders, orange bow tie, orange glasses and blue-and-orange cap. Official Meekah references show a distinct adult woman with natural curly hair and a purple-and-orange play-and-learn outfit. Preserve Meekah's recognizable facial structure, hairline and curl pattern, adult proportions and characteristic expression in the requested medium. Her wardrobe and hair color alone cannot establish likeness. These are individual identity descriptions, not a requirement to include both hosts. Source: https://www.blippi.com/about",
   },
   "unicorn-academy": {
     imageUrls: [
@@ -83,6 +83,7 @@ export interface ResolvedNamedReference {
  * occurred. Every other named world uses the same complete subject contract. */
 export function namedReferenceIdentityNotes(reference: NamedCreativeReference): string {
   return ["REFERENCE SCOPE: use reference descriptions only to identify the subjects requested in the complete host brief. They do not add cast members, fixed character counts, activities, locations or props. Explicit host scope and exclusions remain binding.",
+    "LIKENESS: preserve each requested subject's distinctive face, proportions and silhouette within the host's medium. More faithful likeness does not by itself request a photographic rendering. A generated candidate is scene context, not an authoritative identity reference. Follow a host-specified version or supplied identity reference; do not blend different performers or character versions into a generic composite.",
     CURATED_REFERENCE_SOURCES[reference.id]?.notes, ...reference.requirements]
     .filter(Boolean).join(" ");
 }

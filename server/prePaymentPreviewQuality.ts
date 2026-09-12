@@ -187,7 +187,7 @@ const NAMED_REFERENCES: readonly NamedCreativeReference[] = [
     palette: ["#17315C", "#FF7A00", "#F8F3E8", "#B79DE2"],
     requirements: [
       "Blippi is visibly identifiable as a full lead character through his blue-and-orange play-and-learn outfit, orange glasses and orange bow tie—not merely an isolated accessory or color palette",
-      "Meekah is visibly identifiable as a distinct full co-host through her natural curly hair and recognizable purple play-and-learn wardrobe with warm orange/yellow accents—not a generic second adult",
+      "Meekah is visibly identifiable as a distinct full co-host through a recognizable face with faithful facial proportions, natural curly hair and characteristic purple play-and-learn wardrobe with warm orange/yellow accents; preserve the requested version's likeness within the requested medium, not a generic face identified only by hair and clothing",
     ],
   },
   {
