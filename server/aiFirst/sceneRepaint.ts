@@ -17,3 +17,18 @@ export function buildSceneRepaintPrompt(brief: EventBrief): string {
     buildArtworkConstraints(brief),
   ].join("\n\n");
 }
+
+/** Separate scene/style context from the authority for one subject's likeness. */
+export function buildSceneLikenessPrompt(brief: EventBrief, subject: string): string {
+  const treatment = resolveArtDirection(brief).requestedTreatment;
+  if (!treatment) throw new Error("scene-likeness-requires-explicit-treatment");
+  return [
+    `Correct ${subject}'s likeness in image 1 using the official identity reference in image 2. Return one complete finished scene in ${treatment}.`,
+    "IMAGE 1 — scene and finish reference. Preserve its composition, palette, painted finish, requested activities and objects. The user considers this finish an acceptable option. The generated face is not an authoritative identity reference.",
+    `IMAGE 2 — identity reference for ${subject} only. Match the pictured person's distinctive facial structure and proportions, eye and brow shapes, nose, smile, hairline and curl arrangement. Retain natural adult anatomy and a recognizable expression while adapting the likeness into image 1's painted treatment. Do not blend a different performer or a generic cartoon face into that identity.`,
+    "The identity photograph does not request a photographic scene, a pasted photographic face, its pose, framing, white background or typography. Do not copy its letter badge, logo or any other writing. Keep clothing surfaces coherent and text-free.",
+    `Preserve ${subject}'s dancing action and position in the scene while correcting likeness. Keep every other requested character and scene element intact; do not introduce another person or extra limbs.`,
+    "The complete host brief below remains binding. Preserve all requested details, quantities, exclusions and independently readable scene elements. Return artwork extending to every canvas edge, without a comparison layout or explanatory text.",
+    buildArtworkConstraints(brief),
+  ].join("\n\n");
+}

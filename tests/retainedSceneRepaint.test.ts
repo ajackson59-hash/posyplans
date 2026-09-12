@@ -7,7 +7,7 @@ import { ArtworkNormalizationError, ArtworkProviderError, GOOGLE_ARTWORK_MODEL }
 import { encodePng } from "../server/aiFirst/png";
 import { MEDIUM_FEASIBILITY_CASES } from "../server/aiFirst/mediumFeasibilityCases";
 import { buildQualityLockedPreviewBrief, customerVisiblePreviewBytes } from "../server/prePaymentPreviewQuality";
-import { runRetainedSceneRepaint, SCENE_REPAINT_EXPERIMENT } from "../server/retainedSceneRepaint";
+import { runRetainedSceneRepaint, SCENE_REPAINT_EXPERIMENT, SCENE_LIKENESS_EXPERIMENT } from "../server/retainedSceneRepaint";
 import type { VisionVerdict } from "../server/aiFirst/visionGate";
 
 const environment = { VERCEL_ENV: "preview", VERCEL_GIT_COMMIT_REF: "codex/launch-blockers" };
@@ -119,4 +119,58 @@ it("retains an unreviewable provider response without spending on a critic or in
   expect(f.store.all.at(-1)?.assetHash).toBe(hash(raw));
   expect(f.store.all.at(-1)?.reviewEvidence?.reviewedAssetHash).toBeNull();
   expect(f.review).not.toHaveBeenCalled(); expect(f.generate).toHaveBeenCalledTimes(1);
+});
+
+async function likenessFixture() {
+  const f = await fixture();
+  const bytes = encodePng({ width: 64, height: 64, rgb: new Uint8Array(64 * 64 * 3).fill(150) });
+  const identity = { ...SCENE_LIKENESS_EXPERIMENT.identity, sha256: hash(bytes) };
+  const options = { ...f.options, registration: { ...f.options.registration,
+    datasetId: SCENE_LIKENESS_EXPERIMENT.datasetId, identity }, identityReferenceBytes: bytes };
+  return { ...f, options, identityBytes: bytes };
+}
+
+it("binds separate scene and identity pixels to one edit and the exact identity-backed teaser review", async () => {
+  const f = await likenessFixture();
+  const referenceEvidence = [{ role: "identity" as const, subject: "Meekah", region: "Face and hair",
+    sha256: hash(f.identityBytes), sourceUrl: SCENE_LIKENESS_EXPERIMENT.identity.sourceUrl }];
+  f.review.mockResolvedValue({ ...verdict(true), referenceEvidence });
+  const result = await runRetainedSceneRepaint(f.event, f.store, f.options);
+  expect(result).toMatchObject({ kind: "evaluated", gatePassed: true });
+  const request = (f.generate.mock.calls[0] as any)[0];
+  expect(request.referenceImages.map((r: any) => hash(r.bytes))).toEqual([hash(f.bytes), hash(f.identityBytes)]);
+  expect(request.prompt).toContain("IMAGE 1 — scene and finish reference");
+  expect(request.prompt).toContain("IMAGE 2 — identity reference for Meekah only");
+  expect(request.prompt).toContain(f.event.vibeDescription);
+  expect(request.maxTransientRetries).toBe(0);
+  const reviewInput = (f.review.mock.calls[0] as any)[0];
+  expect(reviewInput.references).toHaveLength(1);
+  expect(reviewInput.references[0]).toMatchObject({ subject: "Meekah", role: "identity", sha256: hash(f.identityBytes) });
+  expect(reviewInput.references[0].bytes.equals(f.identityBytes)).toBe(true);
+  expect(reviewInput.bytes.equals(customerVisiblePreviewBytes(f.bytes))).toBe(true);
+  expect(f.store.all.find(r => r.idempotencyKey?.endsWith(":identity-reference"))?.assetHash).toBe(hash(f.identityBytes));
+  expect(f.store.all.every(r => r.status === "rejected" && !r.previewId)).toBe(true);
+  expect((await runRetainedSceneRepaint(f.event, f.store, f.options)).kind).toBe("blocked");
+  expect(f.generate).toHaveBeenCalledTimes(1); expect(f.review).toHaveBeenCalledTimes(1);
+});
+
+it("refuses missing or changed identity bytes before claiming or spending", async () => {
+  const f = await likenessFixture();
+  for (const bytes of [undefined, Buffer.from("wrong identity")]) {
+    expect((await runRetainedSceneRepaint(f.event, f.store, { ...f.options, identityReferenceBytes: bytes })).kind).toBe("blocked");
+  }
+  expect(f.store.all).toHaveLength(1); expect(f.generate).not.toHaveBeenCalled(); expect(f.review).not.toHaveBeenCalled();
+});
+
+it("does not reopen the original experiment by supplying a new reference", async () => {
+  const f = await fixture();
+  expect((await runRetainedSceneRepaint(f.event, f.store, { ...f.options, identityReferenceBytes: f.bytes })).kind).toBe("blocked");
+  expect(f.generate).not.toHaveBeenCalled(); expect(f.store.all).toHaveLength(1);
+});
+
+it("cannot pass when the critic omits proof of the registered identity reference", async () => {
+  const f = await likenessFixture(); f.review.mockResolvedValue(verdict(true));
+  const result = await runRetainedSceneRepaint(f.event, f.store, f.options);
+  expect(result).toMatchObject({ kind: "evaluated", gatePassed: false, evidence: { outcome: "review-unavailable" } });
+  expect(f.generate).toHaveBeenCalledTimes(1); expect(f.review).toHaveBeenCalledTimes(1);
 });

@@ -10,7 +10,7 @@ import { canGenerateDraft } from "./masterPlannerEntitlement";
 import { CUSTOMER_PREVIEW_POLICY } from "./customerPreviewPolicy";
 import { customerArtworkEvaluation, googleCustomerArtworkEvaluation, CUSTOMER_EVALUATION_PAID_ENABLED } from "./customerArtworkEvaluation";
 import { ORIGINAL_CONTROL_REVIEW, reviewRetainedCustomerArtwork } from "./customerArtworkRetainedReview";
-import { SCENE_REPAINT_EXPERIMENT, runRetainedSceneRepaint } from "./retainedSceneRepaint";
+import { SCENE_REPAINT_EXPERIMENT, SCENE_LIKENESS_EXPERIMENT, runRetainedSceneRepaint } from "./retainedSceneRepaint";
 import {
   type ArtworkReferenceImage,
   type ArtworkReferenceMimeType,
@@ -605,8 +605,14 @@ export function registerPrePaymentPreviewQualityRoutes(
     if (process.env.VERCEL_ENV !== "preview" || process.env.VERCEL_GIT_COMMIT_REF !== "codex/launch-blockers") {
       return res.status(404).json({ error: "Not found" });
     }
-    const parsed = z.object({ confirmOneImageAndReview: z.literal(true),
-      expectedAssetHash: z.literal(SCENE_REPAINT_EXPERIMENT.sourceHash) }).strict().safeParse(req.body);
+    const parsed = z.union([
+      z.object({ confirmOneImageAndReview: z.literal(true),
+        expectedAssetHash: z.literal(SCENE_REPAINT_EXPERIMENT.sourceHash) }).strict(),
+      z.object({ experiment: z.literal("meekah-likeness-v1"), confirmOneImageAndReview: z.literal(true),
+        expectedAssetHash: z.literal(SCENE_LIKENESS_EXPERIMENT.sourceHash),
+        expectedIdentityHash: z.literal(SCENE_LIKENESS_EXPERIMENT.identity.sha256),
+        identityReferenceBase64: z.string().min(1).max(1_400_000) }).strict(),
+    ]).safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "Confirm the fixed one-image, one-review experiment" });
     const event = await store.getEventByOwnerToken(String(req.params.ownerToken));
     if (!event || event.id !== SCENE_REPAINT_EXPERIMENT.eventId) return res.status(404).json({ error: "Not found" });
@@ -614,7 +620,9 @@ export function registerPrePaymentPreviewQualityRoutes(
     const close = () => { if (!res.writableEnded) controller.abort(); };
     res.on("close", close);
     try {
-      const result = await runRetainedSceneRepaint(event, artworkAttemptStore, { signal: controller.signal });
+      const result = await runRetainedSceneRepaint(event, artworkAttemptStore, { signal: controller.signal,
+        ...("identityReferenceBase64" in parsed.data ? { registration: SCENE_LIKENESS_EXPERIMENT,
+          identityReferenceBytes: Buffer.from(parsed.data.identityReferenceBase64, "base64") } : {}) });
       return res.status(result.kind === "blocked" ? 409 : result.kind === "unavailable" ? 503 : 200).json(result);
     } catch {
       if (!res.headersSent) return res.status(503).json({ error: "Repaint unavailable; claimed experiments cannot be retried" });
