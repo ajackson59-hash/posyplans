@@ -59,8 +59,10 @@ and reuse of compiled grammars. This is an avoidable cache-variation risk,
 not a proven explanation for the timeout. The corrective shared reviewer uses
 one stable schema per mode/reference-presence combination: exact requirements
 and reference keys remain in the unchanged task message, and server validation
-still enforces complete, unique, in-scope responses. Unknown requirements now
-fail explicitly. Each dispatched verdict retains the schema version and SHA.
+still enforces complete, unique, in-scope responses. Unknown answers to a concrete
+checklist fail explicitly; briefs without a concrete checklist retain their
+existing holistic review behavior. Each dispatched verdict retains the schema
+version and SHA.
 
 No live call of this subsequent correction is authorized by the closed v2
 registration or was made. Provider acceptance, latency, semantic calibration

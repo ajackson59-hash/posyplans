@@ -547,7 +547,9 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
       })) as Record<keyof VisionScores, string> : undefined;
 
   const failureCodes: string[] = [];
-  if (reportedRequired.some(row => !reviewRequirements.some(requirement =>
+  // The previous schema used an enum only for a nonempty concrete checklist.
+  // Preserve the existing empty-list behavior for holistic invitation briefs.
+  if (reviewRequirements.length > 0 && reportedRequired.some(row => !reviewRequirements.some(requirement =>
       row.requirement.trim().toLowerCase() === requirement.trim().toLowerCase()))) {
     failureCodes.push("review-unexpected-requirement", "brief-fidelity");
   }
