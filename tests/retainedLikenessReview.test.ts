@@ -7,7 +7,7 @@ import { encodePng } from "../server/aiFirst/png";
 import { MEDIUM_FEASIBILITY_CASES } from "../server/aiFirst/mediumFeasibilityCases";
 import { buildQualityLockedPreviewBrief, customerVisiblePreviewBytes } from "../server/prePaymentPreviewQuality";
 import { SCENE_LIKENESS_EXPERIMENT } from "../server/retainedSceneRepaint";
-import { RETAINED_LIKENESS_REVIEW, FEATURE_COMPARISON_CONTROLS, runRetainedLikenessReview } from "../server/retainedLikenessReview";
+import { RETAINED_LIKENESS_REVIEW, FEATURE_COMPARISON_CONTROLS, FEATURE_COMPARISON_V2_CONTROLS, runRetainedLikenessReview } from "../server/retainedLikenessReview";
 import { IDENTITY_FEATURES } from "../server/aiFirst/identityComparison";
 import { runVisionGate, type VisionGateInput } from "../server/aiFirst/visionGate";
 
@@ -161,4 +161,43 @@ it.each(["matched", "mismatched"] as const)("keeps the live %s v1 control closed
     .toMatchObject({ kind: "blocked", reason: "feature-comparison-v1-closed-after-provider-error" });
   expect(f.create).not.toHaveBeenCalled();
   expect(f.store.all).toHaveLength(2);
+});
+
+async function pairedFixture(accurate = false) {
+  const f = await fixture(accurate);
+  const controls = Object.fromEntries((["mismatched", "matched"] as const).map(caseId => {
+    const positive = caseId === "matched", pixels = positive ? f.identity : f.bytes;
+    return [caseId, { ...FEATURE_COMPARISON_V2_CONTROLS[caseId], sourceAttemptId: positive ? f.reference.id : f.source.id,
+      referenceAttemptId: f.reference.id, sourceHash: hash(pixels), reviewedHash: hash(customerVisiblePreviewBytes(pixels)),
+      referenceHash: hash(f.identity) }];
+  }));
+  return { ...f, run: (caseId: "mismatched" | "matched") => runRetainedLikenessReview(f.event, f.store,
+    { ...f.options, registration: controls[caseId] }) };
+}
+
+it.each([true, false])("runs the v2 pair once and allows an accounted semantic miss before the matching control (accurate=%s)", async accurate => {
+  const f = await pairedFixture(accurate);
+  expect(await f.run("matched")).toMatchObject({ kind: "blocked", reason: "feature-comparison-prerequisite-unavailable" });
+  expect(f.create).not.toHaveBeenCalled();
+  expect(await f.run("mismatched")).toMatchObject({ kind: "reviewed", evidence: { identityCorrect: !accurate, criticRequests: 1 } });
+  expect(await f.run("matched")).toMatchObject({ kind: "reviewed", evidence: { identityCorrect: accurate, criticRequests: 1 } });
+  expect((await f.run("mismatched")).kind).toBe("blocked");
+  expect((await f.run("matched")).kind).toBe("blocked");
+  expect(f.create).toHaveBeenCalledTimes(2);
+});
+
+it("stops the v2 pair at a provider error without spending the second request", async () => {
+  const f = await pairedFixture();
+  f.create.mockRejectedValue(new Error("400 compiled grammar too large"));
+  expect(await f.run("mismatched")).toMatchObject({ kind: "reviewed", evidence: { outcome: "review-unavailable" } });
+  expect(await f.run("matched")).toMatchObject({ kind: "blocked", reason: "feature-comparison-prerequisite-unavailable" });
+  expect(f.create).toHaveBeenCalledTimes(1);
+});
+
+it("rejects a registration for a different reviewer version before dispatch", async () => {
+  const f = await fixture();
+  expect(await runRetainedLikenessReview(f.event, f.store, { ...f.options,
+    registration: { ...f.options.registration, reviewerVersion: "different-version" } }))
+    .toMatchObject({ kind: "blocked", reason: "feature-comparison-version-mismatch" });
+  expect(f.create).not.toHaveBeenCalled();
 });

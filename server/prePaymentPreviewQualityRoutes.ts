@@ -11,7 +11,7 @@ import { CUSTOMER_PREVIEW_POLICY } from "./customerPreviewPolicy";
 import { customerArtworkEvaluation, googleCustomerArtworkEvaluation, CUSTOMER_EVALUATION_PAID_ENABLED } from "./customerArtworkEvaluation";
 import { ORIGINAL_CONTROL_REVIEW, reviewRetainedCustomerArtwork } from "./customerArtworkRetainedReview";
 import { SCENE_REPAINT_EXPERIMENT, SCENE_LIKENESS_EXPERIMENT, runRetainedSceneRepaint } from "./retainedSceneRepaint";
-import { RETAINED_LIKENESS_REVIEW, FEATURE_COMPARISON_CONTROLS, runRetainedLikenessReview } from "./retainedLikenessReview";
+import { RETAINED_LIKENESS_REVIEW, FEATURE_COMPARISON_CONTROLS, FEATURE_COMPARISON_V2_CONTROLS, runRetainedLikenessReview } from "./retainedLikenessReview";
 import {
   type ArtworkReferenceImage,
   type ArtworkReferenceMimeType,
@@ -630,11 +630,14 @@ export function registerPrePaymentPreviewQualityRoutes(
     } finally { res.off("close", close); }
   });
 
-  app.post("/api/events/owner/:ownerToken/prepayment-preview/feature-comparison/:caseId", async (req, res) => {
+  for (const [path, controls] of [
+    ["/api/events/owner/:ownerToken/prepayment-preview/feature-comparison/:caseId", FEATURE_COMPARISON_CONTROLS],
+    ["/api/events/owner/:ownerToken/prepayment-preview/feature-comparison-v2/:caseId", FEATURE_COMPARISON_V2_CONTROLS],
+  ] as const) app.post(path, async (req, res) => {
     res.setHeader("Cache-Control", "private, no-store");
     if (process.env.VERCEL_ENV !== "preview" || process.env.VERCEL_GIT_COMMIT_REF !== "codex/launch-blockers" ||
-        !Object.hasOwn(FEATURE_COMPARISON_CONTROLS, String(req.params.caseId))) return res.status(404).json({ error: "Not found" });
-    const registration = FEATURE_COMPARISON_CONTROLS[String(req.params.caseId) as keyof typeof FEATURE_COMPARISON_CONTROLS];
+        !Object.hasOwn(controls, String(req.params.caseId))) return res.status(404).json({ error: "Not found" });
+    const registration = controls[String(req.params.caseId) as keyof typeof controls];
     const parsed = z.object({ confirmOneVisionCall: z.literal(true), expectedAssetHash: z.literal(registration.sourceHash),
       expectedIdentityHash: z.literal(registration.referenceHash) }).strict().safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "Confirm one review of this fixed control" });

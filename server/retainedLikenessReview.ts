@@ -22,6 +22,8 @@ type ReviewRegistration = typeof RETAINED_LIKENESS_REVIEW & {
   sourceStage?: "completed" | "identity-reference";
   expectedIdentity?: boolean;
   requireFeatureComparison?: boolean;
+  reviewerVersion?: string;
+  requiresCompletedDataset?: string;
 };
 /** New two-control authorization; previous review/generation claims are never reused. */
 export const FEATURE_COMPARISON_CONTROLS: Record<"mismatched" | "matched", ReviewRegistration> = {
@@ -36,6 +38,15 @@ export const FEATURE_COMPARISON_CONTROLS: Record<"mismatched" | "matched", Revie
 // registered stop rule closes the pair; the unattempted match is not spare budget.
 const CLOSED_FEATURE_COMPARISON_DATASETS = new Set(Object.values(FEATURE_COMPARISON_CONTROLS).map(row => row.datasetId));
 
+/** User approved the corrected-schema pair after reviewing the v1 failure. */
+export const FEATURE_COMPARISON_V2_CONTROLS: Record<"mismatched" | "matched", ReviewRegistration> = {
+  mismatched: { ...FEATURE_COMPARISON_CONTROLS.mismatched,
+    datasetId: "meekah-feature-comparison-20260912-v2-mismatched", reviewerVersion: "reference-feature-comparison-v2" },
+  matched: { ...FEATURE_COMPARISON_CONTROLS.matched,
+    datasetId: "meekah-feature-comparison-20260912-v2-matched", reviewerVersion: "reference-feature-comparison-v2",
+    requiresCompletedDataset: "meekah-feature-comparison-20260912-v2-mismatched" },
+};
+
 export async function runRetainedLikenessReview(event: Event, store: AiFirstArtworkAttemptStore,
   options: { environment?: NodeJS.ProcessEnv; signal?: AbortSignal; review?: typeof runVisionGate;
     registration?: ReviewRegistration } = {}) {
@@ -43,11 +54,23 @@ export async function runRetainedLikenessReview(event: Event, store: AiFirstArtw
   const environment = options.environment ?? process.env;
   const blocked = (reason: string) => ({ kind: "blocked" as const, reason, customerActivation: "disabled" as const });
   if (CLOSED_FEATURE_COMPARISON_DATASETS.has(registration.datasetId)) return blocked("feature-comparison-v1-closed-after-provider-error");
+  if (registration.reviewerVersion && registration.reviewerVersion !== IDENTITY_COMPARISON_VERSION) return blocked("feature-comparison-version-mismatch");
   if (environment.VERCEL_ENV !== "preview" || environment.VERCEL_GIT_COMMIT_REF !== "codex/launch-blockers" ||
       event.id !== registration.eventId || !event.ownerToken || !store.recordOnce || options.signal?.aborted ||
       event.eventName !== "Artwork evaluation" || event.eventType !== "Artwork evaluation" || event.inviteStatus !== "draft" ||
       event.themeName !== "" || event.paletteColors !== "[]" || hash(event.vibeDescription) !== registration.hostBriefHash) {
     return blocked("likeness-review-context-mismatch");
+  }
+  if (registration.requiresCompletedDataset) {
+    const completed = (await store.listForOwner(event.id, event.ownerToken)).filter(row =>
+      row.runId === registration.requiresCompletedDataset && row.reviewEvidence?.customerEvaluation?.stage === "completed");
+    const prior = completed[0], proof = prior?.reviewEvidence?.customerEvaluation;
+    if (completed.length !== 1 || prior.status !== "rejected" || prior.previewId ||
+        proof?.customerActivation !== "disabled" || proof.reviewerVersion !== registration.reviewerVersion ||
+        proof.deploymentSha !== (environment.VERCEL_GIT_COMMIT_SHA ?? null) || proof.referenceHash !== registration.referenceHash ||
+        proof.criticRequests !== 1 || proof.referenceVerified !== true ||
+        !["identity-control-correct", "identity-control-incorrect"].includes(String(proof.outcome)) ||
+        prior.reviewEvidence?.verdict?.unavailable !== false) return blocked("feature-comparison-prerequisite-unavailable");
   }
   const [source, reference] = await Promise.all([
     store.findById(event.id, event.ownerToken, registration.sourceAttemptId),

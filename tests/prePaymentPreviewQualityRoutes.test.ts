@@ -42,6 +42,12 @@ it("bounds the retained likeness review route to Preview, the fixed owner and ex
     expect((await request(makeApp()).post(controlPath + "matched").send(body)).status).toBe(400);
     expect((await request(makeApp()).post(controlPath + "mismatched").send({ ...body, expectedIdentity: false })).status).toBe(400);
     expect((await request(makeApp()).post(controlPath + "mismatched").send(body)).status).toBe(404);
+    const v2Path = controlPath.replace("feature-comparison/", "feature-comparison-v2/");
+    expect((await request(makeApp()).post(v2Path + "unknown").send(body)).status).toBe(404);
+    expect((await request(makeApp()).post(v2Path + "mismatched").send({ ...body, expectedIdentity: false })).status).toBe(400);
+    expect((await request(makeApp()).post(v2Path + "mismatched").send(body)).status).toBe(404);
+    vi.stubEnv("VERCEL_ENV", "production");
+    expect((await request(makeApp()).post(v2Path + "mismatched").send(body)).status).toBe(404);
   } finally { vi.unstubAllEnvs(); }
 });
 const EVENT_ID = 410;
