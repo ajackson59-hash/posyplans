@@ -8,7 +8,7 @@ import { encodePng } from "../server/aiFirst/png";
 import { MEDIUM_FEASIBILITY_CASES } from "../server/aiFirst/mediumFeasibilityCases";
 import { buildQualityLockedPreviewBrief, customerVisiblePreviewBytes } from "../server/prePaymentPreviewQuality";
 import { runRetainedSceneRepaint, SCENE_REPAINT_EXPERIMENT, SCENE_LIKENESS_EXPERIMENT } from "../server/retainedSceneRepaint";
-import type { VisionVerdict } from "../server/aiFirst/visionGate";
+import { runVisionGate, type VisionGateInput, type VisionVerdict } from "../server/aiFirst/visionGate";
 
 const environment = { VERCEL_ENV: "preview", VERCEL_GIT_COMMIT_REF: "codex/launch-blockers" };
 const hash = (bytes: Buffer) => createHash("sha256").update(bytes).digest("hex");
@@ -38,7 +38,7 @@ async function fixture() {
     telemetry: { outputFormat: "jpeg" as const, providerRequestCount: 1,
       google: { model: GOOGLE_ARTWORK_MODEL, imageSize: "1K" as const, aspectRatio: "9:16" as const,
         size: "768x1376" as const, interactionId: "test", usage: { total_input_tokens: 10, total_output_tokens: 1120 } } } }));
-  const review = vi.fn(async () => verdict());
+  const review = vi.fn(async (_input: VisionGateInput) => verdict());
   const options = { environment, registration, generate, review };
   return { event, store, original, bytes, options, generate, review };
 }
@@ -143,15 +143,38 @@ it("binds separate scene and identity pixels to one edit and the exact identity-
   expect(request.prompt).toContain("IMAGE 2 — identity reference for Meekah only");
   expect(request.prompt).toContain(f.event.vibeDescription);
   expect(request.maxTransientRetries).toBe(0);
-  const reviewInput = (f.review.mock.calls[0] as any)[0];
-  expect(reviewInput.references).toHaveLength(1);
-  expect(reviewInput.references[0]).toMatchObject({ subject: "Meekah", role: "identity", sha256: hash(f.identityBytes) });
-  expect(reviewInput.references[0].bytes.equals(f.identityBytes)).toBe(true);
+  const reviewInput = f.review.mock.calls[0][0];
+  expect(reviewInput.referenceImages).toHaveLength(1);
+  expect(reviewInput.referenceImages![0]).toMatchObject({ subject: "Meekah", role: "identity", sha256: hash(f.identityBytes) });
+  expect(reviewInput.referenceImages![0].bytes.equals(f.identityBytes)).toBe(true);
   expect(reviewInput.bytes.equals(customerVisiblePreviewBytes(f.bytes))).toBe(true);
   expect(f.store.all.find(r => r.idempotencyKey?.endsWith(":identity-reference"))?.assetHash).toBe(hash(f.identityBytes));
   expect(f.store.all.every(r => r.status === "rejected" && !r.previewId)).toBe(true);
   expect((await runRetainedSceneRepaint(f.event, f.store, f.options)).kind).toBe("blocked");
   expect(f.generate).toHaveBeenCalledTimes(1); expect(f.review).toHaveBeenCalledTimes(1);
+});
+
+it("sends exact candidate and identity bytes through the real reviewer adapter and retains their provenance", async () => {
+  const f = await likenessFixture();
+  // Stub only the external transport: exercise the actual adapter contract.
+  const create = vi.fn(async (_request: unknown, _options: unknown) => ({
+    content: [{ type: "text", text: "{}" }], stop_reason: "end_turn",
+    usage: { input_tokens: 10, output_tokens: 20 },
+  }));
+  const client = { messages: { create } } as unknown as NonNullable<VisionGateInput["client"]>;
+  const review = (input: VisionGateInput) => runVisionGate({ ...input, client });
+  const result = await runRetainedSceneRepaint(f.event, f.store, { ...f.options, review });
+  expect(create).toHaveBeenCalledTimes(1);
+  const request = create.mock.calls[0][0] as { messages: { content: Array<Record<string, any>> }[] };
+  const content = request.messages[0].content;
+  expect(content.filter(part => part.type === "image").map(part => hash(Buffer.from(part.source.data, "base64")))).toEqual([
+    hash(customerVisiblePreviewBytes(f.bytes)), hash(f.identityBytes),
+  ]);
+  expect(content.some(part => part.type === "text" && part.text.includes('"role":"identity-only"'))).toBe(true);
+  expect(create.mock.calls[0][1]).toMatchObject({ maxRetries: 0 });
+  expect(result).toMatchObject({ kind: "evaluated", gatePassed: false,
+    verdict: { referenceEvidence: [{ role: "identity", subject: "Meekah", sha256: hash(f.identityBytes) }] } });
+  expect(f.store.all.at(-1)?.reviewEvidence?.verdict?.referenceEvidence?.[0]).toMatchObject({ sha256: hash(f.identityBytes) });
 });
 
 it("refuses missing or changed identity bytes before claiming or spending", async () => {

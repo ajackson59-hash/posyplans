@@ -1,8 +1,9 @@
 # Meekah likeness correction — 12 September 2026
 
-Status: registered, unrun. Preview research only. User said "Proceed" after the
-proposed official-reference likeness test. Maximum one Google image edit and one
-Sonnet review, zero classifiers, retries, alternate providers or publication.
+Status: CLOSED, allowance consumed. Preview research only. After an automatic
+approval interruption with no server claim, the user explicitly approved sending
+the saved scene and official reference to Posy Preview for one Google image edit
+and one Anthropic review. Exactly one of each ran; zero classifiers or retries.
 
 The user rated the existing finish an "OK option" and requested a more realistic,
 accurate Meekah. This is a likeness correction within the existing painted scene;
@@ -21,7 +22,8 @@ original synthetic host brief. The old repaint registration stays consumed.
   proportionally resized inside1024×1024 without cropping or changing features.
   Final1024×1015,985466bytes, SHA
   `347745ce1d75a4e5e8e7cacf20ca7fa693d4cb66c17d99f010e7c010113994b8`.
-  Both providers receive these same verified identity pixels.
+  These pixels were intended for both providers. The live generator received
+  both references; the reviewer reference was omitted by the wiring defect below.
 
 ## Mechanism and boundaries
 
@@ -61,3 +63,48 @@ If the request outcome is uncertain, inspect durable rows with read-only calls;
 never repeat the POST. Timing/cost must explicitly exclude previously incurred
 scene generation/repaint stages and offline reference preparation from any
 claimed uninterrupted customer measurement. All original launch gates remain.
+
+
+## Live result and corrective action
+
+Executed on `8fc417c8d3e77e1c6b0ae2b85666c5a80d14b518`, Preview
+`https://posy-qntnp3vul-poseplans.vercel.app`. HTTP200, completed attempt293;
+stages288–293, reference retained separately at289. Event snapshot unchanged,
+all records rejected and customer activation disabled. No repeat request.
+
+- New source SHA `3ed9ff2d1da11a7a8553272b071b16c521519efa638649ffb3c0bda430f6cc9e`.
+- Exact313×560 reviewer image SHA `7d16340d64c38bf1a24f218b5db3f5e59666d6b1e2ff3d57ce26e972f18181f0`.
+- Google edit9435ms (provider9054ms, normalization377ms); Sonnet28932ms.
+  Measured stage elapsed39678ms, client request47984ms. This excludes previous
+  scene work and is not an uninterrupted customer-flow measurement.
+- Google2346input tokens (1830text,516image),1489output (1120image,
+  369unitemized); Sonnet7268input/947output. Do not sum duplicate stage rows or
+  treat the reference row as generated output. No final billed dollar total known.
+- Critic scores: text5, artifact5, premium3, fidelity3, composition5, age5.
+  It rejected medium/purchase while reporting identity accurate. However,
+  `referenceEvidence` was absent, so the harness correctly recorded
+  `review-unavailable` and `gatePassed:false`. This is not a valid
+  reference-supported likeness verdict.
+
+Root cause: the harness supplied `references` in a conditional object spread;
+the real `runVisionGate` adapter reads `referenceImages`. TypeScript permitted the
+extra spread property, and the old mocked test repeated the wrong property name.
+The fix passes the correctly named explicit property. A regression now exercises
+the real reviewer adapter with only the external transport stubbed, verifying
+candidate/reference image hashes, identity-only labels, one transport call with
+retries disabled, and returned/persisted provenance. The corrected contract test
+and new adapter regression both failed before the fix. No threshold or prior
+verdict was rewritten, and no further paid call was made to validate the fix.
+Other customer-flow and calibration call sites already use `referenceImages`.
+
+Independent inspection of both source and exact teaser: Meekah's face and smile
+appear closer to the supplied portrait, with less exaggerated eyes and a yellow
+headband now visible. Hair remains a broad rounded loose silhouette rather than
+the reference's gathered asymmetric curls. This is partial improvement, not a
+faithful-match or user approval. Dancing poses, Blippi, ball pit, foam structures,
+bubbles, ice-cream counter and palette remain; two unrequested wall vents were
+added. No readable lettering was observed. Painted marks remain on floor, walls
+and blocks, so the critic's absolute claim of no brush-made edges anywhere is
+not supported, while the characters still have prominent outlines and smooth
+shading. Medium/craft calibration remains unresolved. This test is closed;
+retain this image for human review instead of generating another variation.

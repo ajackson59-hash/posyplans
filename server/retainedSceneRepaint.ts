@@ -128,7 +128,7 @@ export async function runRetainedSceneRepaint(event: Event, store: AiFirstArtwor
     }
     evidence.criticRequests = null; await save("review-claimed"); signal.throwIfAborted();
     verdict = await (options.review ?? runVisionGate)({ bytes: reviewed, brief, concept,
-      reviewMode: "teaser", maxFormatRepairs: 0, ...(references.length ? { references } : {}), signal });
+      reviewMode: "teaser", maxFormatRepairs: 0, referenceImages: references, signal });
     evidence.criticRequests = verdict.requestCount ?? null;
     evidence.criticUsage = verdict.usage; evidence.criticMs = verdict.durationMs;
     evidence.elapsedMs = Date.now() - started;
