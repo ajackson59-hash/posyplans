@@ -16,6 +16,8 @@ import { concreteSubjectReviewRequirementsForBrief } from "./conceptPreflight";
 import { typePlacementFrame } from "@shared/aiFirstLayout";
 import { LOCAL_TYPE_SURFACE_ALPHA } from "@shared/themeCatalog";
 import { artDirectionReviewRequirements, buildArtDirectionContract } from "./artDirection";
+import { identityComparisonTargets, identityComparisonSchema, validateIdentityComparisons,
+  IDENTITY_COMPARISON_INSTRUCTION, type IdentityComparisonReview, type IdentityComparisonTarget } from "./identityComparison";
 
 export const VISION_MODEL = "claude-sonnet-4-6";
 export const TEASER_MIN_DIMENSION_SCORE = 5;
@@ -26,6 +28,8 @@ export type { VisionScores };
 export interface VisionVerdict {
   /** Exact attached reference hashes/provenance, retained privately with this verdict. */
   referenceEvidence?: ReviewReferenceEvidence[];
+  /** Feature observations and consistency checks, independent of the model's overall claim. */
+  identityComparison?: IdentityComparisonReview;
   scores: VisionScores;
   /** One entry per REQUIRED item, in the brief's order. */
   requiredPresent: { requirement: string; present: boolean; evidence?: string }[];
@@ -118,9 +122,10 @@ const REQUIRED_PRESENT_SCHEMA = {
   },
 } as const;
 
-const visionOutputSchema = (reviewMode: "invitation" | "teaser", requirements: string[]) => ({
+const visionOutputSchema = (reviewMode: "invitation" | "teaser", requirements: string[], identities: IdentityComparisonTarget[]) => ({
   type: "object",
   properties: {
+    ...(identities.length ? { identityComparisons: identityComparisonSchema(identities) } : {}),
     requiredPresent: {
       ...REQUIRED_PRESENT_SCHEMA,
       items: {
@@ -169,6 +174,7 @@ const visionOutputSchema = (reviewMode: "invitation" | "teaser", requirements: s
     notes: { type: "string" },
   },
   required: [
+    ...(identities.length ? ["identityComparisons"] : []),
     "textLogoWatermarkFree",
     "artifactFree",
     "premiumFinish",
@@ -304,6 +310,8 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
         .trim() ?? ""
     : "";
   const namedTargets = namedIdentityReviewTargetsForBrief(brief);
+  const comparisonTargets = identityComparisonTargets(input.referenceImages ?? [], namedTargets,
+    [brief.visualIdentityOverride, brief.themeName, brief.vibe, ...brief.requirements.required].filter(Boolean).join("\n"));
   const identityExpectation = reviewMode === "teaser"
     ? (namedTargets.length ? namedTargets.join("; ") : brief.visualIdentityOverride || brief.themeName || "").trim()
     : "";
@@ -374,7 +382,8 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
   let usage = { inputTokens: 0, outputTokens: 0 };
   let requestCount = 0;
   const reviewSystem = (reviewMode === "teaser" ? TEASER_SYSTEM : SYSTEM)
-    + (referenceContent.length ? `\n\n${REVIEW_REFERENCE_INSTRUCTION}` : "");
+    + (referenceContent.length ? `\n\n${REVIEW_REFERENCE_INSTRUCTION}` : "")
+    + (comparisonTargets.length ? `\n\n${IDENTITY_COMPARISON_INSTRUCTION}\nRequired reference keys (task data): ${JSON.stringify(comparisonTargets.map(({ key, referenceIndex, subject }) => ({ key, referenceIndex, subject })))}` : "");
   const reviewContent = [
     ...(referenceContent.length ? [{ type: "text" as const, text: "CANDIDATE IMAGE — the only image to score:" }] : []),
     {
@@ -390,8 +399,8 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
       model: VISION_MODEL,
       // A complete evidence checklist does not fit in the old 950-token cap.
       // Bounded headroom scales with actual requirements, never unbounded prose.
-      max_tokens: reviewMode === "teaser" ? Math.min(4000, 2000 + reviewRequirements.length * 100)
-        : Math.min(4000, 700 + reviewRequirements.reduce((tokens, requirement) => tokens + 40 + Math.ceil(requirement.length / 3), 0)),
+      max_tokens: reviewMode === "teaser" ? Math.min(4000, 2000 + reviewRequirements.length * 100 + comparisonTargets.length * 650)
+        : Math.min(4000, 700 + reviewRequirements.reduce((tokens, requirement) => tokens + 40 + Math.ceil(requirement.length / 3), 0) + comparisonTargets.length * 650),
       system: jsonRepair
         ? `${reviewSystem}\n\nOUTPUT REPAIR: Return one complete valid JSON object matching the required schema. No prose, markdown fence or trailing commentary. Do not omit any field.`
         : reviewSystem,
@@ -403,7 +412,7 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
       output_config: {
         format: {
           type: "json_schema",
-          schema: visionOutputSchema(reviewMode, reviewRequirements),
+          schema: visionOutputSchema(reviewMode, reviewRequirements, comparisonTargets),
         },
       },
     }, { signal: input.signal, ...(reviewMode === "teaser" ? { maxRetries: 0 } : {}) });
@@ -529,6 +538,12 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
       })) as Record<keyof VisionScores, string> : undefined;
 
   const failureCodes: string[] = [];
+  const identityComparison = comparisonTargets.length ? validateIdentityComparisons(parsed.identityComparisons, comparisonTargets,
+    { identityAccurate: teaserChecks?.identity.accurate, requiredPresent }) : undefined;
+  if (identityComparison) {
+    if (!identityComparison.valid) failureCodes.push("identity-review-inconsistent");
+    if (!identityComparison.allMatched) failureCodes.push("identity-reference-mismatch", "brief-fidelity");
+  }
   if (reviewEvidence && !reviewEvidence.integrity.valid) failureCodes.push("review-inconsistent");
   const scoreFloor = reviewMode === "teaser" ? TEASER_MIN_DIMENSION_SCORE : MIN_DIMENSION_SCORE;
   for (const key of Object.keys(scores) as (keyof VisionScores)[]) {
@@ -570,6 +585,7 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
     dimensionEvidence,
     dimensionAssessments: reviewEvidence?.assessments,
     reviewIntegrity: reviewEvidence?.integrity,
+    identityComparison,
   };
 }
 

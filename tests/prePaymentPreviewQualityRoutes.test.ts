@@ -37,6 +37,11 @@ it("bounds the retained likeness review route to Preview, the fixed owner and ex
     stored = { ...baseEvent };
     expect((await request(makeApp()).post(path).send(body)).status).toBe(404);
     expect(generate).not.toHaveBeenCalled();
+    const controlPath = `/api/events/owner/${OWNER}/prepayment-preview/feature-comparison/`;
+    expect((await request(makeApp()).post(controlPath + "unknown").send(body)).status).toBe(404);
+    expect((await request(makeApp()).post(controlPath + "matched").send(body)).status).toBe(400);
+    expect((await request(makeApp()).post(controlPath + "mismatched").send({ ...body, expectedIdentity: false })).status).toBe(400);
+    expect((await request(makeApp()).post(controlPath + "mismatched").send(body)).status).toBe(404);
   } finally { vi.unstubAllEnvs(); }
 });
 const EVENT_ID = 410;

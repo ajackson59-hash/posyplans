@@ -7,6 +7,7 @@ import { runVisionGate, type VisionVerdict } from "./aiFirst/visionGate";
 import { namedReferenceIdentityNotes } from "./namedReferenceResolver";
 import { buildQualityLockedPreviewBrief, customerVisiblePreviewBytes, detectNamedCreativeReferenceSync } from "./prePaymentPreviewQuality";
 import { SCENE_LIKENESS_EXPERIMENT } from "./retainedSceneRepaint";
+import { IDENTITY_COMPARISON_VERSION } from "./aiFirst/identityComparison";
 
 const hash = (value: string | Buffer) => createHash("sha256").update(value).digest("hex");
 export const RETAINED_LIKENESS_REVIEW = {
@@ -17,11 +18,25 @@ export const RETAINED_LIKENESS_REVIEW = {
   hostBriefHash: SCENE_LIKENESS_EXPERIMENT.hostBriefHash,
   referenceHash: SCENE_LIKENESS_EXPERIMENT.identity.sha256,
 };
+type ReviewRegistration = typeof RETAINED_LIKENESS_REVIEW & {
+  sourceStage?: "completed" | "identity-reference";
+  expectedIdentity?: boolean;
+  requireFeatureComparison?: boolean;
+};
+/** New two-control authorization; previous review/generation claims are never reused. */
+export const FEATURE_COMPARISON_CONTROLS: Record<"mismatched" | "matched", ReviewRegistration> = {
+  mismatched: { ...RETAINED_LIKENESS_REVIEW, datasetId: "meekah-feature-comparison-20260912-v1-mismatched",
+    expectedIdentity: false, requireFeatureComparison: true },
+  matched: { ...RETAINED_LIKENESS_REVIEW, datasetId: "meekah-feature-comparison-20260912-v1-matched",
+    sourceAttemptId: "289", sourceStage: "identity-reference", sourceHash: RETAINED_LIKENESS_REVIEW.referenceHash,
+    reviewedHash: "942f52abc84831a9a606df2036a7bbd1d0e600927adfe072e45f6e0833fbb3c6",
+    expectedIdentity: true, requireFeatureComparison: true },
+};
 
 export async function runRetainedLikenessReview(event: Event, store: AiFirstArtworkAttemptStore,
   options: { environment?: NodeJS.ProcessEnv; signal?: AbortSignal; review?: typeof runVisionGate;
-    registration?: typeof RETAINED_LIKENESS_REVIEW } = {}) {
-  const registration = options.registration ?? RETAINED_LIKENESS_REVIEW;
+    registration?: ReviewRegistration } = {}) {
+  const registration: ReviewRegistration = options.registration ?? RETAINED_LIKENESS_REVIEW;
   const environment = options.environment ?? process.env;
   const blocked = (reason: string) => ({ kind: "blocked" as const, reason, customerActivation: "disabled" as const });
   if (environment.VERCEL_ENV !== "preview" || environment.VERCEL_GIT_COMMIT_REF !== "codex/launch-blockers" ||
@@ -36,7 +51,7 @@ export async function runRetainedLikenessReview(event: Event, store: AiFirstArtw
   ]);
   if (!source || !reference || [source, reference].some(row => row.status !== "rejected" || row.previewId ||
       row.runId !== SCENE_LIKENESS_EXPERIMENT.datasetId) ||
-      source.reviewEvidence?.customerEvaluation?.stage !== "completed" ||
+      source.reviewEvidence?.customerEvaluation?.stage !== (registration.sourceStage ?? "completed") ||
       reference.reviewEvidence?.customerEvaluation?.stage !== "identity-reference" ||
       source.assetHash !== registration.sourceHash || reference.assetHash !== registration.referenceHash) {
     return blocked("likeness-review-source-mismatch");
@@ -55,7 +70,7 @@ export async function runRetainedLikenessReview(event: Event, store: AiFirstArtw
   const named = detectNamedCreativeReferenceSync(event.vibeDescription);
   const { brief, concept } = await buildQualityLockedPreviewBrief(event, named ? namedReferenceIdentityNotes(named) : "", named);
   // The user's negative judgment and this expected result never enter the model request.
-  const evidence: Record<string, unknown> = { ...registration, stage: "claimed", expectedMeekahIdentity: false,
+  const evidence: Record<string, unknown> = { ...registration, stage: "claimed", expectedMeekahIdentity: registration.expectedIdentity ?? false,
     imageProviderCalls: 0, classifierRequests: 0, criticRequests: null,
     deploymentSha: environment.VERCEL_GIT_COMMIT_SHA ?? null, customerActivation: "disabled",
     uninterruptedCustomerLatencyMs: null };
@@ -99,6 +114,17 @@ export async function runRetainedLikenessReview(event: Event, store: AiFirstArtw
     evidence.referenceVerified = Boolean(referenceVerified);
     evidence.mismatchDetected = Boolean(mismatchDetected);
     evidence.outcome = !accounted ? "review-unavailable" : mismatchDetected ? "likeness-mismatch-detected" : "likeness-mismatch-missed";
+    if (registration.requireFeatureComparison) {
+      const comparison = verdict.identityComparison;
+      const target = comparison?.comparisons.find(row => row.subject === "Meekah" && row.referenceIndex === 1);
+      const expected = registration.expectedIdentity === true;
+      const identityCorrect = accounted && comparison?.version === IDENTITY_COMPARISON_VERSION && comparison.valid &&
+        comparison.comparisons.length === 1 && target?.decision === (expected ? "match" : "mismatch") &&
+        observed?.present === expected && Boolean(observed.evidence?.trim()) &&
+        (expected || verdict.teaserChecks?.identity.accurate === false);
+      evidence.identityCorrect = Boolean(identityCorrect);
+      evidence.outcome = !accounted ? "review-unavailable" : identityCorrect ? "identity-control-correct" : "identity-control-incorrect";
+    }
     evidence.elapsedMs = Date.now() - started;
     const attemptId = await save("completed");
     return { kind: "reviewed" as const, attemptId, verdict, evidence };
