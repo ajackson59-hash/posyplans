@@ -10,6 +10,7 @@ import { canGenerateDraft } from "./masterPlannerEntitlement";
 import { CUSTOMER_PREVIEW_POLICY } from "./customerPreviewPolicy";
 import { customerArtworkEvaluation, googleCustomerArtworkEvaluation, CUSTOMER_EVALUATION_PAID_ENABLED } from "./customerArtworkEvaluation";
 import { ORIGINAL_CONTROL_REVIEW, reviewRetainedCustomerArtwork } from "./customerArtworkRetainedReview";
+import { SCENE_REPAINT_EXPERIMENT, runRetainedSceneRepaint } from "./retainedSceneRepaint";
 import {
   type ArtworkReferenceImage,
   type ArtworkReferenceMimeType,
@@ -598,6 +599,27 @@ export function registerPrePaymentPreviewQualityRoutes(
   const now = dependencies.now ?? Date.now;
   const jobTimeoutMs = dependencies.jobTimeoutMs ?? PREPAYMENT_PREVIEW_JOB_TIMEOUT_MS;
   const artworkAttemptStore = dependencies.artworkAttemptStore ?? new DbArtworkAttemptStore();
+
+  app.post("/api/events/owner/:ownerToken/prepayment-preview/scene-repaint", async (req, res) => {
+    res.setHeader("Cache-Control", "private, no-store");
+    if (process.env.VERCEL_ENV !== "preview" || process.env.VERCEL_GIT_COMMIT_REF !== "codex/launch-blockers") {
+      return res.status(404).json({ error: "Not found" });
+    }
+    const parsed = z.object({ confirmOneImageAndReview: z.literal(true),
+      expectedAssetHash: z.literal(SCENE_REPAINT_EXPERIMENT.sourceHash) }).strict().safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "Confirm the fixed one-image, one-review experiment" });
+    const event = await store.getEventByOwnerToken(String(req.params.ownerToken));
+    if (!event || event.id !== SCENE_REPAINT_EXPERIMENT.eventId) return res.status(404).json({ error: "Not found" });
+    const controller = new AbortController();
+    const close = () => { if (!res.writableEnded) controller.abort(); };
+    res.on("close", close);
+    try {
+      const result = await runRetainedSceneRepaint(event, artworkAttemptStore, { signal: controller.signal });
+      return res.status(result.kind === "blocked" ? 409 : result.kind === "unavailable" ? 503 : 200).json(result);
+    } catch {
+      if (!res.headersSent) return res.status(503).json({ error: "Repaint unavailable; claimed experiments cannot be retried" });
+    } finally { res.off("close", close); }
+  });
 
   app.post("/api/events/owner/:ownerToken/prepayment-preview/retained-review", async (req, res) => {
     if (process.env.VERCEL_ENV !== "preview" || process.env.VERCEL_GIT_COMMIT_REF !== "codex/launch-blockers") {
