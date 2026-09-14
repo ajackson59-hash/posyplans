@@ -8,6 +8,7 @@ import { namedReferenceIdentityNotes } from "./namedReferenceResolver";
 import { buildQualityLockedPreviewBrief, customerVisiblePreviewBytes, detectNamedCreativeReferenceSync } from "./prePaymentPreviewQuality";
 import { SCENE_LIKENESS_EXPERIMENT } from "./retainedSceneRepaint";
 import { IDENTITY_COMPARISON_VERSION } from "./aiFirst/identityComparison";
+import { BLIND_LIKENESS_VERSION, runBlindLikenessReview, type BlindLikenessVerdict } from "./aiFirst/blindLikenessReview";
 
 const hash = (value: string | Buffer) => createHash("sha256").update(value).digest("hex");
 export const RETAINED_LIKENESS_REVIEW = {
@@ -25,6 +26,7 @@ type ReviewRegistration = typeof RETAINED_LIKENESS_REVIEW & {
   reviewerVersion?: string;
   requiresCompletedDataset?: string;
   streamDiagnostics?: boolean;
+  reviewKind?: "reference-only";
 };
 /** New two-control authorization; previous review/generation claims are never reused. */
 export const FEATURE_COMPARISON_CONTROLS: Record<"mismatched" | "matched", ReviewRegistration> = {
@@ -57,14 +59,25 @@ export const STREAM_COMPARISON_CONTROLS: Record<"mismatched" | "matched", Review
     requiresCompletedDataset: "meekah-stream-comparison-20260914-v1-mismatched" },
 };
 
+/** New reference-only comparison; all earlier combined-review claims stay consumed. */
+export const BLIND_COMPARISON_CONTROLS: Record<"mismatched" | "matched", ReviewRegistration> = {
+  mismatched: { ...STREAM_COMPARISON_CONTROLS.mismatched,
+    datasetId: "meekah-reference-only-20260914-v1-mismatched", reviewKind: "reference-only", reviewerVersion: BLIND_LIKENESS_VERSION },
+  matched: { ...STREAM_COMPARISON_CONTROLS.matched,
+    datasetId: "meekah-reference-only-20260914-v1-matched", reviewKind: "reference-only", reviewerVersion: BLIND_LIKENESS_VERSION,
+    requiresCompletedDataset: "meekah-reference-only-20260914-v1-mismatched" },
+};
+
 export async function runRetainedLikenessReview(event: Event, store: AiFirstArtworkAttemptStore,
   options: { environment?: NodeJS.ProcessEnv; signal?: AbortSignal; review?: typeof runVisionGate;
+    blindReview?: typeof runBlindLikenessReview;
     registration?: ReviewRegistration } = {}) {
   const registration: ReviewRegistration = options.registration ?? RETAINED_LIKENESS_REVIEW;
   const environment = options.environment ?? process.env;
+  const referenceOnly = registration.reviewKind === "reference-only";
   const blocked = (reason: string) => ({ kind: "blocked" as const, reason, customerActivation: "disabled" as const });
   if (CLOSED_FEATURE_COMPARISON_DATASETS.has(registration.datasetId)) return blocked("feature-comparison-v1-closed-after-provider-error");
-  if (registration.reviewerVersion && registration.reviewerVersion !== IDENTITY_COMPARISON_VERSION) return blocked("feature-comparison-version-mismatch");
+  if (registration.reviewerVersion && registration.reviewerVersion !== (referenceOnly ? BLIND_LIKENESS_VERSION : IDENTITY_COMPARISON_VERSION)) return blocked("feature-comparison-version-mismatch");
   if (environment.VERCEL_ENV !== "preview" || environment.VERCEL_GIT_COMMIT_REF !== "codex/launch-blockers" ||
       event.id !== registration.eventId || !event.ownerToken || !store.recordOnce || options.signal?.aborted ||
       event.eventName !== "Artwork evaluation" || event.eventType !== "Artwork evaluation" || event.inviteStatus !== "draft" ||
@@ -75,12 +88,14 @@ export async function runRetainedLikenessReview(event: Event, store: AiFirstArtw
     const completed = (await store.listForOwner(event.id, event.ownerToken)).filter(row =>
       row.runId === registration.requiresCompletedDataset && row.reviewEvidence?.customerEvaluation?.stage === "completed");
     const prior = completed[0], proof = prior?.reviewEvidence?.customerEvaluation;
+    const priorBlind = proof?.blindReview as BlindLikenessVerdict | undefined;
     if (completed.length !== 1 || prior.status !== "rejected" || prior.previewId ||
         proof?.customerActivation !== "disabled" || proof.reviewerVersion !== registration.reviewerVersion ||
         proof.deploymentSha !== (environment.VERCEL_GIT_COMMIT_SHA ?? null) || proof.referenceHash !== registration.referenceHash ||
         proof.criticRequests !== 1 || proof.referenceVerified !== true ||
-        !["identity-control-correct", "identity-control-incorrect"].includes(String(proof.outcome)) ||
-        prior.reviewEvidence?.verdict?.unavailable !== false) return blocked("feature-comparison-prerequisite-unavailable");
+        !(referenceOnly ? ["identity-control-correct"] : ["identity-control-correct", "identity-control-incorrect"]).includes(String(proof.outcome)) ||
+        (referenceOnly ? proof.reviewKind !== "reference-only" || priorBlind?.unavailable !== false || priorBlind.decision !== "mismatch"
+          : prior.reviewEvidence?.verdict?.unavailable !== false)) return blocked("feature-comparison-prerequisite-unavailable");
   }
   const [source, reference] = await Promise.all([
     store.findById(event.id, event.ownerToken, registration.sourceAttemptId),
@@ -135,6 +150,27 @@ export async function runRetainedLikenessReview(event: Event, store: AiFirstArtw
   const started = Date.now();
   try {
     signal.throwIfAborted();
+    if (referenceOnly) {
+      // Explicit pixel-only arguments: never forward brief, concept, reference labels or expected outcomes.
+      const review = await (options.blindReview ?? runBlindLikenessReview)({ candidate: reviewed, reference: identityBytes, signal });
+      evidence.blindReview = review;
+      evidence.criticRequests = review.requestCount;
+      evidence.criticUsage = review.usage;
+      evidence.criticMs = review.durationMs;
+      const referenceVerified = review.inputHashes.reference === registration.referenceHash && review.inputHashes.candidate === registration.reviewedHash;
+      evidence.referenceVerified = referenceVerified;
+      const accounted = referenceVerified && !signal.aborted && !review.unavailable && review.requestCount === 1 &&
+        review.version === BLIND_LIKENESS_VERSION && review.scope === "reference-likeness-only" &&
+        review.requestTimings.length === 1 && review.requestTimings[0].outcome === "completed" && review.requestTimings[0].usageStatus === "complete" &&
+        [review.usage.inputTokens, review.usage.outputTokens].every(n => Number.isSafeInteger(n) && n >= 0);
+      const identityCorrect = accounted && review.comparison?.valid === true && review.issues.length === 0 &&
+        review.decision === (registration.expectedIdentity ? "match" : "mismatch");
+      evidence.identityCorrect = Boolean(identityCorrect);
+      evidence.outcome = !accounted ? "review-unavailable" : identityCorrect ? "identity-control-correct" : "identity-control-incorrect";
+      evidence.elapsedMs = Date.now() - started;
+      const attemptId = await save("completed");
+      return { kind: "reviewed" as const, attemptId, review, evidence };
+    }
     verdict = await (options.review ?? runVisionGate)({ bytes: reviewed, brief, concept, referenceImages,
       reviewMode: "teaser", maxFormatRepairs: 0, signal, streamDiagnostics: registration.streamDiagnostics });
     evidence.criticRequests = verdict.requestCount ?? null;

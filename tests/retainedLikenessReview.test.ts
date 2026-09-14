@@ -1,3 +1,5 @@
+import { runBlindLikenessReview } from "../server/aiFirst/blindLikenessReview";
+import { blindReport, blindFixtureClient } from "./helpers/blindReviewFixture";
 // @vitest-environment node
 import { visionRequestRequirements } from "./helpers/visionRequestRequirements";
 import { createHash } from "node:crypto";
@@ -8,7 +10,7 @@ import { encodePng } from "../server/aiFirst/png";
 import { MEDIUM_FEASIBILITY_CASES } from "../server/aiFirst/mediumFeasibilityCases";
 import { buildQualityLockedPreviewBrief, customerVisiblePreviewBytes } from "../server/prePaymentPreviewQuality";
 import { SCENE_LIKENESS_EXPERIMENT } from "../server/retainedSceneRepaint";
-import { RETAINED_LIKENESS_REVIEW, FEATURE_COMPARISON_CONTROLS, FEATURE_COMPARISON_V2_CONTROLS, STREAM_COMPARISON_CONTROLS, runRetainedLikenessReview } from "../server/retainedLikenessReview";
+import { RETAINED_LIKENESS_REVIEW, FEATURE_COMPARISON_CONTROLS, FEATURE_COMPARISON_V2_CONTROLS, STREAM_COMPARISON_CONTROLS, BLIND_COMPARISON_CONTROLS, runRetainedLikenessReview } from "../server/retainedLikenessReview";
 import { IDENTITY_FEATURES } from "../server/aiFirst/identityComparison";
 import { runVisionGate, type VisionGateInput } from "../server/aiFirst/visionGate";
 
@@ -220,4 +222,46 @@ it("requires complete timing evidence before allowing the streaming matching con
   expect(await run("matched")).toMatchObject({ kind: "blocked", reason: "feature-comparison-prerequisite-unavailable" });
   expect((await run("mismatched")).kind).toBe("blocked");
   expect(review).toHaveBeenCalledTimes(1);
+});
+
+async function blindPairedFixture(negativeCorrect = true) {
+  const f = await fixture(), capture = vi.fn();
+  const client = blindFixtureClient(body => {
+    const candidate = body.messages[0].content.find((p: any) => p.type === "image").source.data;
+    const positive = hash(Buffer.from(candidate, "base64")) === hash(customerVisiblePreviewBytes(f.identity));
+    return blindReport(positive || !negativeCorrect);
+  }, capture);
+  const blindReview = vi.fn(input => {
+    expect(Object.keys(input).sort()).toEqual(["candidate", "reference", "signal"]);
+    return runBlindLikenessReview({ ...input, client });
+  });
+  const registrations = Object.fromEntries((["mismatched", "matched"] as const).map(caseId => {
+    const pixels = caseId === "matched" ? f.identity : f.bytes;
+    return [caseId, { ...BLIND_COMPARISON_CONTROLS[caseId], sourceAttemptId: caseId === "matched" ? f.reference.id : f.source.id,
+      referenceAttemptId: f.reference.id, sourceHash: hash(pixels), reviewedHash: hash(customerVisiblePreviewBytes(pixels)), referenceHash: hash(f.identity) }];
+  }));
+  const run = (caseId: "mismatched" | "matched") => runRetainedLikenessReview(f.event, f.store,
+    { ...f.options, registration: registrations[caseId], blindReview });
+  return { ...f, run, capture, blindReview };
+}
+
+it("runs the isolated pair once without a combined critic or fabricated artwork scores", async () => {
+  const f = await blindPairedFixture(), before = structuredClone(f.event);
+  expect((await f.run("matched")).kind).toBe("blocked");
+  const negative = await Promise.all([f.run("mismatched"), f.run("mismatched")]);
+  expect(negative.map(r => r.kind).sort()).toEqual(["blocked", "reviewed"]);
+  expect(negative.find(r => r.kind === "reviewed")).toMatchObject({ evidence: { outcome: "identity-control-correct", criticRequests: 1 },
+    review: { decision: "mismatch", scope: "reference-likeness-only" } });
+  expect(await f.run("matched")).toMatchObject({ evidence: { outcome: "identity-control-correct", criticRequests: 1 }, review: { decision: "match" } });
+  expect((await f.run("matched")).kind).toBe("blocked");
+  expect(f.capture).toHaveBeenCalledTimes(2); expect(f.create).not.toHaveBeenCalled();
+  expect(f.event).toEqual(before);
+  expect(f.store.all.slice(2).every(row => row.status === "rejected" && !row.previewId && row.visionScores === null && row.reviewEvidence?.verdict === null)).toBe(true);
+});
+
+it("stops the isolated pair on an incorrect negative without spending on the portrait", async () => {
+  const f = await blindPairedFixture(false);
+  expect(await f.run("mismatched")).toMatchObject({ evidence: { outcome: "identity-control-incorrect" } });
+  expect(await f.run("matched")).toMatchObject({ kind: "blocked", reason: "feature-comparison-prerequisite-unavailable" });
+  expect(f.capture).toHaveBeenCalledTimes(1); expect(f.create).not.toHaveBeenCalled();
 });

@@ -11,7 +11,7 @@ import { CUSTOMER_PREVIEW_POLICY } from "./customerPreviewPolicy";
 import { customerArtworkEvaluation, googleCustomerArtworkEvaluation, CUSTOMER_EVALUATION_PAID_ENABLED } from "./customerArtworkEvaluation";
 import { ORIGINAL_CONTROL_REVIEW, reviewRetainedCustomerArtwork } from "./customerArtworkRetainedReview";
 import { SCENE_REPAINT_EXPERIMENT, SCENE_LIKENESS_EXPERIMENT, runRetainedSceneRepaint } from "./retainedSceneRepaint";
-import { RETAINED_LIKENESS_REVIEW, FEATURE_COMPARISON_CONTROLS, FEATURE_COMPARISON_V2_CONTROLS, STREAM_COMPARISON_CONTROLS, runRetainedLikenessReview } from "./retainedLikenessReview";
+import { RETAINED_LIKENESS_REVIEW, FEATURE_COMPARISON_CONTROLS, FEATURE_COMPARISON_V2_CONTROLS, STREAM_COMPARISON_CONTROLS, BLIND_COMPARISON_CONTROLS, runRetainedLikenessReview } from "./retainedLikenessReview";
 import {
   type ArtworkReferenceImage,
   type ArtworkReferenceMimeType,
@@ -634,6 +634,7 @@ export function registerPrePaymentPreviewQualityRoutes(
     ["/api/events/owner/:ownerToken/prepayment-preview/feature-comparison/:caseId", FEATURE_COMPARISON_CONTROLS],
     ["/api/events/owner/:ownerToken/prepayment-preview/feature-comparison-v2/:caseId", FEATURE_COMPARISON_V2_CONTROLS],
     ["/api/events/owner/:ownerToken/prepayment-preview/stream-comparison/:caseId", STREAM_COMPARISON_CONTROLS],
+    ["/api/events/owner/:ownerToken/prepayment-preview/reference-only-comparison/:caseId", BLIND_COMPARISON_CONTROLS],
   ] as const) app.post(path, async (req, res) => {
     res.setHeader("Cache-Control", "private, no-store");
     if (process.env.VERCEL_ENV !== "preview" || process.env.VERCEL_GIT_COMMIT_REF !== "codex/launch-blockers" ||

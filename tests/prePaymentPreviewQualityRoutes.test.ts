@@ -42,7 +42,7 @@ it("bounds the retained likeness review route to Preview, the fixed owner and ex
     expect((await request(makeApp()).post(controlPath + "matched").send(body)).status).toBe(400);
     expect((await request(makeApp()).post(controlPath + "mismatched").send({ ...body, expectedIdentity: false })).status).toBe(400);
     expect((await request(makeApp()).post(controlPath + "mismatched").send(body)).status).toBe(404);
-    for (const segment of ["feature-comparison-v2", "stream-comparison"]) {
+    for (const segment of ["feature-comparison-v2", "stream-comparison", "reference-only-comparison"]) {
       const nextPath = controlPath.replace("feature-comparison/", `${segment}/`);
       vi.stubEnv("VERCEL_ENV", "preview");
       expect((await request(makeApp()).post(nextPath + "unknown").send(body)).status).toBe(404);
