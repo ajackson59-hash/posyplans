@@ -10,7 +10,7 @@ import { encodePng } from "../server/aiFirst/png";
 import { MEDIUM_FEASIBILITY_CASES } from "../server/aiFirst/mediumFeasibilityCases";
 import { buildQualityLockedPreviewBrief, customerVisiblePreviewBytes } from "../server/prePaymentPreviewQuality";
 import { SCENE_LIKENESS_EXPERIMENT } from "../server/retainedSceneRepaint";
-import { RETAINED_LIKENESS_REVIEW, FEATURE_COMPARISON_CONTROLS, FEATURE_COMPARISON_V2_CONTROLS, STREAM_COMPARISON_CONTROLS, BLIND_COMPARISON_CONTROLS, runRetainedLikenessReview } from "../server/retainedLikenessReview";
+import { RETAINED_LIKENESS_REVIEW, FEATURE_COMPARISON_CONTROLS, FEATURE_COMPARISON_V2_CONTROLS, STREAM_COMPARISON_CONTROLS, BLIND_COMPARISON_CONTROLS, ACCEPTED_ILLUSTRATION_CONTROL, runRetainedLikenessReview } from "../server/retainedLikenessReview";
 import { IDENTITY_FEATURES } from "../server/aiFirst/identityComparison";
 import { runVisionGate, type VisionGateInput } from "../server/aiFirst/visionGate";
 
@@ -264,4 +264,62 @@ it("stops the isolated pair on an incorrect negative without spending on the por
   expect(await f.run("mismatched")).toMatchObject({ evidence: { outcome: "identity-control-incorrect" } });
   expect(await f.run("matched")).toMatchObject({ kind: "blocked", reason: "feature-comparison-prerequisite-unavailable" });
   expect(f.capture).toHaveBeenCalledTimes(1); expect(f.create).not.toHaveBeenCalled();
+});
+
+async function acceptedIllustrationFixture(accurate = true) {
+  const f = await fixture(), candidate = customerVisiblePreviewBytes(f.bytes), capture = vi.fn();
+  const client = blindFixtureClient(() => blindReport(accurate), capture);
+  const blindReview = vi.fn(input => {
+    expect(Object.keys(input).sort()).toEqual(["candidate", "reference", "signal"]);
+    return runBlindLikenessReview({ ...input, client });
+  });
+  const options = { ...f.options, candidate, blindReview, registration: { ...ACCEPTED_ILLUSTRATION_CONTROL,
+    sourceHash: hash(candidate), reviewedHash: hash(candidate), referenceHash: hash(f.identity), referenceAttemptId: f.reference.id } };
+  const run = () => runRetainedLikenessReview(f.event, f.store, options);
+  return { ...f, candidate, capture, blindReview, options, run };
+}
+
+it.each([true, false])("records one registered illustration judgment without changing its human label (model match=%s)", async accurate => {
+  const f = await acceptedIllustrationFixture(accurate), before = structuredClone(f.event);
+  const results = await Promise.all([f.run(), f.run()]);
+  expect(results.map(r => r.kind).sort()).toEqual(["blocked", "reviewed"]);
+  expect(results.find(r => r.kind === "reviewed")).toMatchObject({
+    evidence: { expectedMeekahIdentity: true, sourceInput: "registered-preview", criticRequests: 1,
+      outcome: accurate ? "identity-control-correct" : "identity-control-incorrect" },
+    review: { decision: accurate ? "match" : "mismatch" },
+  });
+  expect(f.blindReview).toHaveBeenCalledTimes(1); expect(f.capture).toHaveBeenCalledTimes(1);
+  expect(f.create).not.toHaveBeenCalled(); expect(f.event).toEqual(before);
+  const body = f.capture.mock.calls[0][0];
+  expect(body.messages[0].content.filter((x: any) => x.type === "image").map((x: any) => hash(Buffer.from(x.source.data, "base64"))))
+    .toEqual([hash(f.candidate), hash(f.identity)]);
+  expect(JSON.stringify(body)).not.toMatch(/Meekah|Blippi|expectedMeekahIdentity|would pass|accepted-illustration/);
+  expect(f.store.all.slice(2).every(row => row.status === "rejected" && !row.previewId && row.assetHash === hash(f.candidate) &&
+    row.visionScores === null && row.reviewEvidence?.verdict === null)).toBe(true);
+  expect((await f.run()).kind).toBe("blocked"); expect(f.capture).toHaveBeenCalledTimes(1);
+});
+
+it("rejects missing, changed, oversized and misregistered illustration input before any claim or reviewer call", async () => {
+  const f = await acceptedIllustrationFixture();
+  for (const candidate of [undefined, Buffer.from("different"), Buffer.alloc(800_001)]) {
+    expect(await runRetainedLikenessReview(f.event, f.store, { ...f.options, candidate }))
+      .toMatchObject({ kind: "blocked", reason: "likeness-review-registered-preview-mismatch" });
+  }
+  for (const registration of [
+    { ...f.options.registration, reviewKind: undefined },
+    { ...f.options.registration, reviewedHash: "0".repeat(64) },
+    { ...f.options.registration, referenceHash: "0".repeat(64) },
+  ]) expect((await runRetainedLikenessReview(f.event, f.store, { ...f.options, registration })).kind).toBe("blocked");
+  expect(f.capture).not.toHaveBeenCalled(); expect(f.store.all).toHaveLength(2);
+});
+
+it("requires the retained reference owner and durable candidate readback before the illustration call", async () => {
+  const f = await acceptedIllustrationFixture();
+  expect((await runRetainedLikenessReview({ ...f.event, ownerToken: "wrong-owner" }, f.store, f.options)).kind).toBe("blocked");
+  const find = f.store.findById.bind(f.store);
+  vi.spyOn(f.store, "findById").mockImplementation((id, owner, recordId) => recordId === f.reference.id
+    ? find(id, owner, recordId) : Promise.resolve(undefined));
+  expect((await f.run()).kind).toBe("blocked"); expect(f.capture).not.toHaveBeenCalled();
+  expect(f.store.all).toHaveLength(3); // The claim remains consumed despite failed readback.
+  expect((await f.run()).kind).toBe("blocked"); expect(f.store.all).toHaveLength(3);
 });

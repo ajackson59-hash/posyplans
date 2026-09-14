@@ -11,7 +11,7 @@ import { CUSTOMER_PREVIEW_POLICY } from "./customerPreviewPolicy";
 import { customerArtworkEvaluation, googleCustomerArtworkEvaluation, CUSTOMER_EVALUATION_PAID_ENABLED } from "./customerArtworkEvaluation";
 import { ORIGINAL_CONTROL_REVIEW, reviewRetainedCustomerArtwork } from "./customerArtworkRetainedReview";
 import { SCENE_REPAINT_EXPERIMENT, SCENE_LIKENESS_EXPERIMENT, runRetainedSceneRepaint } from "./retainedSceneRepaint";
-import { RETAINED_LIKENESS_REVIEW, FEATURE_COMPARISON_CONTROLS, FEATURE_COMPARISON_V2_CONTROLS, STREAM_COMPARISON_CONTROLS, BLIND_COMPARISON_CONTROLS, runRetainedLikenessReview } from "./retainedLikenessReview";
+import { RETAINED_LIKENESS_REVIEW, FEATURE_COMPARISON_CONTROLS, FEATURE_COMPARISON_V2_CONTROLS, STREAM_COMPARISON_CONTROLS, BLIND_COMPARISON_CONTROLS, ACCEPTED_ILLUSTRATION_CONTROL, runRetainedLikenessReview } from "./retainedLikenessReview";
 import {
   type ArtworkReferenceImage,
   type ArtworkReferenceMimeType,
@@ -650,6 +650,31 @@ export function registerPrePaymentPreviewQualityRoutes(
     res.on("close", close);
     try {
       const result = await runRetainedLikenessReview(event, artworkAttemptStore, { registration, signal: controller.signal });
+      return res.status(result.kind === "blocked" ? 409 : result.kind === "unavailable" ? 503 : 200).json(result);
+    } catch {
+      if (!res.headersSent) return res.status(503).json({ error: "Review unavailable; claimed controls cannot be retried" });
+    } finally { res.off("close", close); }
+  });
+
+  app.post("/api/events/owner/:ownerToken/prepayment-preview/accepted-illustration-review", async (req, res) => {
+    res.setHeader("Cache-Control", "private, no-store");
+    if (process.env.VERCEL_ENV !== "preview" || process.env.VERCEL_GIT_COMMIT_REF !== "codex/launch-blockers") {
+      return res.status(404).json({ error: "Not found" });
+    }
+    const registration = ACCEPTED_ILLUSTRATION_CONTROL;
+    const parsed = z.object({ confirmOneVisionCall: z.literal(true),
+      expectedAssetHash: z.literal(registration.sourceHash), expectedIdentityHash: z.literal(registration.referenceHash),
+      candidateBase64: z.string().min(1).max(1_000_000) }).strict().safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "Confirm one review of the registered illustration" });
+    const event = await store.getEventByOwnerToken(String(req.params.ownerToken));
+    if (!event || event.id !== registration.eventId) return res.status(404).json({ error: "Not found" });
+    const controller = new AbortController();
+    const close = () => { if (!res.writableEnded) controller.abort(); };
+    res.on("close", close);
+    try {
+      const result = await runRetainedLikenessReview(event, artworkAttemptStore, {
+        registration, candidate: Buffer.from(parsed.data.candidateBase64, "base64"), signal: controller.signal,
+      });
       return res.status(result.kind === "blocked" ? 409 : result.kind === "unavailable" ? 503 : 200).json(result);
     } catch {
       if (!res.headersSent) return res.status(503).json({ error: "Review unavailable; claimed controls cannot be retried" });

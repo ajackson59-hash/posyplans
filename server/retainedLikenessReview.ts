@@ -27,6 +27,8 @@ type ReviewRegistration = typeof RETAINED_LIKENESS_REVIEW & {
   requiresCompletedDataset?: string;
   streamDiagnostics?: boolean;
   reviewKind?: "reference-only";
+  sourceInput?: "registered-preview";
+  originalSourceHash?: string;
 };
 /** New two-control authorization; previous review/generation claims are never reused. */
 export const FEATURE_COMPARISON_CONTROLS: Record<"mismatched" | "matched", ReviewRegistration> = {
@@ -68,9 +70,21 @@ export const BLIND_COMPARISON_CONTROLS: Record<"mismatched" | "matched", ReviewR
     requiresCompletedDataset: "meekah-reference-only-20260914-v1-mismatched" },
 };
 
+/** One accepted illustration, labeled by the owner before the reference-only review. */
+export const ACCEPTED_ILLUSTRATION_CONTROL: ReviewRegistration = {
+  ...RETAINED_LIKENESS_REVIEW,
+  datasetId: "meekah-accepted-illustration-20260914-v1",
+  sourceAttemptId: "registered-illustration-1-preview", sourceInput: "registered-preview",
+  sourceHash: "2d7c5da9009852b821431222c6c4bbbf76ab1049d78b225c1dce743c64bd262e",
+  reviewedHash: "2d7c5da9009852b821431222c6c4bbbf76ab1049d78b225c1dce743c64bd262e",
+  originalSourceHash: "06497230e29f57e2fabc95099fbe1eb3ba58f2f53e5e07ed59a4c573d2be7db9",
+  expectedIdentity: true, reviewKind: "reference-only", reviewerVersion: BLIND_LIKENESS_VERSION,
+};
+
 export async function runRetainedLikenessReview(event: Event, store: AiFirstArtworkAttemptStore,
   options: { environment?: NodeJS.ProcessEnv; signal?: AbortSignal; review?: typeof runVisionGate;
     blindReview?: typeof runBlindLikenessReview;
+    candidate?: Buffer;
     registration?: ReviewRegistration } = {}) {
   const registration: ReviewRegistration = options.registration ?? RETAINED_LIKENESS_REVIEW;
   const environment = options.environment ?? process.env;
@@ -97,18 +111,24 @@ export async function runRetainedLikenessReview(event: Event, store: AiFirstArtw
         (referenceOnly ? proof.reviewKind !== "reference-only" || priorBlind?.unavailable !== false || priorBlind.decision !== "mismatch"
           : prior.reviewEvidence?.verdict?.unavailable !== false)) return blocked("feature-comparison-prerequisite-unavailable");
   }
+  const registeredPreview = registration.sourceInput === "registered-preview";
+  if (registeredPreview && (!referenceOnly || !options.candidate || options.candidate.length > 800_000 ||
+      hash(options.candidate) !== registration.sourceHash || registration.sourceHash !== registration.reviewedHash)) {
+    return blocked("likeness-review-registered-preview-mismatch");
+  }
   const [source, reference] = await Promise.all([
-    store.findById(event.id, event.ownerToken, registration.sourceAttemptId),
+    registeredPreview ? Promise.resolve(undefined) : store.findById(event.id, event.ownerToken, registration.sourceAttemptId),
     store.findById(event.id, event.ownerToken, registration.referenceAttemptId),
   ]);
-  if (!source || !reference || [source, reference].some(row => row.status !== "rejected" || row.previewId ||
-      row.runId !== SCENE_LIKENESS_EXPERIMENT.datasetId) ||
-      source.reviewEvidence?.customerEvaluation?.stage !== (registration.sourceStage ?? "completed") ||
+  if (!reference || reference.status !== "rejected" || reference.previewId || reference.runId !== SCENE_LIKENESS_EXPERIMENT.datasetId ||
       reference.reviewEvidence?.customerEvaluation?.stage !== "identity-reference" ||
-      source.assetHash !== registration.sourceHash || reference.assetHash !== registration.referenceHash) {
+      reference.assetHash !== registration.referenceHash ||
+      (!registeredPreview && (!source || source.status !== "rejected" || source.previewId ||
+        source.runId !== SCENE_LIKENESS_EXPERIMENT.datasetId || source.assetHash !== registration.sourceHash ||
+        source.reviewEvidence?.customerEvaluation?.stage !== (registration.sourceStage ?? "completed")))) {
     return blocked("likeness-review-source-mismatch");
   }
-  const sourceBytes = Buffer.from(source.assetBytesBase64, "base64");
+  const sourceBytes = registeredPreview ? Buffer.from(options.candidate!) : Buffer.from(source!.assetBytesBase64, "base64");
   const identityBytes = Buffer.from(reference.assetBytesBase64, "base64");
   if (hash(sourceBytes) !== registration.sourceHash || hash(identityBytes) !== registration.referenceHash) {
     return blocked("likeness-review-input-integrity");

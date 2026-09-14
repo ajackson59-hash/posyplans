@@ -6,7 +6,7 @@ import { isReferenceBoardDataUrl } from "../server/prePaymentReferenceBoard";
 import { generateQualityLockedPreview } from "../server/prePaymentPreviewQuality";
 import { ArtworkProviderError } from "../server/aiFirst/artwork";
 import { InMemoryArtworkAttemptStore } from "../server/aiFirst/artworkAttemptStore";
-import { RETAINED_LIKENESS_REVIEW } from "../server/retainedLikenessReview";
+import { RETAINED_LIKENESS_REVIEW, ACCEPTED_ILLUSTRATION_CONTROL } from "../server/retainedLikenessReview";
 import { decodePng, encodePng, readPngSize } from "../server/aiFirst/png";
 
 process.env.DATABASE_URL = "postgres://test/test";
@@ -54,6 +54,25 @@ it("bounds the retained likeness review route to Preview, the fixed owner and ex
   } finally { vi.unstubAllEnvs(); }
 });
 const EVENT_ID = 410;
+
+it("limits accepted illustration review to its fixed Preview owner and bounded exact-input body", async () => {
+  const path = `/api/events/owner/${OWNER}/prepayment-preview/accepted-illustration-review`;
+  const body = { confirmOneVisionCall: true, expectedAssetHash: ACCEPTED_ILLUSTRATION_CONTROL.sourceHash,
+    expectedIdentityHash: ACCEPTED_ILLUSTRATION_CONTROL.referenceHash, candidateBase64: "fixture" };
+  try {
+    vi.stubEnv("VERCEL_GIT_COMMIT_REF", "codex/launch-blockers"); vi.stubEnv("VERCEL_ENV", "production");
+    expect((await request(makeApp()).post(path).send(body)).status).toBe(404);
+    vi.stubEnv("VERCEL_ENV", "preview");
+    for (const changed of [{ ...body, expectedIdentity: true }, { ...body, expectedAssetHash: "wrong" },
+      { ...body, candidateBase64: "x".repeat(1_000_001) }, { ...body, candidateBase64: undefined },
+      { ...body, referenceUrl: "https://example.com/image" }]) {
+      expect((await request(makeApp()).post(path).send(changed)).status).toBe(400);
+    }
+    expect((await request(makeApp()).post(path).send(body)).status).toBe(404);
+    expect((await request(makeApp()).post(path.replace(OWNER, "wrong-owner")).send(body)).status).toBe(404);
+    expect(generate).not.toHaveBeenCalled(); expect(classifyNamedReference).not.toHaveBeenCalled();
+  } finally { vi.unstubAllEnvs(); }
+});
 const NOW = 1_800_000_000_000;
 const OLD_PNG = `data:image/png;base64,${Buffer.from("old unreviewed pixels").toString("base64")}`;
 const APPROVED_BYTES = Buffer.from("approved private pixels");
