@@ -8,7 +8,7 @@ import { encodePng } from "../server/aiFirst/png";
 import { MEDIUM_FEASIBILITY_CASES } from "../server/aiFirst/mediumFeasibilityCases";
 import { buildQualityLockedPreviewBrief, customerVisiblePreviewBytes } from "../server/prePaymentPreviewQuality";
 import { SCENE_LIKENESS_EXPERIMENT } from "../server/retainedSceneRepaint";
-import { RETAINED_LIKENESS_REVIEW, FEATURE_COMPARISON_CONTROLS, FEATURE_COMPARISON_V2_CONTROLS, runRetainedLikenessReview } from "../server/retainedLikenessReview";
+import { RETAINED_LIKENESS_REVIEW, FEATURE_COMPARISON_CONTROLS, FEATURE_COMPARISON_V2_CONTROLS, STREAM_COMPARISON_CONTROLS, runRetainedLikenessReview } from "../server/retainedLikenessReview";
 import { IDENTITY_FEATURES } from "../server/aiFirst/identityComparison";
 import { runVisionGate, type VisionGateInput } from "../server/aiFirst/visionGate";
 
@@ -201,4 +201,23 @@ it("rejects a registration for a different reviewer version before dispatch", as
     registration: { ...f.options.registration, reviewerVersion: "different-version" } }))
     .toMatchObject({ kind: "blocked", reason: "feature-comparison-version-mismatch" });
   expect(f.create).not.toHaveBeenCalled();
+});
+
+it("requires complete timing evidence before allowing the streaming matching control", async () => {
+  const f = await fixture();
+  const makeRegistration = (caseId: "mismatched" | "matched") => ({ ...STREAM_COMPARISON_CONTROLS[caseId],
+    sourceAttemptId: caseId === "matched" ? f.reference.id : f.source.id, referenceAttemptId: f.reference.id,
+    sourceHash: caseId === "matched" ? hash(f.identity) : hash(f.bytes),
+    reviewedHash: hash(customerVisiblePreviewBytes(caseId === "matched" ? f.identity : f.bytes)), referenceHash: hash(f.identity) });
+  const review = vi.fn(async (input: VisionGateInput) => {
+    expect(input.streamDiagnostics).toBe(true);
+    // A substituted legacy reviewer cannot satisfy the new measurement registration.
+    return f.options.review({ ...input, streamDiagnostics: false });
+  });
+  const run = (caseId: "mismatched" | "matched") => runRetainedLikenessReview(f.event, f.store,
+    { ...f.options, registration: makeRegistration(caseId), review });
+  expect(await run("mismatched")).toMatchObject({ kind: "reviewed", evidence: { outcome: "review-unavailable" } });
+  expect(await run("matched")).toMatchObject({ kind: "blocked", reason: "feature-comparison-prerequisite-unavailable" });
+  expect((await run("mismatched")).kind).toBe("blocked");
+  expect(review).toHaveBeenCalledTimes(1);
 });

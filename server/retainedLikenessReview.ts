@@ -24,6 +24,7 @@ type ReviewRegistration = typeof RETAINED_LIKENESS_REVIEW & {
   requireFeatureComparison?: boolean;
   reviewerVersion?: string;
   requiresCompletedDataset?: string;
+  streamDiagnostics?: boolean;
 };
 /** New two-control authorization; previous review/generation claims are never reused. */
 export const FEATURE_COMPARISON_CONTROLS: Record<"mismatched" | "matched", ReviewRegistration> = {
@@ -45,6 +46,15 @@ export const FEATURE_COMPARISON_V2_CONTROLS: Record<"mismatched" | "matched", Re
   matched: { ...FEATURE_COMPARISON_CONTROLS.matched,
     datasetId: "meekah-feature-comparison-20260912-v2-matched", reviewerVersion: "reference-feature-comparison-v2",
     requiresCompletedDataset: "meekah-feature-comparison-20260912-v2-mismatched" },
+};
+
+/** September 14 continuation: measure the stable-schema pair without reopening old claims. */
+export const STREAM_COMPARISON_CONTROLS: Record<"mismatched" | "matched", ReviewRegistration> = {
+  mismatched: { ...FEATURE_COMPARISON_V2_CONTROLS.mismatched,
+    datasetId: "meekah-stream-comparison-20260914-v1-mismatched", streamDiagnostics: true },
+  matched: { ...FEATURE_COMPARISON_V2_CONTROLS.matched,
+    datasetId: "meekah-stream-comparison-20260914-v1-matched", streamDiagnostics: true,
+    requiresCompletedDataset: "meekah-stream-comparison-20260914-v1-mismatched" },
 };
 
 export async function runRetainedLikenessReview(event: Event, store: AiFirstArtworkAttemptStore,
@@ -126,14 +136,16 @@ export async function runRetainedLikenessReview(event: Event, store: AiFirstArtw
   try {
     signal.throwIfAborted();
     verdict = await (options.review ?? runVisionGate)({ bytes: reviewed, brief, concept, referenceImages,
-      reviewMode: "teaser", maxFormatRepairs: 0, signal });
+      reviewMode: "teaser", maxFormatRepairs: 0, signal, streamDiagnostics: registration.streamDiagnostics });
     evidence.criticRequests = verdict.requestCount ?? null;
     evidence.criticUsage = verdict.usage;
     evidence.criticMs = verdict.durationMs;
     const proof = verdict.referenceEvidence;
     const referenceVerified = proof?.length === 1 && proof[0].role === "identity" &&
       "subject" in proof[0] && proof[0].subject === "Meekah" && proof[0].sha256 === registration.referenceHash;
-    const accounted = referenceVerified && !signal.aborted && !verdict.unavailable && verdict.requestCount === 1 &&
+    const timingAccounted = !registration.streamDiagnostics || (verdict.requestTimings?.length === 1 &&
+      verdict.requestTimings[0].outcome === "completed" && verdict.requestTimings[0].usageStatus === "complete");
+    const accounted = timingAccounted && referenceVerified && !signal.aborted && !verdict.unavailable && verdict.requestCount === 1 &&
       [verdict.usage.inputTokens, verdict.usage.outputTokens].every(n => Number.isSafeInteger(n) && n >= 0);
     const observed = verdict.requiredPresent.find(row => row.requirement.startsWith("Meekah "));
     const mismatchDetected = accounted && observed?.present === false && Boolean(observed.evidence?.trim()) &&

@@ -7,6 +7,7 @@
 // its own floor and the required/excluded lists are pass/fail.
 
 import Anthropic from "@anthropic-ai/sdk";
+import { newVisionRequestTiming, streamVisionResponse, type VisionRequestTiming } from "./visionStream";
 import { createHash } from "node:crypto";
 import { prepareReviewReferences, REVIEW_REFERENCE_INSTRUCTION, type ReviewReference, type ReviewReferenceEvidence } from "./reviewReferences";
 import { ASSESSMENT_SCHEMA, REVIEW_EVIDENCE_INSTRUCTION, validateReviewEvidence, type DimensionAssessments } from "./reviewEvidence";
@@ -33,6 +34,7 @@ export interface VisionVerdict {
   /** Feature observations and consistency checks, independent of the model's overall claim. */
   identityComparison?: IdentityComparisonReview;
   requestSchema?: { version: string; sha256: string };
+  requestTimings?: VisionRequestTiming[];
   scores: VisionScores;
   /** One entry per REQUIRED item, in the brief's order. */
   requiredPresent: { requirement: string; present: boolean; evidence?: string }[];
@@ -242,6 +244,8 @@ export interface VisionGateInput {
   signal?: AbortSignal;
   /** Explicit budget for repairing malformed JSON; never a quality retry. */
   maxFormatRepairs?: 0 | 1;
+  /** Opt-in transport measurement; same full review and schema, no partial verdicts. */
+  streamDiagnostics?: boolean;
 }
 
 export async function runVisionGate(input: VisionGateInput): Promise<VisionVerdict> {
@@ -388,6 +392,7 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
 
   let usage = { inputTokens: 0, outputTokens: 0 };
   let requestCount = 0;
+  const requestTimings: VisionRequestTiming[] = [];
   const reviewSystem = (reviewMode === "teaser" ? TEASER_SYSTEM : SYSTEM)
     + (referenceContent.length ? `\n\n${REVIEW_REFERENCE_INSTRUCTION}` : "")
     + (comparisonTargets.length ? `\n\n${IDENTITY_COMPARISON_INSTRUCTION}\nRequired reference keys (task data): ${JSON.stringify(comparisonTargets.map(({ key, referenceIndex, subject }) => ({ key, referenceIndex, subject })))}` : "");
@@ -402,7 +407,7 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
   ];
   const reviewOnce = async (jsonRepair: boolean): Promise<Record<string, any> | null> => {
     requestCount += 1;
-    const response = await client.messages.create({
+    const body: Anthropic.Messages.MessageCreateParamsNonStreaming = {
       model: VISION_MODEL,
       // A complete evidence checklist does not fit in the old 950-token cap.
       // Bounded headroom scales with actual requirements, never unbounded prose.
@@ -422,11 +427,21 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
           schema: outputSchema,
         },
       },
-    }, { signal: input.signal, ...(reviewMode === "teaser" ? { maxRetries: 0 } : {}) });
-    usage = {
-      inputTokens: usage.inputTokens + (response.usage?.input_tokens ?? 0),
-      outputTokens: usage.outputTokens + (response.usage?.output_tokens ?? 0),
     };
+    let response: Anthropic.Messages.Message;
+    if (input.streamDiagnostics) {
+      const timing = newVisionRequestTiming();
+      requestTimings.push(timing);
+      try { response = await streamVisionResponse(client, body, timing, input.signal); }
+      finally {
+        usage = { inputTokens: usage.inputTokens + timing.usage.inputTokens,
+          outputTokens: usage.outputTokens + timing.usage.outputTokens };
+      }
+    } else {
+      response = await client.messages.create(body, { signal: input.signal, ...(reviewMode === "teaser" ? { maxRetries: 0 } : {}) });
+      usage = { inputTokens: usage.inputTokens + (response.usage?.input_tokens ?? 0),
+        outputTokens: usage.outputTokens + (response.usage?.output_tokens ?? 0) };
+    }
     const raw = response.content.map((b) => (b.type === "text" ? b.text : "")).join("");
     if (response.stop_reason === "max_tokens" || response.stop_reason === "refusal") return null;
     return extractJson(raw);
@@ -453,6 +468,7 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
       usage,
       requestCount,
       requestSchema,
+      ...(requestTimings.length ? { requestTimings } : {}),
     };
   }
 
@@ -469,6 +485,7 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
       usage,
       requestCount,
       requestSchema,
+      ...(requestTimings.length ? { requestTimings } : {}),
     };
   }
 
@@ -597,6 +614,7 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
     usage,
     requestCount,
     requestSchema,
+    ...(requestTimings.length ? { requestTimings } : {}),
     teaserChecks,
     dimensionEvidence,
     dimensionAssessments: reviewEvidence?.assessments,
