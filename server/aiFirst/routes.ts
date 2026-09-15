@@ -15,6 +15,7 @@ import { registerMediumFeasibilityRoutes } from "./mediumFeasibilityRoutes";
 import { registerStyleSourceRoutes } from "./styleSourceRoutes";
 import { readFeatureFlags } from "@shared/featureFlags";
 import { AI_FIRST_CONCEPT_KEY, themeFromSnapshot, type AiFirstSnapshot } from "@shared/aiFirstTheme";
+import { ownerEventView } from "../eventArtwork";
 import { OVERLAY_COVERAGE, validateLayoutBeforeGeneration } from "@shared/aiFirstLayout";
 import { buildThemedConcept, themeCopyForEvent } from "@shared/themeCatalog";
 import { deriveThemeDna } from "@shared/themeDna";
@@ -823,7 +824,7 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
         createdAt: Date.now(),
       });
 
-      res.json({ event: updated, previewId: record.previewId, assetHash: record.assetHash });
+      res.json({ event: ownerEventView(updated), previewId: record.previewId, assetHash: record.assetHash });
     }),
   );
 

@@ -3,6 +3,7 @@ import { createServer } from 'node:http';
 import type { Server } from 'node:http';
 import { createHash } from "node:crypto";
 import { storage } from "./storage";
+import { eventArtworkUrl, ownerEventView, publicEventView, restoreEventArtworkReferences } from "./eventArtwork";
 import {
   insertEventSchema, updateEventSchema, insertGuestSchema, updateGuestSchema, rsvpSubmitSchema,
   insertBudgetItemSchema, updateBudgetItemSchema,
@@ -63,12 +64,6 @@ import { getStripe, getPriceId, getSparkPriceId, isStripeConfigured, getWebhookS
 import { sendMetaPurchaseEvent } from "./metaCapi";
 import { registerAiFirstRoutes } from "./aiFirst/routes";
 import { DbPreviewStore, DbUsageStore, DbRunStore, DbArtworkAttemptStore } from "./aiFirst/dbStore";
-
-function publicEventView(event: Event) {
-  // Never expose ownerToken (the host's secret edit key) on public routes.
-  const { ownerToken, capturedEmail, ...rest } = event;
-  return rest;
-}
 
 function publicGuestView(guest: Guest) {
   // A verified recipient needs their invitation allowance and any previous
@@ -264,7 +259,7 @@ export async function registerRoutes(
     const parsed = insertEventSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
     const event = await storage.createEvent(parsed.data);
-    res.json(event);
+    res.json(ownerEventView(event));
   });
 
   // Email-based event recovery. Owner tokens are bearer credentials, so they
@@ -309,15 +304,18 @@ export async function registerRoutes(
     const event = await storage.getEventByOwnerToken(req.params.ownerToken);
     if (!event) return res.status(404).json({ error: "Event not found" });
     const guestList = await storage.listGuests(event.id);
-    res.json({ event, guests: guestList });
+    res.setHeader("Cache-Control", "private, no-store");
+    res.json({ event: ownerEventView(event), guests: guestList });
   });
 
   app.patch("/api/events/owner/:ownerToken", async (req, res) => {
     const parsed = updateEventSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
-    const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, parsed.data);
+    const event = await storage.getEventByOwnerToken(req.params.ownerToken);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+    const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, restoreEventArtworkReferences(event, parsed.data));
     if (!updated) return res.status(404).json({ error: "Event not found" });
-    res.json(updated);
+    res.json(ownerEventView(updated));
   });
 
   // AI Master Planner Intake wizard writes here. Deliberately narrower than
@@ -330,13 +328,14 @@ export async function registerRoutes(
     if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
     const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, parsed.data);
     if (!updated) return res.status(404).json({ error: "Event not found" });
-    res.json(updated);
+    res.json(ownerEventView(updated));
   });
 
   /* ============ EVENT: PUBLIC RSVP PAGE ============ */
   app.get("/api/events/public/:shareSlug", async (req, res) => {
     const event = await storage.getEventByShareSlug(req.params.shareSlug);
     if (!event) return res.status(404).json({ error: "Event not found" });
+    res.setHeader("Cache-Control", "private, no-store");
     res.json(publicEventView(event));
   });
 
@@ -1267,15 +1266,15 @@ export async function registerRoutes(
       // DNA so envelope/liner/stamp match by default. Pure derivation, no LLM
       // call. The host can override any of these later via the suite route.
       const dna = deriveThemeDna(concept);
-      const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, {
+      const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, restoreEventArtworkReferences(event, {
         inviteDesignConceptJson: JSON.stringify(concept),
         inviteIllustrationUrl: illustrationUrl,
         envelopeColor: dna.primaryColor,
         envelopeLinerPattern: dna.linerPattern,
         stampStyle: dna.stampStyle,
-      });
+      }));
       if (!updated) return res.status(404).json({ error: "Event not found" });
-      res.json(updated);
+      res.json(ownerEventView(updated));
     } catch (err) {
       console.error("apply-concept illustration generation failed:", err);
       res.status(502).json({ error: "Couldn't generate the illustration right now — please try again." });
@@ -1459,7 +1458,7 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
       ...defaultEnvelopeForTheme(theme),
     });
     if (!updated) return res.status(404).json({ error: "Event not found" });
-    res.json(updated);
+    res.json(ownerEventView(updated));
   });
 
   // Customises an applied curated theme: palette variant, type pairing, type
@@ -1529,7 +1528,7 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
 
     const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, eventUpdates);
     if (!updated) return res.status(404).json({ error: "Event not found" });
-    res.json(updated);
+    res.json(ownerEventView(updated));
   });
 
   // Lets a host nudge individual colors on an already-applied concept
@@ -1553,7 +1552,7 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
       inviteDesignConceptJson: JSON.stringify(updatedConcept),
     });
     if (!updated) return res.status(404).json({ error: "Event not found" });
-    res.json(updated);
+    res.json(ownerEventView(updated));
   });
 
   // Reverts to the manual invite styling fields (font/accent color pickers),
@@ -1564,7 +1563,7 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
       inviteIllustrationUrl: "",
     });
     if (!updated) return res.status(404).json({ error: "Event not found" });
-    res.json(updated);
+    res.json(ownerEventView(updated));
   });
 
   // Host overrides for the coordinated stationery suite (envelope color,
@@ -1648,7 +1647,7 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
     }
     const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, { inviteStatus: status });
     if (!updated) return res.status(404).json({ error: "Event not found" });
-    res.json(updated);
+    res.json(ownerEventView(updated));
   });
 
   // Update RSVP phone number (shown on public RSVP page for guests who
@@ -1659,7 +1658,7 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
     const phone = typeof req.body?.phone === "string" ? req.body.phone.trim() : "";
     const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, { rsvpPhone: phone });
     if (!updated) return res.status(404).json({ error: "Event not found" });
-    res.json(updated);
+    res.json(ownerEventView(updated));
   });
 
   // ── Live Design Editor endpoint ───────────────────────────────────
@@ -1726,12 +1725,12 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
     }
 
     if (Object.keys(eventUpdates).length === 0) {
-      return res.json(event); // no-op
+      return res.json(ownerEventView(event)); // no-op
     }
 
     const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, eventUpdates);
     if (!updated) return res.status(404).json({ error: "Event not found" });
-    res.json(updated);
+    res.json(ownerEventView(updated));
   });
 
   // "Upload my complete invitation design": the host already has a finished
@@ -1752,7 +1751,7 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
       inviteRenderMode: "custom",
     });
     if (!updated) return res.status(404).json({ error: "Event not found" });
-    res.json(updated);
+    res.json(ownerEventView(updated));
   });
 
   // Switches back to Posy's concept-driven rendering. Deliberately
@@ -1766,7 +1765,7 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
       inviteRenderMode: "",
     });
     if (!updated) return res.status(404).json({ error: "Event not found" });
-    res.json(updated);
+    res.json(ownerEventView(updated));
   });
 
   /* ============ AI MASTER PLANNER ============ */
@@ -1938,7 +1937,7 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
           fontPairingLabel: getFontPairing(appliedConcept.fontPairingId).label,
           borderStyle: appliedConcept.borderStyle,
           layoutStyle: appliedConcept.layoutStyle,
-          illustrationUrl: event.inviteIllustrationUrl || "",
+          illustrationUrl: eventArtworkUrl(event, "inviteIllustrationUrl"),
         }
       : null;
 

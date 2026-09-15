@@ -17,6 +17,7 @@ import { registerEventStartupRoutes } from "./eventStartupRoutes";
 import { registerEmailDiagnosticRoutes } from "./emailDiagnosticRoutes";
 import { registerEventRecoveryRoutes } from "./eventRecoveryRoutes";
 import { registerPrePaymentPreviewQualityRoutes } from "./prePaymentPreviewQualityRoutes";
+import { registerEventArtworkRoutes } from "./eventArtworkRoutes";
 
 declare module "http" {
   interface IncomingMessage {
@@ -124,6 +125,7 @@ export function ensureRoutesRegistered(app: express.Express, httpServer: Server)
       // visible: Preview defaults to a deterministic direction card until the
       // strict GPT Image 2 + vision benchmark is explicitly enabled.
       registerPrePaymentPreviewQualityRoutes(app);
+      registerEventArtworkRoutes(app);
       await registerRoutes(httpServer, app);
       registerInitialPreviewRoute(app);
       registerSmsInvitationRoutes(app);

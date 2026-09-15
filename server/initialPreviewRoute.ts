@@ -3,6 +3,7 @@ import { storage } from "./storage";
 import { getEntitlementSummary } from "./masterPlannerEntitlement";
 import { prePaymentPreviewAssetKind } from "./prePaymentPreviewQualityRoutes";
 import { browserRenderablePreviewUrl } from "./prePaymentPreviewImage";
+import { ownerEventView } from "./eventArtwork";
 
 /**
  * Lets a paid host promote the exact approved pre-checkout artwork they
@@ -39,6 +40,6 @@ export function registerInitialPreviewRoute(app: Express): void {
     });
 
     if (!updated) return res.status(404).json({ error: "Event not found" });
-    return res.json({ event: updated, reusedExistingArtwork: true });
+    return res.json({ event: ownerEventView(updated), reusedExistingArtwork: true });
   });
 }
