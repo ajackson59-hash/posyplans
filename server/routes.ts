@@ -1,4 +1,4 @@
-import type { Express, Request } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer } from 'node:http';
 import type { Server } from 'node:http';
 import { createHash } from "node:crypto";
@@ -84,6 +84,13 @@ function publicGuestView(guest: Guest) {
 }
 
 const guestTokenSchema = z.string().min(24).max(128).regex(/^[A-Za-z0-9_-]+$/);
+
+function stopUnpublishedInvitation(event: Event, res: Response): boolean {
+  if (event.inviteStatus !== "draft") return false;
+  res.set("Cache-Control", "private, no-store");
+  res.status(409).json({ code: "invitation_unpublished", error: "The host is still preparing this invitation. Please check back soon." });
+  return true;
+}
 const guestIdentifySchema = z.object({
   name: z.string().trim().min(2).max(120),
   contact: z.string().trim().min(3).max(254),
@@ -339,6 +346,7 @@ export async function registerRoutes(
   app.get("/api/events/public/:shareSlug/guest/:guestToken", async (req, res) => {
     const event = await storage.getEventByShareSlug(req.params.shareSlug);
     if (!event) return res.status(404).json({ error: "Event not found" });
+    if (stopUnpublishedInvitation(event, res)) return;
     const token = guestTokenSchema.safeParse(req.params.guestToken);
     if (!token.success) return res.status(404).json({ error: "Invitation not found" });
     const guest = await storage.getGuestByAccessToken(event.id, token.data);
@@ -350,6 +358,7 @@ export async function registerRoutes(
   app.post("/api/events/public/:shareSlug/identify", async (req, res) => {
     const event = await storage.getEventByShareSlug(req.params.shareSlug);
     if (!event) return res.status(404).json({ error: "Invitation not found" });
+    if (stopUnpublishedInvitation(event, res)) return;
     const attemptKey = `${req.ip || "unknown"}:${event.shareSlug}`;
     if (!allowGuestIdentifyAttempt(attemptKey)) {
       res.set("Retry-After", String(Math.ceil(GUEST_IDENTIFY_WINDOW_MS / 1000)));
@@ -389,6 +398,7 @@ export async function registerRoutes(
   app.post("/api/events/public/:shareSlug/guest/:guestToken/rsvp", async (req, res) => {
     const event = await storage.getEventByShareSlug(req.params.shareSlug);
     if (!event) return res.status(404).json({ error: "Invitation not found" });
+    if (stopUnpublishedInvitation(event, res)) return;
     const token = guestTokenSchema.safeParse(req.params.guestToken);
     if (!token.success) return res.status(404).json({ error: "Invitation not found" });
     const guest = await storage.getGuestByAccessToken(event.id, token.data);
@@ -440,8 +450,9 @@ export async function registerRoutes(
       note: parsed.data.note ?? guest.note,
       respondedAt: Date.now(),
     });
+    if (!updated) return res.status(404).json({ error: "Invitation not found" });
     res.set("Cache-Control", "private, no-store");
-    res.json(publicGuestView(updated!));
+    res.json(publicGuestView(updated));
   });
 
   /* ============ GUESTS: OWNER MANAGEMENT ============ */
@@ -844,6 +855,8 @@ export async function registerRoutes(
   app.post("/api/events/public/:shareSlug/guest/:guestToken/sms-opt-in", async (req, res) => {
     const event = await storage.getEventByShareSlug(req.params.shareSlug);
     if (!event) return res.status(404).json({ error: "Invitation not found" });
+    // Withdrawing text consent remains available on an unpublished invite.
+    if (req.body?.optIn && stopUnpublishedInvitation(event, res)) return;
     const token = guestTokenSchema.safeParse(req.params.guestToken);
     if (!token.success) return res.status(404).json({ error: "Invitation not found" });
     const guest = await storage.getGuestByAccessToken(event.id, token.data);
@@ -860,8 +873,9 @@ export async function registerRoutes(
       smsOptIn: optIn,
       smsConsentAt: optIn ? Date.now() : null,
     });
+    if (!updated) return res.status(404).json({ error: "Invitation not found" });
     res.set("Cache-Control", "private, no-store");
-    res.json(publicGuestView(updated!));
+    res.json(publicGuestView(updated));
   });
 
   // Sends via Twilio (see server/sms.ts). Requires TWILIO_ACCOUNT_SID,

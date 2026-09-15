@@ -96,6 +96,7 @@ async function makeApp() {
 beforeEach(() => {
   storedGuests = [guest(), guest({ id: 18, accessToken: TOKEN_B, name: "Noah Rivera", email: "noah@example.com" })];
   vi.clearAllMocks();
+  storageMock.getEventByShareSlug.mockImplementation(async (slug: string) => slug === baseEvent.shareSlug ? { ...baseEvent } : undefined);
   storageMock.getEventsByEmail.mockImplementation(async (email: string) =>
     email === "host@example.com" ? [{ ...baseEvent }] : []);
   sendInviteEmail.mockResolvedValue({ ok: true });
@@ -151,6 +152,25 @@ describe("host event recovery", () => {
 });
 
 describe("personalized guest RSVP routes", () => {
+  it("stops recipient access and new responses while an invitation is unpublished", async () => {
+    storageMock.getEventByShareSlug.mockResolvedValue({ ...baseEvent, inviteStatus: "draft" } as any);
+    const app = await makeApp();
+    const base = `/api/events/public/${baseEvent.shareSlug}`;
+    const responses = [
+      await request(app).get(`${base}/guest/${TOKEN_A}`),
+      await request(app).post(`${base}/identify`).send({ name: "Maya Rivera", contact: "maya@example.com" }),
+      await request(app).post(`${base}/guest/${TOKEN_A}/rsvp`).send({ status: "yes", attendingAdults: 2 }),
+      await request(app).post(`${base}/guest/${TOKEN_A}/sms-opt-in`).send({ optIn: true, phone: "5555551212" }),
+    ];
+    expect(responses.map((res) => res.status)).toEqual([409,409,409,409]);
+    for (const res of responses) {
+      expect(res.body.code).toBe("invitation_unpublished");
+      expect(res.headers["cache-control"]).toBe("private, no-store");
+      expect(JSON.stringify(res.body)).not.toContain(TOKEN_A);
+    }
+    expect(storageMock.updateGuest).not.toHaveBeenCalled();
+    expect(storageMock.listGuests).not.toHaveBeenCalled();
+  });
   it("returns only safe recipient fields for a valid guest token", async () => {
     const app = await makeApp();
     const res = await request(app).get(`/api/events/public/${baseEvent.shareSlug}/guest/${TOKEN_A}`);
@@ -163,6 +183,33 @@ describe("personalized guest RSVP routes", () => {
     expect(res.body).not.toHaveProperty("accessToken");
     expect(res.body).not.toHaveProperty("email");
     expect(res.body).not.toHaveProperty("phone");
+  });
+  it("can amend and reload yes, maybe, and declined responses without changing another guest", async () => {
+    const app = await makeApp();
+    const path = `/api/events/public/${baseEvent.shareSlug}/guest/${TOKEN_A}`;
+    const anotherGuestBefore = { ...storedGuests[1] };
+    for (const status of ["yes", "maybe", "no"]) {
+      const saved = await request(app).post(`${path}/rsvp`).send({ status, attendingAdults: 1, attendingChildren: 1, note: `Updated ${status}` });
+      expect(saved.status).toBe(200);
+      const reloaded = await request(app).get(path);
+      expect(reloaded.body).toEqual(saved.body);
+      expect(reloaded.body).toMatchObject({ rsvpStatus: status, attendingCount: status === "no" ? 0 : 2,
+        attendingAdults: status === "no" ? 0 : 1, attendingChildren: status === "no" ? 0 : 1, note: `Updated ${status}` });
+      expect(storedGuests[1]).toEqual(anotherGuestBefore);
+    }
+    expect(sendInviteEmail).not.toHaveBeenCalled();
+    expect(sendReminderSms).not.toHaveBeenCalled();
+  });
+  it("still allows text consent withdrawal while unpublished", async () => {
+    storageMock.getEventByShareSlug.mockResolvedValue({ ...baseEvent, inviteStatus: "draft" } as any);
+    const res = await request(await makeApp()).post(`/api/events/public/${baseEvent.shareSlug}/guest/${TOKEN_A}/sms-opt-in`).send({ optIn: false });
+    expect(res.status).toBe(200);
+    expect(storedGuests[0].smsOptIn).toBe(false);
+  });
+  it("returns not-found if the guest disappears before the response is saved", async () => {
+    storageMock.updateGuest.mockResolvedValueOnce(undefined);
+    const res = await request(await makeApp()).post(`/api/events/public/${baseEvent.shareSlug}/guest/${TOKEN_A}/rsvp`).send({ status: "yes" });
+    expect(res.status).toBe(404);
   });
 
   it("does not accept a token from another event or an invalid token", async () => {

@@ -62,6 +62,12 @@ function headcountLimits(restriction: string) {
 
 export default function Rsvp() {
   const { shareSlug, guestToken } = useParams<{ shareSlug: string; guestToken?: string }>();
+  // A different invitation is a different form, including any local response,
+  // SMS choice, reveal state, and pending mutation UI from the previous guest.
+  return <RsvpInvitation key={`${shareSlug}/${guestToken || ""}`} shareSlug={shareSlug} guestToken={guestToken} />;
+}
+
+function RsvpInvitation({ shareSlug, guestToken }: { shareSlug: string; guestToken?: string }) {
   const { toast } = useToast();
 
   const { data: event, isLoading } = useQuery<PublicEvent>({
@@ -74,7 +80,7 @@ export default function Rsvp() {
     isError: isGuestError,
   } = useQuery<GuestMatch>({
     queryKey: [`/api/events/public/${shareSlug}/guest/${guestToken}`],
-    enabled: Boolean(guestToken),
+    enabled: Boolean(guestToken) && !!event && event.inviteStatus !== "draft",
   });
 
   const [identityName, setIdentityName] = useState("");
@@ -104,7 +110,8 @@ export default function Rsvp() {
   const restriction = event?.rsvpRestriction || "none";
   const limits = headcountLimits(restriction);
   const recipient = selected ?? personalizedGuest ?? null;
-  const allowedPartySize = Math.max(1, recipient?.partySize ?? 1);
+  const allowedPartySize = Math.min(Math.max(1, recipient?.partySize ?? 1),
+    restriction === "plus_one" ? 2 : restriction === "no_additional_guests" ? 1 : Infinity);
 
   // Whenever the restriction caps change (e.g. a fresh guest selection),
   // make sure the current counts still respect them.
@@ -158,7 +165,11 @@ export default function Rsvp() {
       });
       return res.json();
     },
-    onSuccess: ({ guest, guestToken: verifiedToken }) => pickGuest(guest, verifiedToken),
+    onSuccess: ({ guest, guestToken: verifiedToken }) => {
+      pickGuest(guest, verifiedToken);
+      setSmsOptIn(false);
+      setSmsPhone("");
+    },
   });
 
   const totalAttending = adults + children;
@@ -189,9 +200,9 @@ export default function Rsvp() {
   // failure. If a response is lost after the server already saved the RSVP, we
   // also read the private guest record back and treat a matching state as
   // success instead of showing a false "try again" message.
-  const submitRsvp = useMutation<GuestMatch | undefined>({
+  const submitRsvp = useMutation<GuestMatch>({
     mutationFn: async () => {
-      if (!recipient || !activeGuestToken || !status) return;
+      if (!recipient || !activeGuestToken || !status) throw new Error("Choose an RSVP response first.");
       const payload = {
         status,
         attendingAdults: adults,
@@ -210,6 +221,8 @@ export default function Rsvp() {
           if (
             saved.rsvpStatus === status &&
             (saved.attendingCount ?? 0) === expectedCount &&
+            (saved.attendingAdults ?? 0) === (status === "no" ? 0 : adults) &&
+            (saved.attendingChildren ?? 0) === (status === "no" ? 0 : children) &&
             (saved.note || "") === (note || "")
           ) {
             return saved;
@@ -223,7 +236,10 @@ export default function Rsvp() {
     },
     retry: 1,
     retryDelay: 500,
-    onSuccess: () => {
+    onSuccess: (saved) => {
+      // Use the server's accepted response (including any current allowance
+      // adjustment) for the confirmation and the next edit.
+      pickGuest(saved, activeGuestToken);
       setSubmitted(true);
       toast({ title: "RSVP received", description: "Thanks for letting us know!" });
       if (smsOptIn && smsPhone.trim()) saveSmsOptIn.mutate();
@@ -251,7 +267,7 @@ export default function Rsvp() {
     );
   }
 
-  if (guestToken && isGuestError) {
+  if (guestToken && isGuestError && event.inviteStatus !== "draft") {
     return (
       <div className="mx-auto max-w-lg px-6 py-24 text-center">
         <h1 className="font-serif text-2xl font-semibold">This personal invitation link isn't valid</h1>
@@ -565,7 +581,7 @@ export default function Rsvp() {
                   src={event.inviteArtworkUrl}
                   alt=""
                   data-testid="img-rsvp-artwork"
-                  className="h-48 w-full object-cover sm:h-56"
+                  className="block h-auto w-full"
                 />
               )}
               <CardContent className="p-5">
@@ -652,6 +668,13 @@ export default function Rsvp() {
                   The host has your answer
                   {status === "yes" || status === "maybe" ? ` for ${totalAttending} guest${totalAttending === 1 ? "" : "s"}` : ""} — nothing else to do on your end.
                 </p>
+                <Button variant="outline" className="mt-4" data-testid="button-update-rsvp" onClick={() => {
+                  setSubmitted(false);
+                  setSmsOptIn(false);
+                  setSmsPhone("");
+                }}>
+                  Update my RSVP
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -727,10 +750,16 @@ export default function Rsvp() {
               {!guestToken && (
                 <button
                   className="flex-none text-xs font-medium text-primary underline"
+                  disabled={submitRsvp.isPending || saveSmsOptIn.isPending}
                   onClick={() => {
                     setSelected(null);
                     setActiveGuestToken("");
                     setStatus(null);
+                    setAdults(1);
+                    setChildren(0);
+                    setNote("");
+                    setSmsOptIn(false);
+                    setSmsPhone("");
                     setIdentityName("");
                     setIdentityContact("");
                     identifyGuest.reset();
@@ -796,6 +825,7 @@ export default function Rsvp() {
                 className="mt-1.5"
                 placeholder="Dietary restrictions, well wishes, etc."
                 value={note}
+                maxLength={500}
                 onChange={(e) => setNote(e.target.value)}
               />
             </div>
