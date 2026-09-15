@@ -16,9 +16,9 @@ import {
   type ArtworkReferenceImage,
   type ArtworkReferenceMimeType,
 } from "./aiFirst/artwork";
-import { boxDownsampleRgb, decodePng, encodePng, PngDecodeError } from "./aiFirst/png";
+import { PngDecodeError } from "./aiFirst/png";
+import { readApprovedPreview, markApprovedPreview, previewImageBytes, type PreviewImageProfile } from "./prePaymentPreviewImage";
 import {
-  PRE_PAYMENT_PREVIEW_LONG_EDGE,
   canAttemptPrePaymentPreview,
 } from "./prePaymentPreview";
 import {
@@ -114,8 +114,6 @@ function resultFailureReason(result: Awaited<ReturnType<typeof generateQualityLo
   return result.kind === "rejected" ? "quality-rejected" : "preview-unavailable";
 }
 
-const QUALITY_APPROVED_PNG_PREFIX = "data:image/png;posy-quality-approved;base64,";
-const STANDARD_PNG_PREFIX = "data:image/png;base64,";
 // Safety ceiling, NOT a claim of successful artwork latency. A prior high
 // render exceeded 115 seconds; reserve review headroom without permitting the
 // four-minute serial-repair path. The launch target remains a measured 90s.
@@ -171,17 +169,6 @@ function svgPayload(value: string): string | null {
   return value.slice(index + marker.length);
 }
 
-function qualityApprovedDataUrl(value: string): string | null {
-  if (value.startsWith(QUALITY_APPROVED_PNG_PREFIX)) return value;
-  if (!value.startsWith(STANDARD_PNG_PREFIX)) return null;
-  return `${QUALITY_APPROVED_PNG_PREFIX}${value.slice(STANDARD_PNG_PREFIX.length)}`;
-}
-
-function qualityApprovedPayload(value: string | null | undefined): string | null {
-  if (!value?.startsWith(QUALITY_APPROVED_PNG_PREFIX)) return null;
-  return value.slice(QUALITY_APPROVED_PNG_PREFIX.length);
-}
-
 const MAX_REFERENCE_IMAGE_BYTES = 2_500_000;
 const REFERENCE_DATA_URL = /^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=\r\n]+)$/;
 
@@ -215,7 +202,7 @@ function namedReferenceForEventSync(event: Event): NamedCreativeReference | null
 }
 
 function imageIsCurrent(event: Event): boolean {
-  return Boolean(qualityApprovedPayload(event.prePaymentPreviewUrl))
+  return Boolean(readApprovedPreview(event.prePaymentPreviewUrl))
     && (event.prePaymentPreviewUsedAt ?? 0) >= PREPAYMENT_PREVIEW_QUALITY_LOCK_CUTOFF_MS;
 }
 
@@ -361,8 +348,9 @@ async function persistApprovedImage(
   event: Event,
   dataUrl: string,
   timestamp: number,
+  profile: PreviewImageProfile = "legacy",
 ): Promise<boolean> {
-  const approved = qualityApprovedDataUrl(dataUrl);
+  const approved = markApprovedPreview(dataUrl, profile);
   if (!approved) return false;
   const updated = await store.completePrePaymentPreview(event, {
     prePaymentPreviewUrl: approved,
@@ -410,7 +398,7 @@ async function runAutomaticNamedPreviewJob({
     if (abortController.signal.aborted) return;
     // One write owns the winner even while the sibling continues privately.
     // A timeout must await this in-flight write before deciding on fallback.
-    publication ??= persistApprovedImage(store, event, result.dataUrl, now()).then((saved) => {
+    publication ??= persistApprovedImage(store, event, result.dataUrl, now(), result.previewImageProfile).then((saved) => {
       if (saved) console.info(`[prepayment-preview] ${JSON.stringify({
         eventId: event.id, kind: "approved-image", phase: "first-approved",
         timeToApprovedMs: Date.now() - jobStartedAt, model: result.model,
@@ -430,6 +418,7 @@ async function runAutomaticNamedPreviewJob({
         // Named and original themes use the same bounded customer policy.
         // Medium must still clear every existing quality and binary check.
         ...CUSTOMER_PREVIEW_POLICY,
+        previewImageProfile: "detail-v1",
         onApproved: publishApproved,
         namedReference,
         attemptRetention: { store: artworkAttemptStore, eventId: event.id, ownerToken: event.ownerToken },
@@ -443,7 +432,7 @@ async function runAutomaticNamedPreviewJob({
     if (await publication) return;
     if (result.kind === "approved-image"
       && !abortController.signal.aborted
-      && await persistApprovedImage(store, event, result.dataUrl, now())) {
+      && await persistApprovedImage(store, event, result.dataUrl, now(), result.previewImageProfile)) {
       console.info(`[prepayment-preview] ${JSON.stringify({
         eventId: event.id,
         kind: result.kind,
@@ -538,6 +527,7 @@ async function runAutomaticClassifiedPreviewJob({
     const result = await withPreviewDeadline(
       generate(event, {
         ...CUSTOMER_PREVIEW_POLICY,
+        previewImageProfile: "detail-v1",
         namedReference: null,
         attemptRetention: { store: artworkAttemptStore, eventId: event.id, ownerToken: event.ownerToken },
         signal: abortController.signal,
@@ -548,7 +538,7 @@ async function runAutomaticClassifiedPreviewJob({
     );
 
     if (result.kind === "approved-image" && !abortController.signal.aborted
-      && await persistApprovedImage(store, event, result.dataUrl, now())) {
+      && await persistApprovedImage(store, event, result.dataUrl, now(), result.previewImageProfile)) {
       return;
     }
     await persistDirectionCard(store, event, now(), undefined, resultFailureReason(result));
@@ -912,20 +902,18 @@ export function registerPrePaymentPreviewQualityRoutes(
       return res.send(Buffer.from(encoded, "base64"));
     }
 
-    const approvedPayload = qualityApprovedPayload(stored);
-    if (!approvedPayload || !imageIsCurrent(event)) {
+    const approved = readApprovedPreview(stored);
+    if (!approved || !imageIsCurrent(event)) {
       return res.status(404).json({ error: "No approved first look available yet" });
     }
 
-    const fullBytes = Buffer.from(approvedPayload, "base64");
+    const fullBytes = Buffer.from(approved.payload, "base64");
     res.setHeader("Content-Type", "image/png");
 
     if (await isUnlocked(event)) return res.send(fullBytes);
 
     try {
-      const decoded = decodePng(fullBytes);
-      const preview = boxDownsampleRgb(decoded, PRE_PAYMENT_PREVIEW_LONG_EDGE);
-      return res.send(encodePng(preview));
+      return res.send(previewImageBytes(fullBytes, approved.profile));
     } catch (error) {
       const detail = error instanceof PngDecodeError ? error.message : String(error);
       console.error(`[prepayment-preview] approved asset decode failed for event ${event.id}: ${detail}`);

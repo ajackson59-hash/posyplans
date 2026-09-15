@@ -26,7 +26,6 @@ import {
 } from "./aiFirst/artwork";
 import type { AiFirstArtworkAttemptStore } from "./aiFirst/artworkAttemptStore";
 import type { ReviewReference } from "./aiFirst/reviewReferences";
-import { boxDownsampleRgb, decodePng, encodePng } from "./aiFirst/png";
 import { ageFromMilestone, buildEventBrief, type EventBrief } from "./aiFirst/brief";
 import { buildArtworkConstraints, buildRetryPrompt } from "./aiFirst/prompt";
 import { resolveArtDirection } from "./aiFirst/artDirection";
@@ -40,7 +39,7 @@ import {
   runVisionGate,
   type VisionVerdict,
 } from "./aiFirst/visionGate";
-import { PRE_PAYMENT_PREVIEW_LONG_EDGE } from "./prePaymentPreview";
+import { previewImageBytes, type PreviewImageProfile } from "./prePaymentPreviewImage";
 import { prePaymentPreviewSourceBrief } from "./prePaymentPreviewConcept";
 
 export const PREPAYMENT_PREVIEW_MODE_ENV = "POSY_PREPAYMENT_PREVIEW_MODE";
@@ -49,13 +48,12 @@ export const PREPAYMENT_PREVIEW_QUALITY_LOCK_CUTOFF_MS = Date.UTC(2026, 7, 31, 2
 export type PrePaymentPreviewMode = "off" | "direction-card" | "quality-image";
 
 /**
- * Produces the exact low-resolution PNG bytes an unpaid customer receives.
+ * Produces the exact versioned PNG bytes an unpaid customer receives.
  * Quality review runs on these bytes—not a larger source that the browser later
  * transforms—so the approved pixels and the served pixels are equivalent.
  */
-export function customerVisiblePreviewBytes(source: Buffer): Buffer {
-  const decoded = decodePng(source);
-  return encodePng(boxDownsampleRgb(decoded, PRE_PAYMENT_PREVIEW_LONG_EDGE));
+export function customerVisiblePreviewBytes(source: Buffer, profile: PreviewImageProfile = "legacy"): Buffer {
+  return previewImageBytes(source, profile);
 }
 
 /** The first-look image is standalone artwork, not the later invitation card. */
@@ -834,6 +832,7 @@ export type QualityLockedPreviewResult =
   | {
       kind: "approved-image";
       dataUrl: string;
+      previewImageProfile?: PreviewImageProfile;
       attempts: number;
       model: ArtworkModel;
       reviews: PreviewQualityReview[];
@@ -848,6 +847,8 @@ export type QualityLockedPreviewResult =
     };
 
 export interface PreviewQualityDependencies {
+  /** Server-owned transform; historical controls default to their fixed 560px input. */
+  previewImageProfile?: PreviewImageProfile;
   /** Explicit provider qualification only; normal customer selection is unchanged. */
   artworkModel?: ArtworkModel;
   generateImage?: ArtworkGenerator;
@@ -997,6 +998,10 @@ export async function generateQualityLockedPreview(
   event: Event,
   dependencies: PreviewQualityDependencies = {},
 ): Promise<QualityLockedPreviewResult> {
+  const previewImageProfile = dependencies.previewImageProfile ?? "legacy";
+  if (previewImageProfile !== "legacy" && previewImageProfile !== "detail-v1") {
+    throw new Error("Unknown preview image profile");
+  }
   const generateImage = dependencies.generateImage ?? generateArtwork;
   const runTier1 = dependencies.runTier1 ?? runTier1Checks;
   const runVision = dependencies.runVision ?? runVisionGate;
@@ -1037,7 +1042,7 @@ export async function generateQualityLockedPreview(
         // provider failures rather than representing this placeholder as free.
         costUsdMicros: 0,
         reviewEvidence: {
-          version: 1, reviewedAssetHash: null, verdict: null,
+          version: 1, previewImageProfile, reviewedAssetHash: null, verdict: null,
           generationDurationMs: diagnostics.providerDurationMs, providerFailure: diagnostics,
         },
       });
@@ -1059,7 +1064,7 @@ export async function generateQualityLockedPreview(
         tier1Findings: [], visionScores: null, model, quality: renderQuality, size,
         costUsdMicros: estimateImageCostUsdMicros(model, renderQuality, size),
         reviewEvidence: {
-          version: 1, reviewedAssetHash: reviewedBytes ? createHash("sha256").update(reviewedBytes).digest("hex") : null,
+          version: 1, previewImageProfile, reviewedAssetHash: reviewedBytes ? createHash("sha256").update(reviewedBytes).digest("hex") : null,
           verdict: null, generationDurationMs: generated.durationMs,
           generationTelemetry: generated.telemetry,
           reviewError: (error instanceof Error ? error.message : String(error)).slice(0, 1200),
@@ -1101,6 +1106,7 @@ export async function generateQualityLockedPreview(
       try {
         await dependencies.onApproved?.({
           kind: "approved-image",
+          previewImageProfile,
           dataUrl: `data:image/png;base64,${outcome.sourceBytes.toString("base64")}`,
           attempts,
           model: outcome.model,
@@ -1178,7 +1184,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
       let reviewedBytes: Buffer;
       try {
         dependencies.signal?.throwIfAborted();
-        reviewedBytes = customerVisiblePreviewBytes(generated.bytes);
+        reviewedBytes = customerVisiblePreviewBytes(generated.bytes, previewImageProfile);
       } catch (error) {
         await retainUnreviewable(generated, candidate, model, candidateQuality, error);
         return {
@@ -1260,7 +1266,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
             attempt: candidate,
             status: passed ? "accepted" : "rejected",
             // Retain the original provider pixels. Quality is still judged on
-            // reviewedBytes, the exact 560px teaser transform.
+            // reviewedBytes, the exact selected preview transform.
             bytes: generated.bytes,
             previewId: null,
             concept,
@@ -1268,7 +1274,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
             tier1Findings: tier1.findings,
             visionScores: vision?.scores ?? null,
             reviewEvidence: {
-              version: 1, reviewedAssetHash: createHash("sha256").update(reviewedBytes).digest("hex"),
+              version: 1, previewImageProfile, reviewedAssetHash: createHash("sha256").update(reviewedBytes).digest("hex"),
               verdict: vision ?? null, generationDurationMs: generated.durationMs,
               generationTelemetry: generated.telemetry,
             },
@@ -1306,7 +1312,8 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
     if (approved?.sourceBytes && !dependencies.signal?.aborted) {
       return {
         kind: "approved-image",
-        // The gate inspected the exact 560px teaser transform, but paid reuse
+        previewImageProfile,
+        // The gate inspected the exact selected preview transform, but paid reuse
         // and protected evidence retain the original provider resolution.
         dataUrl: `data:image/png;base64,${approved.sourceBytes.toString("base64")}`,
         attempts,
@@ -1371,7 +1378,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
         let repairReview: PreviewQualityReview | undefined;
         try {
           dependencies.signal?.throwIfAborted();
-          const reviewedBytes = customerVisiblePreviewBytes(repaired.bytes);
+          const reviewedBytes = customerVisiblePreviewBytes(repaired.bytes, previewImageProfile);
           const tier1 = runTier1({
             bytes: reviewedBytes,
             artworkModel: repairModel,
@@ -1434,7 +1441,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
                 tier1Findings: tier1.findings,
                 visionScores: vision?.scores ?? null,
                 reviewEvidence: {
-                  version: 1, reviewedAssetHash: createHash("sha256").update(reviewedBytes).digest("hex"),
+                  version: 1, previewImageProfile, reviewedAssetHash: createHash("sha256").update(reviewedBytes).digest("hex"),
                   verdict: vision ?? null, generationDurationMs: repaired.durationMs,
                   generationTelemetry: repaired.telemetry,
                 },
@@ -1451,6 +1458,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
           if (passed && !dependencies.signal?.aborted) {
             return {
               kind: "approved-image",
+              previewImageProfile,
               dataUrl: `data:image/png;base64,${repaired.bytes.toString("base64")}`,
               attempts,
               model: repairModel,
@@ -1546,7 +1554,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
     let reviewedBytes: Buffer;
     try {
       dependencies.signal?.throwIfAborted();
-      reviewedBytes = customerVisiblePreviewBytes(generated.bytes);
+      reviewedBytes = customerVisiblePreviewBytes(generated.bytes, previewImageProfile);
     } catch (error) {
       await retainUnreviewable(generated, candidate, model, quality, error);
       return {
@@ -1613,7 +1621,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
     // Every billed candidate is retained at its original resolution for
     // protected owner-scoped review and paid reuse, accepted and rejected
     // alike — mirroring aiFirst/artworkAttemptStore.ts. The gate evidence was
-    // still computed from `reviewedBytes`, the exact deterministic 560px
+    // still computed from `reviewedBytes`, the exact deterministic selected-profile
     // transform served to an unpaid customer.
     // Best-effort and fail-open: a retention failure must never change the
     // customer-visible result or mask the real approve/reject outcome.
@@ -1636,7 +1644,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
           tier1Findings: tier1.findings,
           visionScores: vision?.scores ?? null,
           reviewEvidence: {
-            version: 1, reviewedAssetHash: createHash("sha256").update(reviewedBytes).digest("hex"),
+            version: 1, previewImageProfile, reviewedAssetHash: createHash("sha256").update(reviewedBytes).digest("hex"),
             verdict: vision ?? null, generationDurationMs: generated.durationMs,
             generationTelemetry: generated.telemetry,
           },
@@ -1653,8 +1661,9 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
     if (passed && !dependencies.signal?.aborted) {
       return {
         kind: "approved-image",
+        previewImageProfile,
         // Persist the full provider result. The private unpaid asset route
-        // derives the exact reviewed 560px pixels from these bytes; after an
+        // derives the exact reviewed profile pixels from these bytes; after an
         // unlock the same approved artwork remains available at full quality.
         dataUrl: `data:image/png;base64,${generated.bytes.toString("base64")}`,
         attempts,

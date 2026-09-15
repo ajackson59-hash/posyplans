@@ -44,6 +44,8 @@ export type ArtworkAttemptQuality = ArtworkQuality | "not-applicable";
 
 export interface ArtworkReviewEvidence {
   version: 1;
+  /** Missing means the historical 560px transform. */
+  previewImageProfile?: import("../prePaymentPreviewImage").PreviewImageProfile;
   /** Identifies the exact customer-visible bytes reviewed, NOT the retained source. */
   reviewedAssetHash: string | null;
   verdict: VisionVerdict | null;

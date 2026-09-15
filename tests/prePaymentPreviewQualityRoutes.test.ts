@@ -235,7 +235,9 @@ describe("quality-locked prepayment preview routes", () => {
     expect(ready.body.kind).toBe("approved-image");
     const teaser = await request(app).get(`/api/events/owner/${OWNER}/prepayment-preview/asset`);
     expect(teaser.headers["cache-control"]).toBe("private, no-store");
-    expect(readPngSize(teaser.body)).toEqual({ width: 315, height: 560 });
+    // No enlargement of a smaller source, and no legacy 560px detail loss.
+    expect(readPngSize(teaser.body)).toEqual({ width: 630, height: 1120 });
+    expect(stored.prePaymentPreviewUrl).toMatch(/^data:image\/png;posy-quality-approved-detail-v1;base64,/);
     expect(teaser.body.equals((runVision.mock.calls[0][0] as { bytes: Buffer }).bytes)).toBe(true);
     const paid = await request(makeApp({ unlocked: true })).get(`/api/events/owner/${OWNER}/prepayment-preview/asset`);
     expect(paid.body.equals(sourceBytes)).toBe(true);

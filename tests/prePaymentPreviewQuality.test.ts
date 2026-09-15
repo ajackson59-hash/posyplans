@@ -706,13 +706,14 @@ describe("prepayment preview quality lock", () => {
       return { bytes, dataUrl: "ignored", durationMs: 10 };
     });
     const onApproved = vi.fn(async (result) => {
+      expect(result.previewImageProfile).toBe("detail-v1");
       expect(decodePng(Buffer.from(result.dataUrl.split(",")[1], "base64")).rgb[0]).toBe(2);
       published();
     });
     let settled = false;
     const running = generateQualityLockedPreview(event, {
       generateImage, runTier1: () => tier1(), runVision: async () => vision(true),
-      parallelCandidates: true, maxCandidates: 2, onApproved,
+      parallelCandidates: true, maxCandidates: 2, onApproved, previewImageProfile: "detail-v1",
     }).then((result) => { settled = true; return result; });
     await publishedSignal;
     expect(settled).toBe(false);
@@ -721,6 +722,7 @@ describe("prepayment preview quality lock", () => {
     const result = await running;
     expect(onApproved).toHaveBeenCalledTimes(1);
     if (result.kind !== "approved-image") throw new Error("expected pass");
+    expect(result.previewImageProfile).toBe("detail-v1");
     expect(decodePng(Buffer.from(result.dataUrl.split(",")[1], "base64")).rgb[0]).toBe(2);
     expect(result.reviews).toHaveLength(2);
   });
@@ -1153,6 +1155,7 @@ describe("prepayment preview quality lock", () => {
         expect(readPngSize(record.bytes as Buffer)).toEqual({ width: 630, height: 1120 });
         expect(record.reviewEvidence).toEqual({
           version: 1,
+          previewImageProfile: "legacy",
           reviewedAssetHash: createHash("sha256").update(customerVisiblePreviewBytes(record.bytes as Buffer)).digest("hex"),
           verdict: vision(false, "generic adjacent character art"), generationDurationMs: 100,
         });

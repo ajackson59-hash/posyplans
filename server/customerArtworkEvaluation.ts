@@ -152,7 +152,7 @@ function fixedCustomerEvaluation(event: Event, store: AiFirstArtworkAttemptStore
       if (options.quality !== "medium" || options.maxCandidates !== 1 || options.parallelCandidates !== false ||
           options.maxFormatRepairs !== 0 || options.allowTargetedCorrection !== false) throw new Error("customer-evaluation-policy-drift");
       evidence.classification ??= options.namedReference ? { ...options.namedReference, trigger: options.namedReference.trigger.source } : null;
-      const result = await generateQualityLockedPreview(input, { ...options, artworkModel: model,
+      const result = await generateQualityLockedPreview(input, { ...options, previewImageProfile: "legacy", artworkModel: model,
         generateImage: async request => {
           if (evidence.imageRequests !== 0 || !request.prompt.includes(item.hostBrief) || request.model !== model ||
               request.quality !== "medium" || request.maxTransientRetries !== 0 || request.referenceImages?.length || request.outputFormat !== "jpeg") {

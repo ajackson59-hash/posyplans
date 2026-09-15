@@ -2,15 +2,7 @@ import type { Express } from "express";
 import { storage } from "./storage";
 import { getEntitlementSummary } from "./masterPlannerEntitlement";
 import { prePaymentPreviewAssetKind } from "./prePaymentPreviewQualityRoutes";
-
-const QUALITY_APPROVED_PNG_PREFIX = "data:image/png;posy-quality-approved;base64,";
-const STANDARD_PNG_PREFIX = "data:image/png;base64,";
-
-function browserRenderablePreviewUrl(value: string): string {
-  return value.startsWith(QUALITY_APPROVED_PNG_PREFIX)
-    ? `${STANDARD_PNG_PREFIX}${value.slice(QUALITY_APPROVED_PNG_PREFIX.length)}`
-    : value;
-}
+import { browserRenderablePreviewUrl } from "./prePaymentPreviewImage";
 
 /**
  * Lets a paid host promote the exact approved pre-checkout artwork they

@@ -564,9 +564,8 @@ export default function DraftGenerating() {
             </button>
           </div>
 
-          {/* Real, capped, low-resolution invitation preview (B2a). The server
-              destroys production-quality detail before these bytes reach the
-              browser, so the composition can remain visible and useful here. */}
+          {/* The private asset route serves the transform tied to this image's
+              quality approval. Keep its native aspect ratio and source detail. */}
           <div
             ref={previewCardRef}
             className="mx-auto w-full max-w-sm overflow-hidden rounded-2xl border border-border bg-card shadow-sm"

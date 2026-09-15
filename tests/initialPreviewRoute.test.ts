@@ -57,8 +57,8 @@ beforeEach(() => {
 });
 
 describe("POST /invite/use-prepayment-preview", () => {
-  it("reuses only a current quality-approved image for an unlocked host", async () => {
-    const event = eventWith(APPROVED_URL);
+  it.each(["posy-quality-approved", "posy-quality-approved-detail-v1"])("reuses a current %s image for an unlocked host", async (marker) => {
+    const event = eventWith(APPROVED_URL.replace("posy-quality-approved", marker));
     mocks.getEventByOwnerToken.mockResolvedValue(event);
     mocks.updateEventById.mockResolvedValue({
       ...event,
@@ -95,8 +95,8 @@ describe("POST /invite/use-prepayment-preview", () => {
     expect(mocks.updateEventById).not.toHaveBeenCalled();
   });
 
-  it("still requires an unlocked entitlement for approved artwork", async () => {
-    mocks.getEventByOwnerToken.mockResolvedValue(eventWith(APPROVED_URL));
+  it.each(["posy-quality-approved", "posy-quality-approved-detail-v1"])("still requires an unlocked entitlement for %s artwork", async (marker) => {
+    mocks.getEventByOwnerToken.mockResolvedValue(eventWith(APPROVED_URL.replace("posy-quality-approved", marker)));
     mocks.getEntitlementSummary.mockResolvedValue({ canGenerate: false });
 
     const response = await request(makeApp())
