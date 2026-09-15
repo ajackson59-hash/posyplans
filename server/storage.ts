@@ -13,7 +13,7 @@ import type {
 } from '@shared/schema';
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import { previewCompletionCondition, previewReservationCondition } from "./prePaymentPreviewReservation";
 
@@ -159,9 +159,10 @@ export class DatabaseStorage implements IStorage {
     const rows = await db
       .update(events)
       .set({ sparkUnlockedAt: Date.now(), sparkCheckoutSessionId: checkoutSessionId })
-      .where(eq(events.id, existing.id))
+      .where(and(eq(events.id, existing.id), isNull(events.sparkUnlockedAt)))
       .returning();
-    return rows[0];
+    // A simultaneous webhook/return may have won after the initial read.
+    return rows[0] ?? this.getEventByOwnerToken(ownerToken);
   }
 
   async listGuests(eventId: number): Promise<Guest[]> {
@@ -422,6 +423,7 @@ export class DatabaseStorage implements IStorage {
           updatedAt: now,
           ...data,
         })
+        .onConflictDoUpdate({ target: emailEntitlements.email, set: { ...data, updatedAt: now } })
         .returning();
       return rows[0];
     }
