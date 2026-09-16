@@ -9,7 +9,8 @@ import { prepareSeparatedReview, combineSeparatedReview, type SeparatedReviewRec
 import { validateIndependentCraft } from "./aiFirst/independentCraftReview";
 import { validateBriefFidelity } from "./aiFirst/briefFidelityReview";
 import { VISION_MODEL } from "./aiFirst/visionGate";
-import registration from "./separatedReviewRegistration.json";
+import { reviewProviderError } from "./aiFirst/reviewProviderError";
+import registration from "./separatedReviewCorrectionRegistration.json";
 
 export const SEPARATED_STUDY_DATASET = registration.dataset;
 export const SEPARATED_STUDY_REQUESTS = registration.requests;
@@ -130,7 +131,8 @@ export async function runSeparatedReviewStudy(event: Event, store: AiFirstArtwor
     if (response.content.length !== 1 || textParts.length !== 1) proof.providerContentInvalid = true;
     try { report = JSON.parse(receipt.rawText); } catch { proof.responseParseFailed = true; }
   } catch (error) {
-    proof.providerError = error instanceof Anthropic.APIError ? { status: error.status ?? null, name: error.name } : { name: "request-failed" };
+    proof.providerError = reviewProviderError(error, [event.ownerToken,
+      ...Object.entries(env).filter(([name]) => /key|token|secret|password|database_url/i.test(name)).map(([, value]) => value)]);
   }
   const component = r.role === "craft" ? validateIndependentCraft(report) : validateBriefFidelity(report, plan.fidelity.context);
   let combined: ReturnType<typeof combineSeparatedReview> | null = null;

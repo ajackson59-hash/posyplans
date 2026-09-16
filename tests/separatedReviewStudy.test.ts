@@ -8,7 +8,7 @@ import { MEDIUM_FEASIBILITY_CASES } from "../server/aiFirst/mediumFeasibilityCas
 import { crossThemeProfile, type CrossThemeCaseId } from "../server/crossThemeReviewProfiles";
 import { prepareSeparatedReview } from "../server/aiFirst/separatedArtworkReview";
 import { runSeparatedReviewStudy, SEPARATED_STUDY_DATASET } from "../server/separatedReviewStudy";
-import registration from "../server/separatedReviewRegistration.json";
+import registration from "../server/separatedReviewCorrectionRegistration.json";
 const original = structuredClone(registration);
 const bytes = encodePng({ width: 8, height: 8, rgb: new Uint8Array(192).fill(125) });
 const environment = { VERCEL_ENV: "preview", VERCEL_GIT_COMMIT_REF: "codex/launch-blockers", VERCEL_GIT_COMMIT_SHA: "study-test" };
@@ -99,6 +99,18 @@ it.each(["contradiction", "extra-field", "accounting", "max-tokens", "model", "o
 it("does not retry an actual SDK transport failure", async () => {
   const f = fixture(); f.transport.mockResolvedValue(new Response(JSON.stringify({ type: "error", error: { type: "rate_limit_error", message: "offline" } }), { status: 429, headers: { "Content-Type": "application/json" } }));
   expect(await runSeparatedReviewStudy(event, f.store, "craft-elsa", f.options)).toMatchObject({ kind: "stopped", physicalRequests: 1, costMicros: null, closed: true });
+  expect(f.transport).toHaveBeenCalledTimes(1);
+});
+it("retains actionable provider errors with request IDs while removing private values", async () => {
+  const f = fixture();
+  f.transport.mockResolvedValue(new Response(JSON.stringify({ type: "error", error: { type: "invalid_request_error",
+    message: "output_config.format.schema: unsupported minimum; test-owner sk-private-example https://private.example/secret " + "a".repeat(150) } }),
+    { status: 400, headers: { "Content-Type": "application/json", "request-id": "req_offline400" } }));
+  expect(await runSeparatedReviewStudy(event, f.store, "craft-elsa", f.options)).toMatchObject({ kind: "stopped", physicalRequests: 1, costMicros: null, closed: true });
+  const error = f.store.all[1].reviewEvidence!.customerEvaluation!.providerError;
+  expect(error).toMatchObject({ status: 400, type: "invalid_request_error", requestId: "req_offline400" });
+  expect(JSON.stringify(error)).toContain("unsupported minimum");
+  expect(JSON.stringify(error)).not.toMatch(/test-owner|sk-private|private\.example|a{128}/);
   expect(f.transport).toHaveBeenCalledTimes(1);
 });
 it("blocks changed deployment, budget exhaustion and corrupted prior receipt before another call", async () => {
