@@ -51,6 +51,8 @@ it("preflights exact detailed pixels without claiming or calling the reviewer", 
   expect(result).toMatchObject({ kind: "preflight", width: 768, height: 1376, tier1: { passed: true },
     alreadyClaimed: false, prerequisitePassed: true, criticRequests: 0, customerActivation: "disabled" });
   expect(f.review).not.toHaveBeenCalled(); expect(f.store.all).toHaveLength(1); expect(f.event).toEqual(before);
+  expect(JSON.stringify(result).length).toBeLessThan(1500);
+  expect(result).not.toHaveProperty("tier1.image");
 });
 
 it("blocks environment, ownership, brief and pixel drift before a claim", async () => {

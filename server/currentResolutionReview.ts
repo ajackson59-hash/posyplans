@@ -83,7 +83,7 @@ export async function runCurrentResolutionReview(event: Event, store: AiFirstArt
   if (options.preflightOnly) return { kind: "preflight" as const, caseId: registration.caseId,
     sourceHash: hash(input.sourceBytes), reviewedHash: hash(input.bytes), contextHash: input.contextHash,
     width: input.bytes.readUInt32BE(16), height: input.bytes.readUInt32BE(20), reviewedBytes: input.bytes.length,
-    tier1: input.tier1, alreadyClaimed, prerequisitePassed, customerActivation: "disabled" as const,
+    tier1: { passed: input.tier1.passed, findings: input.tier1.findings }, alreadyClaimed, prerequisitePassed, customerActivation: "disabled" as const,
     imageProviderCalls: 0, criticRequests: 0 };
   if (alreadyClaimed) return blocked("current-review-already-claimed");
   if (!prerequisitePassed) return blocked("current-review-negative-prerequisite-failed");
@@ -116,7 +116,8 @@ export async function runCurrentResolutionReview(event: Event, store: AiFirstArt
   if (!input.tier1.passed) {
     evidence.criticRequests = 0; evidence.controlPassed = false;
     await save("structural-rejection", null);
-    return { kind: "structural-rejection" as const, imageProviderCalls: 0, criticRequests: 0, tier1: input.tier1,
+    return { kind: "structural-rejection" as const, imageProviderCalls: 0, criticRequests: 0,
+      tier1: { passed: input.tier1.passed, findings: input.tier1.findings },
       customerActivation: "disabled" as const };
   }
   const signal = AbortSignal.any([AbortSignal.timeout(45_000), ...(options.signal ? [options.signal] : [])]);
