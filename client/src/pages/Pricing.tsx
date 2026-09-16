@@ -249,7 +249,10 @@ export default function Pricing() {
                     {startCheckout.isPending ? "Starting checkout…" : "Subscribe to Plus"}
                   </Button>
                   <p className="text-center text-xs text-muted-foreground">
-                    Cancel anytime from your billing settings.
+                    Cancel anytime by email.{" "}
+                    <Link href="/refund-policy" className="underline hover:text-foreground">
+                      How to cancel
+                    </Link>
                   </p>
                   <p className="text-center text-xs text-muted-foreground" data-testid="text-checkout-legal-disclosure">
                     By subscribing, you agree to our{" "}
