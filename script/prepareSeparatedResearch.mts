@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { prepareSeparatedReview } from "../server/aiFirst/separatedArtworkReview.ts";
+import { prepareSeparatedReview } from "../server/aiFirst/legacySeparatedArtworkReview.ts";
 import { validateIndependentCraft } from "../server/aiFirst/independentCraftReview.ts";
 import { crossThemeProfile, type CrossThemeCaseId } from "../server/crossThemeReviewProfiles.ts";
 const dir = process.argv[2];

@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createHash } from "node:crypto";
 import { buildEventBrief } from "../server/aiFirst/brief";
 import { buildBriefFidelityRequest, validateBriefFidelity, type BriefFidelityInput } from "../server/aiFirst/briefFidelityReview";
-import { prepareSeparatedReview, combineSeparatedReview, type SeparatedReviewReceipt } from "../server/aiFirst/separatedArtworkReview";
+import { prepareSeparatedReview, combineSeparatedReview, type SeparatedReviewReceipt } from "../server/aiFirst/legacySeparatedArtworkReview";
 import { validateIndependentCraft } from "../server/aiFirst/independentCraftReview";
 import { IDENTITY_FEATURES } from "../server/aiFirst/identityComparison";
 import { encodePng } from "../server/aiFirst/png";

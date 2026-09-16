@@ -3,7 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { expect, it, vi } from "vitest";
 import { encodePng } from "../server/aiFirst/png";
 import { crossThemeProfile } from "../server/crossThemeReviewProfiles";
-import { prepareSeparatedReview } from "../server/aiFirst/separatedArtworkReview";
+import { prepareSeparatedReview } from "../server/aiFirst/legacySeparatedArtworkReview";
 
 // The real SDK serializer previously sent unsupported minimum/maximum intact.
 // Check the wire schema against the documented subset used by these reviewers.

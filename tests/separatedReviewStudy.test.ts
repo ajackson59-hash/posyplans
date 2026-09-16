@@ -6,7 +6,7 @@ import { encodePng } from "../server/aiFirst/png";
 import { InMemoryArtworkAttemptStore } from "../server/aiFirst/artworkAttemptStore";
 import { MEDIUM_FEASIBILITY_CASES } from "../server/aiFirst/mediumFeasibilityCases";
 import { crossThemeProfile, type CrossThemeCaseId } from "../server/crossThemeReviewProfiles";
-import { prepareSeparatedReview } from "../server/aiFirst/separatedArtworkReview";
+import { prepareSeparatedReview } from "../server/aiFirst/legacySeparatedArtworkReview";
 import { runSeparatedReviewStudy, SEPARATED_STUDY_DATASET } from "../server/separatedReviewStudy";
 import registration from "../server/separatedReviewCorrectionRegistration.json";
 const original = structuredClone(registration);

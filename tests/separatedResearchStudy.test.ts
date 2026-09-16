@@ -6,7 +6,7 @@ import { encodePng } from "../server/aiFirst/png";
 import { InMemoryArtworkAttemptStore, REVIEW_CALIBRATION_MODEL } from "../server/aiFirst/artworkAttemptStore";
 import { MEDIUM_FEASIBILITY_CASES } from "../server/aiFirst/mediumFeasibilityCases";
 import { crossThemeProfile, type CrossThemeCaseId } from "../server/crossThemeReviewProfiles";
-import { prepareSeparatedReview } from "../server/aiFirst/separatedArtworkReview";
+import { prepareSeparatedReview } from "../server/aiFirst/legacySeparatedArtworkReview";
 import { runSeparatedResearchStudy, type ResearchRegistration } from "../server/separatedResearchStudy";
 import proposed from "../server/separatedResearchRegistration.json";
 

@@ -5,7 +5,7 @@ import type { Event } from "@shared/schema";
 import { REVIEW_CALIBRATION_MODEL, type AiFirstArtworkAttemptStore, type ArtworkAttemptInput } from "./aiFirst/artworkAttemptStore";
 import { MEDIUM_FEASIBILITY_CASES } from "./aiFirst/mediumFeasibilityCases";
 import { crossThemeProfile, type CrossThemeCaseId } from "./crossThemeReviewProfiles";
-import { prepareSeparatedReview, combineSeparatedReview, type SeparatedReviewReceipt } from "./aiFirst/separatedArtworkReview";
+import { prepareSeparatedReview, combineSeparatedReview, type SeparatedReviewReceipt } from "./aiFirst/legacySeparatedArtworkReview";
 import { validateIndependentCraft } from "./aiFirst/independentCraftReview";
 import { validateBriefFidelity } from "./aiFirst/briefFidelityReview";
 import { VISION_MODEL } from "./aiFirst/visionGate";
