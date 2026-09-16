@@ -7,6 +7,7 @@ import { generateQualityLockedPreview } from "../server/prePaymentPreviewQuality
 import { ArtworkProviderError } from "../server/aiFirst/artwork";
 import { InMemoryArtworkAttemptStore } from "../server/aiFirst/artworkAttemptStore";
 import { RETAINED_LIKENESS_REVIEW, ACCEPTED_ILLUSTRATION_CONTROL } from "../server/retainedLikenessReview";
+import { CURRENT_RESOLUTION_CONTROLS } from "../server/currentResolutionReview";
 import { decodePng, encodePng, readPngSize } from "../server/aiFirst/png";
 
 process.env.DATABASE_URL = "postgres://test/test";
@@ -54,6 +55,25 @@ it("bounds the retained likeness review route to Preview, the fixed owner and ex
   } finally { vi.unstubAllEnvs(); }
 });
 const EVENT_ID = 410;
+
+it("bounds current-resolution reviews to the fixed Preview owner, case and exact body", async () => {
+  const path = `/api/events/owner/${OWNER}/prepayment-preview/current-resolution-review/lettering`;
+  const body = { mode: "review", confirmOneVisionCall: true, expectedAssetHash: CURRENT_RESOLUTION_CONTROLS.lettering.sourceHash };
+  try {
+    vi.stubEnv("VERCEL_GIT_COMMIT_REF", "codex/launch-blockers"); vi.stubEnv("VERCEL_ENV", "production");
+    expect((await request(makeApp()).post(path).send(body)).status).toBe(404);
+    vi.stubEnv("VERCEL_ENV", "preview");
+    for (const changed of [{ ...body, confirmOneVisionCall: false }, { ...body, expectedAssetHash: "wrong" },
+      { ...body, candidateBase64: "extra" }, { ...body, expectedIdentity: true }, { ...body, mode: "preflight" }]) {
+      expect((await request(makeApp()).post(path).send(changed)).status).toBe(400);
+    }
+    expect((await request(makeApp()).post(path.replace("lettering", "unknown")).send(body)).status).toBe(404);
+    expect((await request(makeApp()).post(path).send(body)).status).toBe(404);
+    expect((await request(makeApp()).post(path.replace(OWNER, "wrong-owner")).send(body)).status).toBe(404);
+    expect(generate).not.toHaveBeenCalled(); expect(classifyNamedReference).not.toHaveBeenCalled();
+    expect(updateEventById).not.toHaveBeenCalled();
+  } finally { vi.unstubAllEnvs(); }
+});
 
 it("limits accepted illustration review to its fixed Preview owner and bounded exact-input body", async () => {
   const path = `/api/events/owner/${OWNER}/prepayment-preview/accepted-illustration-review`;

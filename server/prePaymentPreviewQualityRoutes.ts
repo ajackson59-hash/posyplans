@@ -12,6 +12,7 @@ import { customerArtworkEvaluation, googleCustomerArtworkEvaluation, CUSTOMER_EV
 import { ORIGINAL_CONTROL_REVIEW, reviewRetainedCustomerArtwork } from "./customerArtworkRetainedReview";
 import { SCENE_REPAINT_EXPERIMENT, SCENE_LIKENESS_EXPERIMENT, runRetainedSceneRepaint } from "./retainedSceneRepaint";
 import { RETAINED_LIKENESS_REVIEW, FEATURE_COMPARISON_CONTROLS, FEATURE_COMPARISON_V2_CONTROLS, STREAM_COMPARISON_CONTROLS, BLIND_COMPARISON_CONTROLS, ACCEPTED_ILLUSTRATION_CONTROL, runRetainedLikenessReview } from "./retainedLikenessReview";
+import { CURRENT_RESOLUTION_CONTROLS, runCurrentResolutionReview } from "./currentResolutionReview";
 import {
   type ArtworkReferenceImage,
   type ArtworkReferenceMimeType,
@@ -643,6 +644,36 @@ export function registerPrePaymentPreviewQualityRoutes(
       return res.status(result.kind === "blocked" ? 409 : result.kind === "unavailable" ? 503 : 200).json(result);
     } catch {
       if (!res.headersSent) return res.status(503).json({ error: "Review unavailable; claimed controls cannot be retried" });
+    } finally { res.off("close", close); }
+  });
+
+  app.post("/api/events/owner/:ownerToken/prepayment-preview/current-resolution-review/:caseId", async (req, res) => {
+    res.setHeader("Cache-Control", "private, no-store");
+    if (process.env.VERCEL_ENV !== "preview" || process.env.VERCEL_GIT_COMMIT_REF !== "codex/launch-blockers" ||
+        !Object.hasOwn(CURRENT_RESOLUTION_CONTROLS, String(req.params.caseId))) return res.status(404).json({ error: "Not found" });
+    const registration = CURRENT_RESOLUTION_CONTROLS[String(req.params.caseId) as keyof typeof CURRENT_RESOLUTION_CONTROLS];
+    const fields = { expectedAssetHash: z.literal(registration.sourceHash),
+      ...(registration.sourceAttemptId ? {} : { candidateBase64: z.string().min(1).max(3_100_000) }) };
+    const parsed = z.discriminatedUnion("mode", [
+      z.object({ ...fields, mode: z.literal("preflight") }).strict(),
+      z.object({ ...fields, mode: z.literal("review"), confirmOneVisionCall: z.literal(true) }).strict(),
+    ]).safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "Use the fixed review control and exact confirmation" });
+    const event = await store.getEventByOwnerToken(String(req.params.ownerToken));
+    if (!event || event.id !== 61) return res.status(404).json({ error: "Not found" });
+    const candidateBase64 = "candidateBase64" in parsed.data ? parsed.data.candidateBase64 : undefined;
+    const candidate = typeof candidateBase64 === "string" ? Buffer.from(candidateBase64, "base64") : undefined;
+    if (candidate && candidate.toString("base64") !== candidateBase64) return res.status(400).json({ error: "Invalid pixel encoding" });
+    const controller = new AbortController();
+    const close = () => { if (!res.writableEnded) controller.abort(); };
+    res.on("close", close);
+    try {
+      const result = await runCurrentResolutionReview(event, artworkAttemptStore, registration, {
+        candidate, preflightOnly: parsed.data.mode === "preflight", signal: controller.signal,
+      });
+      return res.status(result.kind === "blocked" ? 409 : result.kind === "unavailable" ? 503 : 200).json(result);
+    } catch {
+      if (!res.headersSent) return res.status(503).json({ error: "Current-resolution review unavailable; claimed cases cannot be retried" });
     } finally { res.off("close", close); }
   });
 
