@@ -1,3 +1,4 @@
+import { visionFixtureReply } from "./helpers/visionRequestRequirements";
 import { visionRequestRequirements } from "./helpers/visionRequestRequirements";
 import { createHash } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
@@ -89,7 +90,7 @@ it.each(["match", "mismatch", "missing"] as const)("enforces %s evidence through
   brief.requirements = { required: [`[VISIBLE NAMED IDENTITY] ${requirement}`], preferred: [], excluded: [] };
   const scores = { textLogoWatermarkFree: 5, artifactFree: 5, premiumFinish: 5, briefFidelity: 5, compositionQuality: 5, ageAppropriate: 5 };
   const create = vi.fn(async (body: any) => ({ stop_reason: "end_turn", usage: { input_tokens: 100, output_tokens: 100 },
-    content: [{ type: "text", text: JSON.stringify({ ...scores,
+    content: [{ type: "text", text: JSON.stringify(visionFixtureReply(body, { ...scores,
       ...(assessment === "missing" ? {} : { identityComparisons: row(assessment) }),
       requiredPresent: visionRequestRequirements(body).map(
         (requirement: string) => ({ requirement, present: true, evidence: "Visible subject in offline fixture" })),
@@ -97,7 +98,7 @@ it.each(["match", "mismatch", "missing"] as const)("enforces %s evidence through
         { status: "clear", criterion: "none", location: "Entire canvas", observation: "Positive offline fixture support" }])),
       teaserChecks: { identity: { accurate: true, evidence: "Generic identity claim from fixture" },
         milestone: { correct: true, evidence: "No count requested" }, purchase: { wouldCreatePurchaseDesire: true, evidence: "Fixture only" } },
-    }) }] }));
+    })) }] }));
   const result = await runVisionGate({ bytes, brief, concept, referenceImages: [reference], reviewMode: "teaser",
     maxFormatRepairs: 0, client: { messages: { create } } as any });
   expect(result.passed).toBe(assessment === "match");

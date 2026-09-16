@@ -1,3 +1,4 @@
+import { visionFixtureReply } from "./helpers/visionRequestRequirements";
 import { runBlindLikenessReview } from "../server/aiFirst/blindLikenessReview";
 import { blindReport, blindFixtureClient } from "./helpers/blindReviewFixture";
 // @vitest-environment node
@@ -36,7 +37,7 @@ async function fixture(accurate = false) {
   const scores = { textLogoWatermarkFree: 5, artifactFree: 5, premiumFinish: 3,
     briefFidelity: 3, compositionQuality: 5, ageAppropriate: 5 };
   const create = vi.fn(async (body: any, _options: unknown) => ({ stop_reason: "end_turn",
-    usage: { input_tokens: 100, output_tokens: 80 }, content: [{ type: "text", text: JSON.stringify({ ...scores,
+    usage: { input_tokens: 100, output_tokens: 80 }, content: [{ type: "text", text: JSON.stringify(visionFixtureReply(body, { ...scores,
       ...(body.output_config.format.schema.properties.identityComparisons ? { identityComparisons: IDENTITY_FEATURES.map(feature => ({
           referenceKey: "reference1", feature, candidateLocation: "Right figure", candidateVisibility: "clear", referenceVisibility: "clear",
           referenceObservation: "Reference geometry fixture", candidateObservation: "Candidate geometry fixture",
@@ -52,7 +53,7 @@ async function fixture(accurate = false) {
       teaserChecks: { milestone: { correct: true, evidence: "No count required" },
         identity: { accurate, evidence: "Fixture face and hair comparison" },
         purchase: { wouldCreatePurchaseDesire: false, evidence: "Fixture medium failure" } },
-    }) }] }));
+    })) }] }));
   const client = { messages: { create } } as unknown as NonNullable<VisionGateInput["client"]>;
   const review = (input: VisionGateInput) => runVisionGate({ ...input, client });
   const options = { environment, registration, review };

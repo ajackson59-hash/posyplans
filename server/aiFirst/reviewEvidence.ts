@@ -1,7 +1,7 @@
 /** Server-owned review rules. A valid report is not proof that its visual judgment is correct. */
 import type { VisionScores } from "@shared/aiFirstStream";
 
-export const REVIEW_EVIDENCE_VERSION = "located-medium-review-v2";
+export const REVIEW_EVIDENCE_VERSION = "separate-execution-review-v3";
 export const REVIEW_CRITERIA = {
   textLogoWatermarkFree: ["lettering", "logo", "watermark"],
   artifactFree: ["malformed-anatomy", "malformed-object", "composite-seam", "duplicated-pattern", "incoherent-light"],
@@ -16,6 +16,7 @@ export interface DimensionAssessment {
   criterion: string;
   location: string;
   observation: string;
+  basis?: "observed-craft" | "observed-layout" | "brief-compliance" | "unresolved";
 }
 export type DimensionAssessments = Record<keyof VisionScores, DimensionAssessment>;
 
@@ -28,8 +29,11 @@ export const ASSESSMENT_SCHEMA = {
       criterion: { type: "string", enum: ["none", ...criteria] },
       location: { type: "string" },
       observation: { type: "string" },
+      ...(["premiumFinish", "compositionQuality"].includes(dimension) ? {
+        basis: { type: "string", enum: [dimension === "premiumFinish" ? "observed-craft" : "observed-layout", "brief-compliance", "unresolved"] },
+      } : {}),
     },
-    required: ["status", "criterion", "location", "observation"],
+    required: ["status", "criterion", "location", "observation", ...(["premiumFinish", "compositionQuality"].includes(dimension) ? ["basis"] : [])],
     additionalProperties: false,
   }])),
   required: Object.keys(REVIEW_CRITERIA),
@@ -42,10 +46,10 @@ Wrong identity, missing requested details, a substituted medium or unwanted cont
 Do not pair praise such as "clean, balanced, intentional" with a reduced composition score unless you also identify the actual layout defect. Do not restate a brief mismatch as generic-execution. That criterion requires visible repetitive or default craft decisions, with their location and effect. Missing required facts or failed identity cannot coexist with a 5 for briefFidelity. All-clear assessments cannot coexist with a false purchase check; identify the actual limiting dimension or report uncertainty. Scores are never averaged or automatically raised.
 MEDIUM-SPECIFIC CRAFT ANCHORS (principles, not a list of allowed media):
 - Flat vector / graphic art: deliberate contours, shape rhythm, controlled palette and hierarchy; absent gradients or depth are not defects.
-- Painting / drawing: controlled marks, purposeful edges and coherent texture; visible brushwork or paper texture is not careless execution by itself.
+- Painting / drawing: controlled marks, purposeful edges and coherent texture; visible brushwork or paper texture is not careless execution by itself. Apply these anchors when painting is actually visible; its absence belongs to medium compliance.
 - Photography: coherent subject detail, light, contact, focus and color; photographic realism or an unidentified photographer is not a failure.
 - 3D / clay / animation: coherent stylized forms, material response and contact; intentional stylized anatomy differs from broken anatomy.
-- Collage / mixed media / textile / unfamiliar treatments: inspect the requested construction's internal consistency; intentional seams, flatness and varied textures are valid. Preserve free-form host intent. Never impose another medium's surface, gloss, depth or realism.
+- Collage / mixed media / textile / unfamiliar treatments: inspect the visible construction's internal consistency; intentional seams, flatness and varied textures are valid. Preserve free-form host intent in the independent fidelity check. Never impose another medium's surface, gloss, depth or realism when judging craftsmanship.
 These anchors apply to original scenes, adult events and every named character or franchise. Judge only visible evidence at the supplied resolution. Notes must not hide a defect omitted from its dimension assessment.`;
 
 const evidence = (value: unknown): value is string => typeof value === "string" && value.trim().length > 0;
@@ -65,7 +69,13 @@ export function validateReviewEvidence(raw: unknown, scores: VisionScores, facts
       issues.push(`${key}:missing-located-assessment`); continue;
     }
     assessments[key] = { status: row.status, criterion: row.criterion,
-      location: row.location.trim(), observation: row.observation.trim() };
+      location: row.location.trim(), observation: row.observation.trim(),
+      ...(["premiumFinish", "compositionQuality"].includes(key) ? { basis: row.basis } : {}) };
+    if (key === "premiumFinish" || key === "compositionQuality") {
+      if (row.basis === "brief-compliance") issues.push(`${key}:brief-compliance-is-not-execution`);
+      else if (row.basis !== (key === "premiumFinish" ? "observed-craft" : "observed-layout"))
+        issues.push(`${key}:missing-independent-execution-basis`);
+    }
     const allowed: readonly string[] = REVIEW_CRITERIA[key];
     if (row.status === "clear") {
       if (row.criterion !== "none" || scores[key] !== 5) issues.push(`${key}:clear-score-conflict`);

@@ -1,3 +1,4 @@
+import { visionFixtureReply } from "./helpers/visionRequestRequirements";
 // The quality gate. Tier 1 is deterministic and free, so it runs first and
 // catches the defects that are measurable; Tier 2 is the paid critic and is
 // the only thing that can judge taste. The invariant both share is that
@@ -345,8 +346,8 @@ const brief = (over: Partial<EventBrief> = {}): EventBrief => ({
 function critic(body: Record<string, unknown>): Anthropic {
   return {
     messages: {
-      create: async () => ({
-        content: [{ type: "text", text: JSON.stringify(body) }],
+      create: async (request: any) => ({
+        content: [{ type: "text", text: JSON.stringify(visionFixtureReply(request, body)) }],
         usage: { input_tokens: 1200, output_tokens: 180 },
       }),
     },
@@ -403,7 +404,7 @@ describe("tier 2 — acceptance", () => {
     const verdict = await runVision({ requiredPresent: [{ requirement: "bubbles", present: true }] }, {
       requirements: { required: ["[VISIBLE HOST DETAIL] ice cream", "[VISIBLE HOST DETAIL] bubbles"], preferred: [], excluded: [] },
     });
-    expect(verdict.requiredPresent).toEqual([
+    expect(verdict.requiredPresent).toMatchObject([
       { requirement: "ice cream", present: false }, { requirement: "bubbles", present: true },
     ]);
     expect(verdict.passed).toBe(false);
@@ -434,8 +435,8 @@ describe("tier 2 — acceptance", () => {
   it("fails closed on a token-truncated response even when its visible JSON looks complete", async () => {
     let calls = 0;
     const verdict = await runVisionGate({ bytes: artworkPng(), concept: concept(), brief: brief(), client: {
-      messages: { create: async () => { calls += 1; return { stop_reason: "max_tokens",
-        content: [{ type: "text", text: JSON.stringify({ ...allFive, requiredPresent: [], excludedFound: [], notes: "" }) }],
+      messages: { create: async (request: any) => { calls += 1; return { stop_reason: "max_tokens",
+        content: [{ type: "text", text: JSON.stringify(visionFixtureReply(request, { ...allFive, requiredPresent: [], excludedFound: [], notes: "" })) }],
         usage: { input_tokens: 10, output_tokens: 700 } }; } },
     } as unknown as Anthropic });
     expect(calls).toBe(2);
@@ -540,7 +541,7 @@ describe("tier 2 — acceptance", () => {
     });
     const verdict = await runVision({ requiredPresent: [] }, construction);
     expect(verdict.passed).toBe(false);
-    expect(verdict.failureCodes).toContain("brief-fidelity");
+    expect(verdict.failureCodes).toContain("review-checklist-invalid");
   });
 
   it("does not turn framing and negative prompt rules into visible checklist items", async () => {
@@ -570,12 +571,12 @@ describe("tier 2 — acceptance", () => {
             content: [
               {
                 type: "text",
-                text: JSON.stringify({
+                text: JSON.stringify(visionFixtureReply(request, {
                   ...allFive,
                   requiredPresent: visible.map((requirement) => ({ requirement, present: true })),
                   excludedFound: [],
                   notes: "",
-                }),
+                })),
               },
             ],
             usage: { input_tokens: 1200, output_tokens: 180 },
@@ -592,7 +593,7 @@ describe("tier 2 — acceptance", () => {
     });
 
     expect(verdict.passed).toBe(true);
-    expect(verdict.requiredPresent).toEqual(visible.map((requirement) => ({ requirement, present: true })));
+    expect(verdict.requiredPresent).toMatchObject(visible.map((requirement) => ({ requirement, present: true })));
     const checklist = reviewText.split("VISIBLE MUST-HAVES")[1]?.split("EXCLUDED:")[0] ?? "";
     expect(checklist).toContain("construction / little-builder identity");
     expect(checklist).toContain("at least two coherent builder or jobsite cues");
@@ -615,9 +616,9 @@ describe("tier 2 — acceptance", () => {
       await runVisionGate({ bytes: artworkPng(), concept: concept(), brief: b, reviewMode: "teaser", client: {
         messages: { create: async (request: any) => {
           modelText = request.messages[0].content.find((x: any) => x.type === "text").text;
-          return { content: [{ type: "text", text: JSON.stringify({ ...allFive,
+          return { content: [{ type: "text", text: JSON.stringify(visionFixtureReply(request, { ...allFive,
             requiredPresent: [{ requirement, present: true, evidence: "Visible character in right panel" }],
-            excludedFound: [], notes: "", dimensionAssessments: passingDimensionAssessments, teaserChecks: passingTeaserChecks }) }],
+            excludedFound: [], notes: "", dimensionAssessments: passingDimensionAssessments, teaserChecks: passingTeaserChecks })) }],
             usage: { input_tokens: 100, output_tokens: 100 } };
         } },
       } as unknown as Anthropic });
@@ -652,14 +653,14 @@ describe("tier 2 — acceptance", () => {
           return {
             content: [{
               type: "text",
-              text: JSON.stringify({
+              text: JSON.stringify(visionFixtureReply(request, {
                 ...allFive,
                 requiredPresent: [],
                 excludedFound: [],
                 teaserChecks: passingTeaserChecks,
                 dimensionAssessments: passingDimensionAssessments,
                 notes: "",
-              }),
+              })),
             }],
             usage: { input_tokens: 1200, output_tokens: 180 },
           };
@@ -706,7 +707,7 @@ describe("tier 2 — acceptance", () => {
         create: async (request: any) => {
           reviewText = request.messages[0].content.find((part: any) => part.type === "text")?.text ?? "";
           return {
-            content: [{ type: "text", text: JSON.stringify({
+            content: [{ type: "text", text: JSON.stringify(visionFixtureReply(request, {
               ...allFive,
               briefFidelity: 2,
               requiredPresent: [], excludedFound: [],
@@ -717,7 +718,7 @@ describe("tier 2 — acceptance", () => {
                 briefFidelity: { status: "uncertain", criterion: "identity-mismatch", location: "Figure wrist", observation: "The turquoise cuff cannot be resolved." },
               },
               notes: "Reference context does not establish matching pixels.",
-            }) }],
+            })) }],
             usage: { input_tokens: 1200, output_tokens: 180 },
           };
         },
@@ -836,12 +837,12 @@ describe("tier 2 — acceptance", () => {
             content: [
               {
                 type: "text",
-                text: JSON.stringify({
+                text: JSON.stringify(visionFixtureReply(request, {
                   ...allFive,
                   requiredPresent: [],
                   excludedFound: [],
                   notes: "The required artwork remains visible outside the protected type panel.",
-                }),
+                })),
               },
             ],
             usage: { input_tokens: 1200, output_tokens: 180 },
@@ -875,7 +876,7 @@ describe("tier 2 — acceptance", () => {
             content: [
               {
                 type: "text",
-                text: JSON.stringify({ ...allFive, requiredPresent: [], excludedFound: [], notes: "" }),
+                text: JSON.stringify(visionFixtureReply(request, { ...allFive, requiredPresent: [], excludedFound: [], notes: "" })),
               },
             ],
             usage: { input_tokens: 1200, output_tokens: 180 },
@@ -943,10 +944,10 @@ describe("tier 2 — acceptance", () => {
       bytes: artworkPng(),
       concept: concept(),
       brief: brief(),
-      client: { messages: { create: async () => {
+      client: { messages: { create: async (request: any) => {
         calls += 1;
         return {
-          content: [{ type: "text", text: calls === 1 ? "The image is excellent." : JSON.stringify(valid) }],
+          content: [{ type: "text", text: calls === 1 ? "The image is excellent." : JSON.stringify(visionFixtureReply(request, valid)) }],
           usage: { input_tokens: 10, output_tokens: 5 },
         };
       } } } as unknown as Anthropic,

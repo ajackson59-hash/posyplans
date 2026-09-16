@@ -17,13 +17,15 @@ import { MIN_DIMENSION_SCORE, type VisionScores } from "@shared/aiFirstStream";
 import { concreteSubjectReviewRequirementsForBrief } from "./conceptPreflight";
 import { typePlacementFrame } from "@shared/aiFirstLayout";
 import { LOCAL_TYPE_SURFACE_ALPHA } from "@shared/themeCatalog";
-import { artDirectionReviewRequirements, buildArtDirectionContract } from "./artDirection";
+import { artDirectionReviewRequirements, buildArtDirectionContract, resolveArtDirection } from "./artDirection";
+import { bindReviewChecklist, reviewRequirementManifest } from "./reviewChecklist";
+import { MEDIUM_ASSESSMENT_SCHEMA, MEDIUM_REVIEW_INSTRUCTION, validateMediumAssessment, type MediumAssessment } from "./reviewTreatment";
 import { identityComparisonTargets, identityComparisonSchema, validateIdentityComparisons,
   IDENTITY_COMPARISON_INSTRUCTION, type IdentityComparisonReview } from "./identityComparison";
 
 export const VISION_MODEL = "claude-sonnet-4-6";
 export const TEASER_MIN_DIMENSION_SCORE = 5;
-export const VISION_SCHEMA_VERSION = "static-review-schema-v1";
+export const VISION_SCHEMA_VERSION = "static-review-schema-v2";
 
 export { MIN_DIMENSION_SCORE };
 export type { VisionScores };
@@ -37,7 +39,12 @@ export interface VisionVerdict {
   requestTimings?: VisionRequestTiming[];
   scores: VisionScores;
   /** One entry per REQUIRED item, in the brief's order. */
-  requiredPresent: { requirement: string; present: boolean; evidence?: string }[];
+  requiredPresent: { requirement: string; present: boolean; evidence?: string; requirementId?: string;
+    reviewStatus?: "reported" | "unresolved" }[];
+  checklist?: ReturnType<typeof bindReviewChecklist>["checklist"];
+  mediumAssessment?: MediumAssessment;
+  /** Provider-generated text only, retained privately; never includes request headers or credentials. */
+  providerResponses?: { text: string; stopReason: string | null }[];
   /** Located visual observations, not merely a repeated numeric verdict. */
   dimensionEvidence?: Record<keyof VisionScores, string>;
   dimensionAssessments?: Partial<DimensionAssessments>;
@@ -67,17 +74,18 @@ Score each 1-5. 4 means "a professional stationery studio would ship this". 3 me
 
 - textLogoWatermarkFree: 5 = no letters, words, numbers, logos, signatures or watermarks anywhere, including stylised or partial ones.
 - artifactFree: 5 = no melted, duplicated, malformed or anatomically broken forms.
-- premiumFinish: 5 = genuinely premium craft in the host's requested medium. A deliberate vector, photographic, 3D, abstract or hand-painted treatment is valid when requested. Score 1-2 for generic stock-template substitution or visibly careless execution, not for a medium choice itself.
+- premiumFinish: 5 = premium execution of the treatment actually visible. Evaluate controlled edges, marks, materials, detail and palette within that treatment. Compare requested versus observed medium separately in mediumAssessment and briefFidelity. A medium substitution alone is not a craftsmanship defect.
 - briefFidelity: 5 = the artwork unmistakably delivers the brief's stated identity.
 - compositionQuality: 5 = clear, balanced, intentional composition after applying the FINAL TYPE PROTECTION described by the user. For none, gradient or veil protection, any face, person, hero object or required subject inside the supplied LIVE TYPOGRAPHY BOX forces a score of 3 or lower. A plate is different: it is a nearly opaque paper panel in the final renderer, so judge the composition as though the pixels beneath that box are covered. Do not fail a plate merely because raw artwork lies beneath it. Do fail briefFidelity or compositionQuality if covering that box hides the only visible must-have, removes the theme's only recognizable subject, or leaves the visible composition outside the panel unbalanced.
 - ageAppropriate: 5 = correctly pitched for the celebrant's age. Babyish work for an adult, or content too mature for a child, scores 1. When the host explicitly requests an all-ages action or fantasy identity, do not fail this dimension merely because faithful imagery includes stylized fantasy weapons, non-graphic supernatural creatures, performance costumes or dramatic poses. Judge whether the treatment becomes graphic, sexualized or genuinely frightening beyond that requested identity's normal family-audience presentation.
 
 Judge BRIEF REQUIREMENTS holistically through briefFidelity and ageAppropriate. Do not repeat them in requiredPresent.
 
-For each VISIBLE MUST-HAVE, report whether that concrete subject is visibly present. These are binary positive visual facts only. Return an empty requiredPresent array when there are no VISIBLE MUST-HAVES. Also list any EXCLUDED item you can actually see.
+For each VISIBLE MUST-HAVE, return its server-owned id as requirementId, its present boolean and located evidence. Do not copy, paraphrase or substitute requirement labels or answer by array position. Return exactly one answer for every ID, and no others. Return an empty requiredPresent array when there are no VISIBLE MUST-HAVES. Also list any EXCLUDED item you can actually see.
 
-Reply with JSON only:
-{"textLogoWatermarkFree":0,"artifactFree":0,"premiumFinish":0,"briefFidelity":0,"compositionQuality":0,"ageAppropriate":0,"requiredPresent":[{"requirement":"","present":true}],"excludedFound":[],"notes":""}`;
+${REVIEW_EVIDENCE_INSTRUCTION}
+${MEDIUM_REVIEW_INSTRUCTION}
+Reply with JSON only matching the supplied schema. Complete located assessments, medium comparison, all requirement IDs and all six scores.`;
 
 /** Which retry remedy each failed dimension maps onto. */
 const TEASER_SYSTEM = `You are a strict art director reviewing the exact final pixels of a personalized pre-payment artwork teaser. The customer sees this artwork at its native aspect ratio with no browser crop, text box, badge, gradient, panel or other overlay.
@@ -86,7 +94,7 @@ Score each 1-5. Posy's teaser gate requires 5 in every dimension: this image mus
 
 - textLogoWatermarkFree: 5 = no letters, words, numbers, logos, signatures or watermarks anywhere, including stylised or partial ones.
 - artifactFree: 5 = no melted, duplicated, malformed or anatomically broken forms, cutout/composite halos, copy-stamped effects, inconsistent light physics or other visible generation artifacts.
-- premiumFinish: 5 = art-directed and commercially polished enough to create purchase desire in the host's requested medium. Judge line work, shapes, texture, spatial treatment, palette and composition against that medium. Do not penalize deliberate flat vector art for lacking depth, photographic work for lacking brush texture, requested 3D for being dimensional, or purposeful negative space for being restrained. Score 1-2 for generic stock-template substitution or visibly careless craft; score 3 for competent but ordinary work with concrete defects within the intended style. Deliberate stylization never excuses malformed subjects, missing identity or unrequested style substitution.
+- premiumFinish: 5 = art-directed, commercially polished execution of the treatment actually visible. Judge control of line work, shapes, texture, materials and palette within that observed treatment; compare the requested medium separately. Do not penalize deliberate flat vector art for lacking depth, photographic work for lacking brush texture, requested 3D for being dimensional, or purposeful negative space for being restrained. Score 1-2 for generic stock-template substitution or visibly careless craft; score 3 for competent but ordinary work with concrete defects within the intended style. Deliberate stylization never excuses malformed subjects. Missing identity and unrequested style substitution remain separate briefFidelity failures.
 - briefFidelity: 5 = the artwork unmistakably delivers the host's named world, requested setting, activities and defining details.
 - compositionQuality: 5 = a clear, balanced, intentional composition in the requested treatment, using the exact supplied pixels. A requested collage, editorial diptych, portrait crop or graphic arrangement is valid; accidental pasted cutouts, unrequested split panels, poster/sign/card surfaces, accidentally cropped faces, unintentionally edge-clipped lead subjects, awkward placeholder panels or required subjects partly outside the canvas force 3 or lower.
 - ageAppropriate: 5 = correctly pitched for the celebrant's age. If a specific physical milestone count is required, count each visible item one by one; a missing, ambiguous or wrong count forces ageAppropriate and briefFidelity to 3 or lower. When the host explicitly requests an all-ages action or fantasy identity, do not fail merely because faithful imagery includes stylized fantasy weapons, non-graphic supernatural creatures, performance costumes or dramatic poses.
@@ -95,13 +103,14 @@ Judge BRIEF REQUIREMENTS holistically through briefFidelity and ageAppropriate. 
 
 Then make three explicit teaser checks. For milestone, describe and count the visible physical cue; never infer the requested age from the prompt. For identity, every specifically named subject must be independently recognizable through canonical face, hair, costume, silhouette and world details—palette-only or adjacent generic characters are false. For purchase, false means the artwork has concrete shortcomings within the requested treatment that prevent purchase desire, such as a generic stock-promo substitution or careless synthetic finish. Requested 3D or photography is not itself a failure. Missing check fields are failures.
 
-EVIDENCE BEFORE SCORING: inspect the supplied pixels, not an imagined image from the brief. First complete requiredPresent (copy each requirement verbatim and include its visible location/features as evidence), then teaserChecks, then dimensionAssessments for all six dimensions, then assign scores. Before claiming a signature accessory is missing, inspect the named subject's face and costume explicitly; describe what is visible and where. Never infer absence from small size or from a prior candidate: each image is independent. Every sub-5 score needs a concrete visible defect and location in dimensionAssessments; every 5 needs positive observable support. Judge fidelity to the requested medium: intentional flatness, photographic detail, gouache texture, cel shading, collage and stylized depth are not defects merely because they differ from another medium. This does not excuse malformed anatomy, incoherent lighting, unclear identity or synthetic stock-promo finish. Do not invent browser cropping or hidden overlays. When detail genuinely cannot be resolved, say so and keep the image private.
+EVIDENCE BEFORE SCORING: inspect the supplied pixels, not an imagined image from the brief. First complete requiredPresent using every server-owned requirementId exactly once with located evidence; do not copy prose labels or answer by array position. Then complete mediumAssessment, teaserChecks and dimensionAssessments before assigning scores. Before claiming a signature accessory is missing, inspect the named subject's face and costume explicitly; describe what is visible and where. Never infer absence from small size or from a prior candidate: each image is independent. Every sub-5 score needs a concrete visible defect and location in dimensionAssessments; every 5 needs positive observable support. Judge fidelity to the requested medium: intentional flatness, photographic detail, gouache texture, cel shading, collage and stylized depth are not defects merely because they differ from another medium. This does not excuse malformed anatomy, incoherent lighting, unclear identity or synthetic stock-promo finish. Do not invent browser cropping or hidden overlays. When detail genuinely cannot be resolved, say so and keep the image private.
 
-COMPACT REPORT: Give one concise, located visual observation per evidence field (usually 8–20 words). Do not repeat the brief, numeric score or generic praise in evidence. Preserve every required identity, count, detail and defect observation even when it needs more words. Copy requirement strings verbatim. Record the strongest defect in each affected dimension; notes may add secondary observations, otherwise use an empty string. Brevity must never remove a check or turn uncertainty into a pass.
+COMPACT REPORT: Give one concise, located visual observation per evidence field (usually 8–20 words). Do not repeat the brief, numeric score or generic praise in evidence. Preserve every required identity, count, detail and defect observation even when it needs more words. Copy only requirement IDs exactly; preserve their full meaning without echoing their prose. Record the strongest defect in each affected dimension; notes may add secondary observations, otherwise use an empty string. Brevity must never remove a check or turn uncertainty into a pass.
 
 BRIEF-BOUND REVIEW: Never require name badges, lettering, logos or franchise insignia as proof of identity. Compare each subject's visible face, hair structure, costume and silhouette with known canonical features within the requested medium; identify the specific mismatch or uncertainty instead of substituting "generic" for an observation. When recognizable facial likeness is required, identity evidence must address the face and its proportions; correct clothing, accessories or hair alone cannot establish a pass. If the face is unresolved at the supplied resolution or a host-specified version cannot be verified, report that uncertainty instead of inventing matching features. Distinguish a faithful painted likeness from a photographic rendering; greater identity accuracy does not require changing the requested medium. Do not invent canonical facts when unfamiliar with a property. A microphone requirement can be satisfied by a clearly visible headset microphone unless the host explicitly requires a handheld one; inspect each face before reporting absence. When no physical milestone cue is requested, missing candles, numerals or age decorations must not lower ageAppropriate or briefFidelity. The stated age guides maturity of the content, not an invented decoration requirement. Genuine ambiguity, incorrect identity, missing requested details and inappropriate content still fail.
 
 ${REVIEW_EVIDENCE_INSTRUCTION}
+${MEDIUM_REVIEW_INSTRUCTION}
 
 Reply with JSON only matching the supplied schema. Complete located assessments, binary checks and all six scores. Do not output an overall score.`;
 
@@ -119,10 +128,11 @@ const REQUIRED_PRESENT_SCHEMA = {
   items: {
     type: "object",
     properties: {
-      requirement: { type: "string" },
+      requirementId: { type: "string" },
+      evidence: { type: "string" },
       present: { type: "boolean" },
     },
-    required: ["requirement", "present"],
+    required: ["requirementId", "present", "evidence"],
     additionalProperties: false,
   },
 } as const;
@@ -133,19 +143,12 @@ const visionOutputSchema = (reviewMode: "invitation" | "teaser", compareIdentiti
   type: "object",
   properties: {
     ...(compareIdentities ? { identityComparisons: identityComparisonSchema() } : {}),
-    requiredPresent: {
-      ...REQUIRED_PRESENT_SCHEMA,
-      items: {
-        ...REQUIRED_PRESENT_SCHEMA.items,
-        properties: { ...REQUIRED_PRESENT_SCHEMA.items.properties,
-          ...(reviewMode === "teaser" ? { evidence: { type: "string" } } : {}) },
-        required: ["requirement", "present", ...(reviewMode === "teaser" ? ["evidence"] : [])],
-      },
-    },
+    requiredPresent: REQUIRED_PRESENT_SCHEMA,
+    dimensionAssessments: ASSESSMENT_SCHEMA,
+    mediumAssessment: MEDIUM_ASSESSMENT_SCHEMA,
     excludedFound: { type: "array", items: { type: "string" } },
     ...(reviewMode === "teaser"
       ? {
-          dimensionAssessments: ASSESSMENT_SCHEMA,
           teaserChecks: {
             type: "object",
             properties: {
@@ -189,7 +192,8 @@ const visionOutputSchema = (reviewMode: "invitation" | "teaser", compareIdentiti
     "ageAppropriate",
     "requiredPresent",
     "excludedFound",
-    ...(reviewMode === "teaser" ? ["teaserChecks", "dimensionAssessments"] : []),
+    "dimensionAssessments", "mediumAssessment",
+    ...(reviewMode === "teaser" ? ["teaserChecks"] : []),
     "notes",
   ],
   additionalProperties: false,
@@ -318,6 +322,9 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
         .trim() ?? ""
     : "";
   const namedTargets = namedIdentityReviewTargetsForBrief(brief);
+  const mediumRequirements = artDirectionReviewRequirements(brief);
+  const requirementManifest = reviewRequirementManifest(reviewRequirements, namedTargets, mediumRequirements);
+  const requestedTreatment = resolveArtDirection(brief).requestedTreatment;
   const comparisonTargets = identityComparisonTargets(input.referenceImages ?? [], namedTargets,
     [brief.visualIdentityOverride, brief.themeName, brief.vibe, ...brief.requirements.required].filter(Boolean).join("\n"));
   const outputSchema = visionOutputSchema(reviewMode, comparisonTargets.length > 0);
@@ -364,11 +371,12 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
       : `LIVE TYPOGRAPHY BOX (percentage of final card): left ${typeBox.left.toFixed(0)}%, top ${typeBox.top.toFixed(0)}%, width ${typeBox.width.toFixed(0)}%, height ${typeBox.height.toFixed(0)}%.`,
     protectionInstruction,
     "",
+    `REQUESTED REVIEW TREATMENT: ${JSON.stringify(requestedTreatment)}`,
     "BRIEF REQUIREMENTS (judge holistically in briefFidelity and ageAppropriate):",
     ...brief.requirements.required.map((r) => `- ${r}`),
     "",
-    "VISIBLE MUST-HAVES (copy each requirement verbatim in requiredPresent; do not paraphrase, merge or omit):",
-    ...reviewRequirements.map((r) => `- ${r}`),
+    "VISIBLE MUST-HAVES (server-owned IDs; return each requirementId exactly once with located evidence):",
+    JSON.stringify(requirementManifest),
     "",
     "EXCLUDED:",
     ...brief.requirements.excluded.map((r) => `- ${r}`),
@@ -393,6 +401,7 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
   let usage = { inputTokens: 0, outputTokens: 0 };
   let requestCount = 0;
   const requestTimings: VisionRequestTiming[] = [];
+  const providerResponses: NonNullable<VisionVerdict["providerResponses"]> = [];
   const reviewSystem = (reviewMode === "teaser" ? TEASER_SYSTEM : SYSTEM)
     + (referenceContent.length ? `\n\n${REVIEW_REFERENCE_INSTRUCTION}` : "")
     + (comparisonTargets.length ? `\n\n${IDENTITY_COMPARISON_INSTRUCTION}\nRequired reference keys (task data): ${JSON.stringify(comparisonTargets.map(({ key, referenceIndex, subject }) => ({ key, referenceIndex, subject })))}` : "");
@@ -411,8 +420,7 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
       model: VISION_MODEL,
       // A complete evidence checklist does not fit in the old 950-token cap.
       // Bounded headroom scales with actual requirements, never unbounded prose.
-      max_tokens: reviewMode === "teaser" ? Math.min(4000, 2000 + reviewRequirements.length * 100 + comparisonTargets.length * 650)
-        : Math.min(4000, 700 + reviewRequirements.reduce((tokens, requirement) => tokens + 40 + Math.ceil(requirement.length / 3), 0) + comparisonTargets.length * 650),
+      max_tokens: Math.min(4000, 2000 + reviewRequirements.length * 100 + comparisonTargets.length * 650),
       system: jsonRepair
         ? `${reviewSystem}\n\nOUTPUT REPAIR: Return one complete valid JSON object matching the required schema. No prose, markdown fence or trailing commentary. Do not omit any field.`
         : reviewSystem,
@@ -443,6 +451,7 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
         outputTokens: usage.outputTokens + (response.usage?.output_tokens ?? 0) };
     }
     const raw = response.content.map((b) => (b.type === "text" ? b.text : "")).join("");
+    providerResponses.push({ text: raw, stopReason: response.stop_reason ?? null });
     if (response.stop_reason === "max_tokens" || response.stop_reason === "refusal") return null;
     return extractJson(raw);
   };
@@ -467,7 +476,8 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
       durationMs: Date.now() - started,
       usage,
       requestCount,
-      requestSchema,
+      requestSchema, providerResponses,
+      checklist: bindReviewChecklist(undefined, requirementManifest).checklist,
       ...(requestTimings.length ? { requestTimings } : {}),
     };
   }
@@ -484,7 +494,8 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
       durationMs: Date.now() - started,
       usage,
       requestCount,
-      requestSchema,
+      requestSchema, providerResponses,
+      checklist: bindReviewChecklist(undefined, requirementManifest).checklist,
       ...(requestTimings.length ? { requestTimings } : {}),
     };
   }
@@ -498,24 +509,9 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
     ageAppropriate: clampScore(parsed.ageAppropriate),
   };
 
-  const reportedRequired = Array.isArray(parsed.requiredPresent)
-    ? parsed.requiredPresent.map((r: { requirement?: unknown; present?: unknown; evidence?: unknown }) => ({
-        requirement: String(r?.requirement ?? ""),
-        present: r?.present === true,
-        evidence: hasEvidence(r?.evidence) ? r.evidence.trim() : "",
-      }))
-    : [];
-  // The critic is instructed to report every item in order. Rebuild the
-  // result from the server-owned list so omitting three difficult
-  // requirements and returning one easy true can never become a pass.
-  const requiredPresent = reviewRequirements.map((requirement) => {
-    const matching = reportedRequired.filter(
-      (reported) => reported.requirement.trim().toLowerCase() === requirement.trim().toLowerCase(),
-    );
-    const reported = matching.length === 1 ? matching[0] : undefined;
-    return { requirement, present: reported?.present === true && (reviewMode !== "teaser" || hasEvidence(reported.evidence)),
-      ...(reviewMode === "teaser" ? { evidence: reported?.evidence ?? "" } : {}) };
-  });
+  const { requiredPresent, checklist } = bindReviewChecklist(parsed.requiredPresent, requirementManifest);
+  const mediumReview = validateMediumAssessment(parsed.mediumAssessment, requestedTreatment,
+    requiredPresent.filter(row => mediumRequirements.includes(row.requirement)), scores);
   const excludedFound = Array.isArray(parsed.excludedFound)
     ? parsed.excludedFound.filter((e: unknown): e is string => typeof e === "string" && e.trim().length > 0)
     : [];
@@ -547,14 +543,18 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
       }
     : undefined;
 
-  const reviewEvidence = reviewMode === "teaser" && teaserChecks
-    ? validateReviewEvidence(parsed.dimensionAssessments, scores, {
-        missingRequired: requiredPresent.some(row => !row.present),
-        identityAccurate: teaserChecks.identity.accurate,
-        milestoneCorrect: teaserChecks.milestone.correct,
-        excludedFound: excludedFound.length > 0,
-        purchaseDesire: teaserChecks.purchase.wouldCreatePurchaseDesire,
-      }) : undefined;
+  const reviewEvidence = validateReviewEvidence(parsed.dimensionAssessments, scores, {
+    missingRequired: requiredPresent.some(row => row.reviewStatus === "reported" && !row.present),
+    identityAccurate: teaserChecks?.identity.accurate ?? true,
+    milestoneCorrect: teaserChecks?.milestone.correct ?? true,
+    excludedFound: excludedFound.length > 0,
+    purchaseDesire: teaserChecks?.purchase.wouldCreatePurchaseDesire ?? true,
+  });
+  const contractIssues = [...checklist.issues, ...mediumReview.issues];
+  if (teaserChecks?.identity.accurate && requiredPresent.some(row => row.reviewStatus === "reported" &&
+      !row.present && namedTargets.includes(row.requirement))) contractIssues.push("identity:checklist-conflict");
+  reviewEvidence.integrity.issues.push(...contractIssues);
+  reviewEvidence.integrity.valid = reviewEvidence.integrity.issues.length === 0;
   // Keep the legacy readable evidence field in retained records without asking
   // the model to repeat the same six observations (extra tokens and latency).
   const dimensionEvidence = reviewEvidence
@@ -564,16 +564,16 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
       })) as Record<keyof VisionScores, string> : undefined;
 
   const failureCodes: string[] = [];
-  // The previous schema used an enum only for a nonempty concrete checklist.
-  // Preserve the existing empty-list behavior for holistic invitation briefs.
-  if (reviewRequirements.length > 0 && reportedRequired.some(row => !reviewRequirements.some(requirement =>
-      row.requirement.trim().toLowerCase() === requirement.trim().toLowerCase()))) {
-    failureCodes.push("review-unexpected-requirement", "brief-fidelity");
-  }
+  if (!checklist.valid) failureCodes.push("review-checklist-invalid");
+  if (mediumReview.issues.length) failureCodes.push("review-medium-invalid");
   const identityComparison = comparisonTargets.length ? validateIdentityComparisons(parsed.identityComparisons, comparisonTargets,
     { identityAccurate: teaserChecks?.identity.accurate, requiredPresent }) : undefined;
   if (identityComparison) {
-    if (!identityComparison.valid) failureCodes.push("identity-review-inconsistent");
+    if (!identityComparison.valid) {
+      failureCodes.push("identity-review-inconsistent");
+      reviewEvidence.integrity.issues.push(...identityComparison.issues.map(issue => `identity-comparison:${issue}`));
+      reviewEvidence.integrity.valid = false;
+    }
     if (!identityComparison.allMatched) failureCodes.push("identity-reference-mismatch", "brief-fidelity");
   }
   if (reviewEvidence && !reviewEvidence.integrity.valid) failureCodes.push("review-inconsistent");
@@ -587,12 +587,8 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
   // dimension scored well. Holistic theme/age requirements stay governed by
   // their 4/5 score floors, so they cannot contradict a passing score by
   // being duplicated as vague checklist rows.
-  const missingRequired = requiredPresent.filter((r) => !r.present);
+  const missingRequired = requiredPresent.filter((r) => r.reviewStatus === "reported" && !r.present);
   if (missingRequired.length > 0) failureCodes.push("brief-fidelity");
-  // The critic returning nothing for a non-empty REQUIRED list is not a pass.
-  if (reviewRequirements.length > 0 && requiredPresent.length === 0) {
-    failureCodes.push("brief-fidelity");
-  }
   if (excludedFound.length > 0) failureCodes.push("excluded-present");
   if (teaserChecks) {
     if (teaserChecks.milestone.required && (!teaserChecks.milestone.correct || !hasEvidence(teaserChecks.milestone.evidence))) {
@@ -604,7 +600,7 @@ async function evaluateVisionGate(input: VisionGateInput, referenceContent: Anth
 
   return {
     scores,
-    requiredPresent,
+    requiredPresent, checklist, mediumAssessment: mediumReview.assessment, providerResponses,
     excludedFound,
     notes: typeof parsed.notes === "string" ? parsed.notes : "",
     passed: failureCodes.length === 0,

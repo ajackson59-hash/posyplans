@@ -1,3 +1,4 @@
+import { visionFixtureReply } from "./helpers/visionRequestRequirements";
 import { createHash } from "node:crypto";
 import { expect, it, vi } from "vitest";
 import { runVisionGate, VISION_SCHEMA_VERSION } from "../server/aiFirst/visionGate";
@@ -47,17 +48,17 @@ it.each(["omitted", "duplicated", "unexpected"] as const)("keeps %s requirement 
     const requirements = visionRequestRequirements(request).map(requirement => ({ requirement, present: true, evidence: "Offline fixture" }));
     const requiredPresent = kind === "omitted" ? requirements.slice(1) : [...requirements,
       kind === "duplicated" ? requirements[0] : { requirement: "An unrequested crown", present: true, evidence: "Offline fixture" }];
-    return { stop_reason: "end_turn", usage: { input_tokens: 0, output_tokens: 0 }, content: [{ type: "text", text: JSON.stringify({ ...scores,
+    return { stop_reason: "end_turn", usage: { input_tokens: 0, output_tokens: 0 }, content: [{ type: "text", text: JSON.stringify(visionFixtureReply(request, { ...scores,
       requiredPresent, excludedFound: [], notes: "Offline fixture only",
       dimensionAssessments: Object.fromEntries(Object.keys(scores).map(key => [key,
         { status: "clear", criterion: "none", location: "Full canvas", observation: "Offline fixture" }])),
       teaserChecks: { milestone: { correct: true, evidence: "No count" }, identity: { accurate: true, evidence: "Offline fixture" },
         purchase: { wouldCreatePurchaseDesire: true, evidence: "Offline fixture" } },
-    }) }] };
+    })) }] };
   });
   const result = await runVisionGate({ bytes, concept: concept(), brief: brief({
     requirements: { required: ["[VISIBLE HOST DETAIL] A silver moon arch is visible"], preferred: [], excluded: [] } }),
     reviewMode: "teaser", maxFormatRepairs: 0, client: { messages: { create } } as any });
-  expect(result.passed).toBe(false); expect(result.failureCodes).toContain("brief-fidelity");
+  expect(result.passed).toBe(false); expect(result.failureCodes).toContain("review-checklist-invalid");
   expect(create).toHaveBeenCalledTimes(1);
 });

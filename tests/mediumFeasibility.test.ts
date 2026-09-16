@@ -1,4 +1,4 @@
-import { visionRequestRequirements } from "./helpers/visionRequestRequirements";
+import { visionFixtureAllPresent } from "./helpers/visionRequestRequirements";
 import express from "express";
 import { ArtworkProviderError } from "../server/aiFirst/artwork";
 import { Script } from "node:vm";
@@ -19,6 +19,7 @@ const owner = { id: 41, ownerToken: "private-fixture-owner" };
 const env = { VERCEL_ENV: "preview", VERCEL_GIT_COMMIT_REF: "codex/launch-blockers", VERCEL_GIT_COMMIT_SHA: "a".repeat(40) };
 // These plain local pixels exercise accounting and byte identity, never visual quality.
 const bytes = encodePng({ width: 1024, height: 1536, rgb: new Uint8Array(1024 * 1536 * 3).fill(150) });
+const expectedTeaser = customerVisiblePreviewBytes(bytes);
 function setup(options: { malformedCritic?: boolean; badCast?: boolean; unknownUsage?: boolean } = {}) {
   const store = new InMemoryArtworkAttemptStore();
   const create = vi.fn(async (body: any) => {
@@ -27,13 +28,11 @@ function setup(options: { malformedCritic?: boolean; badCast?: boolean; unknownU
         subjects: options.badCast ? ["Elsa", "Olaf"] : body.messages[0].content.includes("Frozen") ? ["Elsa", "Anna"] : ["Moana", "Maui"] }) }] };
     const scores = { textLogoWatermarkFree: 5, artifactFree: 5, premiumFinish: 5, briefFidelity: 5, compositionQuality: 5, ageAppropriate: 5 };
     return { stop_reason: "end_turn", usage: { input_tokens: 500, output_tokens: 400 }, content: [{ type: "text", text:
-      options.malformedCritic ? "not-json" : JSON.stringify({ ...scores,
-        requiredPresent: visionRequestRequirements(body)
-          .map((requirement: string) => ({ requirement, present: true, evidence: "Located local test fixture" })),
+      options.malformedCritic ? "not-json" : JSON.stringify(visionFixtureAllPresent(body, { ...scores,
         excludedFound: [], notes: "Test fixture only", dimensionAssessments: Object.fromEntries(Object.keys(scores).map(k =>
           [k, { status: "clear", criterion: "none", location: "Full canvas", observation: "Located fixture evidence" }])),
         teaserChecks: { milestone: { correct: true, evidence: "No numeral requested" }, identity: { accurate: true, evidence: "Fixture" },
-          purchase: { wouldCreatePurchaseDesire: true, evidence: "Fixture" } } }) }] };
+          purchase: { wouldCreatePurchaseDesire: true, evidence: "Fixture" } } })) }] };
   });
   const generateImage = vi.fn(async () => ({ bytes, dataUrl: `data:image/png;base64,${bytes.toString("base64")}`, durationMs: 40_000,
     telemetry: { outputFormat: "jpeg" as const, providerRequestCount: 1, providerDurationMs: 39_900, normalizationDurationMs: 100,
@@ -70,7 +69,7 @@ describe("bounded private medium feasibility", () => {
         expect(result.evidence.criticRequests).toBe(1); expect(result.evidence.imageProviderRequests).toBe(1);
         expect(result.evidence.prompt).toContain(MEDIUM_FEASIBILITY_CASES[i].hostBrief);
         const row = await s.store.findById(owner.id, owner.ownerToken, result.recordId);
-        expect(feasibilityTeaser(row!)).toEqual(customerVisiblePreviewBytes(bytes));
+        expect(feasibilityTeaser(row!)).toEqual(expectedTeaser);
         expect(readPngSize(feasibilityTeaser(row!))).toEqual({ width: 373, height: 560 });
       }
       expect((await runMediumFeasibility(s.args(i))).kind).toBe("blocked");

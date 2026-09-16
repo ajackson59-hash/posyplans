@@ -1,3 +1,4 @@
+import { visionFixtureAllPresent } from "./helpers/visionRequestRequirements";
 // The pipeline, driven end to end with fake providers.
 //
 // What matters here is not that it produces four cards — it is HOW. Artwork
@@ -84,11 +85,11 @@ function fakeAnthropic(options: FakeOptions = {}): { client: Anthropic; visionCa
             yield { type: "content_block_delta", delta: { type: "text_delta", text: `${JSON.stringify(item)}\n` } };
           }
         })(),
-      create: async () => {
+      create: async (request: any) => {
         visionCalls += 1;
         const pass = options.visionPasses ? options.visionPasses(visionCalls) : true;
         return {
-          content: [{ type: "text", text: JSON.stringify(visionBody(pass)) }],
+          content: [{ type: "text", text: JSON.stringify(visionFixtureAllPresent(request, visionBody(pass))) }],
           usage: { input_tokens: 1000, output_tokens: 150 },
         };
       },
@@ -424,8 +425,8 @@ describe("degradation", () => {
           (async function* () {
             yield { type: "content_block_delta", delta: { type: "text_delta", text: `${JSON.stringify(CONCEPTS[0])}\n` } };
           })(),
-        create: async () => ({
-          content: [{ type: "text", text: JSON.stringify(visionBody(true)) }],
+        create: async (request: any) => ({
+          content: [{ type: "text", text: JSON.stringify(visionFixtureAllPresent(request, visionBody(true))) }],
           usage: { input_tokens: 10, output_tokens: 10 },
         }),
       },

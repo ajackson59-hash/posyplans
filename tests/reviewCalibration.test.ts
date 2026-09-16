@@ -1,3 +1,4 @@
+import { visionFixtureReply } from "./helpers/visionRequestRequirements";
 import { visionRequestRequirements } from "./helpers/visionRequestRequirements";
 import { createHash } from "node:crypto";
 import express from "express";
@@ -31,7 +32,7 @@ const scores = { textLogoWatermarkFree: 5, artifactFree: 5, premiumFinish: 5,
   briefFidelity: 5, compositionQuality: 5, ageAppropriate: 5 };
 function critic(accurate: boolean, malformed = false) {
   const create = vi.fn(async (body: any) => ({ stop_reason: "end_turn", usage: { input_tokens: 100, output_tokens: 80 },
-    content: [{ type: "text", text: malformed ? "invalid" : JSON.stringify({ ...scores,
+    content: [{ type: "text", text: malformed ? "invalid" : JSON.stringify(visionFixtureReply(body, { ...scores,
       requiredPresent: visionRequestRequirements(body)
         .map((requirement: string) => ({ requirement, present: accurate, evidence: "Located identity fixture evidence" })),
       excludedFound: [], notes: "",
@@ -39,7 +40,7 @@ function critic(accurate: boolean, malformed = false) {
       teaserChecks: { milestone: { correct: true, evidence: "No count required" },
         identity: { accurate, evidence: "Visible hair, face and costume fixture observations" },
         purchase: { wouldCreatePurchaseDesire: true, evidence: "Fixture only" } },
-    }) }] }));
+    })) }] }));
   return { create, client: { messages: { create } } as unknown as Anthropic };
 }
 function input(store: InMemoryArtworkAttemptStore, client: Anthropic, caseId: CalibrationCaseId = "rumi-matched") {

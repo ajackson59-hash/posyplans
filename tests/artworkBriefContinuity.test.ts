@@ -1,3 +1,4 @@
+import { visionFixtureReply } from "./helpers/visionRequestRequirements";
 import { visionRequestRequirements } from "./helpers/visionRequestRequirements";
 import { describe, expect, it } from "vitest";
 import type Anthropic from "@anthropic-ai/sdk";
@@ -143,7 +144,7 @@ describe("artwork brief continuity across customer generation paths", () => {
       expect(requirements).toContain("exactly six lanterns");
       const scores = { textLogoWatermarkFree: 5, artifactFree: 5, premiumFinish: 5,
         briefFidelity: 5, compositionQuality: 5, ageAppropriate: 5 };
-      return { stop_reason: "end_turn", usage: { input_tokens: 1, output_tokens: 1 }, content: [{ type: "text", text: JSON.stringify({
+      return { stop_reason: "end_turn", usage: { input_tokens: 1, output_tokens: 1 }, content: [{ type: "text", text: JSON.stringify(visionFixtureReply(body, {
         ...scores, requiredPresent: requirements.filter(item => item !== "exactly six lanterns").map(requirement => ({
           requirement, present: true, evidence: "Scripted fixture observation; not actual image quality evidence",
         })), excludedFound: [], notes: "Mock response intentionally omitted the final host requirement",
@@ -151,13 +152,13 @@ describe("artwork brief continuity across customer generation paths", () => {
           status: "clear", criterion: "none", location: "whole image", observation: "Scripted positive observation",
         }])), teaserChecks: { milestone: { correct: true, evidence: "Fixture" }, identity: { accurate: true, evidence: "Fixture" },
           purchase: { wouldCreatePurchaseDesire: true, evidence: "Fixture" } },
-      }) }] };
+      })) }] };
     } } } as unknown as Anthropic;
     const bytes = encodePng({ width: 2, height: 3, rgb: new Uint8Array(18).fill(150) });
     const verdict = await runVisionGate({ brief: target, concept: concept(), bytes, client, reviewMode, maxFormatRepairs: 0 });
     expect(calls).toBe(1);
     expect(verdict.passed).toBe(false);
-    expect(verdict.failureCodes).toContain("brief-fidelity");
+    expect(verdict.failureCodes).toContain("review-checklist-invalid");
     expect(verdict.requiredPresent.find(item => item.requirement === "exactly six lanterns")?.present).toBe(false);
   });
 });

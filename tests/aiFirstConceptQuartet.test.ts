@@ -1,3 +1,4 @@
+import { visionFixtureAllPresent } from "./helpers/visionRequestRequirements";
 // Regression for the seven-attempt construction failure.
 //
 // All providers are fakes. The important boundary is that the entire creative
@@ -143,8 +144,8 @@ function quartetClient(concepts: AiFirstConcept[], onEmit?: () => void): Anthrop
             yield { type: "content_block_delta", delta: { type: "text_delta", text: `${JSON.stringify(item)}\n` } };
           }
         })(),
-      create: async () => ({
-        content: [{ type: "text", text: JSON.stringify(passingVision) }],
+      create: async (request: any) => ({
+        content: [{ type: "text", text: JSON.stringify(visionFixtureAllPresent(request, passingVision)) }],
         usage: { input_tokens: 1, output_tokens: 1 },
       }),
     },

@@ -1242,7 +1242,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
         ...tier1.findings.filter((finding) => finding.critical).map((finding) => finding.message),
         vision?.notes ?? "",
         ...(vision?.requiredPresent ?? [])
-          .filter((item) => !item.present)
+          .filter((item) => !item.present && item.reviewStatus !== "unresolved")
           .map((item) => `Missing required visual: ${item.requirement}`),
         ...(vision?.excludedFound ?? []).map((item) => `Remove excluded visual: ${item}`),
       ].filter(Boolean).join(" ").slice(0, 1200);
@@ -1410,7 +1410,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
             ...tier1.findings.filter((finding) => finding.critical).map((finding) => finding.message),
             vision?.notes ?? "",
             ...(vision?.requiredPresent ?? [])
-              .filter((item) => !item.present)
+              .filter((item) => !item.present && item.reviewStatus !== "unresolved")
               .map((item) => `Missing required visual: ${item.requirement}`),
             ...(vision?.excludedFound ?? []).map((item) => `Remove excluded visual: ${item}`),
           ].filter(Boolean).join(" ").slice(0, 1200);
@@ -1612,7 +1612,7 @@ PRIVATE ALTERNATE TAKE: independently rebuild the same event world from a genuin
       ...tier1.findings.filter((finding) => finding.critical).map((finding) => finding.message),
       vision?.notes ?? "",
       ...(vision?.requiredPresent ?? [])
-        .filter((item) => !item.present)
+        .filter((item) => !item.present && item.reviewStatus !== "unresolved")
         .map((item) => `Missing required visual: ${item.requirement}`),
       ...(vision?.excludedFound ?? []).map((item) => `Remove excluded visual: ${item}`),
     ].filter(Boolean).join(" ").slice(0, 1200);

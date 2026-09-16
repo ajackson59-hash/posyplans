@@ -1,3 +1,4 @@
+import { visionFixtureReply } from "./helpers/visionRequestRequirements";
 import { visionRequestRequirements } from "./helpers/visionRequestRequirements";
 import { createHash } from "node:crypto";
 import express from "express";
@@ -27,7 +28,7 @@ const allFive = { textLogoWatermarkFree: 5, artifactFree: 5, premiumFinish: 5,
   briefFidelity: 5, compositionQuality: 5, ageAppropriate: 5 };
 function critic(override: Record<string, unknown> = {}) {
   const create = vi.fn(async (body: any) => ({ stop_reason: "end_turn", usage: { input_tokens: 30, output_tokens: 20 },
-    content: [{ type: "text", text: JSON.stringify({ ...allFive,
+    content: [{ type: "text", text: JSON.stringify(visionFixtureReply(body, { ...allFive,
       requiredPresent: visionRequestRequirements(body)
         .map((requirement: string) => ({ requirement, present: true, evidence: "Scripted fixture observation" })),
       excludedFound: [], notes: "Test only",
@@ -35,7 +36,7 @@ function critic(override: Record<string, unknown> = {}) {
       teaserChecks: { milestone: { correct: true, evidence: "No age props" },
         identity: { accurate: true, evidence: "Original construction" },
         purchase: { wouldCreatePurchaseDesire: true, evidence: "Fixture only" } }, ...override,
-    }) }] }));
+    })) }] }));
   return { create, client: { messages: { create } } as unknown as Anthropic };
 }
 function app(store = new InMemoryArtworkAttemptStore(), environment = "preview", branch = "codex/launch-blockers") {

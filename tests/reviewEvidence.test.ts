@@ -6,7 +6,8 @@ const five = { textLogoWatermarkFree: 5, artifactFree: 5, premiumFinish: 5,
 const facts = { missingRequired: false, identityAccurate: true, milestoneCorrect: true,
   excludedFound: false, purchaseDesire: true };
 const clear = () => Object.fromEntries(Object.keys(five).map(key => [key,
-  { status: "clear", criterion: "none", location: "Full canvas", observation: "Visible positive support for fixture only" }]));
+  { status: "clear", criterion: "none", location: "Full canvas", observation: "Visible positive support for fixture only",
+    ...(key === "premiumFinish" ? { basis: "observed-craft" } : key === "compositionQuality" ? { basis: "observed-layout" } : {}) }]));
 
 describe("located review integrity, separate from visual correctness", () => {
   it("accepts an internally complete report without inventing an artistic deduction", () => {
@@ -40,7 +41,7 @@ describe("located review integrity, separate from visual correctness", () => {
   it("does not waive a real composition defect because the identity is also wrong", () => {
     const rows = clear();
     rows.briefFidelity = { status: "defect", criterion: "identity-mismatch", location: "Right figure", observation: "Wrong hairstyle" };
-    rows.compositionQuality = { status: "defect", criterion: "edge-clipping", location: "Top edge", observation: "Required face is cut across the eyes" };
+    rows.compositionQuality = { status: "defect", criterion: "edge-clipping", location: "Top edge", observation: "Required face is cut across the eyes", basis: "observed-layout" };
     expect(validateReviewEvidence(rows, { ...five, briefFidelity: 2, compositionQuality: 3 },
       { ...facts, identityAccurate: false, purchaseDesire: false }).integrity.valid).toBe(true);
   });

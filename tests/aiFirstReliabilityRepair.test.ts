@@ -1,3 +1,4 @@
+import { visionFixtureAllPresent } from "./helpers/visionRequestRequirements";
 // PR #3 reliability repair — non-provider tests.
 //
 // Every test here either drives the real pipeline/routes with fakes (no
@@ -98,8 +99,8 @@ function singleConceptClientWithPassingVision(): Anthropic {
             delta: { type: "text_delta", text: `${conceptQuartet(FAILING_CONCEPT).map((item) => JSON.stringify(item)).join("\n")}\n` },
           };
         })(),
-      create: async () => ({
-        content: [{ type: "text", text: JSON.stringify(PASSING_VISION_BODY) }],
+      create: async (request: any) => ({
+        content: [{ type: "text", text: JSON.stringify(visionFixtureAllPresent(request, PASSING_VISION_BODY)) }],
         usage: { input_tokens: 1000, output_tokens: 150 },
       }),
     },
@@ -1407,8 +1408,8 @@ describe("every billed image result is retained, including a clean run's four ac
               yield { type: "content_block_delta", delta: { type: "text_delta", text: `${JSON.stringify(c)}\n` } };
             }
           })(),
-        create: async () => ({
-          content: [{ type: "text", text: JSON.stringify(PASSING_VISION_BODY) }],
+        create: async (request: any) => ({
+          content: [{ type: "text", text: JSON.stringify(visionFixtureAllPresent(request, PASSING_VISION_BODY)) }],
           usage: { input_tokens: 1000, output_tokens: 150 },
         }),
       },

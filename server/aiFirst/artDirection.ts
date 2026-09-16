@@ -14,6 +14,8 @@ export function resolveArtDirection(brief: Pick<EventBrief, "vibe" | "themeName"
   for (const clause of hostDirection.split(/[.!?;\n]|\bbut\b/gi)) {
     for (const match of Array.from(clause.matchAll(MEDIA))) {
       const prefix = clause.slice(0, match.index);
+      // Character-shape descriptions are identity data, not a silhouette-art commission.
+      if (/^silhouette$/i.test(match[0]) && /\b(?:face|hair|body|tail|ear|head|character|furry)\s*$/i.test(prefix)) continue;
       const directive = Array.from(prefix.matchAll(/\b(?:(?:do not|don't|never|avoid)\s+)?(?:use|choose|prefer|render|paint|draw|make it|in favor of)\b/gi)).at(-1);
       const lastInstruction = prefix.slice(directive?.index ?? 0).replace(/\bnot only\b/gi, "");
       // "Pastel pink" is a palette, not an instruction to use pastel sticks.

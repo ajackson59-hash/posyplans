@@ -1,3 +1,4 @@
+import { visionFixtureReply } from "./helpers/visionRequestRequirements";
 import { visionRequestRequirements } from "./helpers/visionRequestRequirements";
 import { describe, expect, it, vi } from "vitest";
 import type Anthropic from "@anthropic-ai/sdk";
@@ -192,14 +193,14 @@ describe("general artwork direction contract", () => {
     const { brief, concept } = await buildQualityLockedPreviewBrief(event("Disney Mickey and Minnie", "flat vector"), "", named("Disney Mickey and Minnie"));
     const create = vi.fn(async (body: any) => {
       const requirements = visionRequestRequirements(body);
-      return { stop_reason: "end_turn", usage: { input_tokens: 5, output_tokens: 5 }, content: [{ type: "text", text: JSON.stringify({
+      return { stop_reason: "end_turn", usage: { input_tokens: 5, output_tokens: 5 }, content: [{ type: "text", text: JSON.stringify(visionFixtureReply(body, {
         ...scores, requiredPresent: requirements.map((requirement: string) => ({ requirement,
           present: !requirement.includes("requested artwork treatment"), evidence: "Fixture: supplied image used a painted treatment" })),
         excludedFound: [], notes: "Fixture only",
         dimensionEvidence: Object.fromEntries(Object.keys(scores).map(k => [k, "Scripted observation"])),
         teaserChecks: { milestone: { correct: true, evidence: "No candles" }, identity: { accurate: true, evidence: "Named identities" },
           purchase: { wouldCreatePurchaseDesire: true, evidence: "Otherwise polished" } },
-      }) }] };
+      })) }] };
     });
     const result = await runVisionGate({ bytes: png, concept, brief, reviewMode: "teaser", maxFormatRepairs: 0,
       client: { messages: { create } } as unknown as Anthropic });
