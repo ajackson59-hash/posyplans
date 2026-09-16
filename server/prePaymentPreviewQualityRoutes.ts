@@ -12,6 +12,8 @@ import { customerArtworkEvaluation, googleCustomerArtworkEvaluation, CUSTOMER_EV
 import { ORIGINAL_CONTROL_REVIEW, reviewRetainedCustomerArtwork } from "./customerArtworkRetainedReview";
 import { SCENE_REPAINT_EXPERIMENT, SCENE_LIKENESS_EXPERIMENT, runRetainedSceneRepaint } from "./retainedSceneRepaint";
 import { RETAINED_LIKENESS_REVIEW, FEATURE_COMPARISON_CONTROLS, FEATURE_COMPARISON_V2_CONTROLS, STREAM_COMPARISON_CONTROLS, BLIND_COMPARISON_CONTROLS, ACCEPTED_ILLUSTRATION_CONTROL, runRetainedLikenessReview } from "./retainedLikenessReview";
+import { CROSS_THEME_REGISTRATIONS, runCrossThemeReview } from "./crossThemeReview";
+import type { CrossThemeCaseId } from "./crossThemeReviewProfiles";
 import { CURRENT_RESOLUTION_CONTROLS, runCurrentResolutionReview } from "./currentResolutionReview";
 import {
   type ArtworkReferenceImage,
@@ -644,6 +646,33 @@ export function registerPrePaymentPreviewQualityRoutes(
       return res.status(result.kind === "blocked" ? 409 : result.kind === "unavailable" ? 503 : 200).json(result);
     } catch {
       if (!res.headersSent) return res.status(503).json({ error: "Review unavailable; claimed controls cannot be retried" });
+    } finally { res.off("close", close); }
+  });
+
+  app.post("/api/events/owner/:ownerToken/prepayment-preview/cross-theme-review/:caseId", async (req, res) => {
+    res.setHeader("Cache-Control", "private, no-store");
+    const registration = CROSS_THEME_REGISTRATIONS.find(c => c.caseId === String(req.params.caseId));
+    if (process.env.VERCEL_ENV !== "preview" || process.env.VERCEL_GIT_COMMIT_REF !== "codex/launch-blockers" || !registration)
+      return res.status(404).json({ error: "Not found" });
+    const parsed = z.object({ mode: z.enum(["preflight", "review", "close"]),
+      expectedReviewedHash: z.literal(registration.reviewedHash), candidateBase64: z.string().min(1).max(3_500_000),
+      confirmOneVisionCall: z.literal(true).optional() }).strict().safeParse(req.body);
+    if (!parsed.success || (parsed.data.mode === "review" && !parsed.data.confirmOneVisionCall))
+      return res.status(400).json({ error: "Use the fixed study input and confirmation" });
+    const event = await store.getEventByOwnerToken(String(req.params.ownerToken));
+    if (!event || event.id !== 61) return res.status(404).json({ error: "Not found" });
+    const candidate = Buffer.from(parsed.data.candidateBase64, "base64");
+    if (candidate.toString("base64") !== parsed.data.candidateBase64) return res.status(400).json({ error: "Invalid pixel encoding" });
+    const controller = new AbortController();
+    const close = () => { if (!res.writableEnded) controller.abort(); };
+    res.on("close", close);
+    try {
+      const result = await runCrossThemeReview(event, artworkAttemptStore, registration.caseId as CrossThemeCaseId, {
+        candidate, preflightOnly: parsed.data.mode === "preflight", closeOnly: parsed.data.mode === "close", signal: controller.signal,
+      });
+      return res.status(result.kind === "blocked" ? 409 : 200).json(result);
+    } catch {
+      if (!res.headersSent) return res.status(503).json({ error: "Study unavailable; a claimed review cannot be repeated" });
     } finally { res.off("close", close); }
   });
 
