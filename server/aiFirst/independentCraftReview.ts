@@ -41,6 +41,7 @@ export function validateIndependentCraft(raw:unknown){
  for(const d of dimensions){
    const value=record[d];
    const row=value&&typeof value==='object'&&!Array.isArray(value)?value as Record<string,unknown>:{};
+   if(Object.keys(row).some(k=>!['score','status','criterion','location','observation'].includes(k)))issues.push(`${d}:unexpected-field`);
    const located=(s:unknown):s is string=>typeof s==='string'&&s.trim().length>0;
    if(typeof row.score!=='number'||!Number.isInteger(row.score)||row.score<1||row.score>5||
      !['clear','defect','uncertain'].includes(String(row.status))||!located(row.location)||!located(row.observation)||!located(row.criterion)){
