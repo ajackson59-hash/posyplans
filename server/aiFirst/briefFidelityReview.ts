@@ -15,7 +15,7 @@ import { IDENTITY_FEATURES, IDENTITY_COMPARISON_INSTRUCTION, identityComparisonS
   identityComparisonTargets, validateIdentityComparisons } from "./identityComparison";
 import { buildIndependentCraftRequest } from "./independentCraftReview";
 
-export const BRIEF_FIDELITY_VERSION = "separate-full-brief-v1";
+export const BRIEF_FIDELITY_VERSION = "separate-full-brief-v2";
 const dimensions = ["textLogoWatermarkFree", "briefFidelity", "ageAppropriate"] as const;
 const statuses = ["matched", "mismatched", "unresolved"] as const;
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -25,7 +25,7 @@ const textSchema = { type: "string" };
 const locatedSchema = { status: { type: "string", enum: [...statuses] }, location: textSchema, observation: textSchema };
 const answerSchema = objectSchema({ requirementId: textSchema, ...locatedSchema });
 const assessmentSchema = Object.fromEntries(dimensions.map(d => [d, objectSchema({
-  score: { type: "integer", minimum: 1, maximum: 5 },
+  score: { type: "integer", enum: [1, 2, 3, 4, 5] },
   status: { type: "string", enum: ["clear", "defect", "uncertain"] },
   criterion: { type: "string", enum: ["none", ...REVIEW_CRITERIA[d]] }, location: textSchema, observation: textSchema,
 })]));

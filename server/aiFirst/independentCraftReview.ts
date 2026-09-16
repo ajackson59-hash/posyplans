@@ -1,14 +1,14 @@
-/** Offline prototype only: no provider call, route, activation, or score replacement. */
+/** Pure packet builder/validator: no provider call or score replacement. */
 import {createHash} from 'node:crypto';
 import {decodePng} from './png';
 import {REVIEW_CRITERIA} from './reviewEvidence';
 import {VISION_MODEL} from './visionGate';
 
-export const INDEPENDENT_CRAFT_VERSION='independent-observed-craft-v1';
+export const INDEPENDENT_CRAFT_VERSION='independent-observed-craft-v2';
 const dimensions=['artifactFree','premiumFinish','compositionQuality'] as const;
 type Dimension=typeof dimensions[number];
 const properties=Object.fromEntries(dimensions.map(d=>[d,{type:'object',properties:{
- score:{type:'integer',minimum:1,maximum:5},status:{type:'string',enum:['clear','defect','uncertain']},
+ score:{type:'integer',enum:[1,2,3,4,5]},status:{type:'string',enum:['clear','defect','uncertain']},
  criterion:{type:'string',enum:['none',...REVIEW_CRITERIA[d]]},location:{type:'string'},observation:{type:'string'},
  },required:['score','status','criterion','location','observation'],additionalProperties:false}]));
 export const INDEPENDENT_CRAFT_SCHEMA={type:'object',properties,required:[...dimensions],additionalProperties:false};

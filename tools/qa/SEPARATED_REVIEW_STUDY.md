@@ -1,4 +1,16 @@
-# Approved separated reviewer validation — 16 September 2026
+# Closed separated reviewer validation — 16 September 2026
+
+## Outcome and offline repair
+
+The approved batch ran on `2d6dab796a800b0d68b273ef4288b09e52568e6f` after all twenty frozen preflights matched. Its first request, `craft-elsa`, made one physical provider attempt and returned HTTP 400 in 405 ms, with no message receipt or usage. The client endpoint returned the retained stopped result successfully. Claim 332, result 333 and terminal closure 334 are saved in Preview. The remaining nineteen requests were not sent. Cost is unknown, not zero. The incomplete component fields are consequences of the missing provider response, not observations about Elsa. No visual accuracy conclusion is available.
+
+The dataset and original registration remain permanently closed and immutable. Twenty-eight historical/source rows and five event rows match their pre-run full-row snapshots. No new artwork, retries, replacements, customer promotion or Production changes occurred.
+
+Offline inspection identified unsupported `minimum`/`maximum` keywords in both new output schemas. Anthropic's [structured-output documentation](https://platform.claude.com/docs/en/build-with-claude/structured-outputs#json-schema-limitations) says these numeric constraints return 400; numeric enums are supported. This is a verified request defect consistent with the observed status, but the exact provider error message was not retained, so it is not proof of the server's specific diagnosis.
+
+The two packet versions now use an integer enum of 1–5. Their instructions, images, briefs, criteria, validators and thresholds are unchanged. Two offline regressions inspect the actual SDK-serialized request against the documented schema subset; both failed on `minimum` before the repair. Local validator bounds remain enforced. The SDK's generic transform is not used because this installed version also strips supported enums. The twenty original registered fingerprints were **not** updated: the corrected builders do not reopen or enable this closed study. Any new paid validation needs a fresh concrete scope and registration. No corrected request has been sent to the provider.
+
+## Historical approved scope
 
 The owner approved the concrete proposal: the same eight saved images and twelve full briefs through private Posy Preview to Anthropic Claude Sonnet4.6, at most twenty reviews with a fresh $2.50 planning reserve. No new images, classifiers, repairs, retries, replacements, merge or Production change. This allowance is separate from both permanently closed cross-theme studies.
 
