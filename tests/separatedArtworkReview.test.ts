@@ -26,10 +26,10 @@ function fidelityReply(packet: ReturnType<typeof buildBriefFidelityRequest>): an
     fullBrief: located(), intendedLayout: located(), purchase: located(),
     medium: { ...located(), status: packet.context.requestedTreatment ? "matched" : "not-requested", observedTreatment: "Synthetic treatment" },
     assessments: { textLogoWatermarkFree: clear(), briefFidelity: clear(), ageAppropriate: clear() },
-    identityComparisons: packet.context.comparisonTargets.flatMap(t => IDENTITY_FEATURES.map(feature => ({ referenceKey: t.key, feature,
+    ...(packet.context.comparisonTargets.length ? { identityComparisons: packet.context.comparisonTargets.flatMap(t => IDENTITY_FEATURES.map(feature => ({ referenceKey: t.key, feature,
       candidateLocation: "central face", candidateVisibility: "clear", referenceVisibility: "clear",
       referenceObservation: "Synthetic geometry in reference", candidateObservation: "Synthetic geometry in candidate",
-      assessment: "match", explanation: "Synthetic paired comparison" }))) };
+      assessment: "match", explanation: "Synthetic paired comparison" }))) } : {}) };
 }
 function craftReply(): any { return { artifactFree: clear(), premiumFinish: clear(), compositionQuality: clear() }; }
 function receipt(packet: { imageHash: string; requestFingerprint: string; schemaHash: string }, raw: unknown): SeparatedReviewReceipt {
@@ -63,8 +63,21 @@ it.each(CROSS_THEME_CASES)("prepares full coverage for retained $caseId without 
     expect(task).toContain(encoded(profile.brief.vibe));
     expect(task).toContain(encoded(profile.brief.inspirationNotes));
     expect(p.fidelity.context.exclusions).toHaveLength(new Set(profile.brief.requirements.excluded).size);
+    expect(p.fidelity.context.comparisonTargets).toHaveLength(0);
+    expect(p.fidelity.body.output_config?.format?.schema.properties).not.toHaveProperty("identityComparisons");
+    expect((p.fidelity.body.messages[0].content as any[]).filter(c => c.type === "image")).toHaveLength(1);
     expect(network).not.toHaveBeenCalled();
   } finally { network.mockRestore(); }
+});
+
+it("rejects reference-image claims invented from written identity descriptions", async () => {
+  const p = buildBriefFidelityRequest({ ...await crossThemeProfile("c01"), bytes, reviewMode: "teaser" });
+  const raw = fidelityReply(p);
+  raw.identityComparisons = IDENTITY_FEATURES.map(feature => ({ referenceKey: "Elsa (Disney Frozen)", feature,
+    candidateLocation: "central face", candidateVisibility: "clear", referenceVisibility: "clear",
+    referenceObservation: "From the written description", candidateObservation: "Visible candidate feature",
+    assessment: "match", explanation: "Claimed description comparison" }));
+  expect(validateBriefFidelity(raw, p.context)).toMatchObject({ valid: false, passed: false });
 });
 
 it.each(["watercolor", "flat vector", "photographic", "3D", "collage", "medium: lacquer inlay"])("preserves free-form %s treatment", medium => {

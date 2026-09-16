@@ -1,4 +1,14 @@
-# Approved corrected separated review — 16 September 2026
+# Closed corrected separated review — 16 September 2026
+
+## Live outcome and reference-mode repair
+
+The approved batch ran on `46d5262056941f915b95855e262768b3ec85ecc7` after all twenty deployed preflights matched. CI464 passed 1,282 tests, typecheck and build. The schema correction worked: both provider requests completed normally with valid JSON and known usage. Craft Elsa (result336) passed all three dimensions. Fidelity Elsa/Elsa (result338) recognized the identity and 3D treatment, but invented four reference-image comparisons despite `comparisonTargets: []` and no attached reference images. Their key `Elsa (Disney Frozen)` was not a supplied reference key. The validator correctly rejected the report; its full-brief/fidelity/purchase conflicts cascade from that invalid comparison. This is not a failed visual likeness observation.
+
+Claims335/337, results336/338 and close339 are retained. The batch is permanently CLOSED after two physical calls. Eighteen requests were not sent. Usage cost is USD0.045993, not an invoice. No retries, new images or customer activation occurred. The earlier unknown-cost HTTP400 belongs to a different closed batch and is not included in this usage total.
+
+Offline repair: the fidelity request now chooses one of two static schema shapes according to the server-owned comparison targets. With none, the comparison field is absent and forbidden, and the instruction explicitly distinguishes written descriptions from reference-image evidence. With supplied targets, the existing four-feature comparisons remain mandatory. Local validation mirrors both modes, still rejects unsolicited comparisons and retains every identity/medium/requirement/purchase check. Only the fidelity packet version changes to v3; craft is unchanged. Twelve retained-case regressions failed before repair. No historical result is rewritten, and no corrected request is dispatched under the closed registration.
+
+## Historical approved scope
 
 The owner approved the prepared corrected batch: the same eight retained images and twelve complete briefs, maximum twenty physical Anthropic Sonnet 4.6 calls, fresh $2.50 planning reserve. No new images, classifiers, repairs, retries, replacements, merge or Production changes. The earlier `separated-review-20260916-v1` remains permanently closed after its first HTTP 400; its original registration and results are unchanged.
 

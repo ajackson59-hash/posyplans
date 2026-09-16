@@ -15,7 +15,7 @@ import { IDENTITY_FEATURES, IDENTITY_COMPARISON_INSTRUCTION, identityComparisonS
   identityComparisonTargets, validateIdentityComparisons } from "./identityComparison";
 import { buildIndependentCraftRequest } from "./independentCraftReview";
 
-export const BRIEF_FIDELITY_VERSION = "separate-full-brief-v2";
+export const BRIEF_FIDELITY_VERSION = "separate-full-brief-v3";
 const dimensions = ["textLogoWatermarkFree", "briefFidelity", "ageAppropriate"] as const;
 const statuses = ["matched", "mismatched", "unresolved"] as const;
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -29,7 +29,7 @@ const assessmentSchema = Object.fromEntries(dimensions.map(d => [d, objectSchema
   status: { type: "string", enum: ["clear", "defect", "uncertain"] },
   criterion: { type: "string", enum: ["none", ...REVIEW_CRITERIA[d]] }, location: textSchema, observation: textSchema,
 })]));
-export const BRIEF_FIDELITY_SCHEMA = objectSchema({
+const commonProperties = {
   requirements: { type: "array", items: answerSchema },
   exclusions: { type: "array", items: answerSchema },
   fullBrief: objectSchema(locatedSchema),
@@ -37,8 +37,9 @@ export const BRIEF_FIDELITY_SCHEMA = objectSchema({
   purchase: objectSchema(locatedSchema),
   medium: objectSchema({ ...locatedSchema, status: { type: "string", enum: [...statuses, "not-requested"] }, observedTreatment: textSchema }),
   assessments: objectSchema(assessmentSchema),
-  identityComparisons: identityComparisonSchema(),
-});
+};
+export const BRIEF_FIDELITY_SCHEMA = objectSchema({ ...commonProperties, identityComparisons: identityComparisonSchema() });
+const NO_REFERENCE_FIDELITY_SCHEMA = objectSchema(commonProperties);
 
 const text = z.string().trim().min(1);
 const located = z.object({ status: z.enum(statuses), location: text, observation: text }).strict();
@@ -54,6 +55,7 @@ const responseSchema = z.object({
     referenceVisibility: z.enum(["clear", "insufficient"]), referenceObservation: text, candidateObservation: text,
     assessment: z.enum(["match", "mismatch", "unresolved"]), explanation: text }).strict()),
 }).strict();
+const noReferenceResponseSchema = responseSchema.omit({ identityComparisons: true });
 
 export interface BriefFidelityInput {
   bytes: Buffer;
@@ -117,26 +119,30 @@ export function buildBriefFidelityRequest(input: BriefFidelityInput) {
     concept: { name: concept.conceptName, description: concept.description, art: concept.art }, surface, ...context };
   const taskText = JSON.stringify(task);
   if (taskText.length > 60_000 || requirements.length + exclusions.length > 60) throw Error("fidelity-context-too-large");
+  const compareReferences = context.comparisonTargets.length > 0;
+  const schema = compareReferences ? BRIEF_FIDELITY_SCHEMA : NO_REFERENCE_FIDELITY_SCHEMA;
   const body: Anthropic.Messages.MessageCreateParamsNonStreaming = { model: VISION_MODEL,
     max_tokens: Math.min(6000, 2300 + 100 * (requirements.length + exclusions.length) + 650 * context.comparisonTargets.length),
-    system: SYSTEM + (references.content.length ? `\n${REVIEW_REFERENCE_INSTRUCTION}\n${IDENTITY_COMPARISON_INSTRUCTION.replace(
+    system: SYSTEM + (references.content.length ? `\n${REVIEW_REFERENCE_INSTRUCTION}` : "")
+      + (compareReferences ? `\n${IDENTITY_COMPARISON_INSTRUCTION.replace(
       "Keep requiredPresent, teaser identity and fidelity consistent with these comparisons.",
-      "Keep requirements, fullBrief and briefFidelity consistent with these comparisons.")}` : ""),
+      "Keep requirements, fullBrief and briefFidelity consistent with these comparisons.")}`
+      : "\nNo reference-image comparisons are requested: comparisonTargets is empty. Written descriptions and URLs are context, not attached reference images. Assess named identities in the requirement observations. Do not emit identityComparisons or claim reference-image visibility."),
     messages: [{ role: "user", content: [{ type: "text", text: "CANDIDATE IMAGE — assess only these pixels:" },
       { type: "image", source: { type: "base64", media_type: "image/png", data: input.bytes.toString("base64") } },
       ...references.content, { type: "text", text: `COMPLETE TASK DATA:\n${taskText}` }] }],
-    output_config: { format: { type: "json_schema", schema: BRIEF_FIDELITY_SCHEMA } } };
+    output_config: { format: { type: "json_schema", schema } } };
   return { body, context, contextHash: hash(taskText), imageHash: candidate.imageHash,
-    requestFingerprint: hash(JSON.stringify(body)), schemaHash: hash(JSON.stringify(BRIEF_FIDELITY_SCHEMA)),
+    requestFingerprint: hash(JSON.stringify(body)), schemaHash: hash(JSON.stringify(schema)),
     version: BRIEF_FIDELITY_VERSION, referenceEvidence: references.evidence };
 }
 
 /** Strict response coverage; located uncertainty stays valid evidence but cannot pass. */
 export function validateBriefFidelity(raw: unknown, context: BriefFidelityContext) {
-  const parsed = responseSchema.safeParse(raw);
+  const parsed = (context.comparisonTargets.length ? responseSchema : noReferenceResponseSchema).safeParse(raw);
   if (!parsed.success) return { valid: false, passed: false, unresolved: false, report: null,
     identityComparison: null, issues: parsed.error.issues.map(i => `fidelity:${i.path.join(".") || "report"}:${i.code}`) };
-  const report = parsed.data, issues: string[] = [];
+  const report = { ...parsed.data, identityComparisons: "identityComparisons" in parsed.data ? parsed.data.identityComparisons : [] }, issues: string[] = [];
   for (const list of ["requirements", "exclusions"] as const) {
     for (const row of report[list]) if (!context[list].some(r => r.id === row.requirementId)) issues.push(`${list}:unknown-id`);
     for (const item of context[list]) {

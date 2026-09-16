@@ -38,7 +38,7 @@ function reportFor(body: any) {
     exclusions: task.exclusions.map((r: any) => ({ requirementId: r.id, ...matched() })),
     fullBrief: matched(), intendedLayout: matched(), purchase: matched(),
     medium: { ...matched(), status: task.requestedTreatment ? "matched" : "not-requested", observedTreatment: "Synthetic treatment" },
-    assessments: { textLogoWatermarkFree: clear(), briefFidelity: clear(), ageAppropriate: clear() }, identityComparisons: [] };
+    assessments: { textLogoWatermarkFree: clear(), briefFidelity: clear(), ageAppropriate: clear() } };
 }
 function fixture(edit: (report: any, response: any) => void = () => {}) {
   const store = new InMemoryArtworkAttemptStore();
