@@ -1,6 +1,6 @@
 {
   "dataset": "separated-research-20260916-v3",
-  "authorizationStatus": "pending",
+  "authorizationStatus": "approved",
   "protocol": "independent-failures-continue-v1",
   "maximumCalls": 19,
   "budgetMicros": 2500000,

@@ -1,4 +1,4 @@
-/** Research-only scheduler. Pending registration; no HTTP route or customer activation.
+/** Approved research-only scheduler. Private Preview route; no customer activation.
  * Invalid model reports are retained failures, not reasons to abandon independent cases.
  * Unknown accounting, transport integrity or retention still fail closed. Old runners are untouched. */
 import Anthropic from "@anthropic-ai/sdk";

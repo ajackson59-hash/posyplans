@@ -28,7 +28,7 @@ function reportFor(body: any) {
 }
 async function fixture(edit: (report: any, response: any, call: number) => void = () => {}) {
   const registration = structuredClone(proposed) as ResearchRegistration;
-  registration.authorizationStatus = "approved"; // Synthetic-only fixture. Deployed proposal remains pending.
+  registration.authorizationStatus = "approved"; // Synthetic-only fixture; never sends a live request.
   const store = new InMemoryArtworkAttemptStore();
   for (const c of registration.cases) {
     const profile = await crossThemeProfile(c.caseId as CrossThemeCaseId), plan = prepareSeparatedReview({ ...profile, bytes, reviewMode: "teaser" });
@@ -69,8 +69,8 @@ async function fixture(edit: (report: any, response: any, call: number) => void 
     run: (id: string, overrides = {}) => runSeparatedResearchStudy(event, store, id, { ...options, ...overrides }, registration) };
 }
 
-it("keeps the real proposal pending and blocks unapproved dispatch without claims or calls", async () => {
-  expect(proposed.authorizationStatus).toBe("pending");
+it("has explicit approval but still blocks an unapproved registration without claims or calls", async () => {
+  expect(proposed.authorizationStatus).toBe("approved");
   const f = await fixture(); f.registration.authorizationStatus = "pending";
   expect(await f.run("fidelity-c01", { preflightOnly: true })).toMatchObject({ kind: "preflight", providerCalls: 0, authorizationStatus: "pending", reusedReceiptIds: ["336"] });
   expect(await f.run("fidelity-c01")).toMatchObject({ kind: "blocked", reason: "research-awaiting-fresh-approval" });
