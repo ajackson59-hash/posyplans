@@ -67,12 +67,61 @@ export default function Rsvp() {
   return <RsvpInvitation key={`${shareSlug}/${guestToken || ""}`} shareSlug={shareSlug} guestToken={guestToken} />;
 }
 
-function RsvpInvitation({ shareSlug, guestToken }: { shareSlug: string; guestToken?: string }) {
-  const { toast } = useToast();
-
-  const { data: event, isLoading } = useQuery<PublicEvent>({
-    queryKey: [`/api/events/public/${shareSlug}`],
+/** Read-only host preview: uses owner access without publishing the draft. */
+export function InvitationPreview() {
+  const { ownerToken } = useParams<{ ownerToken: string }>();
+  const { data, isLoading } = useQuery<{ event: EventRecord }>({
+    queryKey: [`/api/events/owner/${ownerToken}`],
+    enabled: Boolean(ownerToken),
   });
+
+  if (isLoading) {
+    return <div className="mx-auto max-w-lg px-6 py-16"><Skeleton className="h-32 w-full" /></div>;
+  }
+  if (!data?.event) {
+    return (
+      <div className="mx-auto max-w-lg px-6 py-24 text-center">
+        <h1 className="font-serif text-2xl font-semibold">We couldn't open this private preview</h1>
+        <p className="mt-2 text-muted-foreground">Open the preview from your event dashboard.</p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="border-b border-border bg-muted/60 px-4 py-3" data-testid="private-invitation-preview">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold">Private invitation preview</p>
+            <p className="text-xs text-muted-foreground">
+              {data.event.inviteStatus === "draft" ? "Your invitation is still a draft. " : "Your invitation is live. "}
+              RSVPs are disabled in this preview.
+            </p>
+          </div>
+          <Button asChild size="sm" variant="outline">
+            <Link href={`/dashboard/${encodeURIComponent(ownerToken)}`}>Back to your event</Link>
+          </Button>
+        </div>
+      </div>
+      <RsvpInvitation key={ownerToken} shareSlug={data.event.shareSlug} previewEvent={data.event} />
+    </>
+  );
+}
+
+function RsvpInvitation({ shareSlug, guestToken, previewEvent }: {
+  shareSlug: string;
+  guestToken?: string;
+  previewEvent?: PublicEvent;
+}) {
+  const { toast } = useToast();
+  const previewMode = Boolean(previewEvent);
+
+  const { data: publicEvent, isLoading: publicLoading } = useQuery<PublicEvent>({
+    queryKey: [`/api/events/public/${shareSlug}`],
+    enabled: !previewMode,
+  });
+  const event = previewEvent ?? publicEvent;
+  const isLoading = !previewMode && publicLoading;
 
   const {
     data: personalizedGuest,
@@ -80,7 +129,7 @@ function RsvpInvitation({ shareSlug, guestToken }: { shareSlug: string; guestTok
     isError: isGuestError,
   } = useQuery<GuestMatch>({
     queryKey: [`/api/events/public/${shareSlug}/guest/${guestToken}`],
-    enabled: Boolean(guestToken) && !!event && event.inviteStatus !== "draft",
+    enabled: !previewMode && Boolean(guestToken) && !!event && event.inviteStatus !== "draft",
   });
 
   const [identityName, setIdentityName] = useState("");
@@ -159,6 +208,7 @@ function RsvpInvitation({ shareSlug, guestToken }: { shareSlug: string; guestTok
 
   const identifyGuest = useMutation<{ guest: GuestMatch; guestToken: string }>({
     mutationFn: async () => {
+      if (previewMode) throw new Error("RSVPs are disabled in this preview.");
       const res = await apiRequest("POST", `/api/events/public/${shareSlug}/identify`, {
         name: identityName,
         contact: identityContact,
@@ -178,6 +228,7 @@ function RsvpInvitation({ shareSlug, guestToken }: { shareSlug: string; guestTok
   // never make a successfully recorded RSVP look like it failed.
   const saveSmsOptIn = useMutation({
     mutationFn: async () => {
+      if (previewMode) return;
       if (!activeGuestToken || !smsPhone.trim()) return;
       await apiRequest("POST", `/api/events/public/${shareSlug}/guest/${activeGuestToken}/sms-opt-in`, {
         optIn: true,
@@ -202,6 +253,7 @@ function RsvpInvitation({ shareSlug, guestToken }: { shareSlug: string; guestTok
   // success instead of showing a false "try again" message.
   const submitRsvp = useMutation<GuestMatch>({
     mutationFn: async () => {
+      if (previewMode) throw new Error("RSVPs are disabled in this preview.");
       if (!recipient || !activeGuestToken || !status) throw new Error("Choose an RSVP response first.");
       const payload = {
         status,
@@ -278,7 +330,7 @@ function RsvpInvitation({ shareSlug, guestToken }: { shareSlug: string; guestTok
 
   // Draft gate: when the host hasn't published yet, show a friendly
   // "not ready" message instead of the RSVP form.
-  if (event.inviteStatus === "draft") {
+  if (!previewMode && event.inviteStatus === "draft") {
     return (
       <div className="min-h-screen bg-background">
         <header className="border-b border-border">
@@ -621,7 +673,7 @@ function RsvpInvitation({ shareSlug, guestToken }: { shareSlug: string; guestTok
 
           </section>
 
-          {inviteRevealed && (
+          {inviteRevealed && !previewMode && (
             <section
               className="min-w-0 sm:rounded-2xl sm:border sm:border-border/80 sm:bg-card sm:p-6 sm:shadow-[0_18px_52px_-38px_rgba(36,29,24,0.55)]"
               data-testid="section-rsvp-controls"

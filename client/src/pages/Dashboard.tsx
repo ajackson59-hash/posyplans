@@ -1610,7 +1610,7 @@ export default function Dashboard() {
                       <Copy className="mr-1.5 h-3.5 w-3.5" /> Copy link
                     </Button>
                     <Button asChild size="sm" variant="outline">
-                      <a href={`/rsvp/${event.shareSlug}`} target="_blank" rel="noreferrer">
+                      <a href={`/dashboard/${encodeURIComponent(ownerToken)}/invitation-preview`} target="_blank" rel="noreferrer">
                         Preview <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
                       </a>
                     </Button>
