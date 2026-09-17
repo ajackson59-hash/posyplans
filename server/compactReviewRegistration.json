@@ -1,7 +1,7 @@
 {
   "dataset": "compact-review-final-20260917-v1",
   "protocol": "compact-review-final-v1",
-  "authorizationStatus": "pending",
+  "authorizationStatus": "approved",
   "maximumCalls": 15,
   "budgetMicros": 2500000,
   "pricing": {

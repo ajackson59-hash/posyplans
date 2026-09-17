@@ -1,6 +1,7 @@
 # Final bounded reviewer comparison
 
-Status: implemented and prepared; new paid allowance **pending**. The completed
+Status: implemented and prepared; new paid allowance **approved** by the user's
+explicit approval of private Preview access and the fixed fifteen-review scope. The completed
 `evidence-review-20260917-v1` run remains permanently closed. Its results, including
 the missing final receipt and unknown billing, are unchanged. No live accuracy or
 latency improvement has yet been established for this candidate.
@@ -74,7 +75,7 @@ approval. The Zoey source adds one new craft call and two identity control brief
 
 ## Fixed new scope
 
-- Dataset `compact-review-final-20260917-v1`, pending authorization.
+- Dataset `compact-review-final-20260917-v1`, explicitly authorized; fixed inputs and stopping rules unchanged.
 - Fifteen once-only Sonnet 4.6 calls: fourteen fidelity and one craft.
 - Nine saved candidate images, fourteen briefs, three saved identity references.
 - Eight retained craft receipts reused without new provider calls.
@@ -86,7 +87,7 @@ approval. The Zoey source adds one new craft call and two identity control brief
   remains calibration-only, rejected and without a customer preview ID.
 - No customer activation, merge or Production action.
 
-The guarded runner and route are ready with pending authorization. Browser input
+The guarded runner and route have the approved bounded authorization. Browser input
 cannot replace the registration or provider transport. Existing retained candidate
 bytes are read from the owner's verified record, keeping the KPop upload within
 Vercel's payload limit; the new Zoey candidate and reference panels fit in one

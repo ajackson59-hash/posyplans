@@ -20,7 +20,7 @@ const event = { id: 61, ownerToken: 'offline-owner', eventName: 'Artwork evaluat
 
 async function fixture(edit: (raw: any, response: any, call: number) => void = () => {}) {
   const registration = structuredClone(proposed) as CompactReviewRegistration;
-  registration.authorizationStatus = 'approved'; // Fake transport only. Deployed registration remains pending.
+  registration.authorizationStatus = 'approved'; // Fake transport only; the live allowance requires explicit user approval.
   registration.references.forEach((r, i) => r.sha256 = hash(referenceSources[i]));
   const store = new InMemoryArtworkAttemptStore();
   const plans = new Map<string, ReturnType<typeof prepareCompactReview>>();
@@ -83,8 +83,8 @@ async function fixture(edit: (raw: any, response: any, call: number) => void = (
   } };
 }
 
-it('keeps the new allowance pending; preflight reads without calls or writes', async () => {
-  expect(proposed.authorizationStatus).toBe('pending'); const f = await fixture(); f.registration.authorizationStatus = 'pending';
+it('registers the approved allowance while pending preflight still reads without calls or writes', async () => {
+  expect(proposed.authorizationStatus).toBe('approved'); const f = await fixture(); f.registration.authorizationStatus = 'pending';
   const before = JSON.stringify(f.store.all);
   expect(await f.run('fidelity-c01', { preflightOnly: true, candidate: undefined })).toMatchObject({ kind: 'preflight', providerCalls: 0, authorizationStatus: 'pending' });
   expect(await f.run('fidelity-c01')).toMatchObject({ kind: 'blocked', reason: 'research-awaiting-fresh-approval' });
