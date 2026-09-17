@@ -5,6 +5,7 @@ import { useLocation } from "wouter";
 type PreviewKind = "direction-card" | "reference-board" | "approved-image" | "none";
 
 interface PreviewReadiness {
+  humanReview?: boolean;
   mode: "off" | "direction-card" | "quality-image";
   kind: PreviewKind;
   generationState?: "idle" | "generating" | "ready" | "fallback";
@@ -137,7 +138,7 @@ export default function PaywallPreviewGuide() {
 
   // DraftGenerating owns the failed state and the saved brief. Do not add a
   // second message claiming artwork passed review or inviting another submit.
-  if (!card || previewFailed || readiness?.generationState === "fallback") return null;
+  if (!card || previewFailed || readiness?.generationState === "fallback" || readiness?.humanReview) return null;
 
   const namedLabel = readiness?.namedReference?.label;
   const automaticNamedResearch = Boolean(

@@ -1,13 +1,16 @@
 import type { Express } from "express";
 import type { Event } from "@shared/schema";
 import { storage } from "./storage";
+import { humanReviewEventEnabled } from "./humanArtworkReview";
+import { approvedHumanArtwork } from "./humanArtworkPolicy";
 import { eventArtworkFields, eventArtworkVersion, storedEventArtwork, type EventArtworkField } from "./eventArtwork";
 
 type ArtworkStorage = Pick<typeof storage, "getEventByOwnerToken" | "getEventByShareSlug">;
 
 /** Binary reads of applied artwork only. The unpaid preview remains behind
  * its separate approval/version/entitlement-aware route. No provider calls. */
-export function registerEventArtworkRoutes(app: Express, store: ArtworkStorage = storage): void {
+export function registerEventArtworkRoutes(app: Express, store: ArtworkStorage = storage,
+  approved: typeof approvedHumanArtwork = approvedHumanArtwork): void {
   for (const audience of ["owner", "public"] as const) {
     app.get(`/api/events/${audience}/:key/invite/assets/:field`, async (req, res) => {
       res.setHeader("Cache-Control", "private, no-store");
@@ -21,6 +24,9 @@ export function registerEventArtworkRoutes(app: Express, store: ArtworkStorage =
         return res.status(404).json({ error: "Artwork not found" });
       }
       const value = storedEventArtwork(event, field);
+      if (humanReviewEventEnabled(event) && value !== await approved(event)) {
+        return res.status(404).json({ error: "Current artwork needs human approval" });
+      }
       if (typeof req.query.v !== "string" || req.query.v !== eventArtworkVersion(value)) {
         return res.status(404).json({ error: "That artwork version is no longer available" });
       }

@@ -67,6 +67,37 @@ beforeEach(() => {
   apiRequestJson.mockReset();
 });
 
+describe('human review customer gate', () => {
+  it.each(['queued', 'review', 'rejected', 'failed'])('keeps checkout closed in %s state', async (reviewState) => {
+    apiRequestJson.mockImplementation((method: string, url: string) => {
+      if (method === 'GET' && url.endsWith('/prepayment-preview/readiness')) return Promise.resolve({
+        humanReview: true, reviewState, checkoutAllowed: false, ready: false, kind: 'none',
+        generationState: ['queued','review'].includes(reviewState) ? 'generating' : 'idle', pollAfterMs: 60000,
+        savedBrief: 'Complete watercolor garden brief',
+      });
+      if (method === 'GET' && url.endsWith('/master-planner/entitlement')) return Promise.resolve({ canGenerate: false });
+      throw Error('Unexpected request '+method+' '+url);
+    });
+    renderPaywall();
+    await screen.findByTestId('human-artwork-review-status');
+    expect((screen.getByTestId('button-unlock-spark') as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.queryByTestId('img-prepayment-preview')).toBeNull();
+    expect(callsTo('/api/checkout/create-session')).toHaveLength(0);
+    expect(callsTo(`/api/events/owner/${OWNER}/master-planner/generate`)).toHaveLength(0);
+  });
+  it('shows existing Plus access without starting planning while human review is pending', async () => {
+    apiRequestJson.mockImplementation((method: string, url: string) => {
+      if (method === 'GET' && url.endsWith('/prepayment-preview/readiness')) return Promise.resolve({
+        humanReview:true,reviewState:'review',checkoutAllowed:false,ready:false,kind:'none',generationState:'generating',pollAfterMs:60000,
+      });
+      if (method === 'GET' && url.endsWith('/master-planner/entitlement')) return Promise.resolve({canGenerate:true,planTier:'plus'});
+      throw Error('Unexpected request '+method+' '+url);
+    });
+    renderPaywall();await screen.findByText('Your existing access is saved. Planning can continue after artwork approval.');
+    expect(callsTo(`/api/events/owner/${OWNER}/master-planner/generate`)).toHaveLength(0);
+  });
+});
+
 describe("DraftGenerating pre-payment preview", () => {
   it("recovers an approved image on mobile pageshow without another generation or checkout", async () => {
     let ready = false;
