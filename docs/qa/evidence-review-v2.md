@@ -1,10 +1,42 @@
 # Evidence-owned review decisions (v2)
 
-Status: reviewer implemented; the owner approved the fixed twenty-call,
-owner-private Preview verification in `evidenceReviewStudy.ts` and
-`evidenceReviewRegistration.json`. The registration is **approved** for this
-bounded run only. Execution results are pending; customer activation is disabled. The closed v1
-study must not be rerun or migrated into v2. This is not a release-quality claim.
+Status: the authorized twenty-call Preview verification has **finished and closed**.
+All twenty requests were attempted once on `9dec3bc6cda9c283dd212dd6e95632a8220bf072`.
+Nineteen returned valid reports; the final lettering-control fidelity request ended
+at the sixty-second deadline without a receipt. Its billing remains unknown.
+Durable close record 419 blocks further use of this allowance on every deployment.
+Customer integration remains disabled. The reviewer does **not** pass this diagnostic.
+
+## Actual verification — 17 September
+
+- Four of six known identity controls were correct. The correct Rumi and wrong
+  Zoey controls both returned uncertain identity judgments. The latter's overall
+  rejection came from lettering, not a correct identity-mismatch decision.
+- The watercolor mismatch was detected. The lettering negative control was
+  unassessed because its fidelity request did not return a report.
+- Requested portrait framing, diptychs, asymmetry and negative space were accepted
+  in the completed controls. No score/verdict contradiction or invented
+  all-three-microphones requirement recurred in the nineteen returned reports.
+- A factual error remains: the KPop scene's review claimed no microphones were
+  discernible, although headset microphones are visible in the retained pixels.
+  Valid schema/bindings cannot establish the truth of those observations.
+- The KPop and soft-play fidelity reviews took 57.396 and 55.305 seconds. The last
+  request ended at 60.281 seconds without a receipt. This is reviewer timing on
+  saved artwork, not fresh-generation/customer-browser delivery timing.
+- Known returned usage totals 87,425 input and 19,181 output tokens: USD0.549990
+  at registered rates, plus unknown final-request billing. This is not an invoice
+  total. No images, classifiers, retries, replacements or customer promotions.
+- Independent Preview database readback reconciled all twenty claims, twenty
+  result records and closure, with all 190 prior artwork records, five tracked
+  events and 32 frozen input/label files unchanged. New records remain private,
+  calibration-only, rejected and without preview IDs.
+
+The four passes, five rejections, two unresolved cases and one invalid combined
+case are a deliberately mixed diagnostic set, not an artwork-generation success
+rate. Identity remains 4/6 under the frozen criteria; uncertainty is not converted
+to correctness and earlier failures remain in the record. The next engineering
+work must address perceptual identity/detail accuracy and review latency before
+another paid validation or customer rollout. Do not rerun this closed cohort.
 
 ## The three corrections
 
@@ -69,7 +101,7 @@ subset to avoid expanding one nested grammar per requirement. SDK wire tests do
 not prove the provider will accept a new schema or the live model will obey the
 semantic rules. [Anthropic structured-output documentation](https://platform.claude.com/docs/en/build-with-claude/structured-outputs).
 
-## Next gate
+## Registered scope and remaining gate
 
 The approved `evidence-review-20260917-v1` verification now freezes eight retained
 images, twelve full briefs and twenty once-only requests (eight craft, twelve
@@ -80,11 +112,10 @@ their existing output caps. This is a planning reserve, not a provider invoice c
 Sonnet 4.6 standard/global rates remain USD3/15 per million input/output tokens,
 checked 17 September at https://platform.claude.com/docs/en/about-claude/pricing.
 
-Old paid allowances are closed. The owner has separately approved exactly this
-twenty-call scope and USD2.50 planning reserve. After exact-deployment preflight,
-review actual replies for all three regressions,
-alongside genuine negative controls, before integrating v2 into customer paths.
-Then test fresh generation quality and end-to-end delivery time. The eight
+This allowance and all old paid allowances are now closed. The results above
+do not authorize another call, a changed request or customer integration.
+After addressing the observed failures, separately register any further visual
+verification. Fresh generation quality and end-to-end delivery time remain untested. The eight
 directions × twenty-plus trials and 95% human-approved under 90 seconds goal is
 still unproven; unit tests cannot establish it.
 
