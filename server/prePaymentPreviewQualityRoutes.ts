@@ -17,6 +17,8 @@ import { SEPARATED_STUDY_REQUESTS, runSeparatedReviewStudy } from "./separatedRe
 import { runSeparatedResearchStudy } from "./separatedResearchStudy";
 import researchRegistration from "./separatedResearchRegistration.json";
 import { runEvidenceReviewStudy } from "./evidenceReviewStudy";
+import { runCompactReviewStudy } from "./compactReviewStudy";
+import compactRegistration from "./compactReviewRegistration.json";
 import evidenceRegistration from "./evidenceReviewRegistration.json";
 import { CROSS_THEME_REGISTRATIONS, runCrossThemeReview } from "./crossThemeReview";
 import type { CrossThemeCaseId } from "./crossThemeReviewProfiles";
@@ -654,6 +656,35 @@ export function registerPrePaymentPreviewQualityRoutes(
       if (!res.headersSent) return res.status(503).json({ error: "Review unavailable; claimed controls cannot be retried" });
     } finally { res.off("close", close); }
   });
+
+  app.post("/api/events/owner/:ownerToken/prepayment-preview/compact-review/:requestId", async (req, res) => {
+    res.setHeader("Cache-Control", "private, no-store");
+    const registration = compactRegistration.requests.find(r => r.requestId === String(req.params.requestId));
+    if (process.env.VERCEL_ENV !== "preview" || process.env.VERCEL_GIT_COMMIT_REF !== "codex/launch-blockers" || !registration)
+      return res.status(404).json({ error: "Not found" });
+    const parsed = z.object({ mode: z.enum(["preflight", "review", "close"]), expectedReviewedHash: z.literal(registration.imageHash),
+      candidateBase64: z.string().min(1).max(3_500_000).optional(),
+      referenceBase64: z.array(z.string().min(1).max(1_400_000)).max(3).default([]), confirmOneVisionCall: z.literal(true).optional() }).strict().safeParse(req.body);
+    if (!parsed.success || (parsed.data.mode === "review" && !parsed.data.confirmOneVisionCall))
+      return res.status(400).json({ error: "Use the fixed study input and confirmation" });
+    const event = await store.getEventByOwnerToken(String(req.params.ownerToken));
+    if (!event || event.id !== 61) return res.status(404).json({ error: "Not found" });
+    const candidate = parsed.data.candidateBase64 ? Buffer.from(parsed.data.candidateBase64, "base64") : undefined;
+    const referenceSources = parsed.data.referenceBase64.map(b => Buffer.from(b, "base64"));
+    if ((candidate && candidate.toString("base64") !== parsed.data.candidateBase64) ||
+        referenceSources.some((b, i) => b.toString("base64") !== parsed.data.referenceBase64[i])) return res.status(400).json({ error: "Invalid pixel encoding" });
+    const controller = new AbortController();
+    const close = () => { if (!res.writableEnded) controller.abort(); };
+    res.on("close", close);
+    try {
+      const result = await runCompactReviewStudy(event, artworkAttemptStore, registration.requestId, { candidate, referenceSources,
+        preflightOnly: parsed.data.mode === "preflight", closeOnly: parsed.data.mode === "close", signal: controller.signal });
+      return res.status(result.kind === "blocked" ? 409 : 200).json(result);
+    } catch {
+      if (!res.headersSent) return res.status(503).json({ error: "Research unavailable; a claimed review cannot be repeated" });
+    } finally { res.off("close", close); }
+  });
+
 
   app.post("/api/events/owner/:ownerToken/prepayment-preview/evidence-review/:requestId", async (req, res) => {
     res.setHeader("Cache-Control", "private, no-store");

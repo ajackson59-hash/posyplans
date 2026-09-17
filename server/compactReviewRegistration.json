@@ -1,0 +1,506 @@
+{
+  "dataset": "compact-review-final-20260917-v1",
+  "protocol": "compact-review-final-v1",
+  "authorizationStatus": "pending",
+  "maximumCalls": 15,
+  "budgetMicros": 2500000,
+  "pricing": {
+    "inputMicrosPerToken": 3,
+    "outputMicrosPerToken": 15,
+    "checkedDate": "2026-09-17",
+    "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+    "serviceTier": "standard",
+    "inferenceGeo": "global"
+  },
+  "requests": [
+    {
+      "requestId": "fidelity-c01",
+      "role": "fidelity",
+      "imageHash": "3bbb047349b82d697d0bd921abb20334a265b8eea1f3df4f1be469e5aa0f9e95",
+      "requestFingerprint": "b583758b1da97b42a7e9634d64a790657ba2598ea436d8f9df4d1e2b833b5def",
+      "schemaHash": "0702a902403a7dbf7e51e77df5dffe27a4ab11f7e57ebe375c291bb957bbeb96",
+      "version": "compact-grounded-review-v1",
+      "maxOutputTokens": 1385,
+      "planningInputTokens": 25000,
+      "requestPlanningReserveMicros": 95775
+    },
+    {
+      "requestId": "fidelity-c02",
+      "role": "fidelity",
+      "imageHash": "3bbb047349b82d697d0bd921abb20334a265b8eea1f3df4f1be469e5aa0f9e95",
+      "requestFingerprint": "495784f844a130b77ea10052da38517d42d967eb151b93a17541bdd998d8809e",
+      "schemaHash": "0702a902403a7dbf7e51e77df5dffe27a4ab11f7e57ebe375c291bb957bbeb96",
+      "version": "compact-grounded-review-v1",
+      "maxOutputTokens": 1385,
+      "planningInputTokens": 25000,
+      "requestPlanningReserveMicros": 95775
+    },
+    {
+      "requestId": "fidelity-c03",
+      "role": "fidelity",
+      "imageHash": "06fc00dc70854ffe3fde522800ed428f420ecd2bf9b51a2d08b0bb9023d09b32",
+      "requestFingerprint": "a143e73cee531d4367ffcd543beb7959ffce9131335eeb62fa393e7664d162df",
+      "schemaHash": "0702a902403a7dbf7e51e77df5dffe27a4ab11f7e57ebe375c291bb957bbeb96",
+      "version": "compact-grounded-review-v1",
+      "maxOutputTokens": 1385,
+      "planningInputTokens": 25000,
+      "requestPlanningReserveMicros": 95775
+    },
+    {
+      "requestId": "fidelity-c04",
+      "role": "fidelity",
+      "imageHash": "06fc00dc70854ffe3fde522800ed428f420ecd2bf9b51a2d08b0bb9023d09b32",
+      "requestFingerprint": "9f7a5356f52a219ffadec4d07b42e3624786746f3ef38dbc0a946f5bb87bfbcd",
+      "schemaHash": "0702a902403a7dbf7e51e77df5dffe27a4ab11f7e57ebe375c291bb957bbeb96",
+      "version": "compact-grounded-review-v1",
+      "maxOutputTokens": 1385,
+      "planningInputTokens": 25000,
+      "requestPlanningReserveMicros": 95775
+    },
+    {
+      "requestId": "fidelity-c05",
+      "role": "fidelity",
+      "imageHash": "a241d44353371d8eea568de22fe7752861855754fdb73e8fb419dc2d1d68a7d4",
+      "requestFingerprint": "ea651a127770fcafcf986e51811d574695ee1eb4448d8ca29c127cffba24404b",
+      "schemaHash": "0702a902403a7dbf7e51e77df5dffe27a4ab11f7e57ebe375c291bb957bbeb96",
+      "version": "compact-grounded-review-v1",
+      "maxOutputTokens": 1690,
+      "planningInputTokens": 25000,
+      "requestPlanningReserveMicros": 100350
+    },
+    {
+      "requestId": "fidelity-c06",
+      "role": "fidelity",
+      "imageHash": "a241d44353371d8eea568de22fe7752861855754fdb73e8fb419dc2d1d68a7d4",
+      "requestFingerprint": "f324e60fc9321460524d433f84b290dfbf19f0d6321da95d1860848368fc677a",
+      "schemaHash": "0702a902403a7dbf7e51e77df5dffe27a4ab11f7e57ebe375c291bb957bbeb96",
+      "version": "compact-grounded-review-v1",
+      "maxOutputTokens": 1690,
+      "planningInputTokens": 25000,
+      "requestPlanningReserveMicros": 100350
+    },
+    {
+      "requestId": "fidelity-c07",
+      "role": "fidelity",
+      "imageHash": "540c672d8284383d35fbc5cea3e29e2252d40ac651e5d8bd33b792c4fef563ff",
+      "requestFingerprint": "9a5311bd2d6ab07dbc2ae8556bdc34fcb3a6c62d1728f8bb5b52df912956c3b1",
+      "schemaHash": "000f2fd456a5e4f230557c3a1171d5bae24f8613ea1b1d85028d50a423109d9a",
+      "version": "compact-grounded-review-v1",
+      "maxOutputTokens": 2035,
+      "planningInputTokens": 25000,
+      "requestPlanningReserveMicros": 105525
+    },
+    {
+      "requestId": "fidelity-c08",
+      "role": "fidelity",
+      "imageHash": "540c672d8284383d35fbc5cea3e29e2252d40ac651e5d8bd33b792c4fef563ff",
+      "requestFingerprint": "36dc62bbc47ffe3302238659e7cee2e11ceeeb865330f69d61c668a2a9541126",
+      "schemaHash": "000f2fd456a5e4f230557c3a1171d5bae24f8613ea1b1d85028d50a423109d9a",
+      "version": "compact-grounded-review-v1",
+      "maxOutputTokens": 2035,
+      "planningInputTokens": 25000,
+      "requestPlanningReserveMicros": 105525
+    },
+    {
+      "requestId": "fidelity-c09",
+      "role": "fidelity",
+      "imageHash": "c69181ce3c6db1a2eb7fa3eb8fc17bacef8e70bf5df03259c0e0ccc011459a3f",
+      "requestFingerprint": "84c0ee1fff8494c71c732c4320cb588e0f057fe6111f70f11789dea57835eb19",
+      "schemaHash": "000f2fd456a5e4f230557c3a1171d5bae24f8613ea1b1d85028d50a423109d9a",
+      "version": "compact-grounded-review-v1",
+      "maxOutputTokens": 2425,
+      "planningInputTokens": 25000,
+      "requestPlanningReserveMicros": 111375
+    },
+    {
+      "requestId": "fidelity-c10",
+      "role": "fidelity",
+      "imageHash": "fb2a8f25d603e0c8aea5a1a404d6e84b171487768b432dc16a3d913b2f68e596",
+      "requestFingerprint": "b603691de8d40c337011c1a0814de43116f47be32e8b142434ac88db8798c902",
+      "schemaHash": "000f2fd456a5e4f230557c3a1171d5bae24f8613ea1b1d85028d50a423109d9a",
+      "version": "compact-grounded-review-v1",
+      "maxOutputTokens": 4250,
+      "planningInputTokens": 25000,
+      "requestPlanningReserveMicros": 138750
+    },
+    {
+      "requestId": "fidelity-c11",
+      "role": "fidelity",
+      "imageHash": "8f6f8dce768cd36e09d872bd07dc52ad970abca772279fd807a0e6df05c0e105",
+      "requestFingerprint": "5649d4bf5e5de6bf1580a0b6bb364d9b26f0c024a7db6facb091d5bf29badabe",
+      "schemaHash": "000f2fd456a5e4f230557c3a1171d5bae24f8613ea1b1d85028d50a423109d9a",
+      "version": "compact-grounded-review-v1",
+      "maxOutputTokens": 3075,
+      "planningInputTokens": 25000,
+      "requestPlanningReserveMicros": 121125
+    },
+    {
+      "requestId": "fidelity-c12",
+      "role": "fidelity",
+      "imageHash": "dcfc60f28fea7d45a16918a9db1d8619deca90a708658596c55ad1127e6a8f21",
+      "requestFingerprint": "e6e4e528d18a295e2a46a11f8a71432c080249f25c8c9798d8f550dc776a4fbe",
+      "schemaHash": "000f2fd456a5e4f230557c3a1171d5bae24f8613ea1b1d85028d50a423109d9a",
+      "version": "compact-grounded-review-v1",
+      "maxOutputTokens": 3075,
+      "planningInputTokens": 25000,
+      "requestPlanningReserveMicros": 121125
+    },
+    {
+      "requestId": "craft-zoey",
+      "role": "craft",
+      "imageHash": "206292495edee079a83a4614e70e114567d1a952fbe13bc416d397c06c3d7863",
+      "requestFingerprint": "57b2fb0e53b01c8c43ab3c79627018ccdf3d3eae741df0c6a3359cc3e77838a9",
+      "schemaHash": "b65bd4005ab5da1b9cbe8409a9394b64cf33cee974256c0a2c98c9b86fe66cfe",
+      "version": "evidence-owned-decisions-v2",
+      "maxOutputTokens": 1400,
+      "planningInputTokens": 25000,
+      "requestPlanningReserveMicros": 96000
+    },
+    {
+      "requestId": "fidelity-c13",
+      "role": "fidelity",
+      "imageHash": "206292495edee079a83a4614e70e114567d1a952fbe13bc416d397c06c3d7863",
+      "requestFingerprint": "a0b83b872177f1448306ffb324d776ce363f3dc1f43c348e4d8cdf1ab8ebca37",
+      "schemaHash": "0702a902403a7dbf7e51e77df5dffe27a4ab11f7e57ebe375c291bb957bbeb96",
+      "version": "compact-grounded-review-v1",
+      "maxOutputTokens": 1690,
+      "planningInputTokens": 25000,
+      "requestPlanningReserveMicros": 100350
+    },
+    {
+      "requestId": "fidelity-c14",
+      "role": "fidelity",
+      "imageHash": "206292495edee079a83a4614e70e114567d1a952fbe13bc416d397c06c3d7863",
+      "requestFingerprint": "aa8f9b43bc47086fb3af9d35f86317bfc7ddfffb8a31a4ea60a8fcce86763b4a",
+      "schemaHash": "0702a902403a7dbf7e51e77df5dffe27a4ab11f7e57ebe375c291bb957bbeb96",
+      "version": "compact-grounded-review-v1",
+      "maxOutputTokens": 1690,
+      "planningInputTokens": 25000,
+      "requestPlanningReserveMicros": 100350
+    }
+  ],
+  "cases": [
+    {
+      "caseId": "c01",
+      "image": "elsa",
+      "reviewedHash": "3bbb047349b82d697d0bd921abb20334a265b8eea1f3df4f1be469e5aa0f9e95",
+      "combinedFingerprint": "35b9d93ad2e8c9434bed73fdb241fb0d6df70b3b44b0363af664bbba35429b10",
+      "contextHash": "1edf1834e1e8dbcb4c4f39326036d864ac02ed1e0596343ea239182bf6588f59",
+      "craftRequestId": "craft-elsa",
+      "fidelityRequestId": "fidelity-c01",
+      "referenceHashes": []
+    },
+    {
+      "caseId": "c02",
+      "image": "elsa",
+      "reviewedHash": "3bbb047349b82d697d0bd921abb20334a265b8eea1f3df4f1be469e5aa0f9e95",
+      "combinedFingerprint": "455503be90277527085d95ece72b70839acf172fa67c17205e63832befa25fee",
+      "contextHash": "6fafb4ffcc7b33462794558e08730f7efa820518b94e245f54ec72d3637e3e58",
+      "craftRequestId": "craft-elsa",
+      "fidelityRequestId": "fidelity-c02",
+      "referenceHashes": []
+    },
+    {
+      "caseId": "c03",
+      "image": "olaf",
+      "reviewedHash": "06fc00dc70854ffe3fde522800ed428f420ecd2bf9b51a2d08b0bb9023d09b32",
+      "combinedFingerprint": "3745ac93e0b307046960264be7809af6a9a4e90723b440dce87c6c6e24951561",
+      "contextHash": "a37d90a5f5cc96df262090097e5cc3bfd8ababb68e716f8e4bdab6a5f2512feb",
+      "craftRequestId": "craft-olaf",
+      "fidelityRequestId": "fidelity-c03",
+      "referenceHashes": []
+    },
+    {
+      "caseId": "c04",
+      "image": "olaf",
+      "reviewedHash": "06fc00dc70854ffe3fde522800ed428f420ecd2bf9b51a2d08b0bb9023d09b32",
+      "combinedFingerprint": "118ae483c93e95f851e1ce01cecb50f1c63bbf36b763152f0a7518046ee2c025",
+      "contextHash": "4fc71216dc7eda0d9f917b67471312c5ae9722caea75083f5c56c6e9c26302aa",
+      "craftRequestId": "craft-olaf",
+      "fidelityRequestId": "fidelity-c04",
+      "referenceHashes": []
+    },
+    {
+      "caseId": "c05",
+      "image": "rumi",
+      "reviewedHash": "a241d44353371d8eea568de22fe7752861855754fdb73e8fb419dc2d1d68a7d4",
+      "combinedFingerprint": "e6065e48bb42089231ac7a217e850172edb82c214ba2dd71ac766cf5603b2f28",
+      "contextHash": "a80ac8f5ad0be856dde5c6b68011c5e1ec04c40f2d8e2500321d7b003f052b86",
+      "craftRequestId": "craft-rumi",
+      "fidelityRequestId": "fidelity-c05",
+      "referenceHashes": [
+        "7d286c144f5a0e8c651ce0d258358171800025f031be5820f802510461b9f04d",
+        "08ae434516e20ea3d6dbf5325f1b7833823f9552157c51999fbeb304d4d65d02",
+        "703ba156db9788c25fe1dd7eaffc6dcf991d18c90cdec0bfab6091fa1080f1ee"
+      ]
+    },
+    {
+      "caseId": "c06",
+      "image": "rumi",
+      "reviewedHash": "a241d44353371d8eea568de22fe7752861855754fdb73e8fb419dc2d1d68a7d4",
+      "combinedFingerprint": "b8ff8939fb86b784c83afe97e3fb4d0525e07af9903700b16a4b54915f0293d0",
+      "contextHash": "e2e838586b06fde33f3c8fc96949bd0972cc5668ef71c3912613b12a73e56e57",
+      "craftRequestId": "craft-rumi",
+      "fidelityRequestId": "fidelity-c06",
+      "referenceHashes": [
+        "7d286c144f5a0e8c651ce0d258358171800025f031be5820f802510461b9f04d",
+        "08ae434516e20ea3d6dbf5325f1b7833823f9552157c51999fbeb304d4d65d02",
+        "703ba156db9788c25fe1dd7eaffc6dcf991d18c90cdec0bfab6091fa1080f1ee"
+      ]
+    },
+    {
+      "caseId": "c07",
+      "image": "vector",
+      "reviewedHash": "540c672d8284383d35fbc5cea3e29e2252d40ac651e5d8bd33b792c4fef563ff",
+      "combinedFingerprint": "bbb3c656c05a49e7b845b7477080467fd0846973bb7bed204c6a7e9164b074e9",
+      "contextHash": "4225e0dddc3df7b35262a43e01a598370e1d496b93dc97d5bebd5c9147bf27ad",
+      "craftRequestId": "craft-vector",
+      "fidelityRequestId": "fidelity-c07",
+      "referenceHashes": []
+    },
+    {
+      "caseId": "c08",
+      "image": "vector",
+      "reviewedHash": "540c672d8284383d35fbc5cea3e29e2252d40ac651e5d8bd33b792c4fef563ff",
+      "combinedFingerprint": "1d813b102e0fb30ef48ef8d413aa74848f3ec8782c53d20f48c7b04325c04f5b",
+      "contextHash": "d46553475f670961e0a4d2bee9ceb3ffbb5a23954f88115ef24cffe5f0b8e083",
+      "craftRequestId": "craft-vector",
+      "fidelityRequestId": "fidelity-c08",
+      "referenceHashes": []
+    },
+    {
+      "caseId": "c09",
+      "image": "construction",
+      "reviewedHash": "c69181ce3c6db1a2eb7fa3eb8fc17bacef8e70bf5df03259c0e0ccc011459a3f",
+      "combinedFingerprint": "747124589db2f166dd980c715fbb9578426f899e6ee6ca33491f4b14b2c3f2e4",
+      "contextHash": "032c6090640b1cc1cec6e1e68f41bbccfd3cb7406657cfd9a0b0f6630ddcfc06",
+      "craftRequestId": "craft-construction",
+      "fidelityRequestId": "fidelity-c09",
+      "referenceHashes": []
+    },
+    {
+      "caseId": "c10",
+      "image": "kpop",
+      "reviewedHash": "fb2a8f25d603e0c8aea5a1a404d6e84b171487768b432dc16a3d913b2f68e596",
+      "combinedFingerprint": "e348f08837c5ad351e8c2ffb3c1da84d602530c02a8d979b7a118d2adb1947a9",
+      "contextHash": "dee3feba55ee119d748017102fc5175d6a5bc352bbf29f69bd08004c118e7142",
+      "craftRequestId": "craft-kpop",
+      "fidelityRequestId": "fidelity-c10",
+      "referenceHashes": [
+        "7d286c144f5a0e8c651ce0d258358171800025f031be5820f802510461b9f04d",
+        "08ae434516e20ea3d6dbf5325f1b7833823f9552157c51999fbeb304d4d65d02",
+        "703ba156db9788c25fe1dd7eaffc6dcf991d18c90cdec0bfab6091fa1080f1ee"
+      ]
+    },
+    {
+      "caseId": "c11",
+      "image": "scene",
+      "reviewedHash": "8f6f8dce768cd36e09d872bd07dc52ad970abca772279fd807a0e6df05c0e105",
+      "combinedFingerprint": "eb613ac32af3da4643d795084854fddf40d44f3317bb8adc6c43a1988c54d970",
+      "contextHash": "7cf8f236ef3937636bc2aab7db3899f13f5f7147fafb7f4fdfe861ebe3fa9836",
+      "craftRequestId": "craft-scene",
+      "fidelityRequestId": "fidelity-c11",
+      "referenceHashes": []
+    },
+    {
+      "caseId": "c12",
+      "image": "lettering",
+      "reviewedHash": "dcfc60f28fea7d45a16918a9db1d8619deca90a708658596c55ad1127e6a8f21",
+      "combinedFingerprint": "8ad7470dd2da7d7a34532fd20c5006d8c1e2bdd1c4a30433d904a9182cec8a0f",
+      "contextHash": "1278cf3d332074f598e03b8509e1aa0d6b8f4adfd109ae7a1af5b8ff985b520e",
+      "craftRequestId": "craft-lettering",
+      "fidelityRequestId": "fidelity-c12",
+      "referenceHashes": []
+    },
+    {
+      "caseId": "c13",
+      "image": "zoey",
+      "reviewedHash": "206292495edee079a83a4614e70e114567d1a952fbe13bc416d397c06c3d7863",
+      "combinedFingerprint": "f12c7b68240788066e8e1157cc62f3d5e44c1674f54f2c772545c9a48c031902",
+      "contextHash": "93aa7569d77ad4015118a61c736d477e263bd2a67f04a1e14c7cc6dd71c927f9",
+      "craftRequestId": "craft-zoey",
+      "fidelityRequestId": "fidelity-c13",
+      "referenceHashes": [
+        "7d286c144f5a0e8c651ce0d258358171800025f031be5820f802510461b9f04d",
+        "08ae434516e20ea3d6dbf5325f1b7833823f9552157c51999fbeb304d4d65d02",
+        "703ba156db9788c25fe1dd7eaffc6dcf991d18c90cdec0bfab6091fa1080f1ee"
+      ]
+    },
+    {
+      "caseId": "c14",
+      "image": "zoey",
+      "reviewedHash": "206292495edee079a83a4614e70e114567d1a952fbe13bc416d397c06c3d7863",
+      "combinedFingerprint": "ac10eda19f71c57e068fe1b34261e077926c248f674bb07e80314a61fda43679",
+      "contextHash": "3776f41365f25b7ee21d744553659ffa74b5f6ca1ce5cb3dcea0d3facbc5fb65",
+      "craftRequestId": "craft-zoey",
+      "fidelityRequestId": "fidelity-c14",
+      "referenceHashes": [
+        "7d286c144f5a0e8c651ce0d258358171800025f031be5820f802510461b9f04d",
+        "08ae434516e20ea3d6dbf5325f1b7833823f9552157c51999fbeb304d4d65d02",
+        "703ba156db9788c25fe1dd7eaffc6dcf991d18c90cdec0bfab6091fa1080f1ee"
+      ]
+    }
+  ],
+  "reusedCraft": [
+    {
+      "requestId": "craft-elsa",
+      "attemptId": "380",
+      "dataset": "evidence-review-20260917-v1",
+      "deploymentSha": "9dec3bc6cda9c283dd212dd6e95632a8220bf072",
+      "imageHash": "3bbb047349b82d697d0bd921abb20334a265b8eea1f3df4f1be469e5aa0f9e95",
+      "requestFingerprint": "2e436efbb1c4b582b3bcb603d3e7e1559912c632832f4f0e6a8fb39e24f377c6",
+      "schemaHash": "b65bd4005ab5da1b9cbe8409a9394b64cf33cee974256c0a2c98c9b86fe66cfe",
+      "rawTextSha256": "27084bd74ae215722a8711d40cc1cc447f33d7726f2cbaa65c837cb3a2033708",
+      "receiptSha256": "843b2a833a944d9e109124024bd5bc8fc8618f6245a8bb85ac015a1575d336ff",
+      "providerMs": 16935,
+      "originalHttpMs": 26041
+    },
+    {
+      "requestId": "craft-olaf",
+      "attemptId": "386",
+      "dataset": "evidence-review-20260917-v1",
+      "deploymentSha": "9dec3bc6cda9c283dd212dd6e95632a8220bf072",
+      "imageHash": "06fc00dc70854ffe3fde522800ed428f420ecd2bf9b51a2d08b0bb9023d09b32",
+      "requestFingerprint": "0ba4cd418d3f9d295d3ceca9b415ddb6e844c6f416b9bdd682d1ad256a0ab99b",
+      "schemaHash": "b65bd4005ab5da1b9cbe8409a9394b64cf33cee974256c0a2c98c9b86fe66cfe",
+      "rawTextSha256": "3dfb11f0efd8afc2f3e94340debb0361580e33f5a1f075c98a018c5b804e2671",
+      "receiptSha256": "5e786a19baa84787ea088fab40be21a1f34df1644154d1c23d6d580f34e0069b",
+      "providerMs": 13635,
+      "originalHttpMs": 20708
+    },
+    {
+      "requestId": "craft-rumi",
+      "attemptId": "392",
+      "dataset": "evidence-review-20260917-v1",
+      "deploymentSha": "9dec3bc6cda9c283dd212dd6e95632a8220bf072",
+      "imageHash": "a241d44353371d8eea568de22fe7752861855754fdb73e8fb419dc2d1d68a7d4",
+      "requestFingerprint": "722e9101cede4057ac3a8cb6cf304f5af8fe4b10bb2ae11e8b3f8f2f29934456",
+      "schemaHash": "b65bd4005ab5da1b9cbe8409a9394b64cf33cee974256c0a2c98c9b86fe66cfe",
+      "rawTextSha256": "031beb407e1830077e1ae784489d10656ceba740f78e8ec2a8ccc36827fee40b",
+      "receiptSha256": "ca6ade12aa67fe2eec4be2eaadb4e3e291503500d72435190ada9cbc2cdcbef3",
+      "providerMs": 8245,
+      "originalHttpMs": 15987
+    },
+    {
+      "requestId": "craft-vector",
+      "attemptId": "398",
+      "dataset": "evidence-review-20260917-v1",
+      "deploymentSha": "9dec3bc6cda9c283dd212dd6e95632a8220bf072",
+      "imageHash": "540c672d8284383d35fbc5cea3e29e2252d40ac651e5d8bd33b792c4fef563ff",
+      "requestFingerprint": "c40dec1c459b6dd24fd07faa3eec63eec766862ed80b3d9a611c5d627389553e",
+      "schemaHash": "b65bd4005ab5da1b9cbe8409a9394b64cf33cee974256c0a2c98c9b86fe66cfe",
+      "rawTextSha256": "d46e6af593774c3417075744574c31f0a3e28f7f15100059c420135593df2562",
+      "receiptSha256": "be786fcc490b419926cffcf4e78b629a5dae89cf1946e72f7876141d46222c4a",
+      "providerMs": 8052,
+      "originalHttpMs": 15716
+    },
+    {
+      "requestId": "craft-construction",
+      "attemptId": "404",
+      "dataset": "evidence-review-20260917-v1",
+      "deploymentSha": "9dec3bc6cda9c283dd212dd6e95632a8220bf072",
+      "imageHash": "c69181ce3c6db1a2eb7fa3eb8fc17bacef8e70bf5df03259c0e0ccc011459a3f",
+      "requestFingerprint": "893d7d7cfb956a18a705a61ade6e8ccfaa84fd08d8fba24aa3bf2fb82ba6f767",
+      "schemaHash": "b65bd4005ab5da1b9cbe8409a9394b64cf33cee974256c0a2c98c9b86fe66cfe",
+      "rawTextSha256": "625e980de230d6a136fe9872ebad8a596f99ffc74083e1ffc9259b0d6f189e85",
+      "receiptSha256": "d5c11f188c74f5d1105fcfd66b0b3c62c65787e432a50b436677064bd5993ffb",
+      "providerMs": 12226,
+      "originalHttpMs": 19551
+    },
+    {
+      "requestId": "craft-kpop",
+      "attemptId": "408",
+      "dataset": "evidence-review-20260917-v1",
+      "deploymentSha": "9dec3bc6cda9c283dd212dd6e95632a8220bf072",
+      "imageHash": "fb2a8f25d603e0c8aea5a1a404d6e84b171487768b432dc16a3d913b2f68e596",
+      "requestFingerprint": "4d9c47181fc2302b8ccdb8a63f82f51ea039f5db1bd48043242fe2cf504ab8e2",
+      "schemaHash": "b65bd4005ab5da1b9cbe8409a9394b64cf33cee974256c0a2c98c9b86fe66cfe",
+      "rawTextSha256": "12036c9e7f2e68fd83d693590ed7ca0285ece54cf10c159baf70685f8c673538",
+      "receiptSha256": "b3ad80d19f7f9a46be11d9983d4564f41dd8697ac42b75c8ea6b29bb30c4c455",
+      "providerMs": 8908,
+      "originalHttpMs": 17313
+    },
+    {
+      "requestId": "craft-scene",
+      "attemptId": "412",
+      "dataset": "evidence-review-20260917-v1",
+      "deploymentSha": "9dec3bc6cda9c283dd212dd6e95632a8220bf072",
+      "imageHash": "8f6f8dce768cd36e09d872bd07dc52ad970abca772279fd807a0e6df05c0e105",
+      "requestFingerprint": "846b0447e9783b4dd723059acee6c87ec40343535a26ad03eeed6e6e96b6638c",
+      "schemaHash": "b65bd4005ab5da1b9cbe8409a9394b64cf33cee974256c0a2c98c9b86fe66cfe",
+      "rawTextSha256": "28e0273e7508029e3a0bb7030b34161b64a725ca92ebe5432c94f24e7e9bc03a",
+      "receiptSha256": "c08c40f0261460025abf18fa81fa9907b36473d681e611374d8edcab13c3c07e",
+      "providerMs": 7205,
+      "originalHttpMs": 14486
+    },
+    {
+      "requestId": "craft-lettering",
+      "attemptId": "416",
+      "dataset": "evidence-review-20260917-v1",
+      "deploymentSha": "9dec3bc6cda9c283dd212dd6e95632a8220bf072",
+      "imageHash": "dcfc60f28fea7d45a16918a9db1d8619deca90a708658596c55ad1127e6a8f21",
+      "requestFingerprint": "e62496d3ed5e4a2cc71a8671518ecd0d928d2a289c9863940e9c945ae7c8f4ff",
+      "schemaHash": "b65bd4005ab5da1b9cbe8409a9394b64cf33cee974256c0a2c98c9b86fe66cfe",
+      "rawTextSha256": "2b9bfd57e7030012d938a9c60dc2136bb5effde266385e8325465521eca4d1b9",
+      "receiptSha256": "d4010e5720033f1b18df2172b9d24204b54be454a067ec21c7ad9b12e48dd491",
+      "providerMs": 13114,
+      "originalHttpMs": 21116
+    }
+  ],
+  "references": [
+    {
+      "sha256": "7d286c144f5a0e8c651ce0d258358171800025f031be5820f802510461b9f04d",
+      "sourceUrl": "https://www.netflix.com/tudum/articles/kpop-demon-hunters-cast",
+      "role": "identity",
+      "subject": "Rumi",
+      "region": "Named KPop Demon Hunters animated character panel only; native source pixels, no photographic adult panel",
+      "sourceHash": "534d23bee02f125a69eebcac35bf0c8c25b658195928a530853b42529ec6ddb5",
+      "sourceFilename": "rumi.png",
+      "sourceWidth": 1200,
+      "sourceHeight": 589,
+      "sourceRegion": {
+        "x": 435,
+        "y": 0,
+        "width": 765,
+        "height": 589
+      },
+      "decodedRgbSha256": "905572b62d0b5b169337ab8958b16a8028b5ddbfe6f8b312c690a50bbced0786"
+    },
+    {
+      "sha256": "08ae434516e20ea3d6dbf5325f1b7833823f9552157c51999fbeb304d4d65d02",
+      "sourceUrl": "https://www.netflix.com/tudum/articles/kpop-demon-hunters-cast",
+      "role": "identity",
+      "subject": "Mira",
+      "region": "Named KPop Demon Hunters animated character panel only; native source pixels, no photographic adult panel",
+      "sourceHash": "8a04198d7efee5e097cf499d6ca95019bb8e2d450048b4afc0bd16b2c87f48fd",
+      "sourceFilename": "mira.jpg",
+      "sourceWidth": 1200,
+      "sourceHeight": 589,
+      "sourceRegion": {
+        "x": 435,
+        "y": 0,
+        "width": 765,
+        "height": 589
+      },
+      "decodedRgbSha256": "bce214490cad1c325ffebc1c870f51ee2d120b36d673ffe621b78bf81ff35b1b"
+    },
+    {
+      "sha256": "703ba156db9788c25fe1dd7eaffc6dcf991d18c90cdec0bfab6091fa1080f1ee",
+      "sourceUrl": "https://www.netflix.com/tudum/articles/kpop-demon-hunters-cast",
+      "role": "identity",
+      "subject": "Zoey",
+      "region": "Named KPop Demon Hunters animated character panel only; native source pixels, no photographic adult panel",
+      "sourceHash": "206292495edee079a83a4614e70e114567d1a952fbe13bc416d397c06c3d7863",
+      "sourceFilename": "zoey.png",
+      "sourceWidth": 1200,
+      "sourceHeight": 589,
+      "sourceRegion": {
+        "x": 435,
+        "y": 0,
+        "width": 765,
+        "height": 589
+      },
+      "decodedRgbSha256": "1b5245dd32d6e4a329f54bb8d3c172c608c4dc9aea362b6e2766604b14bcd54b"
+    }
+  ]
+}
