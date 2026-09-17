@@ -1,9 +1,9 @@
 # Evidence-owned review decisions (v2)
 
-Status: reviewer implemented; a separate pending, owner-private Preview research
-route and bounded dispatcher are now prepared in `evidenceReviewStudy.ts` and
-`evidenceReviewRegistration.json`. The registration remains **pending** and cannot
-spend. No paid v2 execution or customer activation has occurred. The closed v1
+Status: reviewer implemented; the owner approved the fixed twenty-call,
+owner-private Preview verification in `evidenceReviewStudy.ts` and
+`evidenceReviewRegistration.json`. The registration is **approved** for this
+bounded run only. Execution results are pending; customer activation is disabled. The closed v1
 study must not be rerun or migrated into v2. This is not a release-quality claim.
 
 ## The three corrections
@@ -71,7 +71,7 @@ semantic rules. [Anthropic structured-output documentation](https://platform.cla
 
 ## Next gate
 
-The pending `evidence-review-20260917-v1` verification now freezes eight retained
+The approved `evidence-review-20260917-v1` verification now freezes eight retained
 images, twelve full briefs and twenty once-only requests (eight craft, twelve
 fidelity). All twelve combined fingerprints match the previously prepared human
 board. There is no reused v1 receipt. The maximum planning reserve is USD2.50;
@@ -80,8 +80,9 @@ their existing output caps. This is a planning reserve, not a provider invoice c
 Sonnet 4.6 standard/global rates remain USD3/15 per million input/output tokens,
 checked 17 September at https://platform.claude.com/docs/en/about-claude/pricing.
 
-Old paid allowances are closed. No new calls are authorized by this implementation.
-After explicit approval and exact-deployment preflight, review actual replies for all three regressions,
+Old paid allowances are closed. The owner has separately approved exactly this
+twenty-call scope and USD2.50 planning reserve. After exact-deployment preflight,
+review actual replies for all three regressions,
 alongside genuine negative controls, before integrating v2 into customer paths.
 Then test fresh generation quality and end-to-end delivery time. The eight
 directions × twenty-plus trials and 95% human-approved under 90 seconds goal is

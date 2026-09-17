@@ -18,7 +18,7 @@ const event={id:61,ownerToken:'offline-owner',eventName:'Artwork evaluation',eve
 
 async function fixture(edit:(raw:any,response:any,call:number)=>void=()=>{}) {
   const registration=structuredClone(proposed) as EvidenceReviewRegistration;
-  registration.authorizationStatus='approved'; // Test transport only; the shipped registration stays pending.
+  registration.authorizationStatus='approved'; // Synthetic transport; production calls still use the fixed owner-private scope.
   for(const c of registration.cases){
     const p=prepareSeparatedReview({...await crossThemeProfile(c.caseId as CrossThemeCaseId),bytes,reviewMode:'teaser'});
     c.reviewedHash=p.imageHash;c.contextHash=p.fidelity.contextHash;c.combinedFingerprint=p.fingerprint;
@@ -43,8 +43,8 @@ async function fixture(edit:(raw:any,response:any,call:number)=>void=()=>{}) {
   return {registration,store,transport,options,run:(id:string,overrides={})=>runEvidenceReviewStudy(event,store,id,{...options,...overrides},registration)};
 }
 
-it('ships pending, gives a free preflight and cannot write claims or spend before fresh approval',async()=>{
-  expect(proposed.authorizationStatus).toBe('pending');expect(proposed.reusedCraft).toEqual([]);
+it('registers the approved bounded scope and still blocks an explicitly pending registration',async()=>{
+  expect(proposed.authorizationStatus).toBe('approved');expect(proposed.reusedCraft).toEqual([]);
   const f=await fixture();f.registration.authorizationStatus='pending';
   expect(await f.run('craft-elsa',{preflightOnly:true})).toMatchObject({kind:'preflight',providerCalls:0,authorizationStatus:'pending'});
   expect(await f.run('craft-elsa')).toMatchObject({kind:'blocked',reason:'research-awaiting-fresh-approval'});

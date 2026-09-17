@@ -1,6 +1,6 @@
 {
   "dataset": "evidence-review-20260917-v1",
-  "authorizationStatus": "pending",
+  "authorizationStatus": "approved",
   "protocol": "evidence-owned-research-v1",
   "maximumCalls": 20,
   "budgetMicros": 2500000,
@@ -346,4 +346,3 @@
     }
   ]
 }
-
