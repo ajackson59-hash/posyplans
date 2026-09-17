@@ -1,0 +1,349 @@
+{
+  "dataset": "evidence-review-20260917-v1",
+  "authorizationStatus": "pending",
+  "protocol": "evidence-owned-research-v1",
+  "maximumCalls": 20,
+  "budgetMicros": 2500000,
+  "pricing": {
+    "inputMicrosPerToken": 3,
+    "outputMicrosPerToken": 15,
+    "checkedDate": "2026-09-17",
+    "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+    "serviceTier": "standard",
+    "inferenceGeo": "global"
+  },
+  "reusedCraft": [],
+  "requests": [
+    {
+      "requestId": "craft-elsa",
+      "role": "craft",
+      "imageHash": "3bbb047349b82d697d0bd921abb20334a265b8eea1f3df4f1be469e5aa0f9e95",
+      "requestFingerprint": "2e436efbb1c4b582b3bcb603d3e7e1559912c632832f4f0e6a8fb39e24f377c6",
+      "schemaHash": "b65bd4005ab5da1b9cbe8409a9394b64cf33cee974256c0a2c98c9b86fe66cfe",
+      "version": "evidence-owned-decisions-v2",
+      "maxOutputTokens": 1400,
+      "planningInputTokens": 15000,
+      "requestPlanningReserveMicros": 66000
+    },
+    {
+      "requestId": "fidelity-c01",
+      "role": "fidelity",
+      "imageHash": "3bbb047349b82d697d0bd921abb20334a265b8eea1f3df4f1be469e5aa0f9e95",
+      "requestFingerprint": "d451285b015323a1bdae31f4a27d92abe34136dcd9a5a9d3b42f2bb6b17f5d15",
+      "schemaHash": "b65bd4005ab5da1b9cbe8409a9394b64cf33cee974256c0a2c98c9b86fe66cfe",
+      "version": "evidence-owned-decisions-v2",
+      "maxOutputTokens": 2770,
+      "planningInputTokens": 15000,
+      "requestPlanningReserveMicros": 86550
+    },
+    {
+      "requestId": "fidelity-c02",
+      "role": "fidelity",
+      "imageHash": "3bbb047349b82d697d0bd921abb20334a265b8eea1f3df4f1be469e5aa0f9e95",
+      "requestFingerprint": "71b35191bbb3881ec111dbd149c308278f7fb3a107ba312269e3c253bd1248b1",
+      "schemaHash": "b65bd4005ab5da1b9cbe8409a9394b64cf33cee974256c0a2c98c9b86fe66cfe",
+      "version": "evidence-owned-decisions-v2",
+      "maxOutputTokens": 2770,
+      "planningInputTokens": 15000,
+      "requestPlanningReserveMicros": 86550
+    },
+    {
+      "requestId": "craft-olaf",
+      "role": "craft",
+      "imageHash": "06fc00dc70854ffe3fde522800ed428f420ecd2bf9b51a2d08b0bb9023d09b32",
+      "requestFingerprint": "0ba4cd418d3f9d295d3ceca9b415ddb6e844c6f416b9bdd682d1ad256a0ab99b",
+      "schemaHash": "b65bd4005ab5da1b9cbe8409a9394b64cf33cee974256c0a2c98c9b86fe66cfe",
+      "version": "evidence-owned-decisions-v2",
+      "maxOutputTokens": 1400,
+      "planningInputTokens": 15000,
+      "requestPlanningReserveMicros": 66000
+    },
+    {
+      "requestId": "fidelity-c03",
+      "role": "fidelity",
+      "imageHash": "06fc00dc70854ffe3fde522800ed428f420ecd2bf9b51a2d08b0bb9023d09b32",
+      "requestFingerprint": "e0063c5570c16c138e975f2cd83d90519d37dd3819c99dc4512d22c70cee11bd",
+      "schemaHash": "b65bd4005ab5da1b9cbe8409a9394b64cf33cee974256c0a2c98c9b86fe66cfe",
+      "version": "evidence-owned-decisions-v2",
+      "maxOutputTokens": 2770,
+      "planningInputTokens": 15000,
+      "requestPlanningReserveMicros": 86550
+    },
+    {
+      "requestId": "fidelity-c04",
+      "role": "fidelity",
+      "imageHash": "06fc00dc70854ffe3fde522800ed428f420ecd2bf9b51a2d08b0bb9023d09b32",
+      "requestFingerprint": "347a72f5b8b7e142fe22358c4a7e1ffd22aae9692986594dfea1d1bd712572af",
+      "schemaHash": "b65bd4005ab5da1b9cbe8409a9394b64cf33cee974256c0a2c98c9b86fe66cfe",
+      "version": "evidence-owned-decisions-v2",
+      "maxOutputTokens": 2770,
+      "planningInputTokens": 15000,
+      "requestPlanningReserveMicros": 86550
+    },
+    {
+      "requestId": "craft-rumi",
+      "role": "craft",
+      "imageHash": "a241d44353371d8eea568de22fe7752861855754fdb73e8fb419dc2d1d68a7d4",
+      "requestFingerprint": "722e9101cede4057ac3a8cb6cf304f5af8fe4b10bb2ae11e8b3f8f2f29934456",
+      "schemaHash": "b65bd4005ab5da1b9cbe8409a9394b64cf33cee974256c0a2c98c9b86fe66cfe",
+      "version": "evidence-owned-decisions-v2",
+      "maxOutputTokens": 1400,
+      "planningInputTokens": 15000,
+      "requestPlanningReserveMicros": 66000
+    },
+    {
+      "requestId": "fidelity-c05",
+      "role": "fidelity",
+      "imageHash": "a241d44353371d8eea568de22fe7752861855754fdb73e8fb419dc2d1d68a7d4",
+      "requestFingerprint": "5c34d918c38917ca3d8a948ff2a459becda6579c2d3f956bafded87f046ccbc7",
+      "schemaHash": "b65bd4005ab5da1b9cbe8409a9394b64cf33cee974256c0a2c98c9b86fe66cfe",
+      "version": "evidence-owned-decisions-v2",
+      "maxOutputTokens": 2510,
+      "planningInputTokens": 15000,
+      "requestPlanningReserveMicros": 82650
+    },
+    {
+      "requestId": "fidelity-c06",
+      "role": "fidelity",
+      "imageHash": "a241d44353371d8eea568de22fe7752861855754fdb73e8fb419dc2d1d68a7d4",
+      "requestFingerprint": "9851148035325cd9e543901fd2c7a9dbeafeefece81eb4b937ab4118544f71d8",
+      "schemaHash": "b65bd4005ab5da1b9cbe8409a9394b64cf33cee974256c0a2c98c9b86fe66cfe",
+      "version": "evidence-owned-decisions-v2",
+      "maxOutputTokens": 2510,
+      "planningInputTokens": 15000,
+      "requestPlanningReserveMicros": 82650
+    },
+    {
+      "requestId": "craft-vector",
+      "role": "craft",
+      "imageHash": "540c672d8284383d35fbc5cea3e29e2252d40ac651e5d8bd33b792c4fef563ff",
+      "requestFingerprint": "c40dec1c459b6dd24fd07faa3eec63eec766862ed80b3d9a611c5d627389553e",
+      "schemaHash": "b65bd4005ab5da1b9cbe8409a9394b64cf33cee974256c0a2c98c9b86fe66cfe",
+      "version": "evidence-owned-decisions-v2",
+      "maxOutputTokens": 1400,
+      "planningInputTokens": 15000,
+      "requestPlanningReserveMicros": 66000
+    },
+    {
+      "requestId": "fidelity-c07",
+      "role": "fidelity",
+      "imageHash": "540c672d8284383d35fbc5cea3e29e2252d40ac651e5d8bd33b792c4fef563ff",
+      "requestFingerprint": "da3667b3870bf8ceab375606cfca6d948ee2b33acf26ce5652f345e482207601",
+      "schemaHash": "b65bd4005ab5da1b9cbe8409a9394b64cf33cee974256c0a2c98c9b86fe66cfe",
+      "version": "evidence-owned-decisions-v2",
+      "maxOutputTokens": 4070,
+      "planningInputTokens": 15000,
+      "requestPlanningReserveMicros": 106050
+    },
+    {
+      "requestId": "fidelity-c08",
+      "role": "fidelity",
+      "imageHash": "540c672d8284383d35fbc5cea3e29e2252d40ac651e5d8bd33b792c4fef563ff",
+      "requestFingerprint": "8f37fbd54499564db98d3d415fffe33a3a07e8069a9496a592c0dc783f26ee33",
+      "schemaHash": "b65bd4005ab5da1b9cbe8409a9394b64cf33cee974256c0a2c98c9b86fe66cfe",
+      "version": "evidence-owned-decisions-v2",
+      "maxOutputTokens": 4070,
+      "planningInputTokens": 15000,
+      "requestPlanningReserveMicros": 106050
+    },
+    {
+      "requestId": "craft-construction",
+      "role": "craft",
+      "imageHash": "c69181ce3c6db1a2eb7fa3eb8fc17bacef8e70bf5df03259c0e0ccc011459a3f",
+      "requestFingerprint": "893d7d7cfb956a18a705a61ade6e8ccfaa84fd08d8fba24aa3bf2fb82ba6f767",
+      "schemaHash": "b65bd4005ab5da1b9cbe8409a9394b64cf33cee974256c0a2c98c9b86fe66cfe",
+      "version": "evidence-owned-decisions-v2",
+      "maxOutputTokens": 1400,
+      "planningInputTokens": 15000,
+      "requestPlanningReserveMicros": 66000
+    },
+    {
+      "requestId": "fidelity-c09",
+      "role": "fidelity",
+      "imageHash": "c69181ce3c6db1a2eb7fa3eb8fc17bacef8e70bf5df03259c0e0ccc011459a3f",
+      "requestFingerprint": "934af39491ebb035fb32f22487b8c89c4da591a4f91ec84c9a94cf7e796b73e9",
+      "schemaHash": "b65bd4005ab5da1b9cbe8409a9394b64cf33cee974256c0a2c98c9b86fe66cfe",
+      "version": "evidence-owned-decisions-v2",
+      "maxOutputTokens": 4850,
+      "planningInputTokens": 15000,
+      "requestPlanningReserveMicros": 117750
+    },
+    {
+      "requestId": "craft-kpop",
+      "role": "craft",
+      "imageHash": "fb2a8f25d603e0c8aea5a1a404d6e84b171487768b432dc16a3d913b2f68e596",
+      "requestFingerprint": "4d9c47181fc2302b8ccdb8a63f82f51ea039f5db1bd48043242fe2cf504ab8e2",
+      "schemaHash": "b65bd4005ab5da1b9cbe8409a9394b64cf33cee974256c0a2c98c9b86fe66cfe",
+      "version": "evidence-owned-decisions-v2",
+      "maxOutputTokens": 1400,
+      "planningInputTokens": 15000,
+      "requestPlanningReserveMicros": 66000
+    },
+    {
+      "requestId": "fidelity-c10",
+      "role": "fidelity",
+      "imageHash": "fb2a8f25d603e0c8aea5a1a404d6e84b171487768b432dc16a3d913b2f68e596",
+      "requestFingerprint": "d8f56cf636540753e8866a3467fef29dcd4f4cc09c4e8ce79cbffdd17cd18c7d",
+      "schemaHash": "b65bd4005ab5da1b9cbe8409a9394b64cf33cee974256c0a2c98c9b86fe66cfe",
+      "version": "evidence-owned-decisions-v2",
+      "maxOutputTokens": 5890,
+      "planningInputTokens": 15000,
+      "requestPlanningReserveMicros": 133350
+    },
+    {
+      "requestId": "craft-scene",
+      "role": "craft",
+      "imageHash": "8f6f8dce768cd36e09d872bd07dc52ad970abca772279fd807a0e6df05c0e105",
+      "requestFingerprint": "846b0447e9783b4dd723059acee6c87ec40343535a26ad03eeed6e6e96b6638c",
+      "schemaHash": "b65bd4005ab5da1b9cbe8409a9394b64cf33cee974256c0a2c98c9b86fe66cfe",
+      "version": "evidence-owned-decisions-v2",
+      "maxOutputTokens": 1400,
+      "planningInputTokens": 15000,
+      "requestPlanningReserveMicros": 66000
+    },
+    {
+      "requestId": "fidelity-c11",
+      "role": "fidelity",
+      "imageHash": "8f6f8dce768cd36e09d872bd07dc52ad970abca772279fd807a0e6df05c0e105",
+      "requestFingerprint": "b66ad166f5cd3287ada56d08e818635809387868fd5eaabc1a7a8af907cc2c3c",
+      "schemaHash": "b65bd4005ab5da1b9cbe8409a9394b64cf33cee974256c0a2c98c9b86fe66cfe",
+      "version": "evidence-owned-decisions-v2",
+      "maxOutputTokens": 6150,
+      "planningInputTokens": 15000,
+      "requestPlanningReserveMicros": 137250
+    },
+    {
+      "requestId": "craft-lettering",
+      "role": "craft",
+      "imageHash": "dcfc60f28fea7d45a16918a9db1d8619deca90a708658596c55ad1127e6a8f21",
+      "requestFingerprint": "e62496d3ed5e4a2cc71a8671518ecd0d928d2a289c9863940e9c945ae7c8f4ff",
+      "schemaHash": "b65bd4005ab5da1b9cbe8409a9394b64cf33cee974256c0a2c98c9b86fe66cfe",
+      "version": "evidence-owned-decisions-v2",
+      "maxOutputTokens": 1400,
+      "planningInputTokens": 15000,
+      "requestPlanningReserveMicros": 66000
+    },
+    {
+      "requestId": "fidelity-c12",
+      "role": "fidelity",
+      "imageHash": "dcfc60f28fea7d45a16918a9db1d8619deca90a708658596c55ad1127e6a8f21",
+      "requestFingerprint": "0faa91e578302fb156bcf23f76e3b7502c312589e8b4f5913b7f80cdc3d22d53",
+      "schemaHash": "b65bd4005ab5da1b9cbe8409a9394b64cf33cee974256c0a2c98c9b86fe66cfe",
+      "version": "evidence-owned-decisions-v2",
+      "maxOutputTokens": 6150,
+      "planningInputTokens": 15000,
+      "requestPlanningReserveMicros": 137250
+    }
+  ],
+  "cases": [
+    {
+      "caseId": "c01",
+      "image": "elsa",
+      "reviewedHash": "3bbb047349b82d697d0bd921abb20334a265b8eea1f3df4f1be469e5aa0f9e95",
+      "combinedFingerprint": "c57c8932c074e671668e7982b047950dd8595250846bab2661f6f641211e112a",
+      "contextHash": "298a134d279312da8a6cf24c07c9ea5f9dec3f06298311388b474994978ba92d",
+      "craftRequestId": "craft-elsa",
+      "fidelityRequestId": "fidelity-c01"
+    },
+    {
+      "caseId": "c02",
+      "image": "elsa",
+      "reviewedHash": "3bbb047349b82d697d0bd921abb20334a265b8eea1f3df4f1be469e5aa0f9e95",
+      "combinedFingerprint": "14a28e8def65ce5d71cecef818ff5e7ae8962d77705ab06a101cc3b2f737ca46",
+      "contextHash": "19e4d8c9b23ccb4becf86479433af0b0c971032a916510f0e76a181325efc1c2",
+      "craftRequestId": "craft-elsa",
+      "fidelityRequestId": "fidelity-c02"
+    },
+    {
+      "caseId": "c03",
+      "image": "olaf",
+      "reviewedHash": "06fc00dc70854ffe3fde522800ed428f420ecd2bf9b51a2d08b0bb9023d09b32",
+      "combinedFingerprint": "026174f24d6d37d9d3c2bc908d82eb4bdb50ad09d7351ab8e1abd2d8fdfe2f8b",
+      "contextHash": "f78a04e73d852a99ae1a45305bc33691d58a446c490eb22c33021edcb9924d40",
+      "craftRequestId": "craft-olaf",
+      "fidelityRequestId": "fidelity-c03"
+    },
+    {
+      "caseId": "c04",
+      "image": "olaf",
+      "reviewedHash": "06fc00dc70854ffe3fde522800ed428f420ecd2bf9b51a2d08b0bb9023d09b32",
+      "combinedFingerprint": "ba4ebe8a14c9497e5c74dcec94df47aeb05f2c3fec9cacc352536fb0fc862964",
+      "contextHash": "00b5f1143b0f117116fe00fd1eafeefb4b5750ddc3dfa4dd08d85bb941f5366e",
+      "craftRequestId": "craft-olaf",
+      "fidelityRequestId": "fidelity-c04"
+    },
+    {
+      "caseId": "c05",
+      "image": "rumi",
+      "reviewedHash": "a241d44353371d8eea568de22fe7752861855754fdb73e8fb419dc2d1d68a7d4",
+      "combinedFingerprint": "2f6824ce782fd18c84f074b3d35a73b8b0767dfc0c074873834dcd75a8c1e7ee",
+      "contextHash": "440fb053d4a9b2ad00890bc405bbca36546be77f598e1248862ec51f8ed98a98",
+      "craftRequestId": "craft-rumi",
+      "fidelityRequestId": "fidelity-c05"
+    },
+    {
+      "caseId": "c06",
+      "image": "rumi",
+      "reviewedHash": "a241d44353371d8eea568de22fe7752861855754fdb73e8fb419dc2d1d68a7d4",
+      "combinedFingerprint": "55a403dc73f5509b540c62dc05ff7353c610418e4f9f0029b259a90703d2bfa5",
+      "contextHash": "31f7e1fa369dc96444d17ea52ef6515758b93994be059c4824f2ea10ba0d0158",
+      "craftRequestId": "craft-rumi",
+      "fidelityRequestId": "fidelity-c06"
+    },
+    {
+      "caseId": "c07",
+      "image": "vector",
+      "reviewedHash": "540c672d8284383d35fbc5cea3e29e2252d40ac651e5d8bd33b792c4fef563ff",
+      "combinedFingerprint": "2ca549b10126322d235ecb99a51798c3a4ce19d8c24bfc6b1de1c7728c0155e3",
+      "contextHash": "656d37839cb7b16ffa9cd597a6be95213fbde0c74de62b0e7e2b5f65d03aa308",
+      "craftRequestId": "craft-vector",
+      "fidelityRequestId": "fidelity-c07"
+    },
+    {
+      "caseId": "c08",
+      "image": "vector",
+      "reviewedHash": "540c672d8284383d35fbc5cea3e29e2252d40ac651e5d8bd33b792c4fef563ff",
+      "combinedFingerprint": "2f9c55d7b33115619f0a0ee1e5ed0d8525f77ab46dd9e6b58324618c52d30c29",
+      "contextHash": "4b9c7629e95f915bdaffe5bcc8e93af71490fe344c1bb07855f3e45908ffe239",
+      "craftRequestId": "craft-vector",
+      "fidelityRequestId": "fidelity-c08"
+    },
+    {
+      "caseId": "c09",
+      "image": "construction",
+      "reviewedHash": "c69181ce3c6db1a2eb7fa3eb8fc17bacef8e70bf5df03259c0e0ccc011459a3f",
+      "combinedFingerprint": "7e1888b28ba6549cac74b5100987d785fe8964eb076baeade54ac40843d8df72",
+      "contextHash": "52f8194d6b656b7217522a6aedc297fc060174982dfc945a22d2edcfe069e1a9",
+      "craftRequestId": "craft-construction",
+      "fidelityRequestId": "fidelity-c09"
+    },
+    {
+      "caseId": "c10",
+      "image": "kpop",
+      "reviewedHash": "fb2a8f25d603e0c8aea5a1a404d6e84b171487768b432dc16a3d913b2f68e596",
+      "combinedFingerprint": "5c34b6ba5396e8431449650450500bd942d0adbc0867b07ae06400aba79e6f44",
+      "contextHash": "ea5301d8687ac1c9acac8ed69227e1de77563a460ef443db6167f7ce383ebc3d",
+      "craftRequestId": "craft-kpop",
+      "fidelityRequestId": "fidelity-c10"
+    },
+    {
+      "caseId": "c11",
+      "image": "scene",
+      "reviewedHash": "8f6f8dce768cd36e09d872bd07dc52ad970abca772279fd807a0e6df05c0e105",
+      "combinedFingerprint": "ccc5fc3a904fb8d4dbdbe81fa00515ebe2b0ad8fe633067ada577c1635ea2592",
+      "contextHash": "d3f844ab3c20aa3ad06217b56ae5d732dc7caa462e1a6419af52fa2f0a58ce1f",
+      "craftRequestId": "craft-scene",
+      "fidelityRequestId": "fidelity-c11"
+    },
+    {
+      "caseId": "c12",
+      "image": "lettering",
+      "reviewedHash": "dcfc60f28fea7d45a16918a9db1d8619deca90a708658596c55ad1127e6a8f21",
+      "combinedFingerprint": "8bde1ac7f73f08506d0c27df9fc35ecfcbab086ea0d87ee86543c5dbebde7247",
+      "contextHash": "d3f844ab3c20aa3ad06217b56ae5d732dc7caa462e1a6419af52fa2f0a58ce1f",
+      "craftRequestId": "craft-lettering",
+      "fidelityRequestId": "fidelity-c12"
+    }
+  ]
+}
+

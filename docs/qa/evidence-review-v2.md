@@ -1,8 +1,10 @@
 # Evidence-owned review decisions (v2)
 
-Status: implemented for offline preparation and validation. No v2 HTTP route,
-provider dispatch, approved study registration or customer activation. The closed
-v1 study must not be rerun or migrated into v2. This is not a release-quality claim.
+Status: reviewer implemented; a separate pending, owner-private Preview research
+route and bounded dispatcher are now prepared in `evidenceReviewStudy.ts` and
+`evidenceReviewRegistration.json`. The registration remains **pending** and cannot
+spend. No paid v2 execution or customer activation has occurred. The closed v1
+study must not be rerun or migrated into v2. This is not a release-quality claim.
 
 ## The three corrections
 
@@ -24,7 +26,9 @@ uncertainty.
 - `legacySeparatedArtworkReview.ts` preserves the v1 packet/combination code.
   Both registered historical runners and the historical preparation script import
   that frozen version explicitly. Their old registrations and receipt hashes are
-  unchanged. Existing customer paths are unchanged.
+  unchanged. Existing customer paths are unchanged. The new owner-only
+  `/prepayment-preview/evidence-review/:requestId` route is Preview-only, restricted
+  to the registered owner event/branch, and cannot authorize itself from a request.
 - Each component is bound to exact pixels, schema, request and model; missing,
   retried, truncated, stale or unaccounted receipts cannot pass.
 - No score is elevated, no stored review is rewritten, and no historical answer
@@ -67,10 +71,26 @@ semantic rules. [Anthropic structured-output documentation](https://platform.cla
 
 ## Next gate
 
-Prepare a new, explicitly scoped Preview-only verification with frozen v2 packets
-and retained images. Old paid allowances are closed. No new calls are authorized
-by this implementation. Review actual model replies for all three regressions,
+The pending `evidence-review-20260917-v1` verification now freezes eight retained
+images, twelve full briefs and twenty once-only requests (eight craft, twelve
+fidelity). All twelve combined fingerprints match the previously prepared human
+board. There is no reused v1 receipt. The maximum planning reserve is USD2.50;
+individual packet reserves total USD1.7772 at 15,000 planned input tokens each and
+their existing output caps. This is a planning reserve, not a provider invoice cap.
+Sonnet 4.6 standard/global rates remain USD3/15 per million input/output tokens,
+checked 17 September at https://platform.claude.com/docs/en/about-claude/pricing.
+
+Old paid allowances are closed. No new calls are authorized by this implementation.
+After explicit approval and exact-deployment preflight, review actual replies for all three regressions,
 alongside genuine negative controls, before integrating v2 into customer paths.
 Then test fresh generation quality and end-to-end delivery time. The eight
 directions × twenty-plus trials and 95% human-approved under 90 seconds goal is
 still unproven; unit tests cannot establish it.
+
+The separate scheduler retains complete invalid model reports and continues
+independent requests only when one physical call, accounting, exact request and
+durable retention are known. It stops on unknown billing/outcome, input changes,
+retention failure, cancellation, pricing mismatch or reserve overrun. No retry,
+repair, generation or classifier is allowed. Every claim/result stays private,
+calibration-only, rejected and without a preview ID. Closure is durable; budget
+or call allowance cannot be reused. The model never receives human notes or labels.
