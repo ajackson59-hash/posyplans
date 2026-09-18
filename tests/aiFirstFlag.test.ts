@@ -88,6 +88,27 @@ describe("route gating", () => {
     expect(res.body).toEqual(DEFAULT_FEATURE_FLAGS);
   });
 
+  it("keeps owner-scoped retained evidence available on the certified named Preview branch", async () => {
+    const app = appWith({
+      VERCEL_ENV: "preview",
+      VERCEL_GIT_COMMIT_REF: "codex/launch-blockers",
+    });
+    const res = await request(app).get(`/api/events/owner/${OWNER}/ai-first/review/attempts`);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ attempts: [] });
+  });
+
+  it("does not open retained evidence on an unrelated flag-off Preview branch", async () => {
+    const app = appWith({
+      VERCEL_ENV: "preview",
+      VERCEL_GIT_COMMIT_REF: "unrelated-preview",
+    });
+    const res = await request(app).get(`/api/events/owner/${OWNER}/ai-first/review/attempts`);
+
+    expect(res.status).toBe(404);
+  });
+
   it("serves status with the flag on", async () => {
     const app = appWith({ [featureFlagEnvVar("aiFirstInvitations")]: "1" });
     const res = await request(app).get(`/api/events/owner/${OWNER}/ai-first/status`);

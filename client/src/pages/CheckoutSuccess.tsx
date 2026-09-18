@@ -36,10 +36,10 @@ function useUrlParam(name: string): string | undefined {
 
 export default function CheckoutSuccess() {
   const sessionId = useUrlParam("session_id");
-  const returnToken = useUrlParam("returnToken");
+  const requestedReturnToken = useUrlParam("returnToken");
   const [, navigate] = useLocation();
 
-  const { data, isLoading, isError, error } = useQuery<CheckoutConfirmResult>({
+  const { data, isLoading, isError, isFetching, error, refetch } = useQuery<CheckoutConfirmResult>({
     queryKey: ["/api/checkout/confirm", sessionId],
     queryFn: () => apiRequestJson<CheckoutConfirmResult>("GET", `/api/checkout/confirm?sessionId=${encodeURIComponent(sessionId || "")}`),
     enabled: !!sessionId,
@@ -47,7 +47,12 @@ export default function CheckoutSuccess() {
   });
 
   const isSpark = data?.plan === "spark";
-  const sparkReturnToken = returnToken || data?.returnToken;
+  const returnToken = data?.returnToken || requestedReturnToken;
+  const sparkReturnToken = returnToken;
+  const isTrial = data?.planTier === "plus_trial";
+  const confirmed = isSpark ? data?.unlocked === true : data?.plan === "plus" && (
+    data.planTier === "plus_active" || (isTrial && !!data.trialEndsAt && data.trialEndsAt > Date.now())
+  );
 
   // If the host upgraded from mid-build on a specific event, send them right
   // back to that event's dashboard — their plan was never lost, they just
@@ -56,7 +61,7 @@ export default function CheckoutSuccess() {
   const goToGetStarted = () => {
     // A Spark purchase unlocks one specific event's plan — take the host
     // straight back to generation so the plan they just paid for gets built.
-    if (isSpark && sparkReturnToken) {
+    if (confirmed && isSpark && sparkReturnToken) {
       navigate(`/draft-generating/${sparkReturnToken}`);
       return;
     }
@@ -79,7 +84,7 @@ export default function CheckoutSuccess() {
   };
 
   useEffect(() => {
-    if (!data?.firedEvent) return;
+    if (!confirmed || !data?.firedEvent) return;
     trackEvent(data.firedEvent, {
       value: data.value,
       currency: "USD",
@@ -92,7 +97,7 @@ export default function CheckoutSuccess() {
     if (isMarketingConsentGranted() && data.eventId && data.value != null) {
       window.fbq?.("track", "Purchase", { value: data.value, currency: "USD" }, { eventID: data.eventId });
     }
-  }, [data?.firedEvent, data?.billingInterval, data?.eventId, data?.value]);
+  }, [confirmed, data?.firedEvent, data?.billingInterval, data?.eventId, data?.value]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -124,15 +129,18 @@ export default function CheckoutSuccess() {
                 <Skeleton className="mx-auto h-5 w-48" />
                 <Skeleton className="mx-auto h-4 w-64" />
               </>
-            ) : isError ? (
+            ) : isError || !confirmed ? (
               <>
                 <XCircle className="mx-auto h-10 w-10 text-destructive" />
                 <h1 className="font-serif text-xl font-semibold text-foreground" data-testid="text-checkout-error-title">
                   Couldn't confirm your checkout
                 </h1>
                 <p className="text-sm text-muted-foreground" data-testid="text-checkout-error-detail">
-                  {error instanceof Error ? error.message : "Please contact support if this persists."}
+                  {error instanceof Error ? error.message : "Your access isn't confirmed yet. Check again shortly; you don't need to pay again."}
                 </p>
+                <Button variant="outline" onClick={() => refetch()} disabled={isFetching} data-testid="button-retry-payment-confirmation">
+                  {isFetching ? "Checking payment…" : "Check payment again"}
+                </Button>
               </>
             ) : (
               <>
@@ -143,17 +151,18 @@ export default function CheckoutSuccess() {
                   </p>
                 )}
                 <h1 className="font-serif text-xl font-semibold text-foreground" data-testid="text-checkout-success-title">
-                  {isSpark ? "Your event is unlocked" : "You're on Plus"}
+                  {isSpark ? "Your event is unlocked" : isTrial ? "Your Plus trial is active" : "You're on Plus"}
                 </h1>
                 <p className="text-sm text-muted-foreground" data-testid="text-checkout-success-detail">
                   {isSpark
                     ? "Your plan is ready to build — let's put it together now."
+                    : isTrial ? "Your Plus trial is active. Head back to your event to use it."
                     : "Your Plus subscription is active. Head back to any of your events to use it."}
                 </p>
               </>
             )}
             <Button className="w-full" data-testid="button-back-home" onClick={goToGetStarted}>
-              {isSpark ? "Build my plan" : returnToken ? "Back to my event" : "Start planning"}
+              {confirmed && isSpark ? "Build my plan" : returnToken ? "Back to my event" : "Start planning"}
             </Button>
           </CardContent>
         </Card>

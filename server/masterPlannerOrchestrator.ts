@@ -26,6 +26,8 @@
 // touching the Anthropic SDK.
 
 import { storage } from "./storage";
+import { humanReviewEventEnabled } from "./humanArtworkReview";
+import { approvedHumanArtwork } from "./humanArtworkPolicy";
 import { generateThemeAndIdentityAi, type ThemeAndIdentityResult } from "./themeAi";
 import { generateBudgetSuggestionAi, type BudgetSuggestion } from "./budgetAi";
 import { generateMenuAi, type MenuSuggestion } from "./menuAi";
@@ -147,8 +149,11 @@ export async function runMasterPlannerOrchestration(
         guestCount,
       });
       await storage.updateEventById(eventId, {
-        themeName: result.themeName,
-        paletteColors: JSON.stringify(result.paletteColors),
+        // The reviewed brief owns its theme and palette; planning cannot replace it.
+        ...(humanReviewEventEnabled(initialEvent) ? {} : {
+          themeName: result.themeName,
+          paletteColors: JSON.stringify(result.paletteColors),
+        }),
         eventIdentity: result.eventIdentity,
       });
       await markStageCompleted(generationId, "theme");
@@ -278,38 +283,47 @@ export async function runMasterPlannerOrchestration(
     await setDraftStage(eventId, "invites");
     try {
       const eventForStage5 = (await storage.getEventById(eventId))!;
-      const [menuItemsForDna, budgetItemsForDna] = await Promise.all([
-        storage.listMenuItems(eventId),
-        storage.listBudgetItems(eventId),
-      ]);
-      const appliedConcept = parseInviteDesignConcept(eventForStage5.inviteDesignConceptJson);
-      const dnaProfile = computeEventDna({
-        eventType: eventForStage5.eventType,
-        menuItems: menuItemsForDna,
-        budgetItems: budgetItemsForDna,
-        appliedConceptDnaHints: appliedConcept?.dnaHints,
-      });
-      const formatRecommendation = recommendInviteFormat(dnaProfile, guestCount);
+      if (humanReviewEventEnabled(eventForStage5)) {
+        const artwork = await approvedHumanArtwork(eventForStage5);
+        if (!artwork) throw new Error('Current artwork needs human approval');
+        await storage.updateEventById(eventId, {
+          inviteArtworkUrl: artwork, inviteIllustrationUrl: artwork,
+          customInviteImageUrl: '', inviteDesignConceptJson: '{}',
+        });
+      } else {
+        const [menuItemsForDna, budgetItemsForDna] = await Promise.all([
+          storage.listMenuItems(eventId),
+          storage.listBudgetItems(eventId),
+        ]);
+        const appliedConcept = parseInviteDesignConcept(eventForStage5.inviteDesignConceptJson);
+        const dnaProfile = computeEventDna({
+          eventType: eventForStage5.eventType,
+          menuItems: menuItemsForDna,
+          budgetItems: budgetItemsForDna,
+          appliedConceptDnaHints: appliedConcept?.dnaHints,
+        });
+        const formatRecommendation = recommendInviteFormat(dnaProfile, guestCount);
 
-      const concepts = await deps.generateInviteConcepts({
-        themePrompt: eventForStage5.vibeDescription || eventForStage5.themeName,
-        eventName: eventForStage5.eventName,
-        eventType: eventForStage5.eventType,
-        eventDate: eventForStage5.eventDate,
-        location: eventForStage5.location,
-        hostNames: eventForStage5.hostNames,
-        themeName: eventForStage5.themeName,
-        dnaSummary: dnaSummaryForPrompt(dnaProfile),
-        formatGuidance: formatRecommendation?.conceptGuidance ?? null,
-      });
-      const chosen = selectRecommendedConcept(concepts, dnaProfile);
-      const aspectRatio = chosen.layoutStyle === "banner" ? "16:9" : chosen.layoutStyle === "full-bleed" ? "9:16" : "1:1";
-      const illustrationUrl = await deps.generateIllustration(chosen, aspectRatio);
+        const concepts = await deps.generateInviteConcepts({
+          themePrompt: eventForStage5.vibeDescription || eventForStage5.themeName,
+          eventName: eventForStage5.eventName,
+          eventType: eventForStage5.eventType,
+          eventDate: eventForStage5.eventDate,
+          location: eventForStage5.location,
+          hostNames: eventForStage5.hostNames,
+          themeName: eventForStage5.themeName,
+          dnaSummary: dnaSummaryForPrompt(dnaProfile),
+          formatGuidance: formatRecommendation?.conceptGuidance ?? null,
+        });
+        const chosen = selectRecommendedConcept(concepts, dnaProfile);
+        const aspectRatio = chosen.layoutStyle === "banner" ? "16:9" : chosen.layoutStyle === "full-bleed" ? "9:16" : "1:1";
+        const illustrationUrl = await deps.generateIllustration(chosen, aspectRatio);
 
-      await storage.updateEventById(eventId, {
-        inviteDesignConceptJson: JSON.stringify(chosen),
-        inviteIllustrationUrl: illustrationUrl,
-      });
+        await storage.updateEventById(eventId, {
+          inviteDesignConceptJson: JSON.stringify(chosen),
+          inviteIllustrationUrl: illustrationUrl,
+        });
+      }
       await markStageCompleted(generationId, "invites");
       completed.add("invites");
     } catch (err) {

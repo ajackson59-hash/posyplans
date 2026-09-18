@@ -13,8 +13,9 @@ import type {
 } from '@shared/schema';
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { randomBytes } from "crypto";
+import { previewCompletionCondition, previewReservationCondition } from "./prePaymentPreviewReservation";
 
 if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL is not set. Add the Supabase pooled connection string to your environment.");
@@ -75,6 +76,8 @@ export interface IStorage {
 
   getEventById(eventId: number): Promise<Event | undefined>;
   updateEventById(eventId: number, data: Partial<Event>): Promise<Event | undefined>;
+  reservePrePaymentPreview(event: Event, startedAt: number): Promise<Event | undefined>;
+  completePrePaymentPreview(event: Event, data: Pick<Event, "prePaymentPreviewUrl" | "prePaymentPreviewUsedAt">): Promise<Event | undefined>;
   setEventCapturedEmail(eventId: number, email: string): Promise<Event | undefined>;
   getEventsByEmail(email: string): Promise<Event[]>;
 
@@ -93,6 +96,20 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  async completePrePaymentPreview(event: Event, data: Pick<Event, "prePaymentPreviewUrl" | "prePaymentPreviewUsedAt">): Promise<Event | undefined> {
+    const [completed] = await db.update(events).set(data).where(previewCompletionCondition(event)).returning();
+    return completed;
+  }
+
+  async reservePrePaymentPreview(event: Event, startedAt: number): Promise<Event | undefined> {
+    const [reserved] = await db.update(events).set({
+      prePaymentPreviewAttempts: event.prePaymentPreviewAttempts + 1,
+      prePaymentPreviewUrl: "",
+      prePaymentPreviewUsedAt: startedAt,
+    }).where(previewReservationCondition(event)).returning();
+    return reserved;
+  }
+
   async createEvent(data: InsertEvent): Promise<Event> {
     const ownerToken = randomToken(24);
     const shareSlug = randomToken(10);
@@ -142,9 +159,10 @@ export class DatabaseStorage implements IStorage {
     const rows = await db
       .update(events)
       .set({ sparkUnlockedAt: Date.now(), sparkCheckoutSessionId: checkoutSessionId })
-      .where(eq(events.id, existing.id))
+      .where(and(eq(events.id, existing.id), isNull(events.sparkUnlockedAt)))
       .returning();
-    return rows[0];
+    // A simultaneous webhook/return may have won after the initial read.
+    return rows[0] ?? this.getEventByOwnerToken(ownerToken);
   }
 
   async listGuests(eventId: number): Promise<Guest[]> {
@@ -405,6 +423,7 @@ export class DatabaseStorage implements IStorage {
           updatedAt: now,
           ...data,
         })
+        .onConflictDoUpdate({ target: emailEntitlements.email, set: { ...data, updatedAt: now } })
         .returning();
       return rows[0];
     }

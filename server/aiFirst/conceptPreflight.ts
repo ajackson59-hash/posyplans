@@ -8,6 +8,7 @@
 
 import type { AiFirstConcept } from "@shared/aiFirstInvite";
 import { classifyRequirements, type EventBrief } from "./brief";
+import { targetIsNegated } from "./hostVisualRequirements";
 
 export interface SubjectFamily {
   id: string;
@@ -20,6 +21,8 @@ export interface SubjectFamily {
   bindingRequirements?: readonly string[];
   /** Concrete positive subjects Tier 2 can answer present/absent from pixels. */
   reviewRequirements?: readonly string[];
+  /** Broad named-cast fallback; exact tagged identities supersede this checklist. */
+  reviewScope?: "named-cast";
   /** Curated themes whose shipped artwork genuinely depicts this subject. */
   compatibleThemeIds: readonly string[];
   /** Broader keyword families absorbed by this more-specific identity. */
@@ -37,14 +40,15 @@ const SUBJECT_FAMILIES: readonly SubjectFamily[] = [
     identityCue:
       /\b(k[ -]?pop demon hunters?|huntr\/?x|rumi|mira|zoey|demon[- ]hunt)\b/i,
     bindingRequirements: [
-      "The KPop Demon Hunters identity must be direct and unmistakable, with the recognizable heroine trio Rumi, Mira and Zoey depicted as the central themed characters",
-      "Preserve the trio's distinct K-pop performance energy, signature character silhouettes and supernatural demon-hunting weapons; generic pop stars, abstract neon or an unnamed girl group do not satisfy the theme",
+      "The KPop Demon Hunters identity must be direct and unmistakable through the host's requested named characters and their independently recognizable faces, hair, costume and silhouettes",
+      "Preserve the host's exact cast scope, requested scene and activities; property recognition does not require an unrequested trio, weapons, performance stage or supernatural props; generic pop stars, abstract neon or an unnamed girl group do not satisfy a requested named-character identity",
       "Do not include a franchise logo, movie title, character names as rendered text, or copy another invitation's composition",
     ],
     reviewRequirements: [
-      "The recognizable KPop Demon Hunters heroine trio is visibly present as three distinct central characters",
-      "Both K-pop performance energy and supernatural demon-hunting cues are unmistakably visible",
+      "Each specifically requested KPop Demon Hunters character is independently recognizable through visible identity features",
+      "The host's requested cast scope, scene and activities are visibly respected",
     ],
+    reviewScope: "named-cast",
     compatibleThemeIds: [],
   },
   {
@@ -60,7 +64,7 @@ const SUBJECT_FAMILIES: readonly SubjectFamily[] = [
       /\b(construction|builder|building site|job ?site|digging|digger|excavator|bulldozer|dump truck|backhoe|front loader|cement mixer|crane|hard hat)\b/i,
     bindingRequirements: [
       "The construction / little-builder identity must be unmistakable through at least two coherent builder cues suited to the direction — machinery, machine details, jobsite materials, tools, safety gear, or blueprint/site-plan language",
-      "Do not make a full construction machine mandatory unless the direction's focal strategy is narrative-scene or iconic-detail",
+      "Do not make a full construction machine mandatory unless the host explicitly requests one or the direction's focal strategy is narrative-scene or iconic-detail",
       "Keep every important builder and celebration cue fully visible within the central 70% of the frame so the invitation layout cannot crop it away",
       "Flowers, botanicals, abstract geometry, paper texture and colour alone do not satisfy or replace the construction identity",
     ],
@@ -199,6 +203,13 @@ export function subjectFamiliesForBrief(brief: EventBrief): SubjectFamily[] {
   return matchingFamilies(briefIdentity(brief));
 }
 
+/** Creative variety cannot remove a concrete subject the host actually named. */
+export function hasRequestedConstructionMachine(brief: EventBrief): boolean {
+  const source = brief.visualIdentityOverride || `${brief.themeName}. ${brief.vibe}`;
+  const machines = /\b(?:dump trucks?|excavators?|diggers?|bulldozers?|dozers?|backhoes?|(?:front|wheel)\s+loaders?|loaders?|cranes?|(?:cement|concrete) mixers?)\b/gi;
+  return Array.from(source.matchAll(machines)).some(match => !targetIsNegated(source, match.index ?? 0));
+}
+
 /**
  * Turns a newly named concrete subject into the binding visual identity for
  * this generation. Generic refinements ("more elegant", "less literal")
@@ -219,10 +230,14 @@ export function briefForHostDirection(brief: EventBrief, direction?: string): Ev
   const inheritedIds = new Set(subjectFamiliesForBrief(brief).map((family) => family.id));
   if (explicitFamilies.every((family) => inheritedIds.has(family.id))) return brief;
 
-  const visualIdentityOverride = explicitFamilies.map((family) => family.label).join(" + ");
+  // Families detect a theme change; their labels must not replace the host's
+  // actual medium, cast, setting, counts, palette or exclusions.
+  const visualIdentityOverride = directionFamilies.length > 0
+    ? currentDirection : brief.inspirationNotes.trim();
   return {
     ...brief,
     themeName: visualIdentityOverride,
+    vibe: visualIdentityOverride,
     // Event palettes are derived from the inherited theme. Once the host
     // replaces that identity, carrying its old colours forward turns them
     // into a contradictory pass/fail requirement (for example construction
@@ -261,7 +276,12 @@ export function concreteSubjectRequirementsForBrief(brief: EventBrief): string[]
  * exclusion checks instead of being duplicated as impossible checklist rows.
  */
 export function concreteSubjectReviewRequirementsForBrief(brief: EventBrief): string[] {
-  return subjectFamiliesForBrief(brief).flatMap((family) => family.reviewRequirements ?? []);
+  const exactNamedTargets = brief.requirements.required.some(r => /^\[VISIBLE NAMED IDENTITY\]\s*\S/i.test(r));
+  // Do not ask the critic to invent a second, broader cast interpretation after
+  // the server has already supplied exact named targets. Other world checks
+  // (e.g. construction cues in a compound brief) remain independent requirements.
+  return subjectFamiliesForBrief(brief).flatMap((family) =>
+    family.reviewScope === "named-cast" && exactNamedTargets ? [] : family.reviewRequirements ?? []);
 }
 
 export function preflightConceptForBrief(concept: AiFirstConcept, brief: EventBrief): ConceptPreflightResult {

@@ -1,3 +1,4 @@
+import { visionFixtureAllPresent } from "./helpers/visionRequestRequirements";
 // Final PR #3 reliability controls. Every provider dependency is faked;
 // this file cannot make OpenAI or Anthropic calls.
 
@@ -89,8 +90,8 @@ function oneConceptClient(): Anthropic {
             delta: { type: "text_delta", text: `${conceptQuartet(direction).map((item) => JSON.stringify(item)).join("\n")}\n` },
           };
         })(),
-      create: async () => ({
-        content: [{ type: "text", text: JSON.stringify(passingVision) }],
+      create: async (request: any) => ({
+        content: [{ type: "text", text: JSON.stringify(visionFixtureAllPresent(request, passingVision)) }],
         usage: { input_tokens: 1000, output_tokens: 100 },
       }),
     },

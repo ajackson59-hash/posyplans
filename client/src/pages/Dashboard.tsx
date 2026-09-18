@@ -1366,7 +1366,7 @@ export default function Dashboard() {
                       src={artworkDraft}
                       alt=""
                       data-testid="img-invite-preview-artwork"
-                      className="mt-2 h-40 w-full rounded-md border border-border object-cover"
+                      className="mx-auto mt-2 h-auto w-full max-w-xl rounded-md border border-border"
                     />
                   )}
                   <p
@@ -1486,7 +1486,7 @@ export default function Dashboard() {
                         src={event.inviteArtworkUrl}
                         alt=""
                         data-testid="img-invite-artwork"
-                        className="mb-3 h-40 w-full rounded-md border border-border object-cover"
+                        className="mx-auto mb-3 h-auto w-full max-w-xl rounded-md border border-border"
                       />
                     )}
                     <p
@@ -1610,7 +1610,7 @@ export default function Dashboard() {
                       <Copy className="mr-1.5 h-3.5 w-3.5" /> Copy link
                     </Button>
                     <Button asChild size="sm" variant="outline">
-                      <a href={`/rsvp/${event.shareSlug}`} target="_blank" rel="noreferrer">
+                      <a href={`/dashboard/${encodeURIComponent(ownerToken)}/invitation-preview`} target="_blank" rel="noreferrer">
                         Preview <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
                       </a>
                     </Button>

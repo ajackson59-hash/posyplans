@@ -34,9 +34,12 @@ export default function InitialPreviewReuse() {
     const observer = new MutationObserver(locate);
     observer.observe(document.body, { childList: true, subtree: true });
 
-    fetch(`/api/events/owner/${ownerToken}/prepayment-preview/asset`, { cache: "no-store" })
+    apiRequestJson<{ kind?: string }>(
+      "GET",
+      `/api/events/owner/${encodeURIComponent(ownerToken)}/prepayment-preview/readiness`,
+    )
       .then((response) => {
-        if (!cancelled) setAvailable(response.ok);
+        if (!cancelled) setAvailable(response.kind === "approved-image");
       })
       .catch(() => {
         if (!cancelled) setAvailable(false);
@@ -53,7 +56,11 @@ export default function InitialPreviewReuse() {
   const usePreview = async () => {
     setPending(true);
     try {
-      await apiRequestJson("POST", `/api/events/owner/${ownerToken}/invite/use-prepayment-preview`, {});
+      await apiRequestJson(
+        "POST",
+        `/api/events/owner/${encodeURIComponent(ownerToken)}/invite/use-prepayment-preview`,
+        {},
+      );
       await queryClient.invalidateQueries({ queryKey: [`/api/events/owner/${ownerToken}`] });
       toast({ title: "Your first preview is back", description: "Posy reused the artwork you already liked — no new image was generated." });
       requestAnimationFrame(() => {

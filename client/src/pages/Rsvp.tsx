@@ -62,11 +62,66 @@ function headcountLimits(restriction: string) {
 
 export default function Rsvp() {
   const { shareSlug, guestToken } = useParams<{ shareSlug: string; guestToken?: string }>();
-  const { toast } = useToast();
+  // A different invitation is a different form, including any local response,
+  // SMS choice, reveal state, and pending mutation UI from the previous guest.
+  return <RsvpInvitation key={`${shareSlug}/${guestToken || ""}`} shareSlug={shareSlug} guestToken={guestToken} />;
+}
 
-  const { data: event, isLoading } = useQuery<PublicEvent>({
-    queryKey: [`/api/events/public/${shareSlug}`],
+/** Read-only host preview: uses owner access without publishing the draft. */
+export function InvitationPreview() {
+  const { ownerToken } = useParams<{ ownerToken: string }>();
+  const { data, isLoading } = useQuery<{ event: EventRecord }>({
+    queryKey: [`/api/events/owner/${ownerToken}`],
+    enabled: Boolean(ownerToken),
   });
+
+  if (isLoading) {
+    return <div className="mx-auto max-w-lg px-6 py-16"><Skeleton className="h-32 w-full" /></div>;
+  }
+  if (!data?.event) {
+    return (
+      <div className="mx-auto max-w-lg px-6 py-24 text-center">
+        <h1 className="font-serif text-2xl font-semibold">We couldn't open this private preview</h1>
+        <p className="mt-2 text-muted-foreground">Open the preview from your event dashboard.</p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="border-b border-border bg-muted/60 px-4 py-3" data-testid="private-invitation-preview">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold">Private invitation preview</p>
+            <p className="text-xs text-muted-foreground">
+              {data.event.inviteStatus === "draft" ? "Your invitation is still a draft. " : "Your invitation is live. "}
+              RSVPs are disabled in this preview.
+            </p>
+          </div>
+          <Button asChild size="sm" variant="outline">
+            <Link href={`/dashboard/${encodeURIComponent(ownerToken)}`}>Back to your event</Link>
+          </Button>
+        </div>
+      </div>
+      <RsvpInvitation key={ownerToken} shareSlug={data.event.shareSlug} previewEvent={data.event} />
+    </>
+  );
+}
+
+function RsvpInvitation({ shareSlug, guestToken, previewEvent }: {
+  shareSlug: string;
+  guestToken?: string;
+  previewEvent?: PublicEvent;
+}) {
+  const { toast } = useToast();
+  const previewMode = Boolean(previewEvent);
+
+  const { data: publicEvent, isLoading: publicLoading } = useQuery<PublicEvent>({
+    queryKey: [`/api/events/public/${shareSlug}`],
+    enabled: !previewMode,
+  });
+  const event = previewEvent ?? publicEvent;
+  const isLoading = !previewMode && publicLoading;
 
   const {
     data: personalizedGuest,
@@ -74,7 +129,7 @@ export default function Rsvp() {
     isError: isGuestError,
   } = useQuery<GuestMatch>({
     queryKey: [`/api/events/public/${shareSlug}/guest/${guestToken}`],
-    enabled: Boolean(guestToken),
+    enabled: !previewMode && Boolean(guestToken) && !!event && event.inviteStatus !== "draft",
   });
 
   const [identityName, setIdentityName] = useState("");
@@ -104,7 +159,8 @@ export default function Rsvp() {
   const restriction = event?.rsvpRestriction || "none";
   const limits = headcountLimits(restriction);
   const recipient = selected ?? personalizedGuest ?? null;
-  const allowedPartySize = Math.max(1, recipient?.partySize ?? 1);
+  const allowedPartySize = Math.min(Math.max(1, recipient?.partySize ?? 1),
+    restriction === "plus_one" ? 2 : restriction === "no_additional_guests" ? 1 : Infinity);
 
   // Whenever the restriction caps change (e.g. a fresh guest selection),
   // make sure the current counts still respect them.
@@ -152,13 +208,18 @@ export default function Rsvp() {
 
   const identifyGuest = useMutation<{ guest: GuestMatch; guestToken: string }>({
     mutationFn: async () => {
+      if (previewMode) throw new Error("RSVPs are disabled in this preview.");
       const res = await apiRequest("POST", `/api/events/public/${shareSlug}/identify`, {
         name: identityName,
         contact: identityContact,
       });
       return res.json();
     },
-    onSuccess: ({ guest, guestToken: verifiedToken }) => pickGuest(guest, verifiedToken),
+    onSuccess: ({ guest, guestToken: verifiedToken }) => {
+      pickGuest(guest, verifiedToken);
+      setSmsOptIn(false);
+      setSmsPhone("");
+    },
   });
 
   const totalAttending = adults + children;
@@ -167,6 +228,7 @@ export default function Rsvp() {
   // never make a successfully recorded RSVP look like it failed.
   const saveSmsOptIn = useMutation({
     mutationFn: async () => {
+      if (previewMode) return;
       if (!activeGuestToken || !smsPhone.trim()) return;
       await apiRequest("POST", `/api/events/public/${shareSlug}/guest/${activeGuestToken}/sms-opt-in`, {
         optIn: true,
@@ -189,9 +251,10 @@ export default function Rsvp() {
   // failure. If a response is lost after the server already saved the RSVP, we
   // also read the private guest record back and treat a matching state as
   // success instead of showing a false "try again" message.
-  const submitRsvp = useMutation<GuestMatch | undefined>({
+  const submitRsvp = useMutation<GuestMatch>({
     mutationFn: async () => {
-      if (!recipient || !activeGuestToken || !status) return;
+      if (previewMode) throw new Error("RSVPs are disabled in this preview.");
+      if (!recipient || !activeGuestToken || !status) throw new Error("Choose an RSVP response first.");
       const payload = {
         status,
         attendingAdults: adults,
@@ -210,6 +273,8 @@ export default function Rsvp() {
           if (
             saved.rsvpStatus === status &&
             (saved.attendingCount ?? 0) === expectedCount &&
+            (saved.attendingAdults ?? 0) === (status === "no" ? 0 : adults) &&
+            (saved.attendingChildren ?? 0) === (status === "no" ? 0 : children) &&
             (saved.note || "") === (note || "")
           ) {
             return saved;
@@ -223,7 +288,10 @@ export default function Rsvp() {
     },
     retry: 1,
     retryDelay: 500,
-    onSuccess: () => {
+    onSuccess: (saved) => {
+      // Use the server's accepted response (including any current allowance
+      // adjustment) for the confirmation and the next edit.
+      pickGuest(saved, activeGuestToken);
       setSubmitted(true);
       toast({ title: "RSVP received", description: "Thanks for letting us know!" });
       if (smsOptIn && smsPhone.trim()) saveSmsOptIn.mutate();
@@ -251,7 +319,7 @@ export default function Rsvp() {
     );
   }
 
-  if (guestToken && isGuestError) {
+  if (guestToken && isGuestError && event.inviteStatus !== "draft") {
     return (
       <div className="mx-auto max-w-lg px-6 py-24 text-center">
         <h1 className="font-serif text-2xl font-semibold">This personal invitation link isn't valid</h1>
@@ -262,7 +330,7 @@ export default function Rsvp() {
 
   // Draft gate: when the host hasn't published yet, show a friendly
   // "not ready" message instead of the RSVP form.
-  if (event.inviteStatus === "draft") {
+  if (!previewMode && event.inviteStatus === "draft") {
     return (
       <div className="min-h-screen bg-background">
         <header className="border-b border-border">
@@ -565,7 +633,7 @@ export default function Rsvp() {
                   src={event.inviteArtworkUrl}
                   alt=""
                   data-testid="img-rsvp-artwork"
-                  className="h-48 w-full object-cover sm:h-56"
+                  className="block h-auto w-full"
                 />
               )}
               <CardContent className="p-5">
@@ -605,7 +673,7 @@ export default function Rsvp() {
 
           </section>
 
-          {inviteRevealed && (
+          {inviteRevealed && !previewMode && (
             <section
               className="min-w-0 sm:rounded-2xl sm:border sm:border-border/80 sm:bg-card sm:p-6 sm:shadow-[0_18px_52px_-38px_rgba(36,29,24,0.55)]"
               data-testid="section-rsvp-controls"
@@ -652,6 +720,13 @@ export default function Rsvp() {
                   The host has your answer
                   {status === "yes" || status === "maybe" ? ` for ${totalAttending} guest${totalAttending === 1 ? "" : "s"}` : ""} — nothing else to do on your end.
                 </p>
+                <Button variant="outline" className="mt-4" data-testid="button-update-rsvp" onClick={() => {
+                  setSubmitted(false);
+                  setSmsOptIn(false);
+                  setSmsPhone("");
+                }}>
+                  Update my RSVP
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -727,10 +802,16 @@ export default function Rsvp() {
               {!guestToken && (
                 <button
                   className="flex-none text-xs font-medium text-primary underline"
+                  disabled={submitRsvp.isPending || saveSmsOptIn.isPending}
                   onClick={() => {
                     setSelected(null);
                     setActiveGuestToken("");
                     setStatus(null);
+                    setAdults(1);
+                    setChildren(0);
+                    setNote("");
+                    setSmsOptIn(false);
+                    setSmsPhone("");
                     setIdentityName("");
                     setIdentityContact("");
                     identifyGuest.reset();
@@ -796,6 +877,7 @@ export default function Rsvp() {
                 className="mt-1.5"
                 placeholder="Dietary restrictions, well wishes, etc."
                 value={note}
+                maxLength={500}
                 onChange={(e) => setNote(e.target.value)}
               />
             </div>

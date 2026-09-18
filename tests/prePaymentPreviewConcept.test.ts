@@ -23,7 +23,7 @@ describe("pre-payment preview literal fidelity", () => {
     expect(sourceBrief).toContain("Blippi and Meekah");
     expect(concept.artDirection?.subjectFocus).toContain("Blippi and Meekah");
     expect(concept.illustrationPrompt).toContain("indoor soft-play");
-    expect(concept.illustrationPrompt).toContain("ice-cream treats");
+    expect(concept.illustrationPrompt).toContain("ice cream treats");
     expect(concept.illustrationPrompt).toContain("Do not substitute an abstract symbol");
     expect(concept.illustrationPrompt).toContain("bow tie");
     expect(concept.illustrationPrompt).toContain("dots");
@@ -41,5 +41,13 @@ describe("pre-payment preview literal fidelity", () => {
     expect(sourceBrief).toContain("Candlelit rooftop dinner");
     expect(concept.illustrationPrompt).toContain(sourceBrief);
     expect(concept.illustrationPrompt).toContain("literal people, characters, setting, activities and defining objects");
+  });
+
+  it("does not impose the old soft-play scene or another host on a seaside portrait", () => {
+    const { concept } = buildPrePaymentPreviewConcept({ eventName: "Seaside portrait", eventType: "Birthday",
+      themeName: "", vibeDescription: "Blippi on a quiet beach. No Meekah or other people." } as never);
+    expect(concept.illustrationPrompt).toContain("Blippi on a quiet beach");
+    expect(concept.illustrationPrompt).not.toMatch(/soft.play|foam blocks|ice.cream|Show Blippi and Meekah as/);
+    expect(concept.illustrationPrompt).toContain("every positively requested character");
   });
 });

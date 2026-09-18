@@ -5,6 +5,7 @@ import { z } from "zod";
 import { events, insertEventSchema } from "@shared/schema";
 import type { Event, InsertEvent } from "@shared/schema";
 import { criticalDb } from "./criticalDb";
+import { ownerEventView } from "./eventArtwork";
 
 const startKeySchema = z
   .string()
@@ -182,7 +183,7 @@ export function registerEventStartupRoutes(
     try {
       const event = await createEvent(parsedEvent.data, parsedStartKey.data);
       res.setHeader("Cache-Control", "no-store");
-      return res.json(event);
+      return res.json(ownerEventView(event));
     } catch (error) {
       // Keep the customer response calm and secret-free, but emit only the
       // concise database cause in private runtime logs. Logging the full
