@@ -19,7 +19,7 @@ export class DbHumanArtworkReviewStore implements HumanArtworkReviewStore {
     return rows[0]?.payload as HumanArtworkReview | undefined;
   }
   async list() {
-    const rows = await db.execute(sql`select payload - 'sourceBase64' - 'imageBase64' - 'generation' as payload from public.human_artwork_reviews
+    const rows = await db.execute(sql`select payload - 'sourceBase64' - 'imageBase64' - 'generation' - 'previousCandidates' as payload from public.human_artwork_reviews
       order by case when state in ('queued','generating','review') then 0 else 1 end, created_at asc limit 100`);
     return rows.map(r => r.payload as HumanArtworkReview);
   }

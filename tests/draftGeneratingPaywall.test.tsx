@@ -70,11 +70,11 @@ beforeEach(() => {
 });
 
 describe('human review customer gate', () => {
-  it.each(['not-requested', 'queued', 'review', 'rejected', 'failed'])('keeps checkout closed in %s state', async (reviewState) => {
+  it.each(['not-requested', 'queued', 'correction-queued', 'review', 'rejected', 'failed'])('keeps checkout closed in %s state', async (reviewState) => {
     apiRequestJson.mockImplementation((method: string, url: string) => {
       if (method === 'GET' && url.endsWith('/prepayment-preview/readiness')) return Promise.resolve({
         humanReview: true, reviewState, checkoutAllowed: false, ready: false, kind: 'none',
-        generationState: ['queued','review'].includes(reviewState) ? 'generating' : 'idle', pollAfterMs: 60000,
+        generationState: ['queued','correction-queued','review'].includes(reviewState) ? 'generating' : 'idle', pollAfterMs: 60000,
         savedBrief: 'Complete watercolor garden brief',
       });
       if (method === 'GET' && url.endsWith('/master-planner/entitlement')) return Promise.resolve({ canGenerate: false });

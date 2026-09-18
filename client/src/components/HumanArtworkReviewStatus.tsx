@@ -1,7 +1,8 @@
-export type HumanReviewState = 'not-requested' | 'queued' | 'generating' | 'review' | 'approved' | 'rejected' | 'failed';
+export type HumanReviewState = 'not-requested' | 'queued' | 'correction-queued' | 'generating' | 'review' | 'approved' | 'rejected' | 'failed';
 const titles: Record<HumanReviewState, string> = {
   'not-requested': 'Your artwork will be reviewed by a person',
   queued: 'Your artwork request is waiting for review',
+  'correction-queued': 'Your artwork is waiting for correction',
   generating: 'Preparing your artwork for review',
   review: 'Your artwork is awaiting a human decision',
   approved: 'Your artwork has been approved',

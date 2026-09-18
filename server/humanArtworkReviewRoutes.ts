@@ -6,8 +6,8 @@ import { storage } from './storage';
 import { getEntitlementSummary } from './masterPlannerEntitlement';
 import { ownerEventView } from './eventArtwork';
 import { DbHumanArtworkReviewStore } from './humanArtworkReviewStore';
-import { HUMAN_REVIEW_CHECKS, humanReviewEnabled, humanReviewEventEnabled, reviewerAuthorized, humanArtworkBriefHash,
-  requestHumanArtwork, generateHumanArtwork, decideHumanArtwork, isCurrentHumanApproval,
+import { HUMAN_REVIEW_CHECKS, MAX_HUMAN_ARTWORK_CORRECTIONS, HumanArtworkCorrectionError, humanReviewEnabled, humanReviewEventEnabled, reviewerAuthorized, humanArtworkBriefHash,
+  requestHumanArtwork, requestHumanArtworkCorrection, generateHumanArtwork, decideHumanArtwork, isCurrentHumanApproval,
   type HumanArtworkReview, type HumanArtworkReviewStore } from './humanArtworkReview';
 import { humanArtworkReviewPage } from './humanArtworkReviewPage';
 
@@ -17,7 +17,9 @@ interface Dependencies {
   generate?: typeof generateHumanArtwork; schedule?: (task: () => Promise<void>) => void;
 }
 const publicRow = (r: HumanArtworkReview) => ({ id: r.id, eventId: r.eventId, brief: r.brief, briefHash: r.briefHash,
-  state: r.state, version: r.version, imageHash: r.imageHash, createdAt: r.createdAt, updatedAt: r.updatedAt, history: r.history });
+  state: r.state, version: r.version, imageHash: r.imageHash, createdAt: r.createdAt, updatedAt: r.updatedAt, history: r.history,
+  correctionsRemaining: Math.max(0, MAX_HUMAN_ARTWORK_CORRECTIONS - r.history.filter(h => h.action === 'correction-queued').length),
+  previousCandidates: r.history.filter(h => h.action === 'correction-queued').map(h => ({ version: h.candidateVersion, imageHash: h.imageHash })) });
 export function registerHumanArtworkReviewRoutes(app: Express, deps: Dependencies = {}) {
   const reviews = deps.reviews ?? new DbHumanArtworkReviewStore(), events = deps.events ?? storage;
   const env = () => deps.env ?? process.env;
@@ -30,7 +32,8 @@ export function registerHumanArtworkReviewRoutes(app: Express, deps: Dependencie
     const approved = isCurrentHumanApproval(row, event);
     return { ready: approved, kind: approved ? 'approved-image' : 'none',
       generationState: approved ? 'ready' : row && ['queued','generating','review'].includes(row.state) ? 'generating' : 'idle',
-      pollAfterMs: row && !approved ? 15000 : null, humanReview: true, reviewState: row?.state ?? 'not-requested',
+      pollAfterMs: row && !approved ? 15000 : null, humanReview: true,
+      reviewState: row?.state === 'queued' && row.previousCandidates?.length ? 'correction-queued' : row?.state ?? 'not-requested',
       checkoutAllowed: approved, imageGenerationEnabled: false, automaticReferenceResolutionEnabled: false,
       savedBrief: event.vibeDescription, namedReference: null, failureReason: null };
   };
@@ -67,6 +70,22 @@ export function registerHumanArtworkReviewRoutes(app: Express, deps: Dependencie
     const event = row && await events.getEventByOwnerToken(row.ownerToken);
     if (!row?.imageBase64 || !event || !enabled(event)) return res.status(404).json({ error: 'No candidate' });
     res.setHeader('X-Content-Type-Options','nosniff'); return res.type('png').send(Buffer.from(row.imageBase64,'base64'));
+  }));
+  app.get('/api/staff/artwork-reviews/:id/previous/:version/asset', staff(async (req,res) => {
+    const row = await reviews.get(String(req.params.id));
+    const event = row && await events.getEventByOwnerToken(row.ownerToken);
+    const previous = /^\d+$/.test(String(req.params.version)) && row?.previousCandidates?.find(c => c.version === Number(req.params.version));
+    if (!previous || !previous.imageBase64 || !event || !enabled(event)) return res.status(404).json({ error: 'No retained candidate' });
+    res.setHeader('X-Content-Type-Options','nosniff'); return res.type('png').send(Buffer.from(previous.imageBase64,'base64'));
+  }));
+  app.post('/api/staff/artwork-reviews/:id/correction', staff(async (req,res) => {
+    const input = z.object({ version: z.number().int(), imageHash: z.string().regex(/^[a-f0-9]{64}$/),
+      briefHash: z.string().regex(/^[a-f0-9]{64}$/), note: z.string().trim().min(5).max(2000) }).strict().safeParse(req.body);
+    if (!input.success) return res.status(400).json({ error: 'Describe the required corrections.' });
+    const row = await reviews.get(String(req.params.id)); const event = row && await events.getEventByOwnerToken(row.ownerToken);
+    if (!row || !event || !enabled(event)) return res.status(404).json({ error: 'Not found' });
+    try { return res.json(publicRow(await requestHumanArtworkCorrection(row,event,reviews,input.data,env().POSY_ARTWORK_REVIEWER_ID!))); }
+    catch (error) { return res.status(409).json({ error: error instanceof HumanArtworkCorrectionError ? error.message : 'Unable to save the correction. Refresh before trying again.' }); }
   }));
   app.post('/api/staff/artwork-reviews/:id/generate', staff(async (req,res) => {
     if (env().POSY_HUMAN_ARTWORK_GENERATION !== 'true') return res.status(409).json({ error: 'Paid generation is not enabled for this Preview.' });

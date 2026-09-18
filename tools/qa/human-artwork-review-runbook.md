@@ -28,11 +28,15 @@ The migration `20260917224730_human_artwork_reviews.sql` was applied only to Pre
 6. Only current approval opens this event's checkout and planning. Existing Plus access does not skip the review. General account-level Plus purchases without an event remain separate.
 7. Paid reuse and the planner use the same approved PNG. The planner preserves the reviewed theme and palette. Changing the saved brief invalidates approval, checkout, reuse, and image delivery for owners and guests.
 
-Rejected candidates are terminal in this first implementation. There is no replacement/revision desk yet. Staff turnaround, staffing, handling rejected candidates, and customer notification/service commitments must be resolved before offering this as a live service. Do not ask a customer to edit their brief merely to unlock another attempt.
+8. After rejection, staff can describe the required corrections and select **Queue correction — no charge**. This preserves the rejected source, exact delivery PNG, generation/billing evidence and decision history. It clears the active candidate and queues a replacement without calling a provider. The customer sees that the artwork is waiting for correction; checkout stays closed. The saved brief does not need to change.
+9. If paid generation is separately authorized and enabled, staff must explicitly select **Generate one candidate (paid)** again. The full saved brief and all prior rejection/correction notes feed a new candidate; this is new generation, not editing the old pixels. Prior rejected images remain available privately for comparison. Approval checks, note and full-size inspection reset for the new candidate. An archived image cannot be approved or delivered.
+10. Preview permits at most three corrections for the same saved brief. Stale/duplicate correction requests cannot dispatch or overwrite each other. A failed/interrupted generation remains failed/claimed with its billing uncertainty retained; the correction action does not unlock a retry. Do not reset rows, change the brief just to evade the limit, or retry an unknown provider outcome.
+
+Staff turnaround, staffing, escalation after repeated rejection or generation failure, and customer notification/service commitments must still be resolved before offering this as a live service.
 
 ## Verification
 
-Tests cover staff authentication, private pixels, no-spend submission, duplicate dispatch, terminal failure, complete approval checks, image/brief/version binding, competing decisions, paid reuse, exact owner/guest bytes, stale-brief revocation, legacy bypass paths, production/off/unenrolled isolation, planning reuse, and customer waiting states. The staff page DOM test checks its real inline script with synthetic responses; it is not a rendered-browser or image-quality evaluation.
+Tests cover staff authentication, private pixels, no-spend submission/correction, duplicate dispatch/correction, terminal failure, retained image/billing history, correction limits, fresh approval checks, image/brief/version binding, competing decisions, paid reuse, exact owner/guest bytes, stale-brief revocation, legacy bypass paths, production/off/unenrolled isolation, planning reuse, and customer waiting states. Staff page DOM tests exercise the real inline script with synthetic responses, including archive comparison and fresh full-size inspection; they are not rendered-browser or image-quality evaluations. Archived pixels and provider data are removed from both database queue-list results and staff JSON.
 
 For local interface inspection, run from the repository:
 
@@ -53,6 +57,10 @@ A guarded temporary change to that synthetic event's brief hid its old approved 
 This exposed the globally mounted legacy “Skip preview” shortcut still appearing during human review. The paywall now explicitly permits that shortcut only after successful readiness confirms a legacy optional-preview flow. The shortcut observes that decision and rechecks it before a click can dispatch. Regression coverage mounts the actual shortcut beside the paywall, including unresolved readiness, pending/rejected states, and a legacy-to-human transition. Legacy checkout still skips generation when eligible.
 
 These results establish the tested synthetic approval/display and changed-brief behavior, not generated-artwork quality, a fresh generation lifecycle, rejected-candidate recovery, paid reuse, or guest delivery.
+
+### Correction implementation — 18 September 2026
+
+Rejected-candidate recovery is now implemented in the existing Preview-only workflow. Automated server and staff-page tests cover rejection → free correction queue → separately claimed synthetic generation → new review → exact approved replacement delivery. These tests use procedural images or stubbed bytes; no provider is called. The existing deployed event67 approval is preserved as the customer-display baseline. Staff correction actions still need a live authenticated check before this can be described as a fully verified deployed rejection lifecycle. No reviewer credential has been copied into tests, URLs or source.
 
 - Branch-scoped Preview configuration and synthetic staff approval/customer display are verified. Check the exact new Preview after each code deployment; keep the existing synthetic approval as its baseline.
 - Complete the remaining live rejection, paid reuse and guest-delivery checks. The synthetic approval/display and changed-brief checks above do not cover those paths.
