@@ -44,8 +44,18 @@ Open `http://127.0.0.1:4173/artwork-review` and `/draft-generating/synthetic-hum
 
 ## Remaining before activation or launch
 
-- Configure branch-scoped Preview settings through an authenticated Vercel session and redeploy.
-- Inspect a fresh Preview event and staff portal in a real browser; verify approval/rejection, customer refresh, exact applied pixels, and guest delivery on the deployed build.
+### Deployed synthetic check — 18 September 2026
+
+The owner approved a fresh procedural three-color-band fixture through the real Preview staff page. Database readback confirmed all five checks, the operator identity, and unchanged image/brief binding. The customer page then displayed the approved image, confirmed by the owner's screenshot and an authenticated browser inspection.
+
+A guarded temporary change to that synthetic event's brief hid its old approved artwork and returned the customer page to the review-required state. The original brief was restored immediately; the image returned and the approval history stayed unchanged. All 61 pre-existing event rows retained their baseline digest. No provider, payment or email call was made. Direct API-document navigation was blocked by the browser client, so this check does not claim a deployed raw-asset HTTP status.
+
+This exposed the globally mounted legacy “Skip preview” shortcut still appearing during human review. The paywall now explicitly permits that shortcut only after successful readiness confirms a legacy optional-preview flow. The shortcut observes that decision and rechecks it before a click can dispatch. Regression coverage mounts the actual shortcut beside the paywall, including unresolved readiness, pending/rejected states, and a legacy-to-human transition. Legacy checkout still skips generation when eligible.
+
+These results establish the tested synthetic approval/display and changed-brief behavior, not generated-artwork quality, a fresh generation lifecycle, rejected-candidate recovery, paid reuse, or guest delivery.
+
+- Branch-scoped Preview configuration and synthetic staff approval/customer display are verified. Check the exact new Preview after each code deployment; keep the existing synthetic approval as its baseline.
+- Complete the remaining live rejection, paid reuse and guest-delivery checks. The synthetic approval/display and changed-brief checks above do not cover those paths.
 - Keep paid generation disabled until a specific paid candidate is authorized. Synthetic checks are not evidence of visual quality.
 - Resolve the operational limitations above. Production rollout and full payment/RSVP/email/invitation verification remain separate gates.
 - Do not reopen compact-review-final-20260917-v1 or any older closed research allowance.

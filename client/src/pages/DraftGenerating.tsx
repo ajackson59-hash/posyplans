@@ -917,6 +917,7 @@ export default function DraftGenerating() {
                 type="submit"
                 className="w-full"
                 data-testid="button-unlock-spark"
+                data-direct-checkout-allowed={previewReadiness.isSuccess && !humanReview ? "true" : "false"}
                 disabled={startPrePaymentPreview.isPending || checkoutPending || (humanReviewPending && humanReviewState !== 'not-requested')}
               >
                 {paywallCtaLabel}

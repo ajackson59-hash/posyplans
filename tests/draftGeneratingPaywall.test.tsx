@@ -21,6 +21,7 @@ vi.mock("@/components/AIDemoShowcase", () => ({
 }));
 
 const DraftGenerating = (await import("@/pages/DraftGenerating")).default;
+const DirectCheckoutShortcut = (await import("@/components/DirectCheckoutShortcut")).default;
 
 const OWNER = "preview-owner-token";
 const EMAIL = "alex+fresh-preview@example.com";
@@ -53,6 +54,7 @@ function renderPaywall() {
   return render(
     <QueryClientProvider client={client}>
       <Router hook={hook}>
+        <DirectCheckoutShortcut />
         <Route path="/draft-generating/:ownerToken" component={DraftGenerating} />
       </Router>
     </QueryClientProvider>,
@@ -68,7 +70,7 @@ beforeEach(() => {
 });
 
 describe('human review customer gate', () => {
-  it.each(['queued', 'review', 'rejected', 'failed'])('keeps checkout closed in %s state', async (reviewState) => {
+  it.each(['not-requested', 'queued', 'review', 'rejected', 'failed'])('keeps checkout closed in %s state', async (reviewState) => {
     apiRequestJson.mockImplementation((method: string, url: string) => {
       if (method === 'GET' && url.endsWith('/prepayment-preview/readiness')) return Promise.resolve({
         humanReview: true, reviewState, checkoutAllowed: false, ready: false, kind: 'none',
@@ -80,10 +82,48 @@ describe('human review customer gate', () => {
     });
     renderPaywall();
     await screen.findByTestId('human-artwork-review-status');
-    expect((screen.getByTestId('button-unlock-spark') as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByTestId('button-unlock-spark') as HTMLButtonElement).disabled).toBe(reviewState !== 'not-requested');
+    expect(screen.queryByTestId('button-skip-preview-checkout')).toBeNull();
     expect(screen.queryByTestId('img-prepayment-preview')).toBeNull();
     expect(callsTo('/api/checkout/create-session')).toHaveLength(0);
     expect(callsTo(`/api/events/owner/${OWNER}/master-planner/generate`)).toHaveLength(0);
+  });
+  it('removes the optional shortcut when a legacy event becomes subject to human review', async () => {
+    let humanReview = false;
+    apiRequestJson.mockImplementation((method: string, url: string) => {
+      if (method === 'GET' && url.endsWith('/prepayment-preview/readiness')) return Promise.resolve({
+        humanReview, reviewState: 'approved', checkoutAllowed: true, ready: true,
+        kind: 'approved-image', generationState: 'ready',
+      });
+      if (method === 'GET' && url.endsWith('/master-planner/entitlement')) return Promise.resolve({ canGenerate: false });
+      throw Error('Unexpected request '+method+' '+url);
+    });
+    renderPaywall();
+    await screen.findByTestId('button-skip-preview-checkout');
+    humanReview = true;
+    fireEvent(window, new Event('pageshow'));
+    await waitFor(() => expect(screen.queryByTestId('button-skip-preview-checkout')).toBeNull());
+    expect(callsTo('/api/checkout/create-session')).toHaveLength(0);
+  });
+  it('waits for known legacy readiness before offering a checkout that generates no preview', async () => {
+    const readiness = deferred<{ humanReview: boolean; kind: string; generationState: string }>();
+    const checkout = deferred<{ url: string }>();
+    apiRequestJson.mockImplementation((method: string, url: string) => {
+      if (method === 'GET' && url.endsWith('/prepayment-preview/readiness')) return readiness.promise;
+      if (method === 'GET' && url.endsWith('/master-planner/entitlement')) return Promise.resolve({ canGenerate: false });
+      if (method === 'POST' && url === '/api/checkout/create-session') return checkout.promise;
+      throw Error('Unexpected request '+method+' '+url);
+    });
+    renderPaywall();
+    await screen.findByTestId('button-unlock-spark');
+    expect(screen.queryByTestId('button-skip-preview-checkout')).toBeNull();
+    await act(async () => readiness.resolve({ humanReview: false, kind: 'none', generationState: 'idle' }));
+    await screen.findByTestId('button-skip-preview-checkout');
+    fireEvent.change(screen.getByTestId('input-spark-email'), { target: { value: EMAIL } });
+    fireEvent.click(screen.getByTestId('button-skip-preview-checkout'));
+    await waitFor(() => expect(callsTo('/api/checkout/create-session')).toHaveLength(1));
+    expect(callsTo('/api/checkout/create-session')[0][2]).toEqual({ email: EMAIL, plan: 'spark', returnToken: OWNER });
+    expect(callsTo(`/api/events/owner/${OWNER}/prepayment-preview`)).toHaveLength(0);
   });
   it('shows existing Plus access without starting planning while human review is pending', async () => {
     apiRequestJson.mockImplementation((method: string, url: string) => {
