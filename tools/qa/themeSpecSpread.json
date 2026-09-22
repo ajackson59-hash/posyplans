@@ -1,0 +1,957 @@
+{
+  "provenance": "Specs authored by applying THEME_SPEC_RESOLVER_SYSTEM to each host prompt, then validated by shared/themeSpec.ts and server/aiFirst/themeSpecResolver.ts. This is a design-coverage review of the ThemeSpec representation, NOT a live-dispatch benchmark of claude-haiku-4-5. No image generation and no provider calls were made.",
+  "cases": [
+    {
+      "hostText": "Moana birthday for my 3 year old",
+      "spec": {
+        "canonicalSlug": "island-voyage-sunset",
+        "displayName": "Island Voyage",
+        "themeStyle": "storybook",
+        "occasion": "kids-birthday",
+        "palette": {
+          "ink": "#0b3b52",
+          "accent": "#e2703a",
+          "surface": "#fdf6ec",
+          "body": "#2f4f5c"
+        },
+        "artId": "botanical-sprig",
+        "artPlacement": "corner-mirrored",
+        "textureStyle": "cotton",
+        "dividerStyle": "rule",
+        "overlayTreatment": "veil",
+        "motifIdeal": "hibiscus-and-palm-frond",
+        "setting": "open ocean at golden hour with an outrigger canoe under a woven sail",
+        "motifs": [
+          "hibiscus",
+          "plumeria",
+          "palm fronds",
+          "tapa-cloth border",
+          "rope coil",
+          "cowrie shells"
+        ],
+        "medium": "gouache",
+        "mood": "warm, adventurous, joyful",
+        "ageRegister": "young-child",
+        "subjectPolicy": "none",
+        "protectedTerms": [
+          "Moana"
+        ],
+        "confidence": 0.88
+      }
+    },
+    {
+      "hostText": "island Moana theme please",
+      "spec": {
+        "canonicalSlug": "island-voyage-sunset",
+        "displayName": "Island Voyage",
+        "themeStyle": "storybook",
+        "occasion": "kids-birthday",
+        "palette": {
+          "ink": "#0b3b52",
+          "accent": "#e2703a",
+          "surface": "#fdf6ec",
+          "body": "#2f4f5c"
+        },
+        "artId": "botanical-sprig",
+        "artPlacement": "corner-mirrored",
+        "textureStyle": "cotton",
+        "dividerStyle": "rule",
+        "overlayTreatment": "veil",
+        "motifIdeal": "hibiscus-and-palm-frond",
+        "setting": "turquoise lagoon at sunset ringed by volcanic headlands and palms",
+        "motifs": [
+          "hibiscus",
+          "plumeria",
+          "palm fronds",
+          "tapa-cloth border",
+          "woven sail"
+        ],
+        "medium": "gouache",
+        "mood": "warm, adventurous, joyful",
+        "ageRegister": "young-child",
+        "subjectPolicy": "none",
+        "protectedTerms": [
+          "Moana"
+        ],
+        "confidence": 0.85
+      }
+    },
+    {
+      "hostText": "My daughter wants a Moana party, she is turning four",
+      "spec": {
+        "canonicalSlug": "island-voyage-sunset",
+        "displayName": "Island Voyage",
+        "themeStyle": "storybook",
+        "occasion": "kids-birthday",
+        "palette": {
+          "ink": "#0b3b52",
+          "accent": "#e2703a",
+          "surface": "#fdf6ec",
+          "body": "#2f4f5c"
+        },
+        "artId": "botanical-sprig",
+        "artPlacement": "band",
+        "textureStyle": "cotton",
+        "dividerStyle": "rule",
+        "overlayTreatment": "veil",
+        "motifIdeal": "hibiscus-and-palm-frond",
+        "setting": "sandy shoreline at golden hour with a canoe drawn up and breadfruit trees behind",
+        "motifs": [
+          "hibiscus",
+          "monstera leaf",
+          "tapa-cloth border",
+          "rope coil",
+          "sea turtle"
+        ],
+        "medium": "gouache",
+        "mood": "warm, adventurous, joyful",
+        "ageRegister": "young-child",
+        "subjectPolicy": "none",
+        "protectedTerms": [
+          "Moana"
+        ],
+        "confidence": 0.87
+      }
+    },
+    {
+      "hostText": "Frozen party, she really wants Elsa and Anna",
+      "spec": {
+        "canonicalSlug": "nordic-ice-palace",
+        "displayName": "Winter Palace",
+        "themeStyle": "storybook",
+        "occasion": "kids-birthday",
+        "palette": {
+          "ink": "#1d3557",
+          "accent": "#7fb2d6",
+          "surface": "#f4f9fd",
+          "body": "#33526e"
+        },
+        "artId": "starry-night",
+        "artPlacement": "scatter",
+        "textureStyle": "laid",
+        "dividerStyle": "diamond-rule",
+        "overlayTreatment": "veil",
+        "motifIdeal": "snowflake-filigree",
+        "setting": "a glittering ice palace on a ice-bound fjord beneath a pale aurora",
+        "motifs": [
+          "snowflake filigree",
+          "frosted pine",
+          "icicle fringe",
+          "aurora ribbon",
+          "cut crystal"
+        ],
+        "medium": "watercolor",
+        "mood": "serene, sparkling, regal",
+        "ageRegister": "child",
+        "subjectPolicy": "none",
+        "protectedTerms": [
+          "Frozen",
+          "Elsa",
+          "Anna"
+        ],
+        "confidence": 0.9
+      }
+    },
+    {
+      "hostText": "I would just picture bluey in a backyard with party meaning like balloons",
+      "spec": {
+        "canonicalSlug": "sunny-backyard-blue",
+        "displayName": "Backyard Party",
+        "themeStyle": "kids",
+        "occasion": "kids-birthday",
+        "palette": {
+          "ink": "#14507d",
+          "accent": "#f28c28",
+          "surface": "#fffaf0",
+          "body": "#33607f"
+        },
+        "artId": "bunting-garland",
+        "artPlacement": "band",
+        "textureStyle": "cotton",
+        "dividerStyle": "dots",
+        "overlayTreatment": "plate",
+        "motifIdeal": "paw-print-and-balloon-cluster",
+        "setting": "a sunny suburban backyard with a clothesline, gum trees and a cluster of balloons",
+        "motifs": [
+          "balloon cluster",
+          "paw prints",
+          "clothesline pegs",
+          "gum leaves",
+          "picket fence"
+        ],
+        "medium": "flat-vector",
+        "mood": "bright, playful, cheerful",
+        "ageRegister": "young-child",
+        "subjectPolicy": "none",
+        "protectedTerms": [
+          "Bluey"
+        ],
+        "confidence": 0.82
+      }
+    },
+    {
+      "hostText": "Spider-Man 5th birthday",
+      "spec": {
+        "canonicalSlug": "comic-panel-crimson",
+        "displayName": "Comic Book Hero",
+        "themeStyle": "bold",
+        "occasion": "kids-birthday",
+        "palette": {
+          "ink": "#8c1c24",
+          "accent": "#1b2a6b",
+          "surface": "#fff8ee",
+          "body": "#3a2b2b"
+        },
+        "artId": "terrazzo",
+        "artPlacement": "scatter",
+        "textureStyle": "gloss",
+        "dividerStyle": "rule",
+        "overlayTreatment": "plate",
+        "motifIdeal": "halftone-web-geometry",
+        "setting": "a city skyline at dusk seen from a rooftop, halftone sky, bold panel borders",
+        "motifs": [
+          "halftone dots",
+          "web-line geometry",
+          "panel borders",
+          "skyline silhouette",
+          "action starburst"
+        ],
+        "medium": "flat-vector",
+        "mood": "bold, kinetic, heroic",
+        "ageRegister": "young-child",
+        "subjectPolicy": "none",
+        "protectedTerms": [
+          "Spider-Man"
+        ],
+        "confidence": 0.84
+      }
+    },
+    {
+      "hostText": "Paw Patrol rescue theme for a 4 year old",
+      "spec": {
+        "canonicalSlug": "rescue-squad-yard",
+        "displayName": "Rescue Squad",
+        "themeStyle": "kids",
+        "occasion": "kids-birthday",
+        "palette": {
+          "ink": "#1b3a63",
+          "accent": "#e03d2f",
+          "surface": "#fffdf4",
+          "body": "#39516c"
+        },
+        "artId": "confetti-scatter",
+        "artPlacement": "band",
+        "textureStyle": "none",
+        "dividerStyle": "dots",
+        "overlayTreatment": "plate",
+        "motifIdeal": "rescue-badge-and-paw-print",
+        "setting": "a bright rescue station yard with a ladder truck, traffic cones and a siren tower",
+        "motifs": [
+          "rescue badge",
+          "paw prints",
+          "traffic cone",
+          "ladder",
+          "siren light",
+          "hose reel"
+        ],
+        "medium": "flat-vector",
+        "mood": "energetic, brave, friendly",
+        "ageRegister": "young-child",
+        "subjectPolicy": "none",
+        "protectedTerms": [
+          "Paw Patrol"
+        ],
+        "confidence": 0.83
+      }
+    },
+    {
+      "hostText": "Encanto themed party",
+      "spec": {
+        "canonicalSlug": "colombian-folk-courtyard",
+        "displayName": "Casa Florida",
+        "themeStyle": "bold",
+        "occasion": "kids-birthday",
+        "palette": {
+          "ink": "#5c2a6b",
+          "accent": "#f2b134",
+          "surface": "#fff6e9",
+          "body": "#4a3a55"
+        },
+        "artId": "botanical-sprig",
+        "artPlacement": "corner-mirrored",
+        "textureStyle": "grain",
+        "dividerStyle": "diamond-rule",
+        "overlayTreatment": "veil",
+        "motifIdeal": "embroidered-floral-and-butterfly",
+        "setting": "an arched terracotta courtyard bursting with tropical flowers and butterflies",
+        "motifs": [
+          "embroidered florals",
+          "butterflies",
+          "terracotta arches",
+          "woven mochila pattern",
+          "palm shade"
+        ],
+        "medium": "gouache",
+        "mood": "saturated, warm, magical",
+        "ageRegister": "child",
+        "subjectPolicy": "none",
+        "protectedTerms": [
+          "Encanto"
+        ],
+        "confidence": 0.86
+      }
+    },
+    {
+      "hostText": "Harry Potter 11th birthday",
+      "spec": {
+        "canonicalSlug": "candlelit-spellbook-library",
+        "displayName": "Spellbook Library",
+        "themeStyle": "storybook",
+        "occasion": "kids-birthday",
+        "palette": {
+          "ink": "#3b2412",
+          "accent": "#a8842c",
+          "surface": "#f7efdd",
+          "body": "#4f3a24"
+        },
+        "artId": "starry-night",
+        "artPlacement": "asymmetric",
+        "textureStyle": "laid",
+        "dividerStyle": "diamond-rule",
+        "overlayTreatment": "veil",
+        "motifIdeal": "candle-key-and-constellation",
+        "setting": "a candlelit gothic library with floating candles, stacked leather tomes and a tall arched window",
+        "motifs": [
+          "floating candles",
+          "brass key",
+          "constellation chart",
+          "ink quill",
+          "wax seal",
+          "arched window"
+        ],
+        "medium": "oil-painting",
+        "mood": "mysterious, scholarly, enchanted",
+        "ageRegister": "child",
+        "subjectPolicy": "none",
+        "protectedTerms": [
+          "Harry Potter"
+        ],
+        "confidence": 0.85
+      }
+    },
+    {
+      "hostText": "Mario Kart party for my twins",
+      "spec": {
+        "canonicalSlug": "retro-arcade-raceway",
+        "displayName": "Arcade Raceway",
+        "themeStyle": "bold",
+        "occasion": "kids-birthday",
+        "palette": {
+          "ink": "#1f2a44",
+          "accent": "#e8332a",
+          "surface": "#fffbf0",
+          "body": "#3c4763"
+        },
+        "artId": "sunburst-rays",
+        "artPlacement": "band",
+        "textureStyle": "gloss",
+        "dividerStyle": "rule",
+        "overlayTreatment": "plate",
+        "motifIdeal": "checkered-flag-and-pixel-block",
+        "setting": "a candy-bright raceway curving past striped pipes and floating question blocks",
+        "motifs": [
+          "checkered flag",
+          "pixel blocks",
+          "striped pipes",
+          "banana peel",
+          "star burst",
+          "traffic pylons"
+        ],
+        "medium": "flat-vector",
+        "mood": "fast, cheerful, competitive",
+        "ageRegister": "child",
+        "subjectPolicy": "none",
+        "protectedTerms": [
+          "Mario Kart"
+        ],
+        "confidence": 0.8
+      }
+    },
+    {
+      "hostText": "Taylor Swift Eras sleepover for my 12 year old",
+      "spec": {
+        "canonicalSlug": "glitter-era-stage",
+        "displayName": "Era Tour Night",
+        "themeStyle": "modern",
+        "occasion": "teen-birthday",
+        "palette": {
+          "ink": "#3d2350",
+          "accent": "#d98cb3",
+          "surface": "#fdf4f8",
+          "body": "#51405e"
+        },
+        "artId": "starry-night",
+        "artPlacement": "scatter",
+        "textureStyle": "gloss",
+        "dividerStyle": "dots",
+        "overlayTreatment": "gradient",
+        "motifIdeal": "friendship-bracelet-and-stage-light",
+        "setting": "a dreamy stage at night with sequin light scatter, ribbon streamers and a glitter horizon",
+        "motifs": [
+          "friendship bracelet beads",
+          "stage lights",
+          "sequin scatter",
+          "ribbon streamers",
+          "cassette tape"
+        ],
+        "medium": "colored-pencil",
+        "mood": "dreamy, sparkling, nostalgic",
+        "ageRegister": "teen",
+        "subjectPolicy": "none",
+        "protectedTerms": [
+          "Taylor Swift",
+          "Eras"
+        ],
+        "confidence": 0.79
+      }
+    },
+    {
+      "hostText": "Stranger Things 80s party",
+      "spec": {
+        "canonicalSlug": "neon-eighties-upside-down",
+        "displayName": "Eighties Nightfall",
+        "themeStyle": "bold",
+        "occasion": "teen-birthday",
+        "palette": {
+          "ink": "#7a1224",
+          "accent": "#e84a5f",
+          "surface": "#1c1526",
+          "body": "#e8dff0"
+        },
+        "artId": "sunburst-rays",
+        "artPlacement": "band",
+        "textureStyle": "grain",
+        "dividerStyle": "rule",
+        "overlayTreatment": "gradient",
+        "motifIdeal": "string-lights-and-vhs-glitch",
+        "setting": "a pine forest at night lit by strung bulbs, heavy fog and a red horizon glow",
+        "motifs": [
+          "string lights",
+          "VHS glitch bars",
+          "bicycle",
+          "pine silhouettes",
+          "arcade grid"
+        ],
+        "medium": "photographic",
+        "mood": "eerie, nostalgic, cinematic",
+        "ageRegister": "teen",
+        "subjectPolicy": "none",
+        "protectedTerms": [
+          "Stranger Things"
+        ],
+        "confidence": 0.81
+      }
+    },
+    {
+      "hostText": "moody art deco 40th birthday, black and gold",
+      "spec": {
+        "canonicalSlug": "midnight-deco-gold",
+        "displayName": "Midnight Deco",
+        "themeStyle": "elegant",
+        "occasion": "milestone-birthday",
+        "palette": {
+          "ink": "#d9b45b",
+          "accent": "#b3893a",
+          "surface": "#14120f",
+          "body": "#e6ded0"
+        },
+        "artId": "art-deco-fan",
+        "artPlacement": "corner-mirrored",
+        "textureStyle": "gloss",
+        "dividerStyle": "diamond-rule",
+        "overlayTreatment": "plate",
+        "motifIdeal": "stepped-deco-fan-and-chevron",
+        "setting": "a lacquered black surface with stepped gold fan geometry and fluted columns",
+        "motifs": [
+          "deco fan",
+          "chevron banding",
+          "fluted column",
+          "sunburst inlay",
+          "brass rule"
+        ],
+        "medium": "lacquer-inlay",
+        "mood": "moody, glamorous, assured",
+        "ageRegister": "adult",
+        "subjectPolicy": "none",
+        "protectedTerms": [],
+        "confidence": 0.94
+      }
+    },
+    {
+      "hostText": "watercolor construction trucks 2nd birthday",
+      "spec": {
+        "canonicalSlug": "watercolor-construction-site",
+        "displayName": "Construction Site",
+        "themeStyle": "kids",
+        "occasion": "kids-birthday",
+        "palette": {
+          "ink": "#2f4256",
+          "accent": "#e0a11b",
+          "surface": "#fdf8ef",
+          "body": "#4a5b6d"
+        },
+        "artId": "confetti-scatter",
+        "artPlacement": "band",
+        "textureStyle": "cotton",
+        "dividerStyle": "dots",
+        "overlayTreatment": "veil",
+        "motifIdeal": "dump-truck-and-traffic-cone",
+        "setting": "a soft sunlit dirt lot with a dump truck, excavator and low gravel mounds",
+        "motifs": [
+          "dump truck",
+          "excavator",
+          "traffic cone",
+          "gravel mound",
+          "hard hat",
+          "caution stripe"
+        ],
+        "medium": "watercolor",
+        "mood": "gentle, busy, sunny",
+        "ageRegister": "young-child",
+        "subjectPolicy": "none",
+        "protectedTerms": [],
+        "confidence": 0.96
+      }
+    },
+    {
+      "hostText": "garden dinner party, late summer, linen and figs",
+      "spec": {
+        "canonicalSlug": "late-summer-fig-garden",
+        "displayName": "Fig & Linen",
+        "themeStyle": "elegant",
+        "occasion": "dinner-party",
+        "palette": {
+          "ink": "#3f4a2c",
+          "accent": "#7d3f4e",
+          "surface": "#f6f2e6",
+          "body": "#55604a"
+        },
+        "artId": "botanical-sprig",
+        "artPlacement": "side-mirrored",
+        "textureStyle": "laid",
+        "dividerStyle": "rule",
+        "overlayTreatment": "none",
+        "motifIdeal": "fig-branch-and-olive-sprig",
+        "setting": "a long linen table under a fig tree in late afternoon light, dappled shade",
+        "motifs": [
+          "fig branch",
+          "halved fig",
+          "olive sprig",
+          "linen fold",
+          "beeswax taper",
+          "stone jug"
+        ],
+        "medium": "watercolor",
+        "mood": "unhurried, warm, understated",
+        "ageRegister": "adult",
+        "subjectPolicy": "none",
+        "protectedTerms": [],
+        "confidence": 0.95
+      }
+    },
+    {
+      "hostText": "boho pampas grass baby shower, very neutral",
+      "spec": {
+        "canonicalSlug": "neutral-pampas-boho",
+        "displayName": "Pampas & Clay",
+        "themeStyle": "modern",
+        "occasion": "shower",
+        "palette": {
+          "ink": "#5a4632",
+          "accent": "#b08968",
+          "surface": "#f8f3ea",
+          "body": "#6b5a47"
+        },
+        "artId": "botanical-sprig",
+        "artPlacement": "asymmetric",
+        "textureStyle": "cotton",
+        "dividerStyle": "none",
+        "overlayTreatment": "none",
+        "motifIdeal": "pampas-plume-and-arch",
+        "setting": "a soft clay-toned arch draped with dried pampas plumes and cane",
+        "motifs": [
+          "pampas plume",
+          "dried palm",
+          "terracotta arch",
+          "cane weave",
+          "linen ribbon"
+        ],
+        "medium": "watercolor",
+        "mood": "calm, airy, neutral",
+        "ageRegister": "adult",
+        "subjectPolicy": "none",
+        "protectedTerms": [],
+        "confidence": 0.95
+      }
+    },
+    {
+      "hostText": "retro 70s roller disco",
+      "spec": {
+        "canonicalSlug": "seventies-roller-disco",
+        "displayName": "Roller Disco",
+        "themeStyle": "bold",
+        "occasion": "celebration",
+        "palette": {
+          "ink": "#6b2d1f",
+          "accent": "#e08a2e",
+          "surface": "#fdf0dc",
+          "body": "#4f3a2a"
+        },
+        "artId": "sunburst-rays",
+        "artPlacement": "band",
+        "textureStyle": "grain",
+        "dividerStyle": "rule",
+        "overlayTreatment": "plate",
+        "motifIdeal": "roller-skate-and-rainbow-arc",
+        "setting": "a warm-lit rink with a mirrored ball, rainbow floor arcs and wood panelling",
+        "motifs": [
+          "roller skate",
+          "rainbow arc",
+          "mirror ball",
+          "wood panel",
+          "striped tube sock"
+        ],
+        "medium": "block-print",
+        "mood": "groovy, warm, exuberant",
+        "ageRegister": "adult",
+        "subjectPolicy": "none",
+        "protectedTerms": [],
+        "confidence": 0.93
+      }
+    },
+    {
+      "hostText": "minimalist Japanese tea ceremony 60th",
+      "spec": {
+        "canonicalSlug": "quiet-tea-ceremony",
+        "displayName": "Tea Ceremony",
+        "themeStyle": "elegant",
+        "occasion": "milestone-birthday",
+        "palette": {
+          "ink": "#2f3a33",
+          "accent": "#7d6a4f",
+          "surface": "#f5f2ea",
+          "body": "#4a544b"
+        },
+        "artId": "botanical-sprig",
+        "artPlacement": "asymmetric",
+        "textureStyle": "laid",
+        "dividerStyle": "rule",
+        "overlayTreatment": "none",
+        "motifIdeal": "single-branch-and-tea-whisk",
+        "setting": "a tatami room with a single alcove branch, low light and an open shoji screen",
+        "motifs": [
+          "bamboo whisk",
+          "single plum branch",
+          "shoji lattice",
+          "raku bowl",
+          "stone basin"
+        ],
+        "medium": "line-art",
+        "mood": "quiet, precise, contemplative",
+        "ageRegister": "adult",
+        "subjectPolicy": "none",
+        "protectedTerms": [],
+        "confidence": 0.94
+      }
+    },
+    {
+      "hostText": "cottagecore mushroom foraging party but make it goth",
+      "spec": {
+        "canonicalSlug": "dark-cottage-forage",
+        "displayName": "Nightshade Forage",
+        "themeStyle": "storybook",
+        "occasion": "celebration",
+        "palette": {
+          "ink": "#e9e2ea",
+          "accent": "#8f6f9c",
+          "surface": "#1f1a24",
+          "body": "#cfc4d4"
+        },
+        "artId": "botanical-sprig",
+        "artPlacement": "corner-mirrored",
+        "textureStyle": "laid",
+        "dividerStyle": "diamond-rule",
+        "overlayTreatment": "veil",
+        "motifIdeal": "mushroom-cluster-and-thorn-wreath",
+        "setting": "a dim mossy woodland floor with pale mushroom clusters, ferns and a woven basket",
+        "motifs": [
+          "mushroom cluster",
+          "fern frond",
+          "thorn wreath",
+          "moss patch",
+          "wicker basket",
+          "moth"
+        ],
+        "medium": "colored-pencil",
+        "mood": "hushed, romantic, faintly eerie",
+        "ageRegister": "adult",
+        "subjectPolicy": "none",
+        "protectedTerms": [],
+        "confidence": 0.87
+      }
+    },
+    {
+      "hostText": "a birthday for my dad who only cares about competitive bass fishing",
+      "spec": {
+        "canonicalSlug": "dawn-lake-angler",
+        "displayName": "Dawn on the Lake",
+        "themeStyle": "modern",
+        "occasion": "milestone-birthday",
+        "palette": {
+          "ink": "#20404a",
+          "accent": "#b5772e",
+          "surface": "#f3f1e8",
+          "body": "#3d565e"
+        },
+        "artId": "botanical-sprig",
+        "artPlacement": "band",
+        "textureStyle": "grain",
+        "dividerStyle": "rule",
+        "overlayTreatment": "none",
+        "motifIdeal": "largemouth-bass-and-lure",
+        "setting": "a still lake at first light with mist over the reeds and a low boat wake",
+        "motifs": [
+          "largemouth bass",
+          "spinner lure",
+          "cattail reeds",
+          "rod and reel",
+          "tackle box",
+          "mist band"
+        ],
+        "medium": "oil-painting",
+        "mood": "early, still, quietly triumphant",
+        "ageRegister": "adult",
+        "subjectPolicy": "none",
+        "protectedTerms": [],
+        "confidence": 0.9
+      }
+    },
+    {
+      "hostText": "deep sea hydrothermal vent themed 7th birthday",
+      "spec": {
+        "canonicalSlug": "abyssal-vent-glow",
+        "displayName": "Deep Sea Vents",
+        "themeStyle": "bold",
+        "occasion": "kids-birthday",
+        "palette": {
+          "ink": "#8fe3d6",
+          "accent": "#e2704a",
+          "surface": "#0d1a2b",
+          "body": "#cfe4ea"
+        },
+        "artId": "starry-night",
+        "artPlacement": "scatter",
+        "textureStyle": "none",
+        "dividerStyle": "dots",
+        "overlayTreatment": "gradient",
+        "motifIdeal": "vent-chimney-and-tube-worm",
+        "setting": "the black ocean floor lit by glowing vent chimneys venting dark plumes",
+        "motifs": [
+          "vent chimney",
+          "tube worms",
+          "bioluminescent jelly",
+          "anglerfish lure",
+          "basalt rock",
+          "bubble plume"
+        ],
+        "medium": "gouache",
+        "mood": "strange, glowing, wondrous",
+        "ageRegister": "child",
+        "subjectPolicy": "none",
+        "protectedTerms": [],
+        "confidence": 0.89
+      }
+    },
+    {
+      "hostText": "Y2K cyber mall aesthetic, frosted plastic and gel pens",
+      "spec": {
+        "canonicalSlug": "y2k-frosted-chrome",
+        "displayName": "Frosted Y2K",
+        "themeStyle": "modern",
+        "occasion": "teen-birthday",
+        "palette": {
+          "ink": "#2a3f6b",
+          "accent": "#d94f8c",
+          "surface": "#f0f7fb",
+          "body": "#45557a"
+        },
+        "artId": "terrazzo",
+        "artPlacement": "scatter",
+        "textureStyle": "gloss",
+        "dividerStyle": "dots",
+        "overlayTreatment": "gradient",
+        "motifIdeal": "frosted-plastic-and-chrome-bubble",
+        "setting": "a frosted translucent surface with chrome bubble shapes and holographic sheen",
+        "motifs": [
+          "chrome bubble",
+          "frosted panel",
+          "holographic swirl",
+          "gel-pen squiggle",
+          "butterfly clip",
+          "star sparkle"
+        ],
+        "medium": "flat-vector",
+        "mood": "shiny, optimistic, synthetic",
+        "ageRegister": "teen",
+        "subjectPolicy": "none",
+        "protectedTerms": [],
+        "confidence": 0.91
+      }
+    }
+  ],
+  "adversarialCases": [
+    {
+      "label": "protected name leaked into setting",
+      "hostText": "Frozen party",
+      "expect": "gate-blocks",
+      "spec": {
+        "canonicalSlug": "nordic-ice-palace",
+        "displayName": "Winter Palace",
+        "themeStyle": "storybook",
+        "occasion": "kids-birthday",
+        "palette": {
+          "ink": "#1d3557",
+          "accent": "#7fb2d6",
+          "surface": "#f4f9fd",
+          "body": "#33526e"
+        },
+        "artId": "starry-night",
+        "artPlacement": "scatter",
+        "textureStyle": "laid",
+        "dividerStyle": "diamond-rule",
+        "overlayTreatment": "veil",
+        "motifIdeal": "snowflake-filigree",
+        "setting": "Elsa's ice palace on a frozen fjord beneath a pale aurora",
+        "motifs": [
+          "snowflake filigree",
+          "frosted pine"
+        ],
+        "medium": "watercolor",
+        "mood": "serene, sparkling, regal",
+        "ageRegister": "child",
+        "subjectPolicy": "none",
+        "protectedTerms": [
+          "Frozen",
+          "Elsa"
+        ],
+        "confidence": 0.9
+      }
+    },
+    {
+      "label": "protected name leaked into slug and display name",
+      "hostText": "Bluey backyard party",
+      "expect": "gate-blocks",
+      "spec": {
+        "canonicalSlug": "bluey-backyard-party",
+        "displayName": "Bluey Backyard",
+        "themeStyle": "kids",
+        "occasion": "kids-birthday",
+        "palette": {
+          "ink": "#14507d",
+          "accent": "#f28c28",
+          "surface": "#fffaf0",
+          "body": "#33607f"
+        },
+        "artId": "bunting-garland",
+        "artPlacement": "band",
+        "textureStyle": "cotton",
+        "dividerStyle": "dots",
+        "overlayTreatment": "plate",
+        "motifIdeal": "paw-print-and-balloon",
+        "setting": "a sunny suburban backyard with balloons",
+        "motifs": [
+          "balloon cluster",
+          "paw prints"
+        ],
+        "medium": "flat-vector",
+        "mood": "bright, playful",
+        "ageRegister": "young-child",
+        "subjectPolicy": "none",
+        "protectedTerms": [
+          "Bluey"
+        ],
+        "confidence": 0.8
+      }
+    },
+    {
+      "label": "character rendering requested alongside a protected property",
+      "hostText": "Spider-Man party, want him on the invite",
+      "expect": "policy-repaired",
+      "spec": {
+        "canonicalSlug": "comic-panel-crimson",
+        "displayName": "Comic Book Hero",
+        "themeStyle": "bold",
+        "occasion": "kids-birthday",
+        "palette": {
+          "ink": "#8c1c24",
+          "accent": "#1b2a6b",
+          "surface": "#fff8ee",
+          "body": "#3a2b2b"
+        },
+        "artId": "terrazzo",
+        "artPlacement": "scatter",
+        "textureStyle": "gloss",
+        "dividerStyle": "rule",
+        "overlayTreatment": "plate",
+        "motifIdeal": "halftone-web-geometry",
+        "setting": "a city skyline at dusk seen from a rooftop",
+        "motifs": [
+          "halftone dots",
+          "web-line geometry"
+        ],
+        "medium": "flat-vector",
+        "mood": "bold, kinetic, heroic",
+        "ageRegister": "young-child",
+        "subjectPolicy": "original-character",
+        "protectedTerms": [
+          "Spider-Man"
+        ],
+        "confidence": 0.84
+      }
+    },
+    {
+      "label": "illegible mid-tone palette",
+      "hostText": "grey minimalist 30th",
+      "expect": "palette-repaired",
+      "spec": {
+        "canonicalSlug": "soft-grey-minimal",
+        "displayName": "Soft Grey",
+        "themeStyle": "modern",
+        "occasion": "milestone-birthday",
+        "palette": {
+          "ink": "#8a8a8a",
+          "accent": "#9f9f9f",
+          "surface": "#9a9a9a",
+          "body": "#909090"
+        },
+        "artId": "terrazzo",
+        "artPlacement": "asymmetric",
+        "textureStyle": "none",
+        "dividerStyle": "rule",
+        "overlayTreatment": "none",
+        "motifIdeal": "fine-grid",
+        "setting": "a plain plaster wall in soft raking light",
+        "motifs": [
+          "fine grid",
+          "plaster texture"
+        ],
+        "medium": "photographic",
+        "mood": "quiet, restrained",
+        "ageRegister": "adult",
+        "subjectPolicy": "none",
+        "protectedTerms": [],
+        "confidence": 0.88
+      }
+    }
+  ]
+}
