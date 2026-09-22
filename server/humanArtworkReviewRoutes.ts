@@ -1,13 +1,14 @@
 import type { Express, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { waitUntil } from '@vercel/functions';
+import { isDeepStrictEqual } from 'node:util';
 import type { Event } from '@shared/schema';
 import { storage } from './storage';
 import { getEntitlementSummary } from './masterPlannerEntitlement';
 import { ownerEventView } from './eventArtwork';
 import { DbHumanArtworkReviewStore } from './humanArtworkReviewStore';
-import { HUMAN_REVIEW_CHECKS, MAX_HUMAN_ARTWORK_CORRECTIONS, HumanArtworkCorrectionError, humanReviewEnabled, humanReviewEventEnabled, reviewerAuthorized, humanArtworkBriefHash,
-  requestHumanArtwork, requestHumanArtworkCorrection, generateHumanArtwork, decideHumanArtwork, isCurrentHumanApproval,
+import { HUMAN_REVIEW_CHECKS, MAX_HUMAN_ARTWORK_CORRECTIONS, HumanArtworkCorrectionError, humanReviewEnabled, humanReviewEventEnabled, reviewerAuthorized, humanArtworkBrief, humanArtworkBriefHash,
+  requestHumanArtwork, requestHumanArtworkCorrection, prepareHumanArtworkRequest, generateHumanArtwork, decideHumanArtwork, isCurrentHumanApproval,
   type HumanArtworkReview, type HumanArtworkReviewStore } from './humanArtworkReview';
 import { humanArtworkReviewPage } from './humanArtworkReviewPage';
 
@@ -92,7 +93,10 @@ export function registerHumanArtworkReviewRoutes(app: Express, deps: Dependencie
     const input = z.object({ confirmOneImage: z.literal(true), version: z.number().int(), briefHash: z.string() }).strict().safeParse(req.body);
     const row = await reviews.get(String(req.params.id)); const event = row && await events.getEventByOwnerToken(row.ownerToken);
     if (!input.success || !row || !event || !enabled(event) || row.state !== 'queued' || input.data.version !== row.version
-      || input.data.briefHash !== row.briefHash || row.briefHash !== humanArtworkBriefHash(event)) return res.status(409).json({ error: 'Request changed or already claimed' });
+      || input.data.briefHash !== row.briefHash || row.briefHash !== humanArtworkBriefHash(event)
+      || !isDeepStrictEqual(row.brief, humanArtworkBrief(event))) return res.status(409).json({ error: 'Request changed or already claimed' });
+    try { prepareHumanArtworkRequest(row); }
+    catch (error) { return res.status(409).json({ error: error instanceof HumanArtworkCorrectionError ? error.message : 'Unable to verify saved artwork.' }); }
     schedule(async () => { try { await (deps.generate ?? generateHumanArtwork)(row,reviews,env().POSY_ARTWORK_REVIEWER_ID!); } catch { /* CAS loser never dispatches. */ } });
     return res.status(202).json({ state: 'queued', message: 'One generation scheduled. Refresh for its retained status.' });
   }));

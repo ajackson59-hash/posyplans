@@ -5,7 +5,7 @@ import request from 'supertest';
 import type { Event } from '@shared/schema';
 import { encodePng } from '../server/aiFirst/png';
 import { HUMAN_REVIEW_CHECKS, MAX_HUMAN_ARTWORK_CORRECTIONS, requestHumanArtwork, requestHumanArtworkCorrection, generateHumanArtwork, decideHumanArtwork, isCurrentHumanApproval,
-  humanReviewEventEnabled, reviewerAuthorized, type HumanArtworkReview, type HumanArtworkReviewStore } from '../server/humanArtworkReview';
+  artworkHash, humanReviewEventEnabled, reviewerAuthorized, type HumanArtworkReview, type HumanArtworkReviewStore } from '../server/humanArtworkReview';
 vi.mock('../server/storage', () => ({ storage: {}, db: {} }));
 vi.mock('../server/masterPlannerEntitlement', () => ({ getEntitlementSummary: vi.fn() }));
 const { registerHumanArtworkReviewRoutes } = await import('../server/humanArtworkReviewRoutes');
@@ -132,7 +132,11 @@ describe('human artwork release boundary',()=>{
     expect(fakeGenerate).toHaveBeenCalledTimes(2);
     expect(fakeGenerate).toHaveBeenLastCalledWith(expect.objectContaining({prompt:expect.stringContaining(note),maxTransientRetries:0}));
     expect(fakeGenerate).toHaveBeenLastCalledWith(expect.objectContaining({prompt:expect.stringContaining('One bird is missing.')}));
+    expect(fakeGenerate).toHaveBeenLastCalledWith(expect.objectContaining({model:'gpt-image-2',
+      referenceImages:[{bytes:Buffer.from(original.sourceBase64!,'base64'),mimeType:'image/png',filename:'saved-artwork.png'}]}));
     const corrected=(await store.get(original.id))!;expect(corrected.imageHash).not.toBe(original.imageHash);expect(corrected.state).toBe('review');
+    expect(corrected.generation).toMatchObject({operation:'edit',editSource:{candidateVersion:rejected.version,
+      inputImageHash:artworkHash(Buffer.from(original.sourceBase64!,'base64')),reviewedImageHash:original.imageHash}});
     expect((await request(a).get(owner+'/prepayment-preview/asset')).status).toBe(404);
     for(const bad of [{...input(corrected),checks:[]},{...input(corrected),imageHash:original.imageHash},{...input(original),version:corrected.version}]){
       expect((await auth(request(a).post(path+'/decision')).send(bad)).status).toBe(409);
@@ -140,6 +144,51 @@ describe('human artwork release boundary',()=>{
     expect((await auth(request(a).post(path+'/decision')).send(input(corrected))).status).toBe(200);
     const delivered=await request(a).get(owner+'/prepayment-preview/asset');expect(delivered.body.equals(Buffer.from(corrected.imageBase64!,'base64'))).toBe(true);
     expect((await store.get(original.id))?.previousCandidates).toEqual(queued.previousCandidates);
+  });
+  it.each(['missingArchive','missingImage','changedImage','changedSource','wrongVersion','wrongHistoryHash','changedBrief'] as const)(
+    'blocks invalid edit inputs before scheduling or spending: %s',async kind=>{
+      const original=await candidate();
+      const rejected=await decideHumanArtwork(original,event,store,{...input(original),decision:'rejected',note:'One bird is missing.'},'test');
+      const queued=await requestHumanArtworkCorrection(rejected,event,store,{version:rejected.version,imageHash:rejected.imageHash!,briefHash:rejected.briefHash,note:'Add the missing red bird.'},'test');
+      if(kind==='missingArchive')queued.previousCandidates=[];
+      if(kind==='missingImage')delete queued.previousCandidates![0].imageBase64;
+      if(kind==='changedImage')queued.previousCandidates![0].imageBase64=encodePng({width:8,height:12,rgb:Buffer.alloc(288,25)}).toString('base64');
+      if(kind==='changedSource')queued.previousCandidates![0].sourceBase64=encodePng({width:8,height:12,rgb:Buffer.alloc(288,3)}).toString('base64');
+      if(kind==='wrongVersion')queued.history.at(-1)!.candidateVersion=999;
+      if(kind==='wrongHistoryHash')queued.history.at(-1)!.imageHash='0'.repeat(64);
+      if(kind==='changedBrief')queued.brief.vibe='Silently replaced request';
+      store.rows.set(queued.id,structuredClone(queued));
+      const response=await auth(request(app({POSY_HUMAN_ARTWORK_GENERATION:'true'})).post('/api/staff/artwork-reviews/'+queued.id+'/generate'))
+        .send({confirmOneImage:true,version:queued.version,briefHash:queued.briefHash});
+      expect(response.status).toBe(409);expect(fakeGenerate).toHaveBeenCalledTimes(1);
+      if(kind!=='changedBrief')await expect(generateHumanArtwork(queued,store,'test',fakeGenerate as any)).rejects.toThrow();
+      expect(fakeGenerate).toHaveBeenCalledTimes(1);expect((await store.get(queued.id))?.state).toBe('queued');
+    });
+  it('accepts unchanged briefs after database JSON object keys are reordered',async()=>{
+    const row=await requestHumanArtwork(event,store);
+    function reordered(value:any):any {
+      if(Array.isArray(value))return value.map(reordered);
+      if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).reverse().map(([key,v])=>[key,reordered(v)]));
+      return value;
+    }
+    store.rows.set(row.id,{...row,brief:reordered(row.brief)});
+    const response=await auth(request(app({POSY_HUMAN_ARTWORK_GENERATION:'true'})).post('/api/staff/artwork-reviews/'+row.id+'/generate'))
+      .send({confirmOneImage:true,version:row.version,briefHash:row.briefHash});
+    expect(response.status).toBe(202);expect(fakeGenerate).toHaveBeenCalledTimes(1);
+  });
+  it('edits the most recent rejected picture on a second correction and keeps the original archive',async()=>{
+    const first=await candidate();
+    let row=await decideHumanArtwork(first,event,store,{...input(first),decision:'rejected'},'test');
+    row=await requestHumanArtworkCorrection(row,event,store,{version:row.version,imageHash:row.imageHash!,briefHash:row.briefHash,note:'Add the third red bird.'},'test');
+    const secondBytes=encodePng({width:8,height:12,rgb:Buffer.alloc(288,70)});
+    fakeGenerate.mockResolvedValueOnce({bytes:secondBytes,dataUrl:'data:image/png;base64,'+secondBytes.toString('base64'),durationMs:1} as any);
+    await generateHumanArtwork(row,store,'test',fakeGenerate as any);
+    row=(await store.get(row.id))!;
+    row=await decideHumanArtwork(row,event,store,{...input(row),decision:'rejected'},'test');
+    row=await requestHumanArtworkCorrection(row,event,store,{version:row.version,imageHash:row.imageHash!,briefHash:row.briefHash,note:'Keep the three birds and correct the flower color.'},'test');
+    await generateHumanArtwork(row,store,'test',fakeGenerate as any);
+    expect(fakeGenerate).toHaveBeenLastCalledWith(expect.objectContaining({referenceImages:[{bytes:secondBytes,mimeType:'image/png',filename:'saved-artwork.png'}]}));
+    expect((await store.get(row.id))?.previousCandidates?.[0].imageHash).toBe(first.imageHash);
   });
   it.each(['image','brief','version','changedEvent','owner','state','note'] as const)('blocks a stale or invalid correction: %s',async kind=>{
     const original=await candidate();const rejected=await decideHumanArtwork(original,event,store,{...input(original),decision:'rejected'},'test');

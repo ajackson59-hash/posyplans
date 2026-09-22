@@ -1,5 +1,16 @@
 # Launch readiness — customer dispatch repair, 2026-09-09
 
+## Latest: saved-artwork corrections, 2026-09-22
+
+The [saved-artwork edit repair](tools/qa/ARTWORK_EDIT_REPAIR.md) connects the
+existing private Preview correction workflow to the provider's edit endpoint.
+It passes verified retained pixels and the full brief, records input provenance,
+and blocks missing or mismatched sources before spend. Initial image creation
+is unchanged. Routine founder review and generic-theme substitution are not
+the accepted launch solution. This change is a repair to the correction
+mechanism, not visual qualification or release approval. Prior studies remain
+closed; the existing release criteria and Production boundary remain intact.
+
 ## Current: customer generation budget and cancellation corrected
 
 The [customer dispatch repair](tools/qa/ARTWORK_PIPELINE_REPAIR.md) applies one
