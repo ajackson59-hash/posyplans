@@ -16,6 +16,7 @@ import postgres from "postgres";
 import { eq, and, isNull } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import { previewCompletionCondition, previewReservationCondition } from "./prePaymentPreviewReservation";
+import { customerArtworkRolloutEnabled } from "./customerArtwork";
 
 if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL is not set. Add the Supabase pooled connection string to your environment.");
@@ -119,6 +120,7 @@ export class DatabaseStorage implements IStorage {
       // deliberately published them. The database default remains published
       // only to preserve the behavior of pre-existing rows.
       inviteStatus: "draft",
+      customerArtworkEnabled: customerArtworkRolloutEnabled(),
       ownerToken,
       shareSlug,
       createdAt: Date.now(),

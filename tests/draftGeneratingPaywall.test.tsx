@@ -377,3 +377,93 @@ describe("DraftGenerating pre-payment preview", () => {
     await waitFor(() => expect(callsTo("/api/checkout/create-session")).toHaveLength(1));
   });
 });
+
+const customerBase = {
+  version: 2, briefHash: 'b'.repeat(64), savedBrief: 'Keep the full watercolor garden request.',
+  generationEnabled: true, requestsRemaining: 3, state: 'ready' as const,
+  selectedId: null as string | null, selectedHash: null as string | null, appliedId: null, canContinue: false, supportReference: null,
+  candidates: [{ id: '00000000-0000-4000-8000-000000000001', imageHash: 'a'.repeat(64),
+    assetUrl: '/saved-customer-artwork.png', operation: 'create' as const, correction: null }],
+};
+function customerReadiness(artwork: Omit<typeof customerBase, 'state'> & { state: string }) {
+  return { customerArtwork: artwork, kind: 'customer-artwork', ready: true,
+    generationState: artwork.state === 'generating' ? 'generating' : 'ready', pollAfterMs: 60000, checkoutAllowed: artwork.canContinue };
+}
+describe('customer keeps and revises artwork in the normal paywall', () => {
+  it('shows the saved image and requires a visible explicit choice before checkout; reloads do not create images', async () => {
+    let artwork = structuredClone(customerBase);
+    apiRequestJson.mockImplementation((method: string, url: string, body: any) => {
+      if (method === 'GET' && url.endsWith('/prepayment-preview/readiness')) return Promise.resolve(customerReadiness(artwork));
+      if (method === 'GET' && url.endsWith('/master-planner/entitlement')) return Promise.resolve({ canGenerate: false });
+      if (method === 'POST' && url.endsWith('/artwork/select')) { artwork = { ...artwork, version: 3, selectedId: body.candidateId, selectedHash: body.imageHash, canContinue: true }; return Promise.resolve(artwork); }
+      if (method === 'POST' && url === '/api/checkout/create-session') return new Promise(() => {});
+      throw new Error('Unexpected request ' + method + ' ' + url);
+    });
+    renderPaywall();
+    const img = await screen.findByTestId('customer-artwork-image');
+    expect((screen.getByRole('button', { name: 'Keep this image' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByTestId('button-unlock-spark') as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.queryByTestId('button-skip-preview-checkout')).toBeNull();
+    fireEvent.error(img);
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh saved status' }));
+    await waitFor(() => expect(screen.getByTestId('customer-artwork-image')).not.toBe(img));
+    fireEvent.load(screen.getByTestId('customer-artwork-image'));
+    fireEvent.click(screen.getByRole('button', { name: 'Keep this image' }));
+    await screen.findByRole('button', { name: 'Image kept' });
+    expect(apiRequestJson.mock.calls.find(([,url]) => url.endsWith('/artwork/select'))?.[2]).toEqual({ version: 2, briefHash: customerBase.briefHash,
+      candidateId: customerBase.candidates[0].id, imageHash: customerBase.candidates[0].imageHash });
+    fireEvent(window, new Event('pageshow'));
+    await waitFor(() => expect(callsTo(`/api/events/owner/${OWNER}/prepayment-preview/readiness`).length).toBeGreaterThan(1));
+    expect(callsTo(`/api/events/owner/${OWNER}/prepayment-preview`)).toHaveLength(0);
+    fireEvent.change(screen.getByTestId('input-spark-email'), { target: { value: EMAIL } });
+    fireEvent.submit(screen.getByTestId('button-unlock-spark').closest('form')!);
+    await waitFor(() => expect(callsTo('/api/checkout/create-session')).toHaveLength(1));
+  });
+  it('recovers a lost revision response with GET and locks further changes while the saved request is running', async () => {
+    const running = { ...customerBase, version: 3, state: 'generating' };
+    apiRequestJson.mockImplementation((method: string, url: string) => {
+      if (method === 'GET' && url.endsWith('/prepayment-preview/readiness')) return Promise.resolve(customerReadiness(customerBase));
+      if (method === 'GET' && url.endsWith('/master-planner/entitlement')) return Promise.resolve({ canGenerate: false });
+      if (method === 'POST' && url.endsWith('/artwork/revise')) return Promise.reject(new Error('Connection interrupted'));
+      if (method === 'GET' && url.endsWith('/artwork')) return Promise.resolve(running);
+      throw new Error('Unexpected request ' + method + ' ' + url);
+    });
+    renderPaywall(); fireEvent.load(await screen.findByTestId('customer-artwork-image'));
+    fireEvent.change(screen.getByLabelText('What would you like to change?'), { target: { value: 'Preserve the garden; move only the left bird inward.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Make this change' }));
+    await screen.findByText('Your change is still underway. No new request was sent.');
+    const edits = callsTo(`/api/events/owner/${OWNER}/artwork/revise`);
+    expect(edits).toHaveLength(1);
+    expect(edits[0][2]).toMatchObject({ baseCandidateId: customerBase.candidates[0].id, imageHash: customerBase.candidates[0].imageHash,
+      correction: 'Preserve the garden; move only the left bird inward.' });
+    expect((screen.getByRole('button', { name: 'Make this change' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByTestId('button-unlock-spark') as HTMLButtonElement).disabled).toBe(true);
+    expect(callsTo(`/api/events/owner/${OWNER}/artwork`)).toHaveLength(1);
+  });
+  it('waits for a Plus host’s kept image before automatically starting the plan', async () => {
+    apiRequestJson.mockImplementation((method: string, url: string, body: any) => {
+      if (method === 'GET' && url.endsWith('/prepayment-preview/readiness')) return Promise.resolve(customerReadiness(customerBase));
+      if (method === 'GET' && url.endsWith('/master-planner/entitlement')) return Promise.resolve({ canGenerate: true });
+      if (method === 'GET' && url.endsWith('/master-planner/status')) return Promise.resolve({ draftStatus: 'none', completedStages: [] });
+      if (method === 'POST' && url.endsWith('/artwork/select')) return Promise.resolve({ ...customerBase, version: 3, selectedId: body.candidateId, selectedHash: body.imageHash, canContinue: true });
+      if (method === 'POST' && url.endsWith('/master-planner/generate')) return new Promise(() => {});
+      throw new Error('Unexpected request ' + method + ' ' + url);
+    });
+    renderPaywall(); const img = await screen.findByTestId('customer-artwork-image');
+    expect(callsTo(`/api/events/owner/${OWNER}/master-planner/generate`)).toHaveLength(0);
+    fireEvent.load(img); fireEvent.click(screen.getByRole('button', { name: 'Keep this image' }));
+    await waitFor(() => expect(callsTo(`/api/events/owner/${OWNER}/master-planner/generate`)).toHaveLength(1));
+  });
+  it('returns an already planned event without generating its plan again', async () => {
+    apiRequestJson.mockImplementation((method: string, url: string) => {
+      if (method === 'GET' && url.endsWith('/prepayment-preview/readiness')) return Promise.resolve(customerReadiness({ ...customerBase,
+        selectedId: customerBase.candidates[0].id, selectedHash: customerBase.candidates[0].imageHash, canContinue: true, hasSavedPlan: true } as any));
+      if (method === 'GET' && url.endsWith('/master-planner/entitlement')) return Promise.resolve({ canGenerate: true });
+      throw new Error('Unexpected request ' + method + ' ' + url);
+    });
+    renderPaywall();
+    await waitFor(() => expect(callsTo(`/api/events/owner/${OWNER}/prepayment-preview/readiness`)).toHaveLength(1));
+    await waitFor(() => expect(screen.queryByTestId('customer-artwork-preview')).toBeNull());
+    expect(callsTo(`/api/events/owner/${OWNER}/master-planner/generate`)).toHaveLength(0);
+  });
+});

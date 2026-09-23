@@ -158,6 +158,8 @@ export const events = pgTable("events", {
   // real spend on an unpaid visitor at a small, fixed number of tries even if
   // the quality gate keeps rejecting output. See server/prePaymentPreview.ts.
   prePaymentPreviewAttempts: integer("pre_payment_preview_attempts").notNull().default(0),
+  // Server-owned, stable enrollment. Existing events keep their current flow.
+  customerArtworkEnabled: boolean("customer_artwork_enabled").notNull().default(false),
 });
 
 export const RSVP_RESTRICTIONS = ["none", "no_children", "plus_one", "no_additional_guests"] as const;
@@ -184,6 +186,7 @@ export const insertEventSchema = createInsertSchema(events).omit({
   prePaymentPreviewUrl: true,
   prePaymentPreviewUsedAt: true,
   prePaymentPreviewAttempts: true,
+  customerArtworkEnabled: true,
 });
 export const updateEventSchema = insertEventSchema.partial();
 

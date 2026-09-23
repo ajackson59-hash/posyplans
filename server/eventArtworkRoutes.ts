@@ -3,6 +3,8 @@ import type { Event } from "@shared/schema";
 import { storage } from "./storage";
 import { humanReviewEventEnabled } from "./humanArtworkReview";
 import { approvedHumanArtwork } from "./humanArtworkPolicy";
+import { customerArtworkEventEnabled } from "./customerArtwork";
+import { appliedCustomerArtworkIsKept } from "./customerArtworkPolicy";
 import { eventArtworkFields, eventArtworkVersion, storedEventArtwork, type EventArtworkField } from "./eventArtwork";
 
 type ArtworkStorage = Pick<typeof storage, "getEventByOwnerToken" | "getEventByShareSlug">;
@@ -26,6 +28,9 @@ export function registerEventArtworkRoutes(app: Express, store: ArtworkStorage =
       const value = storedEventArtwork(event, field);
       if (humanReviewEventEnabled(event) && value !== await approved(event)) {
         return res.status(404).json({ error: "Current artwork needs human approval" });
+      }
+      if (customerArtworkEventEnabled(event) && !await appliedCustomerArtworkIsKept(event, value)) {
+        return res.status(404).json({ error: "That artwork is not available for this invitation" });
       }
       if (typeof req.query.v !== "string" || req.query.v !== eventArtworkVersion(value)) {
         return res.status(404).json({ error: "That artwork version is no longer available" });

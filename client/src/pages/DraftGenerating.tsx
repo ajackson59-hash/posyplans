@@ -3,6 +3,8 @@ import { Link, useParams, useLocation } from "wouter";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequestJson } from "@/lib/queryClient";
 import HumanArtworkReviewStatus from "@/components/HumanArtworkReviewStatus";
+import CustomerArtworkPreview from "@/components/CustomerArtworkPreview";
+import type { CustomerArtworkView } from "@shared/customerArtwork";
 import { getCheckoutHandoffPhase } from "@/lib/checkoutHandoff";
 import { touchRecentEvent } from "@/lib/eventRecovery";
 import { Wordmark } from "@/components/Logo";
@@ -38,7 +40,7 @@ interface EntitlementSummary {
   canGenerate: boolean;
 }
 
-type PrePaymentPreviewKind = "direction-card" | "reference-board" | "approved-image" | "none";
+type PrePaymentPreviewKind = "direction-card" | "reference-board" | "approved-image" | "customer-artwork" | "none";
 type PrePaymentPreviewGenerationState = "idle" | "generating" | "ready" | "fallback";
 
 interface PreviewDirectionCard {
@@ -50,6 +52,7 @@ interface PreviewDirectionCard {
 }
 
 interface PrePaymentPreviewReadiness {
+  customerArtwork?: CustomerArtworkView;
   humanReview?: boolean;
   reviewState?: import('@/components/HumanArtworkReviewStatus').HumanReviewState;
   checkoutAllowed?: boolean;
@@ -335,6 +338,8 @@ export default function DraftGenerating() {
     onError: () => {
       setBackgroundPreviewStarted(false);
       previewTriggeredRef.current = false;
+      // A lost response must be resolved by reading the durable request.
+      void previewReadiness.refetch();
     },
   });
 
@@ -354,6 +359,10 @@ export default function DraftGenerating() {
   const humanReview = previewReadiness.data?.humanReview === true;
   const humanReviewPending = humanReview && previewReadiness.data?.checkoutAllowed !== true;
   const humanReviewState = previewReadiness.data?.reviewState ?? 'not-requested';
+  const customerArtwork = previewReadiness.data?.customerArtwork;
+  const customerArtworkPending = !!customerArtwork && !customerArtwork.canContinue;
+  const customerCanCreate = !!customerArtwork && ['empty', 'brief-changed'].includes(customerArtwork.state)
+    && customerArtwork.generationEnabled && customerArtwork.requestsRemaining > 0;
   const readinessState = previewReadiness.data?.generationState ?? "idle";
   const previewGenerationFailed = readinessState === "fallback";
   const previewIsDirectionOnly = readinessKind === "direction-card" || readinessKind === "reference-board";
@@ -454,6 +463,10 @@ export default function DraftGenerating() {
   if (humanReviewPending) paywallCtaLabel = startPrePaymentPreview.isPending
     ? 'Submitting your artwork request…'
     : humanReviewState === 'not-requested' ? 'Submit my artwork for review' : 'Awaiting artwork approval';
+  if (customerArtwork) paywallCtaLabel = checkoutPending ? 'Starting checkout…'
+    : startPrePaymentPreview.isPending || customerArtwork.state === 'generating' ? 'Creating your artwork…'
+    : customerArtwork.canContinue ? continueCheckoutLabel
+    : customerCanCreate ? 'Create my artwork preview' : 'Keep an image above to continue';
 
   // Only auto-fire generation once we know this event is allowed to draft
   // (Spark unlocked or Plus). Never before entitlement resolves, and never
@@ -462,11 +475,12 @@ export default function DraftGenerating() {
     if (startedGenerationRef.current || !ownerToken) return;
     if (checkoutHandoffPhase === "confirming" || checkoutHandoffPhase === "failed") return;
     if (!entitlement.data?.canGenerate) return;
-    if (previewReadiness.isPending || humanReviewPending) return;
+    if (!previewReadiness.isSuccess || humanReviewPending || customerArtworkPending) return;
     startedGenerationRef.current = true;
+    if (customerArtwork?.hasSavedPlan) { navigate(`/dashboard/${ownerToken}`); return; }
     startGeneration.mutate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ownerToken, entitlement.data?.canGenerate, checkoutHandoffPhase, previewReadiness.isPending, humanReviewPending]);
+  }, [ownerToken, entitlement.data?.canGenerate, checkoutHandoffPhase, previewReadiness.isSuccess, humanReviewPending, customerArtworkPending, customerArtwork?.hasSavedPlan]);
 
   const { data: status } = useQuery<MasterPlannerStatus>({
     queryKey: ["master-planner-status", ownerToken],
@@ -547,6 +561,19 @@ export default function DraftGenerating() {
     );
   }
 
+  if (customerArtworkPending && customerArtwork && ownerToken && entitlement.data?.canGenerate) {
+    return <div className="min-h-screen bg-background px-6 py-16"><div className="mx-auto max-w-md space-y-5">
+      <Wordmark />
+      <CustomerArtworkPreview ownerToken={ownerToken} artwork={customerArtwork} refresh={() => previewReadiness.refetch({ throwOnError: true })} />
+      <p className="text-sm text-muted-foreground">Your access is saved. Keep your artwork to continue building your plan.</p>
+      {customerCanCreate ? <form className="space-y-3" onSubmit={e => { e.preventDefault(); requestPersonalizedPreview(); }}>
+        <Label htmlFor="customerPreviewEmail">Email</Label><Input id="customerPreviewEmail" type="email" required value={email} onChange={e => setEmail(e.target.value)} />
+        <Button type="submit" disabled={startPrePaymentPreview.isPending}>Create my artwork preview</Button>
+      </form> : null}
+      {startPrePaymentPreview.isError ? <p role="alert">We couldn't confirm the request. Refresh the saved status before trying again.</p> : null}
+    </div></div>;
+  }
+
   if (humanReviewPending && entitlement.data?.canGenerate) {
     return <div className="min-h-screen bg-background px-6 py-16">
       <div className="mx-auto max-w-md space-y-5">
@@ -600,7 +627,9 @@ export default function DraftGenerating() {
             data-testid="prepayment-preview-card"
             aria-live="polite"
           >
-            {humanReviewPending ? (
+            {customerArtwork && ownerToken ? (
+              <CustomerArtworkPreview ownerToken={ownerToken} artwork={customerArtwork} refresh={() => previewReadiness.refetch({ throwOnError: true })} />
+            ) : humanReviewPending ? (
               <HumanArtworkReviewStatus state={humanReviewState} brief={previewReadiness.data?.savedBrief} />
             ) : previewGenerationFailed ? (
               <div className="px-6 py-6 text-left" role="status" data-testid="prepayment-preview-failure">
@@ -871,6 +900,14 @@ export default function DraftGenerating() {
               className="mx-auto max-w-sm space-y-3"
               onSubmit={(e) => {
                 e.preventDefault();
+                if (!previewReadiness.isSuccess) return;
+                if (customerArtwork) {
+                  if (customerCanCreate) { requestPersonalizedPreview(); return; }
+                  if (!customerArtwork.canContinue) return;
+                  if (selectedPlan === "spark") startSparkCheckout.mutate();
+                  else startPlusCheckout.mutate();
+                  return;
+                }
                 if (humanReviewPending) {
                   if (humanReviewState === 'not-requested') requestPersonalizedPreview();
                   return;
@@ -917,12 +954,13 @@ export default function DraftGenerating() {
                 type="submit"
                 className="w-full"
                 data-testid="button-unlock-spark"
-                data-direct-checkout-allowed={previewReadiness.isSuccess && !humanReview ? "true" : "false"}
-                disabled={startPrePaymentPreview.isPending || checkoutPending || (humanReviewPending && humanReviewState !== 'not-requested')}
+                data-direct-checkout-allowed={previewReadiness.isSuccess && !humanReview && !customerArtwork ? "true" : "false"}
+                disabled={!previewReadiness.isSuccess || startPrePaymentPreview.isPending || checkoutPending || (humanReviewPending && humanReviewState !== 'not-requested') || (customerArtworkPending && !customerCanCreate)}
               >
                 {paywallCtaLabel}
               </Button>
               {humanReview && startPrePaymentPreview.isError ? <p role="alert" className="text-sm text-destructive">We couldn't save your artwork request. Please try again.</p> : null}
+              {customerArtwork && startPrePaymentPreview.isError ? <p role="alert" className="text-sm text-destructive">We couldn't confirm the request. Refresh the saved status before trying again.</p> : null}
               <p className="text-center text-xs text-muted-foreground">
                 {selectedPlan === "spark"
                   ? "One-time payment. No subscription, no auto-renew."

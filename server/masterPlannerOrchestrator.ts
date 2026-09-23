@@ -28,6 +28,8 @@
 import { storage } from "./storage";
 import { humanReviewEventEnabled } from "./humanArtworkReview";
 import { approvedHumanArtwork } from "./humanArtworkPolicy";
+import { customerArtworkApplication, customerArtworkEventEnabled } from "./customerArtwork";
+import { keptCustomerArtwork } from "./customerArtworkPolicy";
 import { generateThemeAndIdentityAi, type ThemeAndIdentityResult } from "./themeAi";
 import { generateBudgetSuggestionAi, type BudgetSuggestion } from "./budgetAi";
 import { generateMenuAi, type MenuSuggestion } from "./menuAi";
@@ -150,7 +152,7 @@ export async function runMasterPlannerOrchestration(
       });
       await storage.updateEventById(eventId, {
         // The reviewed brief owns its theme and palette; planning cannot replace it.
-        ...(humanReviewEventEnabled(initialEvent) ? {} : {
+        ...(humanReviewEventEnabled(initialEvent) || customerArtworkEventEnabled(initialEvent) ? {} : {
           themeName: result.themeName,
           paletteColors: JSON.stringify(result.paletteColors),
         }),
@@ -283,7 +285,11 @@ export async function runMasterPlannerOrchestration(
     await setDraftStage(eventId, "invites");
     try {
       const eventForStage5 = (await storage.getEventById(eventId))!;
-      if (humanReviewEventEnabled(eventForStage5)) {
+      if (customerArtworkEventEnabled(eventForStage5)) {
+        const artwork = await keptCustomerArtwork(eventForStage5);
+        if (!artwork) throw new Error('Keep current artwork before planning');
+        await storage.updateEventById(eventId, customerArtworkApplication(eventForStage5, artwork));
+      } else if (humanReviewEventEnabled(eventForStage5)) {
         const artwork = await approvedHumanArtwork(eventForStage5);
         if (!artwork) throw new Error('Current artwork needs human approval');
         await storage.updateEventById(eventId, {
