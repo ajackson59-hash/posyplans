@@ -1,9 +1,10 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import express from "express";
 import request from "supertest";
 import type { Event, InsertEvent } from "@shared/schema";
 
 process.env.DATABASE_URL = "postgres://test/test";
+afterEach(() => vi.unstubAllEnvs());
 
 const {
   createIdempotentStartedEvent,
@@ -34,6 +35,24 @@ function eventFor(ownerToken: string): Event {
 }
 
 describe("idempotent event startup", () => {
+  it.each([['preview', 'codex/launch-blockers', true], ['production', 'main', false], ['preview', 'another-branch', false]])(
+    'stamps server-owned customer artwork enrollment for %s / %s', async (environment, branch, expected) => {
+      vi.stubEnv('VERCEL_ENV', environment as string); vi.stubEnv('VERCEL_GIT_COMMIT_REF', branch as string);
+      const persistence = { tryInsert: vi.fn(async (input: any) => ({ ...eventFor(input.ownerToken), customerArtworkEnabled: input.customerArtworkEnabled })), findByOwnerToken: vi.fn() };
+      const created = await createIdempotentStartedEvent(seed, startKey, persistence);
+      expect(created.customerArtworkEnabled).toBe(expected);
+      expect(persistence.tryInsert).toHaveBeenCalledWith(expect.objectContaining({ customerArtworkEnabled: expected }));
+    },
+  );
+
+  it('keeps prior enrollment on a replay after new enrollment closes', async () => {
+    vi.stubEnv('VERCEL_ENV', 'preview'); vi.stubEnv('VERCEL_GIT_COMMIT_REF', 'codex/launch-blockers');
+    vi.stubEnv('POSY_CUSTOMER_ARTWORK_FLOW', 'false');
+    const existing = { ...eventFor(ownerTokenForStartKey(startKey)), customerArtworkEnabled: true };
+    const persistence = { tryInsert: vi.fn(async () => undefined), findByOwnerToken: vi.fn(async () => existing) };
+    expect((await createIdempotentStartedEvent(seed, startKey, persistence)).customerArtworkEnabled).toBe(true);
+    expect(persistence.tryInsert).toHaveBeenCalledWith(expect.objectContaining({ customerArtworkEnabled: false }));
+  });
   it("derives a stable, opaque owner token from one browser start key", () => {
     const first = ownerTokenForStartKey(startKey);
     const second = ownerTokenForStartKey(startKey);
@@ -87,12 +106,13 @@ describe("POST /api/events/start", () => {
     app.use(express.json());
     registerEventStartupRoutes(app, { createEvent });
 
-    const response = await request(app).post("/api/events/start").send({ ...seed, startKey });
+    const response = await request(app).post("/api/events/start").send({ ...seed, startKey, customerArtworkEnabled: true });
 
     expect(response.status).toBe(200);
     expect(response.body.ownerToken).toBe(expected.ownerToken);
     expect(response.headers["cache-control"]).toBe("no-store");
     expect(createEvent).toHaveBeenCalledWith(expect.objectContaining(seed), startKey);
+    expect(createEvent.mock.calls[0][0]).not.toHaveProperty('customerArtworkEnabled');
   });
 
   it("returns a calm retryable response instead of leaking a database error", async () => {

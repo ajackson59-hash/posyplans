@@ -6,6 +6,7 @@ import { events, insertEventSchema } from "@shared/schema";
 import type { Event, InsertEvent } from "@shared/schema";
 import { criticalDb } from "./criticalDb";
 import { ownerEventView } from "./eventArtwork";
+import { customerArtworkRolloutEnabled } from "./customerArtwork";
 
 const startKeySchema = z
   .string()
@@ -92,6 +93,7 @@ interface EventStartInsert {
   ownerToken: string;
   shareSlug: string;
   createdAt: number;
+  customerArtworkEnabled: boolean;
 }
 
 export interface EventStartPersistence {
@@ -106,6 +108,7 @@ const databasePersistence: EventStartPersistence = {
       .values({
         ...input.data,
         inviteStatus: "draft",
+        customerArtworkEnabled: input.customerArtworkEnabled,
         ownerToken: input.ownerToken,
         shareSlug: input.shareSlug,
         createdAt: input.createdAt,
@@ -130,6 +133,7 @@ export async function createIdempotentStartedEvent(
 ): Promise<Event> {
   const ownerToken = ownerTokenForStartKey(startKey);
   const createdAt = Date.now();
+  const customerArtworkEnabled = customerArtworkRolloutEnabled();
 
   for (let attempt = 0; attempt < EVENT_START_ATTEMPTS; attempt += 1) {
     const inserted = await persistence.tryInsert({
@@ -137,6 +141,7 @@ export async function createIdempotentStartedEvent(
       ownerToken,
       shareSlug: randomToken(10),
       createdAt,
+      customerArtworkEnabled,
     });
     if (inserted) return inserted;
 

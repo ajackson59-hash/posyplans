@@ -102,3 +102,12 @@ controls, and a returning host should open the kept version even if a newer
 unselected revision exists. New component regression cases cover both. Final
 exact-source CI, deployment and browser evidence is recorded in the canonical
 continuation checklist, along with the still-open live quality/payment gates.
+
+The normal intake entry point was subsequently checked on `9860b80`
+(Verify #483: 113 files / 1,578 tests, successful build). That check found the
+idempotent `/api/events/start` insert used a separate persistence path and did
+not receive enrollment. Event 71 is retained as the private, unspent evidence
+of that gap; it was not silently relabeled. The follow-up passes server-owned
+enrollment through this start path, preserves existing enrollment on replay,
+and tests Preview/Production/other-branch boundaries and client-field stripping.
+The final fresh-event runtime result belongs in the continuation record.
