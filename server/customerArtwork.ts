@@ -58,6 +58,21 @@ export function customerArtworkEventEnabled(event: Event, env: NodeJS.ProcessEnv
 export function customerArtworkGenerationEnabled(env: NodeJS.ProcessEnv = process.env) {
   return env.POSY_CUSTOMER_ARTWORK_GENERATION === 'true';
 }
+/** Optional Preview evaluation envelope. Caps count every lifetime claim, not
+ * just successful images. A present but invalid map closes all new spending. */
+export function customerArtworkRequestLimit(event: Event, env: NodeJS.ProcessEnv = process.env) {
+  const encoded = env.POSY_CUSTOMER_ARTWORK_EVALUATION_LIMITS;
+  if (encoded === undefined) return CUSTOMER_ARTWORK_REQUEST_LIMIT;
+  try {
+    const limits: unknown = JSON.parse(encoded);
+    if (!limits || typeof limits !== 'object' || Array.isArray(limits)) return 0;
+    const entries = Object.entries(limits);
+    if (entries.length > 100 || entries.some(([id, limit]) => !/^[1-9]\d*$/.test(id)
+      || !Number.isSafeInteger(Number(id)) || !Number.isInteger(limit)
+      || typeof limit !== 'number' || limit < 1 || limit > CUSTOMER_ARTWORK_REQUEST_LIMIT)) return 0;
+    return Object.hasOwn(limits, String(event.id)) ? (limits as Record<string, number>)[String(event.id)] : 0;
+  } catch { return 0; }
+}
 export function sessionBelongsTo(row: CustomerArtworkSession, event: Event) {
   return row.eventId === event.id && row.ownerHash === hash(event.ownerToken);
 }
@@ -114,10 +129,12 @@ export function customerArtworkView(row: CustomerArtworkSession, event: Event, e
   const uncertain = row.attempts.find(a => a.status === 'interrupted' || a.status === 'failed');
   const last = current.at(-1);
   const selected = currentCustomerCandidate(row, event, row.selectedId);
+  const requestLimit = customerArtworkRequestLimit(event, env);
+  const requestsRemaining = Math.max(0, requestLimit - row.attempts.length);
   return {
     version: row.version, briefHash, savedBrief: event.vibeDescription ?? '',
-    generationEnabled: customerArtworkGenerationEnabled(env) && !uncertain,
-    requestsRemaining: Math.max(0, CUSTOMER_ARTWORK_REQUEST_LIMIT - row.attempts.length),
+    generationEnabled: customerArtworkGenerationEnabled(env) && !uncertain && requestLimit > 0,
+    requestsRemaining,
     state: running ? 'generating' : uncertain ? uncertain.status as 'failed' | 'interrupted'
       : last?.status === 'ready' ? 'ready' : row.attempts.length ? 'brief-changed' : 'empty',
     selectedId: selected?.id ?? null, selectedHash: selected?.imageHash ?? null,
@@ -135,7 +152,8 @@ export function customerArtworkView(row: CustomerArtworkSession, event: Event, e
 export interface CustomerArtworkRequestInput {
   requestKey: string; version: number; briefHash: string; baseCandidateId?: string; imageHash?: string; correction?: string;
 }
-export async function claimCustomerArtwork(event: Event, row: CustomerArtworkSession, input: CustomerArtworkRequestInput, store: CustomerArtworkStore) {
+export async function claimCustomerArtwork(event: Event, row: CustomerArtworkSession, input: CustomerArtworkRequestInput, store: CustomerArtworkStore,
+  env: NodeJS.ProcessEnv = process.env) {
   if (!sessionBelongsTo(row, event)) throw new CustomerArtworkError('This artwork is not available.', 404);
   // A lost response, duplicate click or replay can only return the saved operation.
   const existing = row.attempts.find(a => a.requestKey === input.requestKey);
@@ -147,7 +165,7 @@ export async function claimCustomerArtwork(event: Event, row: CustomerArtworkSes
   if (event.draftStatus === 'generating') throw new CustomerArtworkError('Your plan is being saved. Please wait before changing its artwork.');
   if (row.version !== input.version || input.briefHash !== customerArtworkBriefHash(event)) throw new CustomerArtworkError('Your details changed. Refresh before requesting artwork.');
   if (row.attempts.some(a => a.status !== 'ready')) throw new CustomerArtworkError('The last request needs to finish or be checked. Your saved images are still available.');
-  if (row.attempts.length >= CUSTOMER_ARTWORK_REQUEST_LIMIT) throw new CustomerArtworkError('You have reached this event’s artwork limit. Keep a saved image or contact support.', 429);
+  if (row.attempts.length >= customerArtworkRequestLimit(event, env)) throw new CustomerArtworkError('You have reached this event’s artwork limit. Keep a saved image or contact support.', 429);
   const brief = humanArtworkBrief(event);
   let request: ArtworkRequest, editSource: ArtworkEditSource | undefined;
   if (input.baseCandidateId) {

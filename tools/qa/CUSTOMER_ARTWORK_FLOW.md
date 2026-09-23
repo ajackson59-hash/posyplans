@@ -15,6 +15,10 @@ or a claim that the multi-theme quality, payment, or delivery gates passed.
   retain their saved flow rather than falling back into legacy generation.
 - Image spending requires `POSY_CUSTOMER_ARTWORK_GENERATION=true` separately.
   This switch defaults off. No prior paid experiment allowance is reused.
+- Optional `POSY_CUSTOMER_ARTWORK_EVALUATION_LIMITS` restricts spending to an
+  explicit event-ID-to-lifetime-request-cap JSON map (1–4). Unlisted events or
+  invalid configuration cannot dispatch. Claims survive brief changes/replays.
+  See [the new customer-flow quality screen](CUSTOMER_ARTWORK_QUALITY_BATCH.md).
 - An optional `POSY_CUSTOMER_ARTWORK_EVENT_IDS` list plus the explicit flow
   switch can enroll specified existing Preview events for controlled tests.
   Never include an active human-review event or reuse a closed paid allowance.

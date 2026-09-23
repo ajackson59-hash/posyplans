@@ -7,7 +7,7 @@ import { getEntitlementSummary } from './masterPlannerEntitlement';
 import { ownerEventView, restoreEventArtworkReferences, eventArtworkFields, storedEventArtwork } from './eventArtwork';
 import { DbCustomerArtworkStore } from './customerArtworkStore';
 import { CustomerArtworkError, claimCustomerArtwork, currentCustomerCandidate, customerArtworkBriefHash,
-  customerArtworkApplication, customerArtworkEventEnabled, customerArtworkGenerationEnabled, customerArtworkView, emptyCustomerArtwork,
+  customerArtworkApplication, customerArtworkEventEnabled, customerArtworkGenerationEnabled, customerArtworkRequestLimit, customerArtworkView, emptyCustomerArtwork,
   finishCustomerArtwork, recoverCustomerArtwork, selectCustomerArtwork, selectedCustomerArtwork,
   type CustomerArtworkRequestInput, type CustomerArtworkSession, type CustomerArtworkStore } from './customerArtwork';
 
@@ -60,9 +60,10 @@ export function registerCustomerArtworkRoutes(app: Express, deps: Dependencies =
     };
   const dispatch = async (event: Event, row: CustomerArtworkSession, input: CustomerArtworkRequestInput) => {
     // Replayed requests are read-only, including when the spend switch was turned off.
-    if (!row.attempts.some(a => a.requestKey === input.requestKey) && !customerArtworkGenerationEnabled(env()))
+    if (!row.attempts.some(a => a.requestKey === input.requestKey)
+      && (!customerArtworkGenerationEnabled(env()) || customerArtworkRequestLimit(event, env()) === 0))
       throw new CustomerArtworkError('Artwork creation is temporarily unavailable. Your saved images are still here.', 503);
-    const claim = await claimCustomerArtwork(event, row, input, sessions);
+    const claim = await claimCustomerArtwork(event, row, input, sessions, env());
     if (claim.request) {
       try { schedule(() => (deps.finish ?? finishCustomerArtwork)(event.id, claim.attempt, claim.request!, sessions)); }
       catch { /* Retain the claim; timed read recovery must not dispatch it again. */ }

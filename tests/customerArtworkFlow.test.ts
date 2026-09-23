@@ -61,6 +61,36 @@ async function ready() {
 }
 
 describe('customer artwork durable request boundary', () => {
+  it.each(['', '{}', 'null', '[]', 'invalid', '{"99003":2}', '{"99002":0}', '{"99002":5}',
+    '{"99002":"2"}', '{"99002":1.5}', '{"99002":2,"bad":1}', '{"099002":2}'])(
+    'rejects an absent event or invalid evaluation allowance before scheduling: %s', async limits => {
+      const server = app({ POSY_CUSTOMER_ARTWORK_EVALUATION_LIMITS: limits });
+      expect((await request(server).get(`${owner}/artwork`)).body.generationEnabled).toBe(false);
+      expect((await request(server).post(`${owner}/prepayment-preview`).send({ email: 'offline@example.com' })).status).toBe(503);
+      expect(jobs).toHaveLength(0); expect(generate).not.toHaveBeenCalled();
+      expect((await store.get(event.id))?.attempts).toHaveLength(0);
+    });
+  it('enforces the scoped cap under concurrent revisions, retains replay/selection, and never resets on a new brief', async () => {
+    const server = app({ POSY_CUSTOMER_ARTWORK_EVALUATION_LIMITS: '{"99002":2}' });
+    expect((await request(server).post(`${owner}/prepayment-preview`).send({ email: 'offline@example.com' })).status).toBe(202);
+    await jobs.shift()!();
+    let row = (await store.get(event.id))!;
+    const input = revision(row);
+    const responses = await Promise.all([request(server).post(`${owner}/artwork/revise`).send(input),
+      request(server).post(`${owner}/artwork/revise`).send(revision(row))]);
+    expect(responses.filter(r => r.status === 202)).toHaveLength(1); expect(jobs).toHaveLength(1);
+    const winning = (await store.get(event.id))!.attempts[1];
+    await jobs.shift()!(); row = (await store.get(event.id))!;
+    expect((await request(server).post(`${owner}/artwork/revise`).send(revision(row))).status).toBe(429);
+    expect((await request(server).post(`${owner}/artwork/select`).send(selection(row, 1))).status).toBe(200);
+    const closed = app({ POSY_CUSTOMER_ARTWORK_GENERATION: 'false', POSY_CUSTOMER_ARTWORK_EVALUATION_LIMITS: '{}' });
+    expect((await request(closed).post(`${owner}/artwork/revise`).send({ ...input,
+      requestKey: winning.requestKey, correction: winning.correction })).status).toBe(202);
+    expect((await request(closed).get(`${owner}/artwork`)).body).toMatchObject({ generationEnabled: false, canContinue: true });
+    event = { ...event, vibeDescription: 'Another full brief does not buy another allowance.' };
+    expect((await request(server).post(`${owner}/prepayment-preview`).send({ email: 'offline@example.com' })).status).toBe(429);
+    expect(generate).toHaveBeenCalledTimes(2); expect(jobs).toHaveLength(0);
+  });
   it('keeps staff, existing events and Production separate; new Preview enrollment persists when rollout closes', () => {
     expect(customerArtworkEventEnabled(event, env)).toBe(true);
     expect(customerArtworkEventEnabled(event, { ...env, VERCEL_ENV: 'production' })).toBe(false);
