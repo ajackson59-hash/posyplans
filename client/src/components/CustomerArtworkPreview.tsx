@@ -41,13 +41,14 @@ export default function CustomerArtworkPreview({ ownerToken, artwork, refresh, p
   const action = useMutation({
     mutationFn: ({ path, body }: { path: string; body: unknown }) => apiRequestJson<CustomerArtworkView>('POST', `/api/events/owner/${ownerToken}/artwork/${path}`, body),
     retry: false,
-    onSuccess: (value, { path }) => { saveView(value); setMessage(path === 'select' ? 'Your image is saved. You can continue when you’re ready.' : 'Your change is underway. Your previous image is saved.'); if (path === 'revise') setCorrection(''); },
+    // The saved artwork state owns progress text, so polling can clear it.
+    onSuccess: (value, { path }) => { saveView(value); setMessage(path === 'select' ? 'Your image is saved. You can continue when you’re ready.' : ''); if (path === 'revise') setCorrection(''); },
     onError: async (error: Error) => {
       // An uncertain POST is followed by GET only. The server's saved state
       // tells us what happened; neither the mutation nor provider is retried.
       setMessage('We lost the response. Checking your saved artwork before another request…');
       try { const value = await apiRequestJson<CustomerArtworkView>('GET', `/api/events/owner/${ownerToken}/artwork`); saveView(value);
-        setMessage(value.state === 'generating' ? 'Your change is still underway. No new request was sent.' : `${error.message} Your saved status has been refreshed. No request was repeated.`); }
+        setMessage(value.state === 'generating' ? 'Your saved request was found. No new request was sent.' : `${error.message} Your saved status has been refreshed. No request was repeated.`); }
       catch { setMessage('We could not reconnect. Refresh the saved status before making another request.'); }
     },
     onSettled: () => { busy.current = false; },

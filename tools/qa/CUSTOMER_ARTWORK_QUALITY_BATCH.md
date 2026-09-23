@@ -1,6 +1,11 @@
 # Customer artwork quality screen — 23 September 2026
 
-Status: **prepared and rehearsed without paid calls; fresh paid allowance pending**.
+Status: **paid allowance approved; case 1 executed; screen stopped with quality
+and cumulative timing gates unmet**. Alex approved the exact 16-request/$5-reserve
+scope, then confirmed the Event 73 Preview settings. Two requests were consumed;
+seven cases remain unrun. See `CUSTOMER_ARTWORK_QUALITY_LIVE_20260923.json` for
+the complete first result, one repair, retained usage, hashes and timing limits.
+Do not ask for the same allowance again or reuse Event 73's exhausted cap.
 This is Priority 2 of Alex's exact handoff. The customer flow is implemented;
 this screen will test real generation, source-based correction and delivery.
 Event 69's acceptance, Events 67–72, all closed studies and prior budgets stay
@@ -17,14 +22,15 @@ send the complete saved brief directly; this screen does not use the retired
 classifier/critic pipeline. No payment, email/SMS, guest publication, merge or
 Production deployment is part of this allowance.
 
-Proposed planning reserve: **US $5**. This is not a provider-enforced dollar cap
+Approved planning reserve: **US $5**. This is not a provider-enforced dollar cap
 or a guaranteed invoice. Hard controls bound the number of requests. Run one
 operation at a time, retain returned token usage, and stop on missing/unknown
 billing, provider failure or a reserve concern before another request. Do not
 claim an aborted or failed request was free. A remaining dollar reserve never
-authorizes additional calls. Approval must cover this fresh, concrete scope;
-the general instruction to proceed has authorized preparation and engineering,
-but did not specify this newly defined paid allowance.
+authorizes additional calls. The user's explicit approval covers this fresh,
+concrete scope; all previously closed allowances remain closed. The stop rules
+still apply within the allowance. No additional paid case was started after
+case 1's incomplete framing repair and observed cumulative timing miss.
 
 Current official source checked September 23:
 [GPT Image 2 model](https://developers.openai.com/api/docs/models/gpt-image-2),

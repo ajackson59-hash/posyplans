@@ -390,6 +390,34 @@ function customerReadiness(artwork: Omit<typeof customerBase, 'state'> & { state
     generationState: artwork.state === 'generating' ? 'generating' : 'ready', pollAfterMs: 60000, checkoutAllowed: artwork.canContinue };
 }
 describe('customer keeps and revises artwork in the normal paywall', () => {
+  it.each(['accepted', 'response-lost'])('removes in-progress guidance when the %s revision finishes through saved-state refresh', async (outcome) => {
+    let artwork: Omit<typeof customerBase, 'state'> & { state: string } = { ...structuredClone(customerBase),
+      selectedId: customerBase.candidates[0].id, selectedHash: customerBase.candidates[0].imageHash, canContinue: true };
+    apiRequestJson.mockImplementation((method: string, url: string) => {
+      if (method === 'GET' && url.endsWith('/prepayment-preview/readiness')) return Promise.resolve(customerReadiness(artwork));
+      if (method === 'GET' && url.endsWith('/master-planner/entitlement')) return Promise.resolve({ canGenerate: false });
+      if (method === 'POST' && url.endsWith('/artwork/revise')) {
+        artwork = { ...artwork, version: 3, state: 'generating', canContinue: false };
+        return outcome === 'accepted' ? Promise.resolve(artwork) : Promise.reject(new Error('Connection interrupted'));
+      }
+      if (method === 'GET' && url.endsWith('/artwork')) return Promise.resolve(artwork);
+      throw new Error('Unexpected request ' + method + ' ' + url);
+    });
+    renderPaywall(); fireEvent.load(await screen.findByTestId('customer-artwork-image'));
+    fireEvent.change(screen.getByLabelText('What would you like to change?'), { target: { value: 'Keep the whole excavator inside the frame.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Make this change' }));
+    await screen.findByText('Creating your artwork. You can return to this page; your request is saved.');
+    artwork = { ...artwork, version: 4, state: 'ready', canContinue: true,
+      candidates: [...artwork.candidates, { ...artwork.candidates[0], id: '00000000-0000-4000-8000-000000000002',
+        imageHash: 'c'.repeat(64), assetUrl: '/revised-customer-artwork.png' }] };
+    fireEvent(window, new Event('pageshow'));
+    await screen.findByRole('button', { name: 'Revision 1' });
+    expect(screen.queryByText(/change is (?:still )?underway/)).toBeNull();
+    expect(screen.queryByText('Creating your artwork. You can return to this page; your request is saved.')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Original · Kept' })).toBeTruthy();
+    expect(callsTo(`/api/events/owner/${OWNER}/artwork/revise`)).toHaveLength(1);
+    expect(callsTo(`/api/events/owner/${OWNER}/prepayment-preview`)).toHaveLength(0);
+  });
   it('opens the kept original on return even when a later revision exists', async () => {
     apiRequestJson.mockImplementation((method: string, url: string) => {
       if (method === 'GET' && url.endsWith('/prepayment-preview/readiness')) return Promise.resolve(customerReadiness({ ...customerBase,
@@ -444,7 +472,7 @@ describe('customer keeps and revises artwork in the normal paywall', () => {
     renderPaywall(); fireEvent.load(await screen.findByTestId('customer-artwork-image'));
     fireEvent.change(screen.getByLabelText('What would you like to change?'), { target: { value: 'Preserve the garden; move only the left bird inward.' } });
     fireEvent.click(screen.getByRole('button', { name: 'Make this change' }));
-    await screen.findByText('Your change is still underway. No new request was sent.');
+    await screen.findByText('Your saved request was found. No new request was sent.');
     const edits = callsTo(`/api/events/owner/${OWNER}/artwork/revise`);
     expect(edits).toHaveLength(1);
     expect(edits[0][2]).toMatchObject({ baseCandidateId: customerBase.candidates[0].id, imageHash: customerBase.candidates[0].imageHash,
