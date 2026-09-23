@@ -11,7 +11,7 @@ export default function CustomerArtworkPreview({ ownerToken, artwork, refresh, p
   ownerToken: string; artwork: CustomerArtworkView; refresh: () => Promise<unknown>; paid?: boolean;
 }) {
   const client = useQueryClient();
-  const [displayedId, setDisplayedId] = useState<string | null>(null);
+  const [displayedId, setDisplayedId] = useState<string | null>(() => artwork.selectedId ?? artwork.candidates.at(-1)?.id ?? null);
   const [loadedHash, setLoadedHash] = useState<string | null>(null);
   const [imageFailed, setImageFailed] = useState(false);
   const [imageRefresh, setImageRefresh] = useState(0);
@@ -20,7 +20,7 @@ export default function CustomerArtworkPreview({ ownerToken, artwork, refresh, p
   const busy = useRef(false);
   const panel = useRef<HTMLDivElement>(null);
   const latest = artwork.candidates.at(-1);
-  const previousLatest = useRef<string | undefined>(undefined);
+  const previousLatest = useRef<string | undefined>(artwork.candidates.at(-1)?.id);
   useEffect(() => {
     if (latest?.id !== previousLatest.current) {
       previousLatest.current = latest?.id;

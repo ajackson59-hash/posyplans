@@ -390,6 +390,19 @@ function customerReadiness(artwork: Omit<typeof customerBase, 'state'> & { state
     generationState: artwork.state === 'generating' ? 'generating' : 'ready', pollAfterMs: 60000, checkoutAllowed: artwork.canContinue };
 }
 describe('customer keeps and revises artwork in the normal paywall', () => {
+  it('opens the kept original on return even when a later revision exists', async () => {
+    apiRequestJson.mockImplementation((method: string, url: string) => {
+      if (method === 'GET' && url.endsWith('/prepayment-preview/readiness')) return Promise.resolve(customerReadiness({ ...customerBase,
+        selectedId: customerBase.candidates[0].id, selectedHash: customerBase.candidates[0].imageHash, canContinue: true,
+        candidates: [...customerBase.candidates, { ...customerBase.candidates[0], id: '00000000-0000-4000-8000-000000000002', imageHash: 'c'.repeat(64), assetUrl: '/revised-customer-artwork.png' }],
+      }));
+      if (method === 'GET' && url.endsWith('/master-planner/entitlement')) return Promise.resolve({ canGenerate: false });
+      throw new Error('Unexpected request ' + method + ' ' + url);
+    });
+    renderPaywall();
+    expect((await screen.findByTestId('customer-artwork-image')).getAttribute('src')).toBe('/saved-customer-artwork.png');
+    expect(screen.getByRole('button', { name: 'Original · Kept' }).getAttribute('aria-pressed')).toBe('true');
+  });
   it('shows the saved image and requires a visible explicit choice before checkout; reloads do not create images', async () => {
     let artwork = structuredClone(customerBase);
     apiRequestJson.mockImplementation((method: string, url: string, body: any) => {

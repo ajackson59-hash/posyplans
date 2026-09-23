@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useLocation } from "wouter";
 
-type PreviewKind = "direction-card" | "reference-board" | "approved-image" | "none";
+type PreviewKind = "direction-card" | "reference-board" | "approved-image" | "customer-artwork" | "none";
 
 interface PreviewReadiness {
   humanReview?: boolean;
+  customerArtwork?: unknown;
   mode: "off" | "direction-card" | "quality-image";
   kind: PreviewKind;
   generationState?: "idle" | "generating" | "ready" | "fallback";
@@ -33,6 +34,7 @@ export default function PaywallPreviewGuide() {
   const [previewReady, setPreviewReady] = useState(false);
   const [previewBusy, setPreviewBusy] = useState(false);
   const [previewFailed, setPreviewFailed] = useState(false);
+  const [customerPanel, setCustomerPanel] = useState(false);
   const [readiness, setReadiness] = useState<PreviewReadiness | null>(null);
 
   const ownerToken = ownerTokenFromLocation(location);
@@ -81,6 +83,7 @@ export default function PaywallPreviewGuide() {
       setPreviewReady(Boolean(image?.complete && image.naturalWidth > 0));
       setPreviewBusy(busy);
       setPreviewFailed(Boolean(nextCard?.querySelector("[data-testid='prepayment-preview-failure']")));
+      setCustomerPanel(Boolean(nextCard?.querySelector("[data-testid='customer-artwork-preview']")));
 
       const placeholder = nextCard?.firstElementChild as HTMLElement | null;
       if (placeholder) {
@@ -138,7 +141,7 @@ export default function PaywallPreviewGuide() {
 
   // DraftGenerating owns the failed state and the saved brief. Do not add a
   // second message claiming artwork passed review or inviting another submit.
-  if (!card || previewFailed || readiness?.generationState === "fallback" || readiness?.humanReview) return null;
+  if (!card || customerPanel || readiness?.customerArtwork || previewFailed || readiness?.generationState === "fallback" || readiness?.humanReview) return null;
 
   const namedLabel = readiness?.namedReference?.label;
   const automaticNamedResearch = Boolean(

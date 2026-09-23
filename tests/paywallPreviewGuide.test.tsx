@@ -6,6 +6,15 @@ import PaywallPreviewGuide from "../client/src/components/PaywallPreviewGuide";
 vi.mock("wouter", () => ({ useLocation: () => ["/draft-generating/test-owner", vi.fn()] }));
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
+it('leaves customer artwork instructions to its version controls, even before readiness responds', async () => {
+  vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
+  render(<><div data-testid="prepayment-preview-card"><div data-testid="customer-artwork-preview">Keep this image</div></div>
+    <button data-testid="button-unlock-spark">Keep an image above to continue</button><PaywallPreviewGuide /></>);
+  await waitFor(() => expect(screen.getByTestId('prepayment-preview-card').textContent).toBe('Keep this image'));
+  expect(screen.queryByTestId('button-jump-to-preview-email')).toBeNull();
+  expect(screen.queryByTestId('text-preview-expectation')).toBeNull();
+});
+
 it("removes the duplicate email invitation when an in-flight preview fails without ever loading an image", async () => {
   const fetch = vi.fn(async () => ({ ok: true, json: async () => ({
     mode: "quality-image", kind: "none", generationState: "idle", imageGenerationEnabled: true,

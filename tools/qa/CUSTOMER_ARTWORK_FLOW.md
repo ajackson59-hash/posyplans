@@ -77,3 +77,28 @@ budget. Measure first-image quality, correction success, browser-visible total
 time and all-in cost. Then verify fresh payment/Plus, invitation/guest RSVP/
 recovery/mobile, and finally the release gates. Nothing in these mechanics
 checks closes those later priorities.
+
+## September 23 verification record
+
+Initial implementation `cd8b201d8c97a054b79ad4230fa885d4b8c39d9d`
+passed official Verify Posy #482 (113 files / 1,576 tests, default test timeouts,
+TypeScript and production bundles). Local full-suite execution passed with a
+30-second timeout after six CPU-heavy historical tests exceeded the local
+five-second deadline; no source test deadlines or acceptance thresholds changed.
+
+Preview migration `20260923174419` is applied. RLS and absent anon/authenticated
+SELECT grants were verified. All existing events remained unenrolled. Private
+Event 70 was then created as an explicitly marked retained-pixel workflow
+fixture, copying the original and corrected Event 69 images without modifying
+Event 69. Its two fixture attempts record zero new provider calls and no new
+quality assessment. Browser checks verified version selection, reverting to the
+original, persistent selection after reload, a 1024x1536 decoded image at the
+native 2:3 ratio, checkout locked before selection and available after selection.
+No checkout submission, paid generation, message or guest publication occurred.
+
+Browser verification found two interface details addressed in the follow-up:
+the legacy preview guide must not add an email/review message under customer
+controls, and a returning host should open the kept version even if a newer
+unselected revision exists. New component regression cases cover both. Final
+exact-source CI, deployment and browser evidence is recorded in the canonical
+continuation checklist, along with the still-open live quality/payment gates.
