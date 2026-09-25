@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import express from 'express';
 import request from 'supertest';
 import type { Event } from '@shared/schema';
@@ -59,6 +59,33 @@ async function ready() {
   await finishCustomerArtwork(event.id, claim.attempt, claim.request!, store, generate);
   return (await store.get(event.id))!;
 }
+
+it('keeps and revises an imported original through the customer HTTP routes within one remaining request', async () => {
+  let row = await ready();
+  const original = row.attempts[0];
+  original.imageBase64 = original.sourceBase64!;
+  original.imageHash = createHash('sha256').update(Buffer.from(original.sourceBase64!, 'base64')).digest('hex');
+  original.providerCalls = 0;
+  await store.compareAndSet(row, row.version);
+  generate.mockClear();
+  const server = app({ POSY_CUSTOMER_ARTWORK_EVALUATION_LIMITS: '{"99002":2}' });
+  expect((await request(server).post(`${owner}/artwork/select`).send(selection(row))).status).toBe(200);
+  row = (await store.get(event.id))!;
+  const input = revision(row);
+  expect((await request(server).post(`${owner}/artwork/revise`).send(input)).status).toBe(202);
+  expect(jobs).toHaveLength(1);
+  await jobs.shift()!();
+  expect(generate).toHaveBeenCalledTimes(1);
+  expect((generate.mock.calls[0] as unknown as [{ referenceImages: Array<{ bytes: Buffer }> }])[0]
+    .referenceImages[0].bytes.equals(bytes)).toBe(true);
+  row = (await store.get(event.id))!;
+  expect(row.selectedId).toBe(original.id);
+  expect((await request(server).post(`${owner}/artwork/revise`).send(revision(row))).status).toBe(429);
+  expect((await request(server).post(`${owner}/artwork/select`).send(selection(row, 1))).status).toBe(200);
+  expect((await request(server).get(`${owner}/artwork`)).body).toMatchObject({
+    selectedId: row.attempts[1].id, requestsRemaining: 0, canContinue: true,
+  });
+});
 
 describe('customer artwork durable request boundary', () => {
   it.each(['', '{}', 'null', '[]', 'invalid', '{"99003":2}', '{"99002":0}', '{"99002":5}',

@@ -50,7 +50,11 @@ export function buildArtworkEditRequest(input: {
     // exact inspected image; a present but invalid source must never fall back.
     const bytes = input.candidate.sourceBase64 === undefined
       ? reviewed : savedPng(input.candidate.sourceBase64);
-    if (hash(previewImageBytes(bytes, 'detail-v1')) !== input.candidate.imageHash)
+    // A retained original may itself be the exact image the customer sees.
+    // Otherwise require the existing deterministic delivery transform; neither
+    // path accepts a different source or changes the image being edited.
+    if (hash(bytes) !== input.candidate.imageHash
+      && hash(previewImageBytes(bytes, 'detail-v1')) !== input.candidate.imageHash)
       throw new ArtworkEditInputError('The original artwork does not match the inspected image.');
     const { width, height } = readPngSize(bytes)!;
     // The existing adapter uses square, 3:2 and 2:3 output sizes. Refuse a

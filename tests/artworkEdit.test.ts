@@ -48,6 +48,18 @@ describe('saved-artwork edits',()=>{
     data.candidate={...candidate,imageHash:'0'.repeat(64)};
     expect(()=>buildArtworkEditRequest(data)).toThrow('no longer matches');
   });
+  it.each([true,false])('edits the exact retained original PNG without re-encoding it (source retained: %s)',hasSource=>{
+    const data=input();
+    expect(hash(source)).not.toBe(hash(image));
+    data.candidate={imageBase64:source.toString('base64'),imageHash:hash(source)} as typeof candidate;
+    if(hasSource) data.candidate.sourceBase64=source.toString('base64');
+    const edit=buildArtworkEditRequest(data);
+    expect(edit.request.referenceImages?.[0].bytes.equals(source)).toBe(true);
+    expect(edit.source).toMatchObject({inputImageHash:hash(source),reviewedImageHash:hash(source),
+      inputKind:hasSource?'original-source':'reviewed-image'});
+    data.candidate.sourceBase64=encodePng({width:1024,height:1536,rgb:Buffer.alloc(1024*1536*3,200)}).toString('base64');
+    expect(()=>buildArtworkEditRequest(data)).toThrow('does not match');
+  });
   it.each([[12,8,'16:9'],[8,8,'1:1']] as const)('keeps a supported %sx%s orientation', (width,height,aspectRatio)=>{
     const data=input(),bytes=encodePng({width,height,rgb:Buffer.alloc(width*height*3,70)}),reviewed=previewImageBytes(bytes,'detail-v1');
     data.candidate={sourceBase64:bytes.toString('base64'),imageBase64:reviewed.toString('base64'),imageHash:hash(reviewed)};
