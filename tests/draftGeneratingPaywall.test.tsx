@@ -390,6 +390,24 @@ function customerReadiness(artwork: Omit<typeof customerBase, 'state'> & { state
     generationState: artwork.state === 'generating' ? 'generating' : 'ready', pollAfterMs: 60000, checkoutAllowed: artwork.canContinue };
 }
 describe('customer keeps and revises artwork in the normal paywall', () => {
+  it.each(['failed', 'interrupted'])('explains an empty %s result without offering an unavailable retry or phantom saved images', async state => {
+    const artwork = { ...customerBase, state, generationEnabled: false, requestsRemaining: 1, candidates: [] };
+    apiRequestJson.mockImplementation((method: string, url: string) => {
+      if (method === 'GET' && url.endsWith('/prepayment-preview/readiness')) return Promise.resolve(customerReadiness(artwork));
+      if (method === 'GET' && url.endsWith('/master-planner/entitlement')) return Promise.resolve({ canGenerate: false });
+      throw new Error('Unexpected request ' + method + ' ' + url);
+    });
+    renderPaywall();
+    await screen.findByText(/We couldn’t create your artwork\. Your event details and request are saved/);
+    expect(screen.getByText('New artwork requests are paused. Contact us for help with this request.')).toBeTruthy();
+    expect(screen.queryByText(/Your saved images are still available/)).toBeNull();
+    expect(screen.queryByText(/1 artwork request remaining/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Keep this image' })).toBeNull();
+    expect((screen.getByTestId('button-unlock-spark') as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh saved status' }));
+    await waitFor(() => expect(callsTo(`/api/events/owner/${OWNER}/prepayment-preview/readiness`).length).toBeGreaterThan(1));
+    expect(apiRequestJson.mock.calls.filter(([method]) => method === 'POST')).toHaveLength(0);
+  });
   it.each(['accepted', 'response-lost'])('removes in-progress guidance when the %s revision finishes through saved-state refresh', async (outcome) => {
     let artwork: Omit<typeof customerBase, 'state'> & { state: string } = { ...structuredClone(customerBase),
       selectedId: customerBase.candidates[0].id, selectedHash: customerBase.candidates[0].imageHash, canContinue: true };

@@ -248,8 +248,8 @@ export default function DraftGenerating() {
   );
 
   const startGeneration = useMutation({
-    mutationFn: () =>
-      apiRequestJson("POST", `/api/events/owner/${ownerToken}/master-planner/generate`, {}),
+    mutationFn: (resumeInterrupted: boolean = false) =>
+      apiRequestJson("POST", `/api/events/owner/${ownerToken}/master-planner/generate`, { resumeInterrupted }),
   });
 
   // Start a Spark checkout for this specific event, then hand off to Stripe.
@@ -478,7 +478,7 @@ export default function DraftGenerating() {
     if (!previewReadiness.isSuccess || humanReviewPending || customerArtworkPending) return;
     startedGenerationRef.current = true;
     if (customerArtwork?.hasSavedPlan) { navigate(`/dashboard/${ownerToken}`); return; }
-    startGeneration.mutate();
+    startGeneration.mutate(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ownerToken, entitlement.data?.canGenerate, checkoutHandoffPhase, previewReadiness.isSuccess, humanReviewPending, customerArtworkPending, customerArtwork?.hasSavedPlan]);
 
@@ -1087,10 +1087,10 @@ export default function DraftGenerating() {
       {capExceeded && (
         <div className="mt-10 max-w-md space-y-3 text-center" data-testid="draft-generating-cap-exceeded">
           <p className="text-sm text-muted-foreground">
-            This event's plan is ready. To regenerate, unlock again with Spark or go Plus for unlimited plans.
+            This event’s plan is ready. Open your dashboard to review it or create a new version with Plus.
           </p>
           <Button asChild data-testid="button-cap-exceeded-pricing">
-            <Link href={`/pricing?returnToken=${ownerToken}`}>Go Plus</Link>
+            <Link href={`/dashboard/${ownerToken}`}>Open my plan</Link>
           </Button>
         </div>
       )}
@@ -1098,10 +1098,10 @@ export default function DraftGenerating() {
       {startupFailed && (
         <div className="mt-10 max-w-md space-y-3 text-center" data-testid="draft-generating-startup-failed">
           <p className="text-sm text-muted-foreground">
-            I couldn't get started just now. Nothing has been spent yet, so it's safe to try again.
+            This attempt could not continue. Your saved progress is intact. Choose Try again to continue.
           </p>
           <Button
-            onClick={() => startGeneration.mutate()}
+            onClick={() => startGeneration.mutate(true)}
             disabled={startGeneration.isPending}
             data-testid="button-retry-start"
           >
@@ -1113,10 +1113,10 @@ export default function DraftGenerating() {
       {hasFailed && (
         <div className="mt-10 max-w-md space-y-3 text-center" data-testid="draft-generating-failed">
           <p className="text-sm text-muted-foreground">
-            That draft didn't finish this time — nothing was lost. Whatever's already done is saved, and picking up won't redo it.
+            That draft didn’t finish. Completed sections are saved. Try again to continue from the last saved section.
           </p>
           <Button
-            onClick={() => startGeneration.mutate()}
+            onClick={() => startGeneration.mutate(true)}
             disabled={startGeneration.isPending}
             data-testid="button-retry-draft"
           >

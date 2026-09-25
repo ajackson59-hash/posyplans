@@ -47,7 +47,7 @@ jobs:
       # The exact protected deployment must still be checked through authenticated
       # Vercel access before merge.
       - name: Verify deployed Preview email sender
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/fix/launch-qa-find-my-event-label'
         env:
           EMAIL_CONFIG_URL: https://posy-git-fix-launch-qa-find-my-event-label-poseplans.vercel.app/api/email/config
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
@@ -103,3 +103,43 @@ jobs:
             process.exit(1);
           }
           NODE
+
+  postgres-integration:
+    name: PostgreSQL transaction verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16.15-bookworm
+        env:
+          POSTGRES_USER: posy_integration
+          POSTGRES_PASSWORD: local-only-test
+          POSTGRES_DB: posy_integration
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U posy_integration -d posy_integration"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      POSY_POSTGRES_INTEGRATION: '1'
+      POSY_POSTGRES_INTEGRATION_URL: postgres://posy_integration:local-only-test@127.0.0.1:5432/posy_integration
+      DATABASE_URL: postgres://posy_integration:local-only-test@127.0.0.1:5432/posy_integration
+      ANTHROPIC_API_KEY: forbidden-in-integration
+      OPENAI_API_KEY: forbidden-in-integration
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.19.0
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify PostgreSQL transactions and migration
+        run: npm run test:postgres

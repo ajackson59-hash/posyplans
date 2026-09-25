@@ -57,8 +57,9 @@ Rules:
 
 export async function generateThemeAndIdentityAi(
   input: ThemeAndIdentityInput,
+  options?: { maxRetries?: number },
 ): Promise<ThemeAndIdentityResult> {
-  const client = new Anthropic();
+  const client = new Anthropic(options);
   const userPrompt = [
     `Event name: "${input.eventName}"`,
     `Event type: "${input.eventType}"`,

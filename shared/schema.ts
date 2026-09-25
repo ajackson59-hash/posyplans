@@ -473,7 +473,7 @@ export type ThemeSuggestionCacheRow = typeof themeSuggestionCache.$inferSelect;
 export const GENERATION_KINDS = ["free_first_draft", "paid_additional_draft"] as const;
 export type GenerationKind = (typeof GENERATION_KINDS)[number];
 
-export const GENERATION_STATES = ["reserved", "consumed", "failed"] as const;
+export const GENERATION_STATES = ["reserved", "running", "consumed", "failed"] as const;
 export type GenerationState = (typeof GENERATION_STATES)[number];
 
 export const masterPlannerGenerations = pgTable("master_planner_generations", {

@@ -15,5 +15,6 @@ export default defineConfig({
     // Enables Testing Library's automatic between-test DOM cleanup.
     globals: true,
     include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
+    exclude: ['tests/**/*.integration.test.ts'],
   },
 });

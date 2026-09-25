@@ -33,6 +33,49 @@ function randomToken(len: number): string {
   return randomBytes(len).toString("base64url").slice(0, len);
 }
 
+export interface InitialGenerationReservation {
+  ok: boolean;
+  reason?: 'already_consumed' | 'interrupted';
+  generation?: MasterPlannerGeneration;
+  shouldStart: boolean;
+}
+
+export const INITIAL_GENERATION_CLAIM_TIMEOUT_MS = 10 * 60 * 1000;
+type StorageTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/** Coordinate ordinary plan edits with the atomic candidate-apply boundary. */
+async function withPlanEventLock<T>(eventId: number, work: (tx: StorageTransaction) => Promise<T>): Promise<T> {
+  return db.transaction(async tx => {
+    const [event] = await tx.select({ id: events.id }).from(events).where(eq(events.id, eventId)).for('update');
+    if (!event) throw new Error('Event not found.');
+    return work(tx);
+  });
+}
+
+/** Expiry is visible recovery only: a later explicit request must claim a new
+ * execution token before any provider work can resume. Parent event is locked. */
+async function expireInitialGenerationLocked(
+  tx: StorageTransaction, eventId: number, rows: MasterPlannerGeneration[], now: number,
+): Promise<boolean> {
+  // A historical duplicate must not turn an already completed plan back into
+  // a loading/failure screen when a status request examines old ledger rows.
+  if (rows.some(row => row.state === 'consumed')) return false;
+  const expired = rows.filter(row => row.state === 'running' &&
+    (!row.reservedAt || now - row.reservedAt >= INITIAL_GENERATION_CLAIM_TIMEOUT_MS));
+  if (!expired.length) return false;
+  const [event] = await tx.select({ draftStatus: events.draftStatus }).from(events).where(eq(events.id, eventId));
+  if (event?.draftStatus === 'ready') return false;
+  for (const row of expired) {
+    await tx.update(masterPlannerGenerations).set({
+      state: 'failed', failedAt: now, failedStage: 'interrupted',
+    }).where(and(eq(masterPlannerGenerations.id, row.id), eq(masterPlannerGenerations.eventId, eventId)));
+  }
+  if (!rows.some(row => row.state === 'running' && !expired.includes(row))) {
+    await tx.update(events).set({ draftStatus: 'failed_partial' }).where(eq(events.id, eventId));
+  }
+  return true;
+}
+
 export interface IStorage {
   createEvent(data: InsertEvent): Promise<Event>;
   getEventByOwnerToken(ownerToken: string): Promise<Event | undefined>;
@@ -82,6 +125,8 @@ export interface IStorage {
   setEventCapturedEmail(eventId: number, email: string): Promise<Event | undefined>;
   getEventsByEmail(email: string): Promise<Event[]>;
 
+  expireInitialGeneration(eventId: number): Promise<void>;
+  reserveInitialGeneration(eventId: number, allowResume?: boolean): Promise<InitialGenerationReservation>;
   getLatestGenerationForEvent(eventId: number): Promise<MasterPlannerGeneration | undefined>;
   getGeneration(id: number): Promise<MasterPlannerGeneration | undefined>;
   createGeneration(eventId: number, kind: GenerationKind, attemptNumber: number): Promise<MasterPlannerGeneration>;
@@ -172,20 +217,30 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createGuest(eventId: number, data: InsertGuest): Promise<Guest> {
-    const rows = await db.insert(guests).values({ ...data, eventId }).returning();
-    return rows[0];
+    return withPlanEventLock(eventId, async tx => {
+      const rows = await tx.insert(guests).values({ ...data, eventId }).returning();
+      return rows[0];
+    });
   }
 
   async updateGuest(eventId: number, guestId: number, data: Partial<Guest>): Promise<Guest | undefined> {
-    const existingRows = await db.select().from(guests).where(and(eq(guests.id, guestId), eq(guests.eventId, eventId)));
-    if (!existingRows[0]) return undefined;
-    const rows = await db.update(guests).set(data).where(eq(guests.id, guestId)).returning();
-    return rows[0];
+    return withPlanEventLock(eventId, async tx => {
+      const condition = and(eq(guests.id, guestId), eq(guests.eventId, eventId));
+      const { id: _id, eventId: _eventId, ...changes } = data;
+      if (Object.keys(changes).length === 0) {
+        const rows = await tx.select().from(guests).where(condition);
+        return rows[0];
+      }
+      const rows = await tx.update(guests).set(changes).where(condition).returning();
+      return rows[0];
+    });
   }
 
   async deleteGuest(eventId: number, guestId: number): Promise<boolean> {
-    const rows = await db.delete(guests).where(and(eq(guests.id, guestId), eq(guests.eventId, eventId))).returning();
-    return rows.length > 0;
+    return withPlanEventLock(eventId, async tx => {
+      const rows = await tx.delete(guests).where(and(eq(guests.id, guestId), eq(guests.eventId, eventId))).returning();
+      return rows.length > 0;
+    });
   }
 
   async getGuest(guestId: number): Promise<Guest | undefined> {
@@ -216,25 +271,37 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createBudgetItem(eventId: number, data: InsertBudgetItem): Promise<BudgetItem> {
-    const rows = await db.insert(budgetItems).values({ ...data, eventId }).returning();
-    return rows[0];
+    return withPlanEventLock(eventId, async tx => {
+      const rows = await tx.insert(budgetItems).values({ ...data, eventId }).returning();
+      return rows[0];
+    });
   }
 
   async createBudgetItemsBulk(eventId: number, items: InsertBudgetItem[]): Promise<BudgetItem[]> {
     if (items.length === 0) return [];
-    return await db.insert(budgetItems).values(items.map((data) => ({ ...data, eventId }))).returning();
+    return withPlanEventLock(eventId, async tx =>
+      tx.insert(budgetItems).values(items.map((data) => ({ ...data, eventId }))).returning());
   }
 
   async updateBudgetItem(eventId: number, itemId: number, data: Partial<BudgetItem>): Promise<BudgetItem | undefined> {
-    const existingRows = await db.select().from(budgetItems).where(and(eq(budgetItems.id, itemId), eq(budgetItems.eventId, eventId)));
-    if (!existingRows[0]) return undefined;
-    const rows = await db.update(budgetItems).set(data).where(eq(budgetItems.id, itemId)).returning();
-    return rows[0];
+    return withPlanEventLock(eventId, async tx => {
+      const condition = and(eq(budgetItems.id, itemId), eq(budgetItems.eventId, eventId));
+      // A row cannot move to another event outside that event's lock.
+      const { id: _id, eventId: _eventId, ...changes } = data;
+      if (Object.keys(changes).length === 0) {
+        const rows = await tx.select().from(budgetItems).where(condition);
+        return rows[0];
+      }
+      const rows = await tx.update(budgetItems).set(changes).where(condition).returning();
+      return rows[0];
+    });
   }
 
   async deleteBudgetItem(eventId: number, itemId: number): Promise<boolean> {
-    const rows = await db.delete(budgetItems).where(and(eq(budgetItems.id, itemId), eq(budgetItems.eventId, eventId))).returning();
-    return rows.length > 0;
+    return withPlanEventLock(eventId, async tx => {
+      const rows = await tx.delete(budgetItems).where(and(eq(budgetItems.id, itemId), eq(budgetItems.eventId, eventId))).returning();
+      return rows.length > 0;
+    });
   }
 
   async listMenuItems(eventId: number): Promise<MenuItem[]> {
@@ -242,25 +309,37 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createMenuItem(eventId: number, data: InsertMenuItem): Promise<MenuItem> {
-    const rows = await db.insert(menuItems).values({ ...data, eventId }).returning();
-    return rows[0];
+    return withPlanEventLock(eventId, async tx => {
+      const rows = await tx.insert(menuItems).values({ ...data, eventId }).returning();
+      return rows[0];
+    });
   }
 
   async createMenuItemsBulk(eventId: number, items: InsertMenuItem[]): Promise<MenuItem[]> {
     if (items.length === 0) return [];
-    return await db.insert(menuItems).values(items.map((data) => ({ ...data, eventId }))).returning();
+    return withPlanEventLock(eventId, async tx =>
+      tx.insert(menuItems).values(items.map((data) => ({ ...data, eventId }))).returning());
   }
 
   async updateMenuItem(eventId: number, itemId: number, data: Partial<MenuItem>): Promise<MenuItem | undefined> {
-    const existingRows = await db.select().from(menuItems).where(and(eq(menuItems.id, itemId), eq(menuItems.eventId, eventId)));
-    if (!existingRows[0]) return undefined;
-    const rows = await db.update(menuItems).set(data).where(eq(menuItems.id, itemId)).returning();
-    return rows[0];
+    return withPlanEventLock(eventId, async tx => {
+      const condition = and(eq(menuItems.id, itemId), eq(menuItems.eventId, eventId));
+      // A row cannot move to another event outside that event's lock.
+      const { id: _id, eventId: _eventId, ...changes } = data;
+      if (Object.keys(changes).length === 0) {
+        const rows = await tx.select().from(menuItems).where(condition);
+        return rows[0];
+      }
+      const rows = await tx.update(menuItems).set(changes).where(condition).returning();
+      return rows[0];
+    });
   }
 
   async deleteMenuItem(eventId: number, itemId: number): Promise<boolean> {
-    const rows = await db.delete(menuItems).where(and(eq(menuItems.id, itemId), eq(menuItems.eventId, eventId))).returning();
-    return rows.length > 0;
+    return withPlanEventLock(eventId, async tx => {
+      const rows = await tx.delete(menuItems).where(and(eq(menuItems.id, itemId), eq(menuItems.eventId, eventId))).returning();
+      return rows.length > 0;
+    });
   }
 
   async listShoppingListItems(eventId: number): Promise<ShoppingListItem[]> {
@@ -268,25 +347,37 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createShoppingListItem(eventId: number, data: InsertShoppingListItem): Promise<ShoppingListItem> {
-    const rows = await db.insert(shoppingListItems).values({ ...data, eventId }).returning();
-    return rows[0];
+    return withPlanEventLock(eventId, async tx => {
+      const rows = await tx.insert(shoppingListItems).values({ ...data, eventId }).returning();
+      return rows[0];
+    });
   }
 
   async createShoppingListItemsBulk(eventId: number, items: InsertShoppingListItem[]): Promise<ShoppingListItem[]> {
     if (items.length === 0) return [];
-    return await db.insert(shoppingListItems).values(items.map((data) => ({ ...data, eventId }))).returning();
+    return withPlanEventLock(eventId, async tx =>
+      tx.insert(shoppingListItems).values(items.map((data) => ({ ...data, eventId }))).returning());
   }
 
   async updateShoppingListItem(eventId: number, itemId: number, data: Partial<ShoppingListItem>): Promise<ShoppingListItem | undefined> {
-    const existingRows = await db.select().from(shoppingListItems).where(and(eq(shoppingListItems.id, itemId), eq(shoppingListItems.eventId, eventId)));
-    if (!existingRows[0]) return undefined;
-    const rows = await db.update(shoppingListItems).set(data).where(eq(shoppingListItems.id, itemId)).returning();
-    return rows[0];
+    return withPlanEventLock(eventId, async tx => {
+      const condition = and(eq(shoppingListItems.id, itemId), eq(shoppingListItems.eventId, eventId));
+      // A row cannot move to another event outside that event's lock.
+      const { id: _id, eventId: _eventId, ...changes } = data;
+      if (Object.keys(changes).length === 0) {
+        const rows = await tx.select().from(shoppingListItems).where(condition);
+        return rows[0];
+      }
+      const rows = await tx.update(shoppingListItems).set(changes).where(condition).returning();
+      return rows[0];
+    });
   }
 
   async deleteShoppingListItem(eventId: number, itemId: number): Promise<boolean> {
-    const rows = await db.delete(shoppingListItems).where(and(eq(shoppingListItems.id, itemId), eq(shoppingListItems.eventId, eventId))).returning();
-    return rows.length > 0;
+    return withPlanEventLock(eventId, async tx => {
+      const rows = await tx.delete(shoppingListItems).where(and(eq(shoppingListItems.id, itemId), eq(shoppingListItems.eventId, eventId))).returning();
+      return rows.length > 0;
+    });
   }
 
   async listTimelineItems(eventId: number): Promise<TimelineItem[]> {
@@ -294,25 +385,37 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTimelineItem(eventId: number, data: InsertTimelineItem): Promise<TimelineItem> {
-    const rows = await db.insert(timelineItems).values({ ...data, eventId }).returning();
-    return rows[0];
+    return withPlanEventLock(eventId, async tx => {
+      const rows = await tx.insert(timelineItems).values({ ...data, eventId }).returning();
+      return rows[0];
+    });
   }
 
   async createTimelineItemsBulk(eventId: number, items: InsertTimelineItem[]): Promise<TimelineItem[]> {
     if (items.length === 0) return [];
-    return await db.insert(timelineItems).values(items.map((data) => ({ ...data, eventId }))).returning();
+    return withPlanEventLock(eventId, async tx =>
+      tx.insert(timelineItems).values(items.map((data) => ({ ...data, eventId }))).returning());
   }
 
   async updateTimelineItem(eventId: number, itemId: number, data: Partial<TimelineItem>): Promise<TimelineItem | undefined> {
-    const existingRows = await db.select().from(timelineItems).where(and(eq(timelineItems.id, itemId), eq(timelineItems.eventId, eventId)));
-    if (!existingRows[0]) return undefined;
-    const rows = await db.update(timelineItems).set(data).where(eq(timelineItems.id, itemId)).returning();
-    return rows[0];
+    return withPlanEventLock(eventId, async tx => {
+      const condition = and(eq(timelineItems.id, itemId), eq(timelineItems.eventId, eventId));
+      // A row cannot move to another event outside that event's lock.
+      const { id: _id, eventId: _eventId, ...changes } = data;
+      if (Object.keys(changes).length === 0) {
+        const rows = await tx.select().from(timelineItems).where(condition);
+        return rows[0];
+      }
+      const rows = await tx.update(timelineItems).set(changes).where(condition).returning();
+      return rows[0];
+    });
   }
 
   async deleteTimelineItem(eventId: number, itemId: number): Promise<boolean> {
-    const rows = await db.delete(timelineItems).where(and(eq(timelineItems.id, itemId), eq(timelineItems.eventId, eventId))).returning();
-    return rows.length > 0;
+    return withPlanEventLock(eventId, async tx => {
+      const rows = await tx.delete(timelineItems).where(and(eq(timelineItems.id, itemId), eq(timelineItems.eventId, eventId))).returning();
+      return rows.length > 0;
+    });
   }
 
   async getThemeSuggestionCache(cacheKey: string): Promise<ThemeSuggestionCacheRow | undefined> {
@@ -369,6 +472,44 @@ export class DatabaseStorage implements IStorage {
       .where(eq(events.capturedEmail, normalized));
     // Most recent first
     return rows.sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+  }
+
+  async expireInitialGeneration(eventId: number): Promise<void> {
+    await withPlanEventLock(eventId, async tx => {
+      const rows = await tx.select().from(masterPlannerGenerations).where(eq(masterPlannerGenerations.eventId, eventId));
+      await expireInitialGenerationLocked(tx, eventId, rows, Date.now());
+    });
+  }
+
+  async reserveInitialGeneration(eventId: number, allowResume = false): Promise<InitialGenerationReservation> {
+    return withPlanEventLock(eventId, async tx => {
+      const rows = await tx.select().from(masterPlannerGenerations).where(eq(masterPlannerGenerations.eventId, eventId));
+      // A consumed attempt cannot be bypassed by an older interrupted row.
+      if (rows.some(row => row.state === 'consumed')) {
+        return { ok: false, reason: 'already_consumed', shouldStart: false };
+      }
+      const now = Date.now();
+      if (await expireInitialGenerationLocked(tx, eventId, rows, now)) {
+        return { ok: false, reason: 'interrupted', shouldStart: false };
+      }
+      const running = rows.find(row => row.state === 'running');
+      if (running) return { ok: true, generation: running, shouldStart: false };
+      const latest = rows.reduce<MasterPlannerGeneration | undefined>((prior, row) =>
+        !prior || row.attemptNumber > prior.attemptNumber ||
+        (row.attemptNumber === prior.attemptNumber && row.id > prior.id) ? row : prior, undefined);
+      if (latest) {
+        if (!allowResume) return { ok: false, reason: 'interrupted', shouldStart: false };
+        const [generation] = await tx.update(masterPlannerGenerations).set({
+          state: 'running', reservedAt: Math.max(now, (latest.reservedAt ?? 0) + 1), failedAt: null, failedStage: null,
+        }).where(and(eq(masterPlannerGenerations.id, latest.id), eq(masterPlannerGenerations.eventId, eventId))).returning();
+        return { ok: true, generation, shouldStart: true };
+      }
+      const [generation] = await tx.insert(masterPlannerGenerations).values({
+        eventId, kind: 'free_first_draft', attemptNumber: 1, state: 'running',
+        reservedAt: now, completedStages: '[]',
+      }).returning();
+      return { ok: true, generation, shouldStart: true };
+    });
   }
 
   async getLatestGenerationForEvent(eventId: number): Promise<MasterPlannerGeneration | undefined> {

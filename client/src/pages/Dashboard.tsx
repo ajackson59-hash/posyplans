@@ -63,6 +63,7 @@ import InviteDesignPicker from "@/components/InviteDesignPicker";
 import CustomerArtworkDesigner from "@/components/CustomerArtworkDesigner";
 import { useCustomerArtwork } from "@/hooks/useCustomerArtwork";
 import PlanningAlerts from "@/components/PlanningAlerts";
+import PlanRegenerationPanel from "@/components/PlanRegenerationPanel";
 import AiDraftedBadge from "@/components/AiDraftedBadge";
 import ReadinessScoreCard from "@/components/ReadinessScoreCard";
 import NextActions from "@/components/NextActions";
@@ -833,6 +834,8 @@ export default function Dashboard() {
             </div>
           )}
         </div>
+
+        {event.draftStatus === "ready" ? <PlanRegenerationPanel key={ownerToken} ownerToken={ownerToken} /> : null}
 
         {retainedReviewRequest && (
           <Card className="border-primary/30 bg-primary/[0.04]" data-testid="card-retained-artwork-review">

@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer } from 'node:http';
 import type { Server } from 'node:http';
 import { createHash } from "node:crypto";
+import { waitUntil } from '@vercel/functions';
 import { storage } from "./storage";
 import { eventArtworkUrl, ownerEventView, publicEventView, restoreEventArtworkReferences } from "./eventArtwork";
 import { checkoutPaymentSettled, CheckoutStateError, stripeMode } from "./checkoutState";
@@ -1799,8 +1800,17 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
       return res.status(402).json({ error: "This event needs Spark or Plus to generate a plan." });
     }
 
-    const reservation = await reserveOrResumeFreeDraft(event.id);
+    // A saved plan is replaced only through the explicit, reviewed Plus flow,
+    // including older events whose first-generation ledger may be absent.
+    if (event.draftStatus === 'ready') {
+      return res.status(409).json({ error: "This event's plan has already been generated." });
+    }
+
+    const reservation = await reserveOrResumeFreeDraft(event.id, req.body?.resumeInterrupted === true);
     if (!reservation.ok || !reservation.generation) {
+      if (reservation.reason === 'interrupted') return res.status(409).json({
+        code: 'generation_interrupted', error: 'The previous attempt stopped before finishing. Your saved progress is intact. Choose Try again to continue.',
+      });
       return res.status(409).json({ error: "This event's plan has already been generated." });
     }
 
@@ -1812,16 +1822,21 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
     // persisted onto the event/generation rows by the orchestrator itself
     // (draftStatus="failed_partial", generation.state="failed"), so this
     // catch only needs to stop an unhandled rejection from surfacing.
-    runMasterPlannerOrchestration(event.id, generationId).catch((err) => {
-      console.error(`Master Planner orchestration failed for event ${event.id}:`, err);
-    });
+    if (reservation.shouldStart) {
+      const job = runMasterPlannerOrchestration(event.id, generationId, undefined, reservation.generation.reservedAt!).catch((err) => {
+        console.error(`Master Planner orchestration failed for event ${event.id}:`, err);
+      });
+      try { waitUntil(job); } catch { void job; }
+    }
   });
 
   // Polled by the loading screen to render its narrated checklist and to
   // know when to navigate on to the dashboard.
   app.get("/api/events/owner/:ownerToken/master-planner/status", async (req, res) => {
-    const event = await storage.getEventByOwnerToken(req.params.ownerToken);
+    let event = await storage.getEventByOwnerToken(req.params.ownerToken);
     if (!event) return res.status(404).json({ error: "Event not found" });
+    await storage.expireInitialGeneration(event.id);
+    event = (await storage.getEventById(event.id))!;
     const generation = await storage.getLatestGenerationForEvent(event.id);
     res.json({
       draftStatus: event.draftStatus,

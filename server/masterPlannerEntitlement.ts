@@ -3,19 +3,17 @@
 // one free first draft, and tracks resumable progress through a crash or a
 // closed browser tab without ever double-spending that free draft.
 //
-// Kept deliberately simple for Phase 3 scope: this app has no login system
-// and no concurrent-request locking layer, so "atomic" here means "no
-// intervening async work between reading and writing the reservation row" —
-// sufficient for a single-host, single-request-at-a-time flow. A real
-// multi-tab race is out of scope, same as the rest of this codebase today.
+// Reservation and execution ownership are protected by a database event-row
+// lock. Reloads and simultaneous tabs observe the same running generation.
 
 import { storage } from "./storage";
 import type { MasterPlannerGeneration, GenerationKind, Event } from "@shared/schema";
 
 export interface ReservationResult {
   ok: boolean;
-  reason?: "already_consumed";
+  reason?: "already_consumed" | "interrupted";
   generation?: MasterPlannerGeneration;
+  shouldStart: boolean;
 }
 
 /** Reserves a fresh free-draft generation slot for this event, or resumes an
@@ -23,28 +21,8 @@ export interface ReservationResult {
  *  completed stage instead of starting over. Refuses if the free draft has
  *  already been fully consumed (Phase 5's paid-additional-draft gating is
  *  out of scope here). */
-export async function reserveOrResumeFreeDraft(eventId: number): Promise<ReservationResult> {
-  const existing = await storage.getLatestGenerationForEvent(eventId);
-
-  if (!existing) {
-    const generation = await storage.createGeneration(eventId, "free_first_draft", 1);
-    return { ok: true, generation };
-  }
-
-  if (existing.state === "consumed") {
-    return { ok: false, reason: "already_consumed" };
-  }
-
-  // "reserved" (interrupted mid-run) or "failed" (a prior attempt errored) —
-  // both resume from the same row, keeping whatever stages already
-  // succeeded so a retry never redoes free work.
-  const resumed = await storage.updateGeneration(existing.id, {
-    state: "reserved",
-    reservedAt: Date.now(),
-    failedAt: null,
-    failedStage: null,
-  });
-  return { ok: true, generation: resumed };
+export async function reserveOrResumeFreeDraft(eventId: number, allowResume = false): Promise<ReservationResult> {
+  return storage.reserveInitialGeneration(eventId, allowResume);
 }
 
 export async function markGenerationConsumed(generationId: number): Promise<void> {

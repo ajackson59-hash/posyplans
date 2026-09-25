@@ -62,6 +62,7 @@ export default function CustomerArtworkPreview({ ownerToken, artwork, refresh, p
         baseCandidateId: displayed.id, imageHash: displayed.imageHash, correction: correction.trim() } });
   };
   const pending = action.isPending || artwork.state === 'generating';
+  const requestFailed = artwork.state === 'failed' || artwork.state === 'interrupted';
   const selected = displayed?.id === artwork.selectedId;
   const canRevise = !!displayed && artwork.generationEnabled && artwork.requestsRemaining > 0 && !pending && loadedHash === displayed.imageHash;
   return <div ref={panel} className="space-y-5 p-5" data-testid="customer-artwork-preview">
@@ -90,8 +91,9 @@ export default function CustomerArtworkPreview({ ownerToken, artwork, refresh, p
       {paid ? <a className="text-primary underline" href={`/draft-generating/${ownerToken}`}>Create a preview from your saved request</a>
         : artwork.state === 'brief-changed' ? 'Your artwork details changed. Create a preview from the updated request below.' : 'Your complete request is saved. Enter your email below to create your preview.'}
     </p> : null}
-    {artwork.state === 'failed' || artwork.state === 'interrupted' ? <div role="alert" className="space-y-2 text-sm">
-      <p>We couldn’t complete the last artwork request. Your saved images are still available to keep. No automatic retry was made.</p>
+    {requestFailed ? <div role="alert" className="space-y-2 text-sm">
+      <p>{artwork.candidates.length ? 'We couldn’t complete the last artwork request. Your saved images are still available to keep.' : 'We couldn’t create your artwork. Your event details and request are saved.'} No automatic retry was made.</p>
+      <p>New artwork requests are paused. Contact us for help with this request.</p>
       <a className="text-primary underline" href={`mailto:hello@posyplans.com?subject=${encodeURIComponent(`Artwork help ${artwork.supportReference ?? ''}`)}`}>Get help with this request</a>
       <p className="text-xs text-muted-foreground">Reference: {artwork.supportReference}</p>
     </div> : null}
@@ -103,7 +105,7 @@ export default function CustomerArtworkPreview({ ownerToken, artwork, refresh, p
       <Button type="submit" variant="outline" className="w-full" disabled={!canRevise || correction.trim().length < 5}>Make this change</Button>
     </form> : null}
     {!artwork.generationEnabled && !artwork.supportReference ? <p role="status" className="text-sm">New artwork requests are temporarily unavailable. You can still keep a saved image.</p> : null}
-    <p className="text-sm text-muted-foreground">{artwork.requestsRemaining > 0 ? `${artwork.requestsRemaining} artwork ${artwork.requestsRemaining === 1 ? 'request' : 'requests'} remaining for this event.` : 'You’ve reached this event’s artwork limit. Keep a saved image or contact support.'}</p>
+    {!requestFailed ? <p className="text-sm text-muted-foreground">{artwork.requestsRemaining > 0 ? `${artwork.requestsRemaining} artwork ${artwork.requestsRemaining === 1 ? 'request' : 'requests'} remaining for this event.` : 'You’ve reached this event’s artwork limit. Keep a saved image or contact support.'}</p> : null}
     <details className="text-sm"><summary className="cursor-pointer font-medium">Your saved request</summary><p className="mt-2 whitespace-pre-wrap">{artwork.savedBrief}</p></details>
     {message ? <p role="status" className="text-sm">{message}</p> : null}
     <Button type="button" variant="ghost" size="sm" disabled={action.isPending} onClick={async () => {

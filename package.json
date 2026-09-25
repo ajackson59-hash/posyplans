@@ -11,6 +11,7 @@
     "start": "NODE_ENV=production node dist/index.cjs",
     "check": "tsc",
     "test": "vitest run",
+    "test:postgres": "node script/postgres-test-config.mjs && vitest run --config vitest.postgres.config.ts",
     "db:migration:new": "npx --yes supabase@2.114.0 migration new",
     "db:reset": "npx --yes supabase@2.114.0 db reset",
     "db:push:dry-run": "npx --yes supabase@2.114.0 db push --dry-run --skip-vault",
