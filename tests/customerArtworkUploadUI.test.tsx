@@ -10,6 +10,13 @@ afterEach(()=>{cleanup();vi.clearAllMocks();});
 const failed:CustomerArtworkView={version:2,briefHash:'a'.repeat(64),savedBrief:'Exact original scene request',generationEnabled:false,requestsRemaining:0,state:'failed',selectedId:null,selectedHash:null,appliedId:null,hasSavedPlan:false,canContinue:false,supportReference:'failure-reference',candidates:[],uploadAvailable:true,uploadsRemaining:3};
 const uploaded:CustomerArtworkView={...failed,version:3,uploadsRemaining:2,candidates:[{id:'upload-id',imageHash:'b'.repeat(64),assetUrl:'/private/upload.png',operation:'upload',correction:null}]};
 describe('artwork upload recovery controls',()=>{
+ it('explains a generation hold without inviting an unavailable creation or claiming unused quota is exhausted',()=>{
+  const client=new QueryClient();render(<QueryClientProvider client={client}><CustomerArtworkPreview ownerToken="synthetic-owner" artwork={{...failed,state:'empty',supportReference:null}} refresh={vi.fn()} /></QueryClientProvider>);
+  expect(screen.getByText('Your request is saved. Choose a ready-made design or upload artwork to continue.')).toBeTruthy();
+  expect(screen.queryByText(/Enter your email below to create your preview/)).toBeNull();
+  expect(screen.queryByText(/reached this event’s artwork limit/)).toBeNull();
+  expect(mocks.request).not.toHaveBeenCalled();client.clear();
+ });
  it('offers recovery without a nonexistent image, uploads once, and requires a loaded image plus explicit keep',async()=>{
   const client=new QueryClient({defaultOptions:{queries:{retry:false},mutations:{retry:false}}});
   mocks.read.mockResolvedValue('data:image/jpeg;base64,synthetic');mocks.request.mockResolvedValue(uploaded);

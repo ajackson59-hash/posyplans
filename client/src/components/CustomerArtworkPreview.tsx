@@ -81,7 +81,7 @@ export default function CustomerArtworkPreview({ ownerToken, artwork, refresh, p
   return <div ref={panel} className="space-y-5 p-5" data-testid="customer-artwork-preview">
     <div>
       <h2 className="font-serif text-xl font-semibold">Your invitation artwork</h2>
-      <p className="mt-1 text-sm text-muted-foreground">{displayed ? 'Review your artwork and keep the image you love.' : requestFailed ? 'Your request is saved. Choose a ready-made design or upload artwork to continue.' : 'Create a preview from your request, or use your own artwork.'}</p>
+      <p className="mt-1 text-sm text-muted-foreground">{displayed ? 'Review your artwork and keep the image you love.' : requestFailed || !artwork.generationEnabled ? 'Your request is saved. Choose a ready-made design or upload artwork to continue.' : 'Create a preview from your request, or use your own artwork.'}</p>
     </div>
     {displayed ? <div className="space-y-3">
       <img key={`${displayed.imageHash}:${imageRefresh}`} src={displayed.assetUrl} alt="Your invitation artwork draft" className="block w-full h-auto rounded-lg"
@@ -100,7 +100,7 @@ export default function CustomerArtworkPreview({ ownerToken, artwork, refresh, p
       {artwork.selectedId && !selected ? <p className="text-sm text-muted-foreground">Your previously kept image remains selected. Keep this version if you want to use it instead.</p> : null}
     </div> : null}
     {artwork.state === 'generating' ? <p role="status" className="flex items-center gap-2 text-sm"><Loader2 className="h-4 w-4 shrink-0 animate-spin" />Creating your artwork. You can return to this page; your request is saved.</p> : null}
-    {artwork.state === 'empty' || artwork.state === 'brief-changed' ? <p className="text-sm text-muted-foreground">
+    {artwork.generationEnabled && (artwork.state === 'empty' || artwork.state === 'brief-changed') ? <p className="text-sm text-muted-foreground">
       {paid ? <a className="text-primary underline" href={`/draft-generating/${ownerToken}`}>Create a preview from your saved request</a>
         : artwork.state === 'brief-changed' ? 'Your artwork details changed. Create a preview from the updated request below.' : 'Your complete request is saved. Enter your email below to create your preview.'}
     </p> : null}
@@ -142,7 +142,7 @@ export default function CustomerArtworkPreview({ ownerToken, artwork, refresh, p
       </div>
     </details> : null}
     {!artwork.generationEnabled && !artwork.supportReference ? <p role="status" className="text-sm">Image generation is temporarily unavailable. {artwork.uploadAvailable ? 'You can choose a ready-made design, upload artwork, or keep a saved image.' : 'You can still keep a saved image.'}</p> : null}
-    {!requestFailed ? <p className="text-sm text-muted-foreground">{artwork.requestsRemaining > 0 ? `${artwork.requestsRemaining} artwork ${artwork.requestsRemaining === 1 ? 'request' : 'requests'} remaining for this event.` : 'You’ve reached this event’s artwork limit. Keep a saved image or contact support.'}</p> : null}
+    {!requestFailed && artwork.generationEnabled ? <p className="text-sm text-muted-foreground">{artwork.requestsRemaining > 0 ? `${artwork.requestsRemaining} artwork ${artwork.requestsRemaining === 1 ? 'request' : 'requests'} remaining for this event.` : 'You’ve reached this event’s artwork limit. Keep a saved image or contact support.'}</p> : null}
     <details className="text-sm"><summary className="cursor-pointer font-medium">Your saved request</summary><p className="mt-2 whitespace-pre-wrap">{artwork.savedBrief}</p></details>
     {message ? <p role="status" className="text-sm">{message}</p> : null}
     <Button type="button" variant="ghost" size="sm" disabled={action.isPending} onClick={async () => {
