@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams, useLocation } from "wouter";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequestJson } from "@/lib/queryClient";
+import HumanArtworkReviewStatus from "@/components/HumanArtworkReviewStatus";
+import CustomerArtworkPreview from "@/components/CustomerArtworkPreview";
+import PlusMembershipLink from "@/components/PlusMembershipLink";
+import type { CustomerArtworkView } from "@shared/customerArtwork";
 import { getCheckoutHandoffPhase } from "@/lib/checkoutHandoff";
 import { touchRecentEvent } from "@/lib/eventRecovery";
 import { Wordmark } from "@/components/Logo";
@@ -12,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CheckCircle2, Loader2, CircleDashed, Check, Play } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import AIDemoShowcase from "@/components/AIDemoShowcase";
+import { previewFailureMessage, type PreviewFailureReason } from "@shared/previewFailure";
 
 // Loading screen shown right after intake finishes, while the AI Master
 // Planner drafts the whole first pass (theme, budget, menu, shopping,
@@ -34,12 +39,25 @@ interface EntitlementSummary {
   planTier: string;
   sparkUnlocked: boolean;
   canGenerate: boolean;
+  requiresExplicitStart: boolean;
 }
 
-type PrePaymentPreviewKind = "direction-card" | "reference-board" | "approved-image" | "none";
+type PrePaymentPreviewKind = "direction-card" | "reference-board" | "approved-image" | "customer-artwork" | "none";
 type PrePaymentPreviewGenerationState = "idle" | "generating" | "ready" | "fallback";
 
+interface PreviewDirectionCard {
+  eventName: string;
+  eyebrow: string;
+  headline: string;
+  supportingCopy: string;
+  cues: string[];
+}
+
 interface PrePaymentPreviewReadiness {
+  customerArtwork?: CustomerArtworkView;
+  humanReview?: boolean;
+  reviewState?: import('@/components/HumanArtworkReviewStatus').HumanReviewState;
+  checkoutAllowed?: boolean;
   ready: boolean;
   generationState: PrePaymentPreviewGenerationState;
   pollAfterMs: number | null;
@@ -47,6 +65,9 @@ interface PrePaymentPreviewReadiness {
   namedReference: { id: string; label: string } | null;
   automaticReferenceResolutionEnabled?: boolean;
   automaticReferenceAttempted?: boolean;
+  directionCard?: PreviewDirectionCard;
+  failureReason?: PreviewFailureReason | null;
+  savedBrief?: string;
 }
 
 type PrePaymentPreviewStart = PrePaymentPreviewReadiness;
@@ -101,20 +122,21 @@ const CHECKLIST: ChecklistLine[] = [
 const STAGE_ORDER = ["theme", "budget_menu", "shopping_timeline", "invites", "checks", "done"];
 
 export default function DraftGenerating() {
+  const queryClient = useQueryClient();
   const { ownerToken } = useParams<{ ownerToken: string }>();
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const startedGenerationRef = useRef(false);
   const confirmedRef = useRef(false);
   const previewTriggeredRef = useRef(false);
+  const previewSubmittedAtRef = useRef<number | null>(null);
+  const [previewDecodedMs, setPreviewDecodedMs] = useState<number | null>(null);
   const previewCardRef = useRef<HTMLDivElement>(null);
   const [email, setEmail] = useState("");
-  const [plusEmail, setPlusEmail] = useState("");
   // The paywall shows Spark and Plus side by side rather than burying Plus in a
   // secondary link — repeat hosts were only being offered the per-event unlock.
   const [selectedPlan, setSelectedPlan] = useState<"spark" | "plus">("spark");
   const [plusInterval, setPlusInterval] = useState<"annual" | "monthly">("annual");
-  const [showPlusEmail, setShowPlusEmail] = useState(false);
   const [demoOpen, setDemoOpen] = useState(false);
   const [previewImageLoaded, setPreviewImageLoaded] = useState(false);
   const [previewImageFailed, setPreviewImageFailed] = useState(false);
@@ -189,6 +211,8 @@ export default function DraftGenerating() {
     ),
     enabled: !!ownerToken,
     retry: false,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     refetchInterval: (query) => {
       const current = query.state.data as PrePaymentPreviewReadiness | undefined;
       return current?.generationState === "generating"
@@ -224,8 +248,16 @@ export default function DraftGenerating() {
   );
 
   const startGeneration = useMutation({
-    mutationFn: () =>
-      apiRequestJson("POST", `/api/events/owner/${ownerToken}/master-planner/generate`, {}),
+    mutationFn: ({ resumeInterrupted = false, confirmMembershipStart }: { resumeInterrupted?: boolean; confirmMembershipStart?: true } = {}) =>
+      apiRequestJson("POST", `/api/events/owner/${ownerToken}/master-planner/generate`, {
+        resumeInterrupted,
+        ...(confirmMembershipStart ? { confirmMembershipStart } : {}),
+      }),
+    onSuccess: () => {
+      // A verified member may already have read `none` or `failed_partial`.
+      // Refresh that cached status so polling begins after the explicit start.
+      void queryClient.invalidateQueries({ queryKey: ["master-planner-status", ownerToken] });
+    },
   });
 
   // Start a Spark checkout for this specific event, then hand off to Stripe.
@@ -262,36 +294,9 @@ export default function DraftGenerating() {
     },
   });
 
-  // Existing Plus members reach this event with no captured email on it, so
-  // the gate can't see their plan and shows the paywall. Letting them supply
-  // the email on their Plus plan stamps it onto the event; the refetched
-  // entitlement then flips canGenerate true and the auto-start effect fires.
-  const captureEmail = useMutation({
-    mutationFn: () => {
-      const eventId = entitlement.data?.eventId;
-      if (!eventId) throw new Error("We couldn't load this event just yet — please try again.");
-      return apiRequestJson<EntitlementSummary>("POST", `/api/events/${eventId}/email-capture`, {
-        email: plusEmail,
-        ownerToken,
-      });
-    },
-    onSuccess: (summary) => {
-      entitlement.refetch();
-      if (!summary.canGenerate) {
-        toast({
-          title: "We couldn't find a Plus plan for that email",
-          description: "Double-check the address, or unlock just this event with Spark below.",
-        });
-      }
-    },
-    onError: (err: Error) => {
-      toast({ title: "Couldn't check that email", description: err.message, variant: "destructive" });
-    },
-  });
-
   // Kicks off the real, capped, low-resolution invitation preview without
   // persisting this provisional field value as the event's recovery identity.
-  // Checkout submission and the explicit Plus lookup capture the email later;
+  // Checkout submission captures the email later;
   // Stripe's verified address remains authoritative after payment.
   const startPrePaymentPreview = useMutation({
     mutationFn: (candidateEmail: string) =>
@@ -299,6 +304,7 @@ export default function DraftGenerating() {
         email: candidateEmail,
       }),
     onSuccess: (result) => {
+      queryClient.setQueryData(["prepayment-preview-readiness", ownerToken], result);
       if (result.ready) {
         setBackgroundPreviewStarted(false);
         setPreviewImageLoaded(false);
@@ -313,6 +319,8 @@ export default function DraftGenerating() {
     onError: () => {
       setBackgroundPreviewStarted(false);
       previewTriggeredRef.current = false;
+      // A lost response must be resolved by reading the durable request.
+      void previewReadiness.refetch();
     },
   });
 
@@ -320,6 +328,8 @@ export default function DraftGenerating() {
     const candidateEmail = email.trim();
     if (!EMAIL_LOOKS_VALID.test(candidateEmail) || previewTriggeredRef.current) return;
     previewTriggeredRef.current = true;
+    previewSubmittedAtRef.current = performance.now();
+    setPreviewDecodedMs(null);
     setPreviewImageLoaded(false);
     setPreviewImageFailed(false);
     bringPreviewIntoView("smooth");
@@ -327,14 +337,32 @@ export default function DraftGenerating() {
   }, [bringPreviewIntoView, email, startPrePaymentPreview]);
 
   const readinessKind = previewReadiness.data?.kind ?? "none";
+  const humanReview = previewReadiness.data?.humanReview === true;
+  const humanReviewPending = humanReview && previewReadiness.data?.checkoutAllowed !== true;
+  const humanReviewState = previewReadiness.data?.reviewState ?? 'not-requested';
+  const customerArtwork = previewReadiness.data?.customerArtwork;
+  const customerArtworkPending = !!customerArtwork && !customerArtwork.canContinue;
+  const customerCanCreate = !!customerArtwork && ['empty', 'brief-changed'].includes(customerArtwork.state)
+    && customerArtwork.generationEnabled && customerArtwork.requestsRemaining > 0;
   const readinessState = previewReadiness.data?.generationState ?? "idle";
+  const previewGenerationFailed = readinessState === "fallback";
+  const previewIsDirectionOnly = readinessKind === "direction-card" || readinessKind === "reference-board";
+  const directionCard =
+    startPrePaymentPreview.data?.directionCard
+    ?? previewReadiness.data?.directionCard
+    ?? null;
+  const previewRequestAccepted =
+    startPrePaymentPreview.isSuccess
+    || backgroundPreviewStarted
+    || readinessState === "generating"
+    || readinessKind !== "none";
   const previewInProgress =
     startPrePaymentPreview.isPending
     || backgroundPreviewStarted
     || readinessState === "generating";
-  const previewReady =
+  const previewReady = !humanReviewPending && (
     persistedPreviewReady
-    || (readinessKind !== "none" && readinessState !== "generating");
+    || (readinessKind !== "none" && readinessState !== "generating"));
 
   useEffect(() => {
     if (readinessState === "generating") {
@@ -375,7 +403,10 @@ export default function DraftGenerating() {
   // silently above the fold.
   useEffect(() => {
     const restorePreview = () => {
-      if (document.visibilityState !== "visible") return;
+      if (document.visibilityState !== "visible" || !ownerToken) return;
+      // iOS bfcache/app suspension can outlive polling. Refresh status only;
+      // never repeat the generation POST or incur a new image charge.
+      void previewReadiness.refetch();
       if (previewInProgress || previewReady || previewImageLoaded) {
         bringPreviewIntoView("auto");
       }
@@ -386,31 +417,38 @@ export default function DraftGenerating() {
       document.removeEventListener("visibilitychange", restorePreview);
       window.removeEventListener("pageshow", restorePreview);
     };
-  }, [bringPreviewIntoView, previewImageLoaded, previewInProgress, previewReady]);
+  }, [bringPreviewIntoView, ownerToken, previewReadiness.refetch, previewImageLoaded, previewInProgress, previewReady]);
 
-  const previewIsVisible = previewReady && previewImageLoaded;
-  const previewCouldNotBeShown = startPrePaymentPreview.isError || (previewReady && previewImageFailed);
-  const previewAssetLoading = previewReady && !previewImageLoaded && !previewImageFailed;
+  const previewIsVisible = previewReady && previewImageLoaded && !previewGenerationFailed;
+  const previewCouldNotBeShown = previewGenerationFailed || startPrePaymentPreview.isError || (previewReady && previewImageFailed);
+  const previewAssetLoading = previewReady && !previewGenerationFailed && !previewImageLoaded && !previewImageFailed;
   const checkoutPending = startSparkCheckout.isPending || startPlusCheckout.isPending;
 
+  const continueCheckoutLabel =
+    selectedPlan === "spark"
+      ? "Continue to checkout — $9.99"
+      : `Continue to Plus — ${plusInterval === "annual" ? "$99/yr" : "$11.99/mo"}`;
   let paywallCtaLabel = "Show me my personalized first look";
   if (checkoutPending) {
     paywallCtaLabel = "Starting checkout…";
-  } else if (previewInProgress) {
+  } else if (startPrePaymentPreview.isPending) {
     paywallCtaLabel = "Creating your personalized first look…";
-  } else if (previewAssetLoading) {
-    paywallCtaLabel = "Revealing your personalized first look…";
-  } else if (previewCouldNotBeShown) {
-    paywallCtaLabel =
-      selectedPlan === "spark"
-        ? "Continue to checkout — $9.99"
-        : `Continue to Plus — ${plusInterval === "annual" ? "$99/yr" : "$11.99/mo"}`;
+  } else if (previewInProgress || previewAssetLoading || previewCouldNotBeShown) {
+    paywallCtaLabel = continueCheckoutLabel;
   } else if (previewIsVisible) {
     paywallCtaLabel =
       selectedPlan === "spark"
         ? "Unlock this event — $9.99"
         : `Subscribe to Plus — ${plusInterval === "annual" ? "$99/yr" : "$11.99/mo"}`;
   }
+  if (humanReviewPending) paywallCtaLabel = startPrePaymentPreview.isPending
+    ? 'Submitting your artwork request…'
+    : humanReviewState === 'not-requested' ? 'Submit my artwork for review' : 'Awaiting artwork approval';
+  if (customerArtwork) paywallCtaLabel = checkoutPending ? 'Starting checkout…'
+    : startPrePaymentPreview.isPending || customerArtwork.state === 'generating' ? 'Creating your artwork…'
+    : customerArtwork.canContinue ? continueCheckoutLabel
+    : customerCanCreate ? 'Create my artwork preview' : customerArtwork.candidates.length ? 'Keep an image above to continue'
+    : customerArtwork.uploadAvailable ? 'Choose artwork above to continue' : 'Artwork needs attention';
 
   // Only auto-fire generation once we know this event is allowed to draft
   // (Spark unlocked or Plus). Never before entitlement resolves, and never
@@ -419,21 +457,25 @@ export default function DraftGenerating() {
     if (startedGenerationRef.current || !ownerToken) return;
     if (checkoutHandoffPhase === "confirming" || checkoutHandoffPhase === "failed") return;
     if (!entitlement.data?.canGenerate) return;
+    if (entitlement.data.requiresExplicitStart) return;
+    if (!previewReadiness.isSuccess || humanReviewPending || customerArtworkPending) return;
     startedGenerationRef.current = true;
-    startGeneration.mutate();
+    if (customerArtwork?.hasSavedPlan) { navigate(`/dashboard/${ownerToken}`); return; }
+    startGeneration.mutate({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ownerToken, entitlement.data?.canGenerate, checkoutHandoffPhase]);
+  }, [ownerToken, entitlement.data?.canGenerate, entitlement.data?.requiresExplicitStart, checkoutHandoffPhase, previewReadiness.isSuccess, humanReviewPending, customerArtworkPending, customerArtwork?.hasSavedPlan]);
 
-  const { data: status } = useQuery<MasterPlannerStatus>({
+  const plannerStatus = useQuery<MasterPlannerStatus>({
     queryKey: ["master-planner-status", ownerToken],
     queryFn: () => apiRequestJson<MasterPlannerStatus>("GET", `/api/events/owner/${ownerToken}/master-planner/status`),
-    enabled: !!ownerToken && startGeneration.isSuccess,
+    enabled: !!ownerToken && (startGeneration.isSuccess || entitlement.data?.requiresExplicitStart === true),
     refetchInterval: (query) => {
       const current = query.state.data as MasterPlannerStatus | undefined;
-      if (current?.draftStatus === "ready" || current?.draftStatus === "failed_partial") return false;
+      if (current?.draftStatus === "ready" || current?.draftStatus === "failed_partial" || current?.draftStatus === "none") return false;
       return 2000;
     },
   });
+  const status = plannerStatus.data;
 
   useEffect(() => {
     if (status?.draftStatus === "ready" && ownerToken) {
@@ -503,6 +545,56 @@ export default function DraftGenerating() {
     );
   }
 
+  if (customerArtworkPending && customerArtwork && ownerToken && entitlement.data?.canGenerate) {
+    return <div className="min-h-screen bg-background px-6 py-16"><div className="mx-auto max-w-md space-y-5">
+      <Wordmark />
+      <CustomerArtworkPreview ownerToken={ownerToken} artwork={customerArtwork} refresh={() => previewReadiness.refetch({ throwOnError: true })} />
+      <p className="text-sm text-muted-foreground">Your access is saved. Keep your artwork to continue building your plan.</p>
+      {customerCanCreate ? <form className="space-y-3" onSubmit={e => { e.preventDefault(); requestPersonalizedPreview(); }}>
+        <Label htmlFor="customerPreviewEmail">Email</Label><Input id="customerPreviewEmail" type="email" required value={email} onChange={e => setEmail(e.target.value)} />
+        <Button type="submit" disabled={startPrePaymentPreview.isPending}>Create my artwork preview</Button>
+      </form> : null}
+      {startPrePaymentPreview.isError ? <p role="alert">We couldn't confirm the request. Refresh the saved status before trying again.</p> : null}
+    </div></div>;
+  }
+
+  if (humanReviewPending && entitlement.data?.canGenerate) {
+    return <div className="min-h-screen bg-background px-6 py-16">
+      <div className="mx-auto max-w-md space-y-5">
+        <Wordmark />
+        <HumanArtworkReviewStatus state={humanReviewState} brief={previewReadiness.data?.savedBrief} />
+        <p className="text-sm text-muted-foreground">Your existing access is saved. Planning can continue after artwork approval.</p>
+        {humanReviewState === 'not-requested' ? <form className="space-y-3" onSubmit={e => { e.preventDefault(); requestPersonalizedPreview(); }}>
+          <Label htmlFor="reviewEmail">Email</Label><Input id="reviewEmail" type="email" required value={email} onChange={e => setEmail(e.target.value)} />
+          <Button type="submit" disabled={startPrePaymentPreview.isPending}>Submit my artwork for review</Button>
+        </form> : null}
+        {startPrePaymentPreview.isError ? <p role="alert">We couldn't save the request. Please try again.</p> : null}
+      </div>
+    </div>;
+  }
+
+  if (entitlement.data?.canGenerate && entitlement.data.requiresExplicitStart && !startGeneration.isSuccess && !startGeneration.isError && !hasFailed && status?.draftStatus !== "generating" && status?.draftStatus !== "ready") {
+    return <div className="min-h-screen bg-background px-6 py-16">
+      <div className="mx-auto max-w-md space-y-5 text-center" data-testid="plus-ready-to-build">
+        <Wordmark />
+        <h1 className="font-serif text-2xl font-semibold text-foreground">Your Plus access is ready</h1>
+        <p className="text-sm text-muted-foreground">Your event details are saved. Choose when you'd like Posy to build your first plan.</p>
+        {!previewReadiness.isSuccess || !plannerStatus.isSuccess ? <p role="status" className="text-sm text-muted-foreground">Checking your saved progress before starting…</p> : null}
+        {plannerStatus.isError ? <Button variant="outline" onClick={() => { void plannerStatus.refetch(); }}>Check saved progress</Button> : null}
+        <Button
+          type="button"
+          data-testid="button-build-plus-plan"
+          disabled={startGeneration.isPending || !previewReadiness.isSuccess || !plannerStatus.isSuccess || status?.draftStatus !== "none" || humanReviewPending || customerArtworkPending}
+          onClick={() => {
+            if (startGeneration.isPending || !previewReadiness.isSuccess || !plannerStatus.isSuccess || status?.draftStatus !== "none" || humanReviewPending || customerArtworkPending) return;
+            startedGenerationRef.current = true;
+            startGeneration.mutate({ confirmMembershipStart: true });
+          }}
+        >{startGeneration.isPending ? "Starting your plan…" : "Build my plan"}</Button>
+      </div>
+    </div>;
+  }
+
   if (showPaywall) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 py-16">
@@ -516,9 +608,11 @@ export default function DraftGenerating() {
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
               Choose how you’d like Posy to build your complete first draft: pay once for this
-              event, or go Plus for every event you host.
+              event, or choose Plus for more planning options and revisions.
             </p>
           </div>
+
+          {ownerToken ? <PlusMembershipLink key={ownerToken} ownerToken={ownerToken} onLinked={() => { void entitlement.refetch(); }} /> : null}
 
           {/* See-how-it-works button — opens demo in a dialog so users stay on the paywall */}
           <div className="text-center">
@@ -533,16 +627,31 @@ export default function DraftGenerating() {
             </button>
           </div>
 
-          {/* Real, capped, low-resolution invitation preview (B2a). The server
-              destroys production-quality detail before these bytes reach the
-              browser, so the composition can remain visible and useful here. */}
+          {/* The private asset route serves the transform tied to this image's
+              quality approval. Keep its native aspect ratio and source detail. */}
           <div
             ref={previewCardRef}
             className="mx-auto w-full max-w-sm overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
             data-testid="prepayment-preview-card"
             aria-live="polite"
           >
-            {previewReady && !previewImageFailed ? (
+            {customerArtwork && ownerToken ? (
+              <CustomerArtworkPreview ownerToken={ownerToken} artwork={customerArtwork} refresh={() => previewReadiness.refetch({ throwOnError: true })} />
+            ) : humanReviewPending ? (
+              <HumanArtworkReviewStatus state={humanReviewState} brief={previewReadiness.data?.savedBrief} />
+            ) : previewGenerationFailed ? (
+              <div className="px-6 py-6 text-left" role="status" data-testid="prepayment-preview-failure">
+                <p className="font-semibold text-foreground">Artwork preview unavailable</p>
+                <p className="mt-2 text-sm text-muted-foreground">{previewFailureMessage(previewReadiness.data?.failureReason)}</p>
+                {previewReadiness.data?.savedBrief && (
+                  <details className="mt-4 text-sm">
+                    <summary className="cursor-pointer font-medium text-primary">View your saved brief</summary>
+                    <p className="mt-2 whitespace-pre-wrap text-muted-foreground">{previewReadiness.data.savedBrief}</p>
+                  </details>
+                )}
+                <p className="mt-4 text-xs text-muted-foreground">Purchasing a plan does not guarantee this artwork can be generated.</p>
+              </div>
+            ) : previewReady && !previewImageFailed ? (
               // The generated illustration's aspect ratio depends on the AI-chosen
               // concept's layoutStyle (currently always full-bleed => native 9:16
               // portrait, but this must stay correct even if that changes). A fixed
@@ -555,10 +664,22 @@ export default function DraftGenerating() {
               <div className="relative min-h-[240px]">
                 <img
                   src={previewAssetUrl}
-                  alt="A personalized first look built from your event direction"
+                  alt={previewIsDirectionOnly ? "Your personalized event direction" : "Your quality-approved personalized artwork"}
                   className="block w-full h-auto"
                   data-testid="img-prepayment-preview"
-                  onLoad={() => setPreviewImageLoaded(true)}
+                  data-preview-kind={readinessKind}
+                  data-submission-to-decoded-ms={previewDecodedMs ?? undefined}
+                  onLoad={async (event) => {
+                    const image = event.currentTarget;
+                    setPreviewImageLoaded(true);
+                    if (typeof image.decode !== "function") return;
+                    try {
+                      await image.decode();
+                      if (previewSubmittedAtRef.current !== null) {
+                        setPreviewDecodedMs(performance.now() - previewSubmittedAtRef.current);
+                      }
+                    } catch { setPreviewImageFailed(true); }
+                  }}
                   onError={() => setPreviewImageFailed(true)}
                 />
                 {!previewImageLoaded && (
@@ -567,27 +688,48 @@ export default function DraftGenerating() {
                     Revealing your personalized first look…
                   </div>
                 )}
-                <span className="absolute right-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground shadow-sm">
-                  Posy first look
-                </span>
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent px-5 pb-4 pt-16 text-white">
-                  <p className="font-serif text-lg font-semibold">A first look, made from your details</p>
-                  <p className="mt-1 text-xs text-white/85">Unlock your complete plan and full invitation designs.</p>
-                </div>
               </div>
             ) : previewInProgress ? (
-              <div className="flex aspect-[9/16] items-center justify-center gap-3 px-6 text-center text-sm text-muted-foreground">
-                <Loader2 className="h-5 w-5 shrink-0 animate-spin" />
-                <div>
-                  <p className="font-medium text-foreground">Creating your personalized first look…</p>
-                  <p className="mt-1 text-xs leading-relaxed">
-                    Posy is finding the right visual references and reviewing the artwork privately. You can leave this tab and return—this will keep working.
-                  </p>
+              <div className="min-h-[240px] px-6 py-6 text-left" role="status" aria-live="polite" data-testid="prepayment-preview-progress-proof">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-primary">
+                  <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                  Creating your personalized first look…
                 </div>
+                {directionCard ? (
+                  <div className="mt-5 space-y-4">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        {directionCard.eyebrow || "DIRECTION CAPTURED"}
+                      </p>
+                      <p className="mt-2 font-serif text-2xl font-semibold leading-tight text-foreground">
+                        {directionCard.headline || directionCard.eventName}
+                      </p>
+                      {directionCard.eventName && directionCard.eventName !== directionCard.headline && (
+                        <p className="mt-1 text-sm text-muted-foreground">{directionCard.eventName}</p>
+                      )}
+                    </div>
+                    {directionCard.cues?.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {directionCard.cues.slice(0, 4).map((cue) => (
+                          <span key={cue} className="rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-medium text-foreground">
+                            {cue}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      Posy is reviewing your artwork privately. This can take several minutes. If no image meets the quality bar, we’ll keep your event direction here. You can continue to checkout while it runs.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
+                    Posy is reviewing your event details and artwork privately. This can take several minutes. If no image meets the quality bar, we’ll keep your event direction here. You can continue to checkout while it runs.
+                  </p>
+                )}
               </div>
             ) : previewCouldNotBeShown ? (
               <div className="flex aspect-[9/16] items-center justify-center px-6 text-center text-sm text-muted-foreground">
-                Posy couldn't complete the first look this time. You can still continue—your full invitation is included once unlocked.
+                Posy couldn't complete the first look this time. Your event details are saved. Purchasing a plan does not guarantee this artwork can be generated.
               </div>
             ) : (
               <div className="flex aspect-[9/16] flex-col items-center justify-center gap-2 px-6 text-center text-sm text-muted-foreground">
@@ -746,7 +888,7 @@ export default function DraftGenerating() {
 
               <ul className="mt-2.5 space-y-1.5">
                 {[
-                  "Unlimited plans, every event",
+                  "Full planning and revision tools",
                   "Unlimited plan regenerations",
                   "Alternate menu, timeline & invite drafts",
                   "Priority AI generation queue",
@@ -766,11 +908,23 @@ export default function DraftGenerating() {
               className="mx-auto max-w-sm space-y-3"
               onSubmit={(e) => {
                 e.preventDefault();
+                if (!previewReadiness.isSuccess) return;
+                if (customerArtwork) {
+                  if (customerCanCreate) { requestPersonalizedPreview(); return; }
+                  if (!customerArtwork.canContinue) return;
+                  if (selectedPlan === "spark") startSparkCheckout.mutate();
+                  else startPlusCheckout.mutate();
+                  return;
+                }
+                if (humanReviewPending) {
+                  if (humanReviewState === 'not-requested') requestPersonalizedPreview();
+                  return;
+                }
                 // The first submit is intentionally the preview reveal. The
                 // checkout action only becomes available after real personal
                 // value is visible. If the optional preview provider fails,
                 // never block a host who is ready to buy.
-                if (!previewIsVisible && !previewCouldNotBeShown) {
+                if (!previewRequestAccepted && !previewIsVisible && !previewCouldNotBeShown) {
                   requestPersonalizedPreview();
                   return;
                 }
@@ -788,11 +942,6 @@ export default function DraftGenerating() {
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  onBlur={() => {
-                    // Generate early without turning a provisional field
-                    // value into the event's permanent recovery identity.
-                    requestPersonalizedPreview();
-                  }}
                 />
                 <p className="mt-1.5 text-xs text-muted-foreground">
                   When you continue to checkout, Posy will also email your private return link.
@@ -806,25 +955,24 @@ export default function DraftGenerating() {
                   data-testid="button-view-personalized-preview"
                 >
                   <CheckCircle2 className="h-3.5 w-3.5" />
-                  Your first look is ready — view it above
+                  {previewIsDirectionOnly ? "Your event direction is ready — view it above" : "Your artwork is ready — view it above"}
                 </button>
               )}
               <Button
                 type="submit"
                 className="w-full"
                 data-testid="button-unlock-spark"
-                disabled={
-                  previewInProgress ||
-                  previewAssetLoading ||
-                  checkoutPending
-                }
+                data-direct-checkout-allowed={previewReadiness.isSuccess && !humanReview && !customerArtwork ? "true" : "false"}
+                disabled={!previewReadiness.isSuccess || startPrePaymentPreview.isPending || checkoutPending || (humanReviewPending && humanReviewState !== 'not-requested') || (customerArtworkPending && !customerCanCreate)}
               >
                 {paywallCtaLabel}
               </Button>
+              {humanReview && startPrePaymentPreview.isError ? <p role="alert" className="text-sm text-destructive">We couldn't save your artwork request. Please try again.</p> : null}
+              {customerArtwork && startPrePaymentPreview.isError ? <p role="alert" className="text-sm text-destructive">We couldn't confirm the request. Refresh the saved status before trying again.</p> : null}
               <p className="text-center text-xs text-muted-foreground">
                 {selectedPlan === "spark"
                   ? "One-time payment. No subscription, no auto-renew."
-                  : "Cancel anytime. Unlocks this event and every event after."}
+                  : "Cancel anytime. Includes full plan revisions for this event."}
               </p>
             </form>
           ) : (
@@ -832,50 +980,6 @@ export default function DraftGenerating() {
               Checkout is launching soon — please check back shortly.
             </p>
           )}
-
-          {/* Existing Plus members — collapsed so it doesn't compete with the choice above */}
-          <div className="mx-auto max-w-sm text-center" data-testid="already-plus-panel">
-            {!showPlusEmail ? (
-              <button
-                type="button"
-                onClick={() => setShowPlusEmail(true)}
-                data-testid="button-show-plus-email"
-                className="text-xs font-medium text-muted-foreground underline underline-offset-2 hover:text-foreground"
-              >
-                Already on Plus? Unlock with your Plus email
-              </button>
-            ) : (
-              <form
-                className="space-y-2 rounded-lg border border-border p-4 text-left"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  captureEmail.mutate();
-                }}
-              >
-                <Label htmlFor="plusEmail" className="text-xs">
-                  Email on your Plus plan
-                </Label>
-                <Input
-                  id="plusEmail"
-                  type="email"
-                  required
-                  data-testid="input-plus-email"
-                  placeholder="you@example.com"
-                  value={plusEmail}
-                  onChange={(e) => setPlusEmail(e.target.value)}
-                />
-                <Button
-                  type="submit"
-                  variant="outline"
-                  className="w-full"
-                  data-testid="button-use-plus-email"
-                  disabled={captureEmail.isPending}
-                >
-                  {captureEmail.isPending ? "Checking…" : "Use my Plus email"}
-                </Button>
-              </form>
-            )}
-          </div>
 
           <p className="text-center">
             <Link
@@ -947,10 +1051,10 @@ export default function DraftGenerating() {
       {capExceeded && (
         <div className="mt-10 max-w-md space-y-3 text-center" data-testid="draft-generating-cap-exceeded">
           <p className="text-sm text-muted-foreground">
-            This event's plan is ready. To regenerate, unlock again with Spark or go Plus for unlimited plans.
+            This event’s plan is ready. Open your dashboard to review it or create a new version with Plus.
           </p>
           <Button asChild data-testid="button-cap-exceeded-pricing">
-            <Link href={`/pricing?returnToken=${ownerToken}`}>Go Plus</Link>
+            <Link href={`/dashboard/${ownerToken}`}>Open my plan</Link>
           </Button>
         </div>
       )}
@@ -958,10 +1062,10 @@ export default function DraftGenerating() {
       {startupFailed && (
         <div className="mt-10 max-w-md space-y-3 text-center" data-testid="draft-generating-startup-failed">
           <p className="text-sm text-muted-foreground">
-            I couldn't get started just now. Nothing has been spent yet, so it's safe to try again.
+            This attempt could not continue. Your saved progress is intact. Choose Try again to continue.
           </p>
           <Button
-            onClick={() => startGeneration.mutate()}
+            onClick={() => startGeneration.mutate({ resumeInterrupted: true, ...(entitlement.data?.requiresExplicitStart ? { confirmMembershipStart: true as const } : {}) })}
             disabled={startGeneration.isPending}
             data-testid="button-retry-start"
           >
@@ -973,10 +1077,10 @@ export default function DraftGenerating() {
       {hasFailed && (
         <div className="mt-10 max-w-md space-y-3 text-center" data-testid="draft-generating-failed">
           <p className="text-sm text-muted-foreground">
-            That draft didn't finish this time — nothing was lost. Whatever's already done is saved, and picking up won't redo it.
+            That draft didn’t finish. Completed sections are saved. Try again to continue from the last saved section.
           </p>
           <Button
-            onClick={() => startGeneration.mutate()}
+            onClick={() => startGeneration.mutate({ resumeInterrupted: true, ...(entitlement.data?.requiresExplicitStart ? { confirmMembershipStart: true as const } : {}) })}
             disabled={startGeneration.isPending}
             data-testid="button-retry-draft"
           >

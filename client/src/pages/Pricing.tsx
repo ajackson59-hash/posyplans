@@ -105,7 +105,7 @@ export default function Pricing() {
             Plans for every kind of host.
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-muted-foreground">
-            Start with a single event, or go Plus for unlimited plans, more options, and
+            Start with a single event, or go Plus for plan revisions, more options, and
             regenerations across everything you host.
           </p>
         </div>
@@ -220,7 +220,7 @@ export default function Pricing() {
                 ))}
               </ul>
 
-              {configured ? (
+              {configured && returnToken ? (
                 <form
                   className="space-y-3 pt-2"
                   onSubmit={(e) => {
@@ -249,7 +249,10 @@ export default function Pricing() {
                     {startCheckout.isPending ? "Starting checkout…" : "Subscribe to Plus"}
                   </Button>
                   <p className="text-center text-xs text-muted-foreground">
-                    Cancel anytime from your billing settings.
+                    Cancel anytime by email.{" "}
+                    <Link href="/refund-policy" className="underline hover:text-foreground">
+                      How to cancel
+                    </Link>
                   </p>
                   <p className="text-center text-xs text-muted-foreground" data-testid="text-checkout-legal-disclosure">
                     By subscribing, you agree to our{" "}
@@ -263,6 +266,12 @@ export default function Pricing() {
                     .
                   </p>
                 </form>
+              ) : configured ? (
+                <div className="space-y-3 pt-2" data-testid="plus-start-event-first">
+                  <p className="text-sm text-muted-foreground">Start your event first, then choose Plus with your details safely saved.</p>
+                  <Button asChild className="w-full"><Link href="/intake">Start an event</Link></Button>
+                  <p className="text-xs text-muted-foreground">Already on Plus? <Link href="/recover" className="text-primary underline underline-offset-2">Find your paid event</Link>. You don't need to purchase again.</p>
+                </div>
               ) : (
                 <div className="rounded-lg border border-dashed border-border p-4 text-center" data-testid="card-checkout-coming-soon">
                   <p className="text-sm font-medium text-foreground">Checkout is launching soon</p>

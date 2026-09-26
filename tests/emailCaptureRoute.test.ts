@@ -37,6 +37,12 @@ const baseEvent = {
 
 let stored: Record<string, unknown>;
 let entitlement: { planTier: string; trialEndsAt?: number | null } | undefined;
+let membership: { subscriptionId: string; customerId: string; planTier: string; trialEndsAt: number | null; billingInterval: string | null } | undefined;
+
+vi.mock("../server/plusMembership", async (original) => ({
+  ...await original<typeof import("../server/plusMembership")>(),
+  getEventPlusAccess: async (eventId: number) => eventId === EVENT_ID ? membership : undefined,
+}));
 
 vi.mock("../server/storage", () => ({
   storage: {
@@ -62,6 +68,7 @@ async function makeApp() {
 beforeEach(() => {
   stored = { ...baseEvent };
   entitlement = undefined;
+  membership = undefined;
   sendEventRecoveryEmail.mockClear();
   sendEventRecoveryEmail.mockResolvedValue({ ok: true });
 });
@@ -87,7 +94,7 @@ describe("POST /api/events/:eventId/email-capture", () => {
     }));
   });
 
-  it("returns canGenerate: true when the captured email holds an active Plus plan", async () => {
+  it("does not grant Plus by typing an active subscriber's email", async () => {
     entitlement = { planTier: "plus_active" };
     const app = await makeApp();
     const res = await request(app)
@@ -95,7 +102,23 @@ describe("POST /api/events/:eventId/email-capture", () => {
       .send({ email: "plus@example.com", ownerToken: OWNER });
 
     expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ emailCaptured: true, canGenerate: false, planTier: "spark", gatedActionsAvailable: false });
+    expect(stored.capturedEmail).toBe("plus@example.com");
+  });
+
+  it("preserves the event's proven Plus membership when its recovery email changes", async () => {
+    stored.capturedEmail = "original@example.com";
+    membership = { subscriptionId: "sub_proven", customerId: "cus_proven", planTier: "plus_active", trialEndsAt: null, billingInterval: "monthly" };
+    const app = await makeApp();
+    const res = await request(app)
+      .post(`/api/events/${EVENT_ID}/email-capture`)
+      .send({ email: "new-contact@example.com", ownerToken: OWNER });
+
+    expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ emailCaptured: true, canGenerate: true, planTier: "plus_active" });
+    expect(stored.capturedEmail).toBe("new-contact@example.com");
+    expect(membership.subscriptionId).toBe("sub_proven");
+    expect(sendEventRecoveryEmail).toHaveBeenCalledWith(expect.objectContaining({ to: "new-contact@example.com" }));
   });
 
   it("rejects a request without a valid ownerToken", async () => {

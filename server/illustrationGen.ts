@@ -1,5 +1,6 @@
 import type { InviteDesignConcept, ArtDirection } from "@shared/inviteDesign";
 import Anthropic from "@anthropic-ai/sdk";
+import { authorizeImageDispatch } from "./imageSpendGuard";
 
 // Generates the bounded, text-free decorative illustration for an applied
 // Invitation Intelligence design concept, by calling OpenAI's image
@@ -88,7 +89,7 @@ export async function generateInviteIllustration(
 
   const prompt = buildIllustrationPrompt(concept);
 
-  const response = await fetch("https://api.openai.com/v1/images/generations", {
+  const init: RequestInit = {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -106,7 +107,12 @@ export async function generateInviteIllustration(
       // even though the RGB data is present.
       background: "opaque",
     }),
-  });
+  };
+  // Legacy paths have no durable customer permit. They fail closed in the
+  // guarded Preview while existing stored illustrations remain readable.
+  await authorizeImageDispatch({ model: "gpt-image-1", prompt, aspectRatio,
+    quality, outputFormat: "png", maxTransientRetries: 0 });
+  const response = await fetch("https://api.openai.com/v1/images/generations", init);
 
   if (!response.ok) {
     const errorBody = await response.text().catch(() => "");

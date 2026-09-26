@@ -20,7 +20,8 @@ import {
   type RunStatus,
 } from "./runStore";
 import type { AiFirstArtworkAttemptStore, ArtworkAttemptRecord } from "./artworkAttemptStore";
-import { DEFAULT_ARTWORK_MODEL, type ArtworkModel, type ArtworkQuality, type ArtworkSize } from "./artwork";
+import { decodeAttemptVision, encodeAttemptVision } from "./artworkAttemptStore";
+import { DEFAULT_ARTWORK_MODEL, type ArtworkSize } from "./artwork";
 
 /**
  * postgres-js surfaces a Postgres unique-violation (SQLSTATE 23505) as a
@@ -414,9 +415,9 @@ function toArtworkAttemptRecord(row: ArtworkAttemptRow): ArtworkAttemptRecord {
     concept: JSON.parse(row.conceptJson),
     failureCodes: JSON.parse(row.failureCodesJson),
     tier1Findings: JSON.parse(row.tier1FindingsJson),
-    visionScores: row.visionScoresJson ? JSON.parse(row.visionScoresJson) : null,
-    model: row.model as ArtworkModel,
-    quality: row.quality as ArtworkQuality,
+    ...decodeAttemptVision(row.visionScoresJson),
+    model: row.model as ArtworkAttemptRecord["model"],
+    quality: row.quality as ArtworkAttemptRecord["quality"],
     size: (row.size as ArtworkSize | null) ?? null,
     costUsdMicros: row.costUsdMicros,
     createdAt: row.createdAt,
@@ -424,6 +425,24 @@ function toArtworkAttemptRecord(row: ArtworkAttemptRow): ArtworkAttemptRecord {
 }
 
 export class DbArtworkAttemptStore implements AiFirstArtworkAttemptStore {
+  async recordOnce(input: Parameters<NonNullable<AiFirstArtworkAttemptStore["recordOnce"]>>[0]) {
+    try {
+      return { created: true, record: await this.record(input) };
+    } catch (error) {
+      // Drizzle may wrap the postgres-js error. Only this exact uniqueness
+      // failure is a replay; infrastructure failures must block before spend.
+      const constraint = uniqueViolationConstraint(error) ??
+        uniqueViolationConstraint((error as { cause?: unknown })?.cause);
+      if (constraint !== "ai_first_artwork_attempts_idempotency_key_uq") throw error;
+      const rows = await db.select().from(aiFirstArtworkAttempts).where(and(
+        eq(aiFirstArtworkAttempts.idempotencyKey, input.idempotencyKey),
+        eq(aiFirstArtworkAttempts.eventId, input.eventId),
+        eq(aiFirstArtworkAttempts.ownerToken, input.ownerToken),
+      ));
+      return { created: false, record: rows[0] ? toArtworkAttemptRecord(rows[0]) : undefined };
+    }
+  }
+
   async record(input: Parameters<AiFirstArtworkAttemptStore["record"]>[0]): Promise<ArtworkAttemptRecord> {
     const assetHash = createHash("sha256").update(input.bytes).digest("hex");
     const now = input.now ?? Date.now();
@@ -444,7 +463,7 @@ export class DbArtworkAttemptStore implements AiFirstArtworkAttemptStore {
         conceptJson: JSON.stringify(input.concept),
         failureCodesJson: JSON.stringify(input.failureCodes),
         tier1FindingsJson: JSON.stringify(input.tier1Findings),
-        visionScoresJson: input.visionScores ? JSON.stringify(input.visionScores) : null,
+        visionScoresJson: encodeAttemptVision(input.visionScores, input.reviewEvidence),
         model: input.model ?? DEFAULT_ARTWORK_MODEL,
         quality: input.quality ?? "high",
         size: input.size ?? null,

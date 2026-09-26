@@ -44,6 +44,12 @@ const baseEvent = {
 
 let stored: Record<string, unknown>;
 let entitlement: { planTier: string; trialEndsAt?: number | null } | undefined;
+let membership: { planTier: string; trialEndsAt?: number | null } | undefined;
+
+vi.mock("../server/plusMembership", async (original) => ({
+  ...await original<typeof import("../server/plusMembership")>(),
+  getEventPlusAccess: async () => membership,
+}));
 
 const generateInviteIllustration = vi.fn(async () => "data:image/png;base64,AAA");
 const generateInviteIllustrationWithQualityGate = vi.fn(async () => "data:image/png;base64,AAA");
@@ -89,6 +95,7 @@ const validConcept = {
 beforeEach(() => {
   stored = { ...baseEvent };
   entitlement = undefined;
+  membership = undefined;
   generateInviteIllustration.mockClear();
   generateInviteIllustrationWithQualityGate.mockClear();
 });
@@ -117,7 +124,7 @@ describe("POST /invite/preview-concept payment gate", () => {
 
   it("allows preview for an active Plus subscriber", async () => {
     stored.capturedEmail = "host@example.com";
-    entitlement = { planTier: "plus_active" };
+    membership = { planTier: "plus_active" };
     const app = await makeApp();
     const res = await request(app)
       .post(`/api/events/owner/${OWNER}/invite/preview-concept`)
@@ -129,7 +136,7 @@ describe("POST /invite/preview-concept payment gate", () => {
 
   it("refuses an expired Plus trial", async () => {
     stored.capturedEmail = "host@example.com";
-    entitlement = { planTier: "plus_trial", trialEndsAt: Date.now() - 1000 };
+    membership = { planTier: "plus_trial", trialEndsAt: Date.now() - 1000 };
     const app = await makeApp();
     const res = await request(app)
       .post(`/api/events/owner/${OWNER}/invite/preview-concept`)
@@ -180,7 +187,7 @@ describe("POST /invite/apply-concept payment gate", () => {
 
   it("allows apply for an active Plus subscriber", async () => {
     stored.capturedEmail = "host@example.com";
-    entitlement = { planTier: "plus_active" };
+    membership = { planTier: "plus_active" };
     const app = await makeApp();
     const res = await request(app)
       .post(`/api/events/owner/${OWNER}/invite/apply-concept`)
@@ -188,5 +195,19 @@ describe("POST /invite/apply-concept payment gate", () => {
 
     expect(res.status).toBe(200);
     expect(generateInviteIllustrationWithQualityGate).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("typed email cannot acquire paid artwork access", () => {
+  it.each(["preview-concept", "apply-concept"])("rejects %s for an unbound event despite a matching Plus email", async (route) => {
+    stored.capturedEmail = "someone-elses-plus@example.com";
+    entitlement = { planTier: "plus_active" };
+    const res = await request(await makeApp())
+      .post(`/api/events/owner/${OWNER}/invite/${route}`)
+      .send({ concept: validConcept });
+    expect(res.status).toBe(402);
+    expect(generateInviteIllustration).not.toHaveBeenCalled();
+    expect(generateInviteIllustrationWithQualityGate).not.toHaveBeenCalled();
+    expect(stored.inviteIllustrationUrl).toBe("");
   });
 });

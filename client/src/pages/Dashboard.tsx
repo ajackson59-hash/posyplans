@@ -60,7 +60,10 @@ import {
   getInviteBodyStyle,
 } from "@/lib/inviteStyles";
 import InviteDesignPicker from "@/components/InviteDesignPicker";
+import CustomerArtworkDesigner from "@/components/CustomerArtworkDesigner";
+import { useCustomerArtwork } from "@/hooks/useCustomerArtwork";
 import PlanningAlerts from "@/components/PlanningAlerts";
+import PlanRegenerationPanel from "@/components/PlanRegenerationPanel";
 import AiDraftedBadge from "@/components/AiDraftedBadge";
 import ReadinessScoreCard from "@/components/ReadinessScoreCard";
 import NextActions from "@/components/NextActions";
@@ -126,6 +129,8 @@ export default function Dashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data, isLoading } = useEventData(ownerToken);
+  const artworkReadiness = useCustomerArtwork(ownerToken);
+  const customerArtwork = artworkReadiness.data?.customerArtwork;
   const retainedReviewRequest = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
     const attemptId = params.get("retainedReviewAttempt");
@@ -327,7 +332,7 @@ export default function Dashboard() {
       await apiRequest("PATCH", `/api/events/owner/${ownerToken}`, {
         inviteSubject: subjectDraft,
         inviteMessage: messageDraft,
-        inviteArtworkUrl: artworkDraft,
+        ...(customerArtwork ? {} : { inviteArtworkUrl: artworkDraft }),
         inviteFontFamily: fontDraft,
         inviteAccentColor: accentColorDraft,
       });
@@ -830,6 +835,8 @@ export default function Dashboard() {
           )}
         </div>
 
+        {event.draftStatus === "ready" ? <PlanRegenerationPanel key={ownerToken} ownerToken={ownerToken} /> : null}
+
         {retainedReviewRequest && (
           <Card className="border-primary/30 bg-primary/[0.04]" data-testid="card-retained-artwork-review">
             <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
@@ -1092,11 +1099,15 @@ export default function Dashboard() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <InviteDesignPicker
+            {customerArtwork ? <CustomerArtworkDesigner ownerToken={ownerToken} artwork={customerArtwork}
+              refresh={() => artworkReadiness.refetch({ throwOnError: true })} />
+            : artworkReadiness.isPending ? <p className="text-sm">Loading your saved artwork…</p>
+            : artworkReadiness.isError ? <Button variant="outline" onClick={() => artworkReadiness.refetch()}>Reload saved artwork</Button>
+            : <InviteDesignPicker
               ownerToken={ownerToken}
               event={event}
               onReviewEventStyle={() => navigateToTab("theme", "event-style-section")}
-            />
+            />}
 
             <div className="flex flex-col gap-3 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -1161,7 +1172,7 @@ export default function Dashboard() {
                   )}
                 </div>
 
-                <div>
+                {!customerArtwork ? <div>
                   <Label>Custom artwork (optional)</Label>
                   <p className="mt-1 text-xs text-muted-foreground">
                     Choose a ready-made template, upload your own photo or designed invite, or leave blank to use the plain themed card.
@@ -1251,6 +1262,8 @@ export default function Dashboard() {
                     />
                   </div>
                 </div>
+
+                : <p className="text-sm text-muted-foreground">Use the saved artwork controls above to revise your image.</p>}
 
                 <div>
                   <Label>Font style</Label>
@@ -1366,7 +1379,7 @@ export default function Dashboard() {
                       src={artworkDraft}
                       alt=""
                       data-testid="img-invite-preview-artwork"
-                      className="mt-2 h-40 w-full rounded-md border border-border object-cover"
+                      className="mx-auto mt-2 h-auto w-full max-w-xl rounded-md border border-border"
                     />
                   )}
                   <p
@@ -1486,7 +1499,7 @@ export default function Dashboard() {
                         src={event.inviteArtworkUrl}
                         alt=""
                         data-testid="img-invite-artwork"
-                        className="mb-3 h-40 w-full rounded-md border border-border object-cover"
+                        className="mx-auto mb-3 h-auto w-full max-w-xl rounded-md border border-border"
                       />
                     )}
                     <p
@@ -1610,7 +1623,7 @@ export default function Dashboard() {
                       <Copy className="mr-1.5 h-3.5 w-3.5" /> Copy link
                     </Button>
                     <Button asChild size="sm" variant="outline">
-                      <a href={`/rsvp/${event.shareSlug}`} target="_blank" rel="noreferrer">
+                      <a href={`/dashboard/${encodeURIComponent(ownerToken)}/invitation-preview`} target="_blank" rel="noreferrer">
                         Preview <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
                       </a>
                     </Button>

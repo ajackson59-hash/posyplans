@@ -1,8 +1,11 @@
-import type { Express, Request } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer } from 'node:http';
 import type { Server } from 'node:http';
 import { createHash } from "node:crypto";
+import { waitUntil } from '@vercel/functions';
 import { storage } from "./storage";
+import { eventArtworkUrl, ownerEventView, publicEventView, restoreEventArtworkReferences } from "./eventArtwork";
+import { checkoutPaymentSettled, CheckoutStateError, stripeMode } from "./checkoutState";
 import {
   insertEventSchema, updateEventSchema, insertGuestSchema, updateGuestSchema, rsvpSubmitSchema,
   insertBudgetItemSchema, updateBudgetItemSchema,
@@ -56,6 +59,7 @@ import { detectMissingItems } from "@shared/missingItems";
 import { assessBudgetFeasibility } from "@shared/budgetFeasibility";
 import { eventStyleSummary } from "@shared/eventStyle";
 import { reserveOrResumeFreeDraft, getEntitlementSummary, safeParseStages, canGenerateDraft } from "./masterPlannerEntitlement";
+import { getEventPlusAccess, hasActivePlusMembership, reconcilePlusMembership } from './plusMembership';
 import { runMasterPlannerOrchestration } from "./masterPlannerOrchestrator";
 import type Stripe from "stripe";
 import { parseCookies, serializeConsentCookie } from "./cookies";
@@ -63,12 +67,6 @@ import { getStripe, getPriceId, getSparkPriceId, isStripeConfigured, getWebhookS
 import { sendMetaPurchaseEvent } from "./metaCapi";
 import { registerAiFirstRoutes } from "./aiFirst/routes";
 import { DbPreviewStore, DbUsageStore, DbRunStore, DbArtworkAttemptStore } from "./aiFirst/dbStore";
-
-function publicEventView(event: Event) {
-  // Never expose ownerToken (the host's secret edit key) on public routes.
-  const { ownerToken, capturedEmail, ...rest } = event;
-  return rest;
-}
 
 function publicGuestView(guest: Guest) {
   // A verified recipient needs their invitation allowance and any previous
@@ -88,6 +86,13 @@ function publicGuestView(guest: Guest) {
 }
 
 const guestTokenSchema = z.string().min(24).max(128).regex(/^[A-Za-z0-9_-]+$/);
+
+function stopUnpublishedInvitation(event: Event, res: Response): boolean {
+  if (event.inviteStatus !== "draft") return false;
+  res.set("Cache-Control", "private, no-store");
+  res.status(409).json({ code: "invitation_unpublished", error: "The host is still preparing this invitation. Please check back soon." });
+  return true;
+}
 const guestIdentifySchema = z.object({
   name: z.string().trim().min(2).max(120),
   contact: z.string().trim().min(3).max(254),
@@ -224,24 +229,19 @@ function allowGuestIdentifyAttempt(key: string, now = Date.now()): boolean {
 }
 
 // Defense-in-depth email capture from trusted Stripe moments (checkout confirm
-// / webhook), where we have both a Stripe-verified email and the event. More
-// trustworthy than the typed-in /email-capture route, so it is authoritative:
-// Stripe's verified address replaces provisional or mistyped input and receives
-// the private return link. This helper never throws because checkout and webhook
-// processing must complete regardless of email persistence or delivery trouble.
-async function stampCapturedEmailSafe(eventId: number, email: string | null | undefined): Promise<void> {
-  try {
-    const normalized = (email ?? "").trim().toLowerCase();
-    if (!normalized) return;
-    const event = await storage.getEventById(eventId);
-    if (!event) return;
-    if (event.capturedEmail && event.capturedEmail !== normalized) {
-      console.info(`[email-capture] replacing event ${eventId}'s earlier email with Stripe's verified address`);
-    }
-    await persistCapturedEmail(event, normalized);
-  } catch (err) {
-    console.error(`[email-capture] failed to stamp email on event ${eventId}:`, err);
+// / webhook), where the settled purchase supplies billing contact information.
+// This is not proof of mailbox ownership and never grants another membership.
+// The billing address replaces provisional or mistyped input and receives the
+// private return link. Plus authority is stored separately by subscription.
+async function stampCapturedEmailForCheckout(eventId: number, email: string | null | undefined): Promise<void> {
+  const normalized = (email ?? "").trim().toLowerCase();
+  if (!normalized) return;
+  const event = await storage.getEventById(eventId);
+  if (!event) return;
+  if (event.capturedEmail && event.capturedEmail !== normalized) {
+    console.info(`[email-capture] replacing event ${eventId}'s earlier email with its settled billing contact`);
   }
+  await persistCapturedEmail(event, normalized);
 }
 
 export async function registerRoutes(
@@ -264,7 +264,7 @@ export async function registerRoutes(
     const parsed = insertEventSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
     const event = await storage.createEvent(parsed.data);
-    res.json(event);
+    res.json(ownerEventView(event));
   });
 
   // Email-based event recovery. Owner tokens are bearer credentials, so they
@@ -309,15 +309,18 @@ export async function registerRoutes(
     const event = await storage.getEventByOwnerToken(req.params.ownerToken);
     if (!event) return res.status(404).json({ error: "Event not found" });
     const guestList = await storage.listGuests(event.id);
-    res.json({ event, guests: guestList });
+    res.setHeader("Cache-Control", "private, no-store");
+    res.json({ event: ownerEventView(event), guests: guestList });
   });
 
   app.patch("/api/events/owner/:ownerToken", async (req, res) => {
     const parsed = updateEventSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
-    const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, parsed.data);
+    const event = await storage.getEventByOwnerToken(req.params.ownerToken);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+    const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, restoreEventArtworkReferences(event, parsed.data));
     if (!updated) return res.status(404).json({ error: "Event not found" });
-    res.json(updated);
+    res.json(ownerEventView(updated));
   });
 
   // AI Master Planner Intake wizard writes here. Deliberately narrower than
@@ -330,19 +333,21 @@ export async function registerRoutes(
     if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
     const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, parsed.data);
     if (!updated) return res.status(404).json({ error: "Event not found" });
-    res.json(updated);
+    res.json(ownerEventView(updated));
   });
 
   /* ============ EVENT: PUBLIC RSVP PAGE ============ */
   app.get("/api/events/public/:shareSlug", async (req, res) => {
     const event = await storage.getEventByShareSlug(req.params.shareSlug);
     if (!event) return res.status(404).json({ error: "Event not found" });
+    res.setHeader("Cache-Control", "private, no-store");
     res.json(publicEventView(event));
   });
 
   app.get("/api/events/public/:shareSlug/guest/:guestToken", async (req, res) => {
     const event = await storage.getEventByShareSlug(req.params.shareSlug);
     if (!event) return res.status(404).json({ error: "Event not found" });
+    if (stopUnpublishedInvitation(event, res)) return;
     const token = guestTokenSchema.safeParse(req.params.guestToken);
     if (!token.success) return res.status(404).json({ error: "Invitation not found" });
     const guest = await storage.getGuestByAccessToken(event.id, token.data);
@@ -354,6 +359,7 @@ export async function registerRoutes(
   app.post("/api/events/public/:shareSlug/identify", async (req, res) => {
     const event = await storage.getEventByShareSlug(req.params.shareSlug);
     if (!event) return res.status(404).json({ error: "Invitation not found" });
+    if (stopUnpublishedInvitation(event, res)) return;
     const attemptKey = `${req.ip || "unknown"}:${event.shareSlug}`;
     if (!allowGuestIdentifyAttempt(attemptKey)) {
       res.set("Retry-After", String(Math.ceil(GUEST_IDENTIFY_WINDOW_MS / 1000)));
@@ -393,6 +399,7 @@ export async function registerRoutes(
   app.post("/api/events/public/:shareSlug/guest/:guestToken/rsvp", async (req, res) => {
     const event = await storage.getEventByShareSlug(req.params.shareSlug);
     if (!event) return res.status(404).json({ error: "Invitation not found" });
+    if (stopUnpublishedInvitation(event, res)) return;
     const token = guestTokenSchema.safeParse(req.params.guestToken);
     if (!token.success) return res.status(404).json({ error: "Invitation not found" });
     const guest = await storage.getGuestByAccessToken(event.id, token.data);
@@ -444,8 +451,9 @@ export async function registerRoutes(
       note: parsed.data.note ?? guest.note,
       respondedAt: Date.now(),
     });
+    if (!updated) return res.status(404).json({ error: "Invitation not found" });
     res.set("Cache-Control", "private, no-store");
-    res.json(publicGuestView(updated!));
+    res.json(publicGuestView(updated));
   });
 
   /* ============ GUESTS: OWNER MANAGEMENT ============ */
@@ -848,6 +856,8 @@ export async function registerRoutes(
   app.post("/api/events/public/:shareSlug/guest/:guestToken/sms-opt-in", async (req, res) => {
     const event = await storage.getEventByShareSlug(req.params.shareSlug);
     if (!event) return res.status(404).json({ error: "Invitation not found" });
+    // Withdrawing text consent remains available on an unpublished invite.
+    if (req.body?.optIn && stopUnpublishedInvitation(event, res)) return;
     const token = guestTokenSchema.safeParse(req.params.guestToken);
     if (!token.success) return res.status(404).json({ error: "Invitation not found" });
     const guest = await storage.getGuestByAccessToken(event.id, token.data);
@@ -864,8 +874,9 @@ export async function registerRoutes(
       smsOptIn: optIn,
       smsConsentAt: optIn ? Date.now() : null,
     });
+    if (!updated) return res.status(404).json({ error: "Invitation not found" });
     res.set("Cache-Control", "private, no-store");
-    res.json(publicGuestView(updated!));
+    res.json(publicGuestView(updated));
   });
 
   // Sends via Twilio (see server/sms.ts). Requires TWILIO_ACCOUNT_SID,
@@ -1267,15 +1278,15 @@ export async function registerRoutes(
       // DNA so envelope/liner/stamp match by default. Pure derivation, no LLM
       // call. The host can override any of these later via the suite route.
       const dna = deriveThemeDna(concept);
-      const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, {
+      const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, restoreEventArtworkReferences(event, {
         inviteDesignConceptJson: JSON.stringify(concept),
         inviteIllustrationUrl: illustrationUrl,
         envelopeColor: dna.primaryColor,
         envelopeLinerPattern: dna.linerPattern,
         stampStyle: dna.stampStyle,
-      });
+      }));
       if (!updated) return res.status(404).json({ error: "Event not found" });
-      res.json(updated);
+      res.json(ownerEventView(updated));
     } catch (err) {
       console.error("apply-concept illustration generation failed:", err);
       res.status(502).json({ error: "Couldn't generate the illustration right now — please try again." });
@@ -1459,7 +1470,7 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
       ...defaultEnvelopeForTheme(theme),
     });
     if (!updated) return res.status(404).json({ error: "Event not found" });
-    res.json(updated);
+    res.json(ownerEventView(updated));
   });
 
   // Customises an applied curated theme: palette variant, type pairing, type
@@ -1529,7 +1540,7 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
 
     const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, eventUpdates);
     if (!updated) return res.status(404).json({ error: "Event not found" });
-    res.json(updated);
+    res.json(ownerEventView(updated));
   });
 
   // Lets a host nudge individual colors on an already-applied concept
@@ -1553,7 +1564,7 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
       inviteDesignConceptJson: JSON.stringify(updatedConcept),
     });
     if (!updated) return res.status(404).json({ error: "Event not found" });
-    res.json(updated);
+    res.json(ownerEventView(updated));
   });
 
   // Reverts to the manual invite styling fields (font/accent color pickers),
@@ -1564,7 +1575,7 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
       inviteIllustrationUrl: "",
     });
     if (!updated) return res.status(404).json({ error: "Event not found" });
-    res.json(updated);
+    res.json(ownerEventView(updated));
   });
 
   // Host overrides for the coordinated stationery suite (envelope color,
@@ -1648,7 +1659,7 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
     }
     const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, { inviteStatus: status });
     if (!updated) return res.status(404).json({ error: "Event not found" });
-    res.json(updated);
+    res.json(ownerEventView(updated));
   });
 
   // Update RSVP phone number (shown on public RSVP page for guests who
@@ -1659,7 +1670,7 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
     const phone = typeof req.body?.phone === "string" ? req.body.phone.trim() : "";
     const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, { rsvpPhone: phone });
     if (!updated) return res.status(404).json({ error: "Event not found" });
-    res.json(updated);
+    res.json(ownerEventView(updated));
   });
 
   // ── Live Design Editor endpoint ───────────────────────────────────
@@ -1726,12 +1737,12 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
     }
 
     if (Object.keys(eventUpdates).length === 0) {
-      return res.json(event); // no-op
+      return res.json(ownerEventView(event)); // no-op
     }
 
     const updated = await storage.updateEventByOwnerToken(req.params.ownerToken, eventUpdates);
     if (!updated) return res.status(404).json({ error: "Event not found" });
-    res.json(updated);
+    res.json(ownerEventView(updated));
   });
 
   // "Upload my complete invitation design": the host already has a finished
@@ -1752,7 +1763,7 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
       inviteRenderMode: "custom",
     });
     if (!updated) return res.status(404).json({ error: "Event not found" });
-    res.json(updated);
+    res.json(ownerEventView(updated));
   });
 
   // Switches back to Posy's concept-driven rendering. Deliberately
@@ -1766,7 +1777,7 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
       inviteRenderMode: "",
     });
     if (!updated) return res.status(404).json({ error: "Event not found" });
-    res.json(updated);
+    res.json(ownerEventView(updated));
   });
 
   /* ============ AI MASTER PLANNER ============ */
@@ -1789,8 +1800,26 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
       return res.status(402).json({ error: "This event needs Spark or Plus to generate a plan." });
     }
 
-    const reservation = await reserveOrResumeFreeDraft(event.id);
+    // Linking an existing membership verifies access only. An old tab or a
+    // reload must not turn that change into a paid planner request.
+    const membership = await getEventPlusAccess(event.id);
+    if (membership?.bindingSource === 'email_verification' && event.draftStatus !== 'ready'
+      && req.body?.confirmMembershipStart !== true) {
+      return res.status(409).json({ code: 'explicit_plan_start_required',
+        error: 'Plus is connected. Choose Build my plan when you are ready to start.' });
+    }
+
+    // A saved plan is replaced only through the explicit, reviewed Plus flow,
+    // including older events whose first-generation ledger may be absent.
+    if (event.draftStatus === 'ready') {
+      return res.status(409).json({ error: "This event's plan has already been generated." });
+    }
+
+    const reservation = await reserveOrResumeFreeDraft(event.id, req.body?.resumeInterrupted === true);
     if (!reservation.ok || !reservation.generation) {
+      if (reservation.reason === 'interrupted') return res.status(409).json({
+        code: 'generation_interrupted', error: 'The previous attempt stopped before finishing. Your saved progress is intact. Choose Try again to continue.',
+      });
       return res.status(409).json({ error: "This event's plan has already been generated." });
     }
 
@@ -1802,16 +1831,21 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
     // persisted onto the event/generation rows by the orchestrator itself
     // (draftStatus="failed_partial", generation.state="failed"), so this
     // catch only needs to stop an unhandled rejection from surfacing.
-    runMasterPlannerOrchestration(event.id, generationId).catch((err) => {
-      console.error(`Master Planner orchestration failed for event ${event.id}:`, err);
-    });
+    if (reservation.shouldStart) {
+      const job = runMasterPlannerOrchestration(event.id, generationId, undefined, reservation.generation.reservedAt!).catch((err) => {
+        console.error(`Master Planner orchestration failed for event ${event.id}:`, err);
+      });
+      try { waitUntil(job); } catch { void job; }
+    }
   });
 
   // Polled by the loading screen to render its narrated checklist and to
   // know when to navigate on to the dashboard.
   app.get("/api/events/owner/:ownerToken/master-planner/status", async (req, res) => {
-    const event = await storage.getEventByOwnerToken(req.params.ownerToken);
+    let event = await storage.getEventByOwnerToken(req.params.ownerToken);
     if (!event) return res.status(404).json({ error: "Event not found" });
+    await storage.expireInitialGeneration(event.id);
+    event = (await storage.getEventById(event.id))!;
     const generation = await storage.getLatestGenerationForEvent(event.id);
     res.json({
       draftStatus: event.draftStatus,
@@ -1831,9 +1865,9 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
     res.json(summary);
   });
 
-  // Captures the host's email onto an event so the entitlement gate can resolve
-  // their Plus membership (canGenerateDraft looks up capturedEmail in
-  // email_entitlements). This is the route referenced-but-never-built that left
+  // Captures the host's contact/recovery email. A typed address never grants
+  // Plus: membership is bound separately by trusted Stripe settlement. This
+  // is the route referenced-but-never-built that left
   // captured_email NULL on every event. Ownership is proven the same way every
   // other event-mutation route proves it — a valid ownerToken — except the
   // token rides in the body here since the path is eventId-scoped per spec.
@@ -1856,8 +1890,8 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
     const email = typeof req.body?.email === "string" ? req.body.email : "";
     const ownerToken = typeof req.body?.ownerToken === "string" ? req.body.ownerToken : "";
     const normalized = email.trim().toLowerCase();
-    // Basic plausibility check — real verification comes from the Stripe-side
-    // stamping; this just rejects obvious garbage before touching storage.
+    // Contact plausibility only. Neither this nor a matching membership email
+    // proves ownership of a mailbox or grants paid access.
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
       return res.status(400).json({ error: "Please enter a valid email address." });
     }
@@ -1870,8 +1904,8 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
 
     // A valid owner token authorizes correcting the event email. The earlier
     // first-write-wins behavior could permanently bind a typo and prevent an
-    // existing Plus address or Stripe's verified checkout address from taking
-    // ownership. Send the private return link only when the address changes.
+    // billing contact from being corrected. This does not change membership
+    // authority. Send the private return link only when the address changes.
     if (event.capturedEmail && event.capturedEmail !== normalized) {
       console.info(`[email-capture] owner corrected event ${eventId}'s captured email`);
     }
@@ -1938,7 +1972,7 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
           fontPairingLabel: getFontPairing(appliedConcept.fontPairingId).label,
           borderStyle: appliedConcept.borderStyle,
           layoutStyle: appliedConcept.layoutStyle,
-          illustrationUrl: event.inviteIllustrationUrl || "",
+          illustrationUrl: eventArtworkUrl(event, "inviteIllustrationUrl"),
         }
       : null;
 
@@ -2000,7 +2034,8 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
   // Lets the frontend show a real checkout button vs. a graceful
   // "launching soon" state without ever hitting an error path.
   app.get("/api/checkout/config", (_req, res) => {
-    res.json({ configured: isStripeConfigured() });
+    res.setHeader("Cache-Control", "no-store");
+    res.json({ configured: isStripeConfigured(), mode: stripeMode(), webhookConfigured: !!getWebhookSecret() });
   });
 
   const checkoutSessionSchema = z.object({
@@ -2009,8 +2044,8 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
     // callers that omit it keep the subscription behavior.
     plan: z.enum(["plus", "spark"]).default("plus"),
     billingInterval: z.enum(["annual", "monthly"]).default("annual"),
-    // For Plus: the event a host was mid-build on, if they upgraded from
-    // inside their dashboard rather than the standalone /pricing page.
+    // Plus checkout requires an originating event until verified membership
+    // linking exists. The handler rejects missing tokens before any writes.
     // For Spark: REQUIRED — the event's ownerToken, since a Spark purchase is
     // event-scoped. Carried through to success_url so checkout can send them
     // back to that event.
@@ -2023,6 +2058,10 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
       return res.status(400).json({ error: "Please provide a valid email and billing option." });
     }
     const { email, plan, billingInterval, returnToken } = parsed.data;
+    if (plan === 'plus' && !returnToken) {
+      return res.status(400).json({ code: 'event_required_for_plus',
+        error: 'Start an event before choosing Plus so your purchase stays connected to it. Already paid? Find your existing event or contact hello@posyplans.com; do not purchase again.' });
+    }
 
     const stripe = getStripe();
     if (!stripe) {
@@ -2033,7 +2072,7 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
 
     // A checkout launched from an event is an explicit owner-authorized email
     // moment. Capture it before handing off to Stripe so an abandoned checkout
-    // is recoverable; Stripe's verified address still wins on confirmation.
+    // is recoverable; the settled billing contact wins on confirmation.
     let returnEvent: Event | undefined;
     if (returnToken) {
       returnEvent = await storage.getEventByOwnerToken(returnToken);
@@ -2043,7 +2082,7 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
       try {
         await persistCapturedEmail(returnEvent, email.toLowerCase());
       } catch (err) {
-        // Stripe confirmation stamps the verified address again, so an email
+        // Stripe confirmation saves the settled billing contact again, so an email
         // persistence outage must not prevent a host from checking out.
         console.error(`[email-capture] couldn't save the checkout email for event ${returnEvent.id}:`, err);
       }
@@ -2100,6 +2139,7 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
           ? `${origin}/pricing?checkout=cancelled&returnToken=${encodeURIComponent(returnToken)}`
           : `${origin}/pricing?checkout=cancelled`,
         metadata: { plan: "plus", billingInterval, ...(returnToken ? { returnToken } : {}) },
+        subscription_data: { metadata: { plan: "plus", billingInterval, ...(returnToken ? { returnToken } : {}) } },
       });
       res.json({ url: session.url });
     } catch (err) {
@@ -2108,130 +2148,170 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
     }
   });
 
-  // Pull-based confirmation: retrieves the session directly from Stripe and
-  // activates the entitlement right on the success-page load, instead of
-  // waiting on a webhook. Chosen because no stable production domain exists
-  // yet to register a long-lived webhook endpoint against (see GTM doc).
-  // Safe to call more than once for the same session — e.g. a page refresh
-  // — without double-firing the analytics conversion event.
-  app.get("/api/checkout/confirm", async (req, res) => {
-    const sessionId = typeof req.query.sessionId === "string" ? req.query.sessionId : undefined;
-    if (!sessionId) return res.status(400).json({ error: "Missing sessionId." });
-
+  // Both the browser return and verified webhook reconcile the current
+  // Stripe session. A completed checkout can still have an unpaid payment.
+  async function fulfillCheckout(sessionId: string, eventSourceUrl?: string) {
     const stripe = getStripe();
-    if (!stripe) return res.status(503).json({ error: "Checkout isn't set up yet." });
+    if (!stripe) throw new CheckoutStateError("Checkout is not configured.", 503, "checkout_unconfigured");
+    const observedAt = Date.now();
+    const session = await stripe.checkout.sessions.retrieve(sessionId, { expand: ["subscription", "customer"] });
+    if (session.status !== "complete") {
+      throw new CheckoutStateError("Your payment is still being confirmed. Check again shortly; do not pay again.", 409, "payment_pending");
+    }
 
-    try {
-      const session = await stripe.checkout.sessions.retrieve(sessionId, { expand: ["subscription", "customer"] });
-      if (session.status !== "complete") {
-        return res.status(409).json({ error: "This checkout session hasn't completed yet." });
+    if (!checkoutPaymentSettled(session)) {
+      throw new CheckoutStateError("Your payment is still being confirmed. Check again shortly; do not pay again.", 409, "payment_pending");
+    }
+    if ((session.mode === "payment" && session.metadata?.plan !== "spark") ||
+        (session.mode === "subscription" && session.metadata?.plan !== "plus") ||
+        (session.mode !== "payment" && session.mode !== "subscription")) {
+      throw new CheckoutStateError("This checkout does not match a Posy purchase.", 400, "invalid_checkout_plan");
+    }
+
+    // Spark one-time purchase (mode: "payment") — no subscription. Unlock
+    // the event named in metadata and report back so the success flow can
+    // send the host into generation. Idempotent via markEventSparkUnlocked.
+    if (session.mode === "payment") {
+      const ownerToken = session.metadata?.ownerToken;
+      const email = (session.customer_details?.email || session.customer_email || "").toLowerCase();
+      if (!ownerToken) {
+        throw new CheckoutStateError("This checkout session is missing its event reference.", 400, "missing_event_reference");
       }
+      const unlocked = await storage.markEventSparkUnlocked(ownerToken, session.id);
+      if (!unlocked) throw new CheckoutStateError("The purchased event could not be found.", 404, "event_not_found");
+      // A settled Spark purchase unlocks only this event. Its billing address
+      // is contact information, never proof of an existing Plus membership.
+      if (unlocked) await stampCapturedEmailForCheckout(unlocked.id, email);
+      // Server-side Purchase conversion (Meta CAPI). event_id = session.id so
+      // it dedupes against the client Pixel fired on the success page.
+      await sendMetaPurchaseEvent({
+        email,
+        phone: session.customer_details?.phone,
+        value: CHECKOUT_PRICES.spark,
+        currency: "USD",
+        eventId: session.id,
+        eventSourceUrl,
+      });
+      return {
+        plan: "spark",
+        unlocked: true,
+        email,
+        returnToken: ownerToken,
+        firedEvent: "spark_unlocked",
+        eventId: session.id,
+        value: CHECKOUT_PRICES.spark,
+      };
+    }
 
-      // Spark one-time purchase (mode: "payment") — no subscription. Unlock
-      // the event named in metadata and report back so the success flow can
-      // send the host into generation. Idempotent via markEventSparkUnlocked.
-      if (session.mode === "payment") {
-        const ownerToken = session.metadata?.ownerToken;
-        const email = (session.customer_details?.email || session.customer_email || "").toLowerCase();
-        if (!ownerToken) {
-          return res.status(500).json({ error: "This checkout session is missing its event reference." });
-        }
-        const unlocked = await storage.markEventSparkUnlocked(ownerToken, session.id);
-        // Defense-in-depth: stamp the Stripe-verified email onto the event so
-        // the entitlement gate resolves membership even if checkout began
-        // with a typo or a different address. Verified Stripe identity wins.
-        if (unlocked) await stampCapturedEmailSafe(unlocked.id, email);
-        // Server-side Purchase conversion (Meta CAPI). event_id = session.id so
-        // it dedupes against the client Pixel fired on the success page.
+    if (!session.subscription || typeof session.subscription === "string") {
+      throw new CheckoutStateError("Your subscription is still being confirmed. Check again shortly; do not pay again.", 409, "subscription_pending");
+    }
+    const subscription = session.subscription as Stripe.Subscription;
+    const email = (session.customer_details?.email || session.customer_email || "").toLowerCase();
+    if (!email) throw new CheckoutStateError("No email on this checkout session.", 409, "missing_checkout_email");
+
+    const newPlanTier = subscription.status === "trialing" &&
+      (!subscription.trial_end || subscription.trial_end * 1000 <= Date.now())
+      ? "plus_expired" : planTierFromSubscriptionStatus(subscription.status);
+    const billingInterval = session.metadata?.billingInterval as BillingInterval | undefined;
+    const plusReturnToken = session.metadata?.returnToken;
+    const returnEvent = plusReturnToken ? await storage.getEventByOwnerToken(plusReturnToken) : undefined;
+    if (plusReturnToken && !returnEvent) {
+      throw new CheckoutStateError("The purchased event could not be found.", 404, "event_not_found");
+    }
+    const customerId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer?.id;
+    const checkoutCustomerId = typeof session.customer === 'string' ? session.customer : session.customer?.id;
+    if (!customerId || customerId !== checkoutCustomerId || !Number.isFinite(subscription.created)) {
+      throw new CheckoutStateError('The membership identity could not be confirmed.', 409, 'membership_identity_pending');
+    }
+    await reconcilePlusMembership({
+      subscriptionId: subscription.id, customerId, planTier: newPlanTier,
+      trialEndsAt: subscription.trial_end ? subscription.trial_end * 1000 : null,
+      billingInterval: billingInterval ?? null, subscriptionCreatedAt: subscription.created * 1000,
+      observedAt, eventId: returnEvent?.id, source: 'checkout', sourceId: session.id,
+    });
+    const boundAccess = returnEvent ? await getEventPlusAccess(returnEvent.id) : undefined;
+    if (returnEvent && (newPlanTier === 'plus_active' || newPlanTier === 'plus_trial')
+      && !hasActivePlusMembership(boundAccess)) {
+      throw new CheckoutStateError('Your payment is recorded, but access for this event needs to be recovered. Contact hello@posyplans.com; do not purchase again.',
+        409, 'membership_recovery_required');
+    }
+    const previous = await storage.getEmailEntitlement(email);
+    const isNewTransition = previous?.planTier !== newPlanTier;
+    if (newPlanTier === "plus_expired" && previous?.stripeSubscriptionId && previous.stripeSubscriptionId !== subscription.id) {
+      throw new CheckoutStateError("This older subscription is no longer active.", 409, "subscription_inactive");
+    }
+
+    const updated = await storage.upsertEmailEntitlement(email, {
+      planTier: newPlanTier,
+      stripeCustomerId: typeof session.customer === "string" ? session.customer : session.customer?.id,
+      stripeSubscriptionId: subscription.id,
+      billingInterval: billingInterval ?? previous?.billingInterval ?? null,
+      trialStartedAt: subscription.trial_start ? subscription.trial_start * 1000 : previous?.trialStartedAt ?? null,
+      trialEndsAt: subscription.trial_end ? subscription.trial_end * 1000 : previous?.trialEndsAt ?? null,
+    });
+
+    if (newPlanTier === "plus_expired" ||
+        (newPlanTier === "plus_trial" && (!subscription.trial_end || subscription.trial_end * 1000 <= Date.now()))) {
+      throw new CheckoutStateError("Your Plus subscription is not active yet. Check again shortly or contact support.", 409, "subscription_inactive");
+    }
+
+    // Defense-in-depth: if this Plus checkout was started from inside a
+    // specific event, save its settled billing contact. The subscription
+    // binding above independently grants membership; contact is not authority.
+    if (returnEvent) {
+      await stampCapturedEmailForCheckout(returnEvent.id, email);
+    }
+
+    let firedEvent: "trial_started" | "subscribed" | null = null;
+    if (isNewTransition) {
+      if (newPlanTier === "plus_trial") {
+        firedEvent = "trial_started";
+      } else if (newPlanTier === "plus_active" && previous?.planTier !== "plus_trial") {
+        // Trial → active (a trial converting to paid) is caught by the
+        // webhook handler below once webhooks are live, not here — the
+        // host is usually long gone from the success page by then.
+        firedEvent = "subscribed";
+      }
+      if (firedEvent) {
+        await storage.logAnalyticsEvent(firedEvent, { email, billingInterval: updated.billingInterval ?? undefined, metadata: { subscriptionId: subscription.id } });
+        // Server-side Purchase conversion (Meta CAPI). event_id =
+        // subscription.id so it dedupes against the client Pixel.
         await sendMetaPurchaseEvent({
           email,
           phone: session.customer_details?.phone,
-          value: CHECKOUT_PRICES.spark,
+          value: plusPriceValue(updated.billingInterval as BillingInterval | null),
           currency: "USD",
-          eventId: session.id,
-          eventSourceUrl: req.get("referer") || undefined,
-        });
-        return res.json({
-          plan: "spark",
-          unlocked: true,
-          email,
-          returnToken: ownerToken,
-          firedEvent: "spark_unlocked",
-          eventId: session.id,
-          value: CHECKOUT_PRICES.spark,
+          eventId: subscription.id,
+          eventSourceUrl,
         });
       }
+    }
 
-      if (!session.subscription || typeof session.subscription === "string") {
-        return res.status(409).json({ error: "This checkout session hasn't completed yet." });
-      }
-      const subscription = session.subscription as Stripe.Subscription;
-      const email = (session.customer_details?.email || session.customer_email || "").toLowerCase();
-      if (!email) return res.status(500).json({ error: "No email on this checkout session." });
+    return {
+      plan: "plus",
+      planTier: boundAccess?.planTier ?? updated.planTier,
+      trialEndsAt: boundAccess?.trialEndsAt ?? updated.trialEndsAt,
+      membershipAccess: returnEvent ? 'event' : 'recovery_required',
+      billingInterval: updated.billingInterval,
+      firedEvent,
+      eventId: subscription.id,
+      value: plusPriceValue(updated.billingInterval as BillingInterval | null),
+      email,
+      returnToken: session.metadata?.returnToken,
+    };
+  }
 
-      const newPlanTier = planTierFromSubscriptionStatus(subscription.status);
-      const billingInterval = session.metadata?.billingInterval as BillingInterval | undefined;
-      const previous = await storage.getEmailEntitlement(email);
-      const isNewTransition = previous?.planTier !== newPlanTier;
-
-      const updated = await storage.upsertEmailEntitlement(email, {
-        planTier: newPlanTier,
-        stripeCustomerId: typeof session.customer === "string" ? session.customer : session.customer?.id,
-        stripeSubscriptionId: subscription.id,
-        billingInterval: billingInterval ?? previous?.billingInterval ?? null,
-        trialStartedAt: subscription.trial_start ? subscription.trial_start * 1000 : previous?.trialStartedAt ?? null,
-        trialEndsAt: subscription.trial_end ? subscription.trial_end * 1000 : previous?.trialEndsAt ?? null,
-      });
-
-      // Defense-in-depth: if this Plus checkout was started from inside a
-      // specific event (returnToken carried through the session metadata),
-      // stamp the verified email onto that event so its entitlement gate
-      // immediately resolves the new Plus membership. Verified Stripe
-      // identity replaces earlier provisional input; failures never throw.
-      const plusReturnToken = session.metadata?.returnToken;
-      if (plusReturnToken) {
-        const returnEvent = await storage.getEventByOwnerToken(plusReturnToken);
-        if (returnEvent) await stampCapturedEmailSafe(returnEvent.id, email);
-      }
-
-      let firedEvent: "trial_started" | "subscribed" | null = null;
-      if (isNewTransition) {
-        if (newPlanTier === "plus_trial") {
-          firedEvent = "trial_started";
-        } else if (newPlanTier === "plus_active" && previous?.planTier !== "plus_trial") {
-          // Trial → active (a trial converting to paid) is caught by the
-          // webhook handler below once webhooks are live, not here — the
-          // host is usually long gone from the success page by then.
-          firedEvent = "subscribed";
-        }
-        if (firedEvent) {
-          await storage.logAnalyticsEvent(firedEvent, { email, billingInterval: updated.billingInterval ?? undefined, metadata: { subscriptionId: subscription.id } });
-          // Server-side Purchase conversion (Meta CAPI). event_id =
-          // subscription.id so it dedupes against the client Pixel.
-          await sendMetaPurchaseEvent({
-            email,
-            phone: session.customer_details?.phone,
-            value: plusPriceValue(updated.billingInterval as BillingInterval | null),
-            currency: "USD",
-            eventId: subscription.id,
-            eventSourceUrl: req.get("referer") || undefined,
-          });
-        }
-      }
-
-      res.json({
-        plan: "plus",
-        planTier: updated.planTier,
-        trialEndsAt: updated.trialEndsAt,
-        billingInterval: updated.billingInterval,
-        firedEvent,
-        eventId: subscription.id,
-        value: plusPriceValue(updated.billingInterval as BillingInterval | null),
-        email,
-      });
+  app.get("/api/checkout/confirm", async (req, res) => {
+    res.setHeader("Cache-Control", "private, no-store");
+    const sessionId = typeof req.query.sessionId === "string" ? req.query.sessionId : undefined;
+    if (!sessionId) return res.status(400).json({ error: "Missing sessionId." });
+    try {
+      return res.json(await fulfillCheckout(sessionId, req.get("referer") || undefined));
     } catch (err) {
+      if (err instanceof CheckoutStateError) return res.status(err.status).json({ error: err.message, code: err.code });
       console.error("Stripe checkout confirmation failed:", err);
-      res.status(502).json({ error: "Couldn't confirm your checkout. Please contact support if this persists." });
+      return res.status(502).json({ error: "Couldn't confirm your checkout. Please contact support if this persists." });
     }
   });
 
@@ -2260,68 +2340,85 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
       return res.status(400).json({ error: "Invalid signature." });
     }
 
+    const mode = stripeMode();
+    if ((mode === "test" && event.livemode) || (mode === "live" && !event.livemode)) {
+      return res.status(400).json({ error: "Stripe event environment does not match checkout." });
+    }
+
     try {
       switch (event.type) {
-        case "checkout.session.completed": {
-          // Spark one-time unlock. The pull-based /api/checkout/confirm is the
-          // primary path, but handle it here too for when the webhook is
-          // registered. Idempotent via markEventSparkUnlocked.
+        case "checkout.session.completed":
+        case "checkout.session.async_payment_succeeded": {
           const session = event.data.object as Stripe.Checkout.Session;
-          if (session.mode === "payment" && session.metadata?.plan === "spark") {
-            const ownerToken = session.metadata?.ownerToken;
-            if (ownerToken) await storage.markEventSparkUnlocked(ownerToken, session.id);
+          if (session.metadata?.plan !== "spark" && session.metadata?.plan !== "plus") break;
+          try {
+            await fulfillCheckout(session.id);
+          } catch (err) {
+            // A pending checkout is acknowledged, then fulfilled by a later
+            // success event. Storage/network failures must return 500 to retry.
+            if (!(err instanceof CheckoutStateError && err.status === 409)) throw err;
           }
           break;
         }
         case "customer.subscription.updated":
-        case "customer.subscription.created": {
-          const subscription = event.data.object as Stripe.Subscription;
-          const customer = await stripe.customers.retrieve(subscription.customer as string);
-          const email = !("deleted" in customer) ? customer.email?.toLowerCase() : undefined;
-          if (email) {
-            const previous = await storage.getEmailEntitlement(email);
-            const newPlanTier = planTierFromSubscriptionStatus(subscription.status);
-            await storage.upsertEmailEntitlement(email, {
-              planTier: newPlanTier,
-              stripeCustomerId: subscription.customer as string,
-              stripeSubscriptionId: subscription.id,
-              trialStartedAt: subscription.trial_start ? subscription.trial_start * 1000 : previous?.trialStartedAt ?? null,
-              trialEndsAt: subscription.trial_end ? subscription.trial_end * 1000 : previous?.trialEndsAt ?? null,
-            });
-            // Trial converting to paid — the transition /api/checkout/confirm
-            // can't catch, since the host isn't on the success page anymore.
-            if (previous?.planTier === "plus_trial" && newPlanTier === "plus_active") {
-              await storage.logAnalyticsEvent("subscribed", { email, metadata: { subscriptionId: subscription.id, via: "trial_conversion" } });
-              // Defense-in-depth: stamp the verified email onto the originating
-              // event if the subscription carries a returnToken in its metadata.
-              // (Present only if checkout set subscription_data.metadata; absent
-              // otherwise, in which case this safely no-ops.) Never throws.
-              const returnToken = subscription.metadata?.returnToken;
-              if (returnToken) {
-                const subEvent = await storage.getEventByOwnerToken(returnToken);
-                if (subEvent) await stampCapturedEmailSafe(subEvent.id, email);
-              }
-              // Server-side Purchase conversion (Meta CAPI). Interval comes
-              // from the subscription's price since no metadata is present on
-              // the webhook object. event_id = subscription.id for dedup.
-              const interval = subscription.items.data[0]?.price?.recurring?.interval;
-              const phone = !("deleted" in customer) ? customer.phone ?? undefined : undefined;
-              await sendMetaPurchaseEvent({
-                email,
-                phone,
-                value: interval === "month" ? CHECKOUT_PRICES.plusMonthly : CHECKOUT_PRICES.plusAnnual,
-                currency: "USD",
-                eventId: subscription.id,
-              });
-            }
-          }
-          break;
-        }
+        case "customer.subscription.created":
         case "customer.subscription.deleted": {
-          const subscription = event.data.object as Stripe.Subscription;
-          const customer = await stripe.customers.retrieve(subscription.customer as string);
-          const email = !("deleted" in customer) ? customer.email?.toLowerCase() : undefined;
-          if (email) await storage.upsertEmailEntitlement(email, { planTier: "plus_expired" });
+          const notification = event.data.object as Stripe.Subscription;
+          // A notification can arrive out of order; reconcile current state.
+          const observedAt = Date.now();
+          const subscription = await stripe.subscriptions.retrieve(notification.id, { expand: ["latest_invoice"] });
+          const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
+          const customer = await stripe.customers.retrieve(customerId);
+          const email = !("deleted" in customer) ? customer.email?.trim().toLowerCase() : undefined;
+          const newPlanTier = subscription.status === "trialing" &&
+            (!subscription.trial_end || subscription.trial_end * 1000 <= Date.now())
+            ? "plus_expired" : planTierFromSubscriptionStatus(subscription.status);
+          // An asynchronous first payment can leave the subscription active
+          // before funds settle. Only a paid invoice may grant paid access here.
+          const invoice = subscription.latest_invoice;
+          if (newPlanTier === "plus_active" &&
+              (!invoice || typeof invoice === "string" || invoice.status !== "paid" || invoice.amount_remaining !== 0)) break;
+          const interval = subscription.items.data[0]?.price?.recurring?.interval;
+          const returnToken = subscription.metadata?.returnToken;
+          const originEvent = returnToken ? await storage.getEventByOwnerToken(returnToken) : undefined;
+          // An exact subscription downgrade must reach its bound events even
+          // if its billing email changed or another subscription shares it.
+          // Only subscriptions marked by Posy's server may grant new access.
+          if (subscription.metadata?.plan === 'plus' || newPlanTier === 'plus_expired') {
+            await reconcilePlusMembership({
+              subscriptionId: subscription.id, customerId, planTier: newPlanTier,
+              trialEndsAt: subscription.trial_end ? subscription.trial_end * 1000 : null,
+              billingInterval: interval === 'month' ? 'monthly' : interval === 'year' ? 'annual' : null,
+              subscriptionCreatedAt: subscription.created * 1000, observedAt,
+              eventId: subscription.metadata?.plan === 'plus' ? originEvent?.id : undefined,
+              source: 'subscription', sourceId: event.id,
+            });
+          }
+          if (!email) break;
+          const previous = await storage.getEmailEntitlement(email);
+          if (newPlanTier === "plus_expired" && previous?.stripeSubscriptionId &&
+              previous.stripeSubscriptionId !== subscription.id) break;
+          await storage.upsertEmailEntitlement(email, {
+            planTier: newPlanTier,
+            stripeCustomerId: customerId,
+            stripeSubscriptionId: subscription.id,
+            billingInterval: interval === "month" ? "monthly" : interval === "year" ? "annual" : previous?.billingInterval ?? null,
+            trialStartedAt: subscription.trial_start ? subscription.trial_start * 1000 : previous?.trialStartedAt ?? null,
+            trialEndsAt: subscription.trial_end ? subscription.trial_end * 1000 : previous?.trialEndsAt ?? null,
+          });
+          const usable = newPlanTier === "plus_active" || (newPlanTier === "plus_trial" &&
+            !!subscription.trial_end && subscription.trial_end * 1000 > Date.now());
+          if (usable && returnToken) {
+            if (originEvent) await stampCapturedEmailForCheckout(originEvent.id, email);
+          }
+          if (previous?.planTier === "plus_trial" && newPlanTier === "plus_active") {
+            await storage.logAnalyticsEvent("subscribed", { email, metadata: { subscriptionId: subscription.id, via: "trial_conversion" } });
+            await sendMetaPurchaseEvent({
+              email, phone: !("deleted" in customer) ? customer.phone ?? undefined : undefined,
+              value: interval === "month" ? CHECKOUT_PRICES.plusMonthly : CHECKOUT_PRICES.plusAnnual,
+              currency: "USD", eventId: subscription.id,
+            });
+          }
           break;
         }
         case "invoice.payment_failed": {

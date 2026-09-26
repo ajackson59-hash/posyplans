@@ -19,6 +19,7 @@
     }
   ],
   "rewrites": [
+    { "source": "/artwork-review", "destination": "/api" },
     { "source": "/api/(.*)", "destination": "/api" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]

@@ -17,10 +17,9 @@ import type { Event } from "../shared/schema";
 // product. Three tries is enough to survive one quality-gate rejection
 // without opening the door to unlimited free generations.
 export const MAX_PRE_PAYMENT_PREVIEW_ATTEMPTS = 3;
-// 300px still looked visibly degraded inside the sales card. 560px is crisp on
-// high-density mobile screens while remaining materially below the 1024px+
-// paid source asset. The private owner-token route and branded overlay—not
-// deliberate ugliness—protect the complete invitation value.
+// Historical approval transform. Keep its bytes stable for saved approvals and
+// consumed calibration controls. Fresh customer approvals use detail-v1 in
+// prePaymentPreviewImage.ts; 560px is insufficient for a high-density sales card.
 export const PRE_PAYMENT_PREVIEW_LONG_EDGE = 560;
 
 // Preview v1 accidentally omitted the host's intake vibe and usually sent

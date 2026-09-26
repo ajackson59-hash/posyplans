@@ -26,6 +26,10 @@
 // touching the Anthropic SDK.
 
 import { storage } from "./storage";
+import { humanReviewEventEnabled } from "./humanArtworkReview";
+import { approvedHumanArtwork } from "./humanArtworkPolicy";
+import { customerArtworkApplication, customerArtworkEventEnabled } from "./customerArtwork";
+import { keptCustomerArtwork } from "./customerArtworkPolicy";
 import { generateThemeAndIdentityAi, type ThemeAndIdentityResult } from "./themeAi";
 import { generateBudgetSuggestionAi, type BudgetSuggestion } from "./budgetAi";
 import { generateMenuAi, type MenuSuggestion } from "./menuAi";
@@ -49,6 +53,7 @@ import { detectMenuThemeCoherence } from "@shared/menuThemeCoherence";
 import { computeReadinessScore } from "@shared/readinessScore";
 import { detectMissingItems } from "@shared/missingItems";
 import { assessBudgetFeasibility } from "@shared/budgetFeasibility";
+import { MasterPlannerRunStore, type InitialGenerationStagePatch } from './masterPlannerRunStore';
 
 export type CoarseDraftStage = "theme" | "budget_menu" | "shopping_timeline" | "invites" | "checks" | "done";
 
@@ -122,7 +127,31 @@ export async function runMasterPlannerOrchestration(
   eventId: number,
   generationId: number,
   deps: OrchestratorDeps = defaultDeps,
+  executionClaim?: number,
 ): Promise<void> {
+  if (executionClaim === undefined && deps === defaultDeps) {
+    throw new Error('A durable execution claim is required to start a plan.');
+  }
+  const run = executionClaim === undefined ? undefined : new MasterPlannerRunStore(eventId, generationId, executionClaim);
+  let activeStage: CoarseDraftStage = 'theme';
+  const stage = (name: CoarseDraftStage) => {
+    activeStage = name;
+    return run ? run.setStage(name) : setDraftStage(eventId, name);
+  };
+  const fail = (name: CoarseDraftStage) => run ? run.fail(name) : failCoarseStage(eventId, generationId, name);
+  async function persist(name: FineStage, patch: InitialGenerationStagePatch = {}) {
+    if (run) return run.completeStage(name, patch);
+    // Dependency-injected/offline legacy callers do not have a persisted claim.
+    // Every production entry supplies one and uses the transaction above.
+    if (patch.event) await storage.updateEventById(eventId, patch.event);
+    if (patch.budgetItems) await storage.createBudgetItemsBulk(eventId, patch.budgetItems);
+    if (patch.menuItems) await storage.createMenuItemsBulk(eventId, patch.menuItems);
+    if (patch.shoppingItems) await storage.createShoppingListItemsBulk(eventId, patch.shoppingItems);
+    if (patch.timelineItems) await storage.createTimelineItemsBulk(eventId, patch.timelineItems);
+    await markStageCompleted(generationId, name);
+  }
+  try {
+  if (run) await run.assertActive();
   const generationRow = await storage.getGeneration(generationId);
   const completed = new Set<FineStage>(
     (generationRow ? safeParseStages(generationRow.completedStages) : []) as FineStage[],
@@ -134,11 +163,11 @@ export async function runMasterPlannerOrchestration(
   const guests = await storage.listGuests(eventId);
   const guestCount = resolveGuestCount(initialEvent.estimatedGuestCount, guests);
 
-  await storage.updateEventById(eventId, { draftStatus: "generating" });
+  if (!run) await storage.updateEventById(eventId, { draftStatus: "generating" });
 
   /* ---- Stage 1: Theme + Event Identity ---- */
   if (!completed.has("theme")) {
-    await setDraftStage(eventId, "theme");
+    await stage("theme");
     try {
       const result: ThemeAndIdentityResult = await deps.generateThemeAndIdentity({
         eventName: initialEvent.eventName,
@@ -146,23 +175,26 @@ export async function runMasterPlannerOrchestration(
         vibeDescription: initialEvent.vibeDescription,
         guestCount,
       });
-      await storage.updateEventById(eventId, {
-        themeName: result.themeName,
-        paletteColors: JSON.stringify(result.paletteColors),
+      await persist('theme', { event: {
+        // The reviewed brief owns its theme and palette; planning cannot replace it.
+        ...(humanReviewEventEnabled(initialEvent) || customerArtworkEventEnabled(initialEvent) ? {} : {
+          themeName: result.themeName,
+          paletteColors: JSON.stringify(result.paletteColors),
+        }),
         eventIdentity: result.eventIdentity,
-      });
-      await markStageCompleted(generationId, "theme");
+      } });
       completed.add("theme");
     } catch (err) {
-      await failCoarseStage(eventId, generationId, "theme");
+      await fail("theme");
       throw err;
     }
   }
 
   /* ---- Stage 2: Budget + Menu (parallel AI calls) ---- */
   if (!completed.has("budget") || !completed.has("menu")) {
-    await setDraftStage(eventId, "budget_menu");
+    await stage("budget_menu");
     const eventForStage2 = (await storage.getEventById(eventId))!;
+    if (run) await run.assertActive();
 
     const [budgetOutcome, menuOutcome] = await Promise.allSettled([
       completed.has("budget")
@@ -187,18 +219,12 @@ export async function runMasterPlannerOrchestration(
 
     if (budgetOutcome.status === "fulfilled" && budgetOutcome.value) {
       const budget: BudgetSuggestion = budgetOutcome.value;
-      await storage.createBudgetItemsBulk(
-        eventId,
-        budget.items.map((item) => ({ category: item.category, name: item.name, estimatedCost: item.estimatedCost })),
-      );
-      await markStageCompleted(generationId, "budget");
+      await persist('budget', { budgetItems: budget.items.map((item) => ({ category: item.category, name: item.name, estimatedCost: item.estimatedCost })) });
       completed.add("budget");
     }
     if (menuOutcome.status === "fulfilled" && menuOutcome.value) {
       const menu: MenuSuggestion = menuOutcome.value;
-      await storage.createMenuItemsBulk(
-        eventId,
-        menu.items.map((item) => ({
+      await persist('menu', { menuItems: menu.items.map((item) => ({
           course: item.course,
           itemName: item.itemName,
           source: item.source,
@@ -206,21 +232,19 @@ export async function runMasterPlannerOrchestration(
           costEstimate: item.costEstimate,
           dietaryTags: item.dietaryTags,
           notes: item.notes,
-        })),
-      );
-      await markStageCompleted(generationId, "menu");
+        })) });
       completed.add("menu");
     }
 
     if (budgetOutcome.status === "rejected" || menuOutcome.status === "rejected") {
-      await failCoarseStage(eventId, generationId, "budget_menu");
+      await fail("budget_menu");
       throw budgetOutcome.status === "rejected" ? budgetOutcome.reason : (menuOutcome as PromiseRejectedResult).reason;
     }
   }
 
   /* ---- Stage 3: Timeline (rule-based) + Shopping (AI) ---- */
   if (!completed.has("timeline") || !completed.has("shopping")) {
-    await setDraftStage(eventId, "shopping_timeline");
+    await stage("shopping_timeline");
     const eventForStage3 = (await storage.getEventById(eventId))!;
     const menuItemsForStage3 = await storage.listMenuItems(eventId);
     const hasCakeMenuItem = menuItemsForStage3.some((item) => item.course === "Cake");
@@ -228,25 +252,22 @@ export async function runMasterPlannerOrchestration(
     if (!completed.has("timeline")) {
       try {
         const timelineItems = generateTimeline({ eventType: eventForStage3.eventType, guestCount, hasCakeMenuItem });
-        await storage.createTimelineItemsBulk(
-          eventId,
-          timelineItems.map((item) => ({
+        await persist('timeline', { timelineItems: timelineItems.map((item) => ({
             time: item.time,
             title: item.title,
             category: item.category,
             sortOrder: item.sortOrder,
-          })),
-        );
-        await markStageCompleted(generationId, "timeline");
+          })) });
         completed.add("timeline");
       } catch (err) {
-        await failCoarseStage(eventId, generationId, "shopping_timeline");
+        await fail("shopping_timeline");
         throw err;
       }
     }
 
     if (!completed.has("shopping")) {
       try {
+        if (run) await run.assertActive();
         const shopping: ShoppingSuggestion = await deps.generateShopping({
           eventName: eventForStage3.eventName,
           eventType: eventForStage3.eventType,
@@ -254,20 +275,16 @@ export async function runMasterPlannerOrchestration(
           guestCount,
           menuItems: menuItemsForStage3.map((item) => ({ course: item.course, itemName: item.itemName })),
         });
-        await storage.createShoppingListItemsBulk(
-          eventId,
-          shopping.items.map((item) => ({
+        await persist('shopping', { shoppingItems: shopping.items.map((item) => ({
             category: item.category,
             itemName: item.itemName,
             quantity: item.quantity,
             estimatedCost: item.estimatedCost,
             notes: item.notes,
-          })),
-        );
-        await markStageCompleted(generationId, "shopping");
+          })) });
         completed.add("shopping");
       } catch (err) {
-        await failCoarseStage(eventId, generationId, "shopping_timeline");
+        await fail("shopping_timeline");
         throw err;
       }
     }
@@ -275,45 +292,59 @@ export async function runMasterPlannerOrchestration(
 
   /* ---- Stage 4 (read-only, feeds Stage 5) + Stage 5: Invitation concept + illustration ---- */
   if (!completed.has("invites")) {
-    await setDraftStage(eventId, "invites");
+    await stage("invites");
     try {
       const eventForStage5 = (await storage.getEventById(eventId))!;
-      const [menuItemsForDna, budgetItemsForDna] = await Promise.all([
-        storage.listMenuItems(eventId),
-        storage.listBudgetItems(eventId),
-      ]);
-      const appliedConcept = parseInviteDesignConcept(eventForStage5.inviteDesignConceptJson);
-      const dnaProfile = computeEventDna({
-        eventType: eventForStage5.eventType,
-        menuItems: menuItemsForDna,
-        budgetItems: budgetItemsForDna,
-        appliedConceptDnaHints: appliedConcept?.dnaHints,
-      });
-      const formatRecommendation = recommendInviteFormat(dnaProfile, guestCount);
+      if (customerArtworkEventEnabled(eventForStage5)) {
+        const artwork = await keptCustomerArtwork(eventForStage5);
+        if (!artwork) throw new Error('Keep current artwork before planning');
+        await persist('invites', { event: customerArtworkApplication(eventForStage5, artwork) });
+      } else if (humanReviewEventEnabled(eventForStage5)) {
+        const artwork = await approvedHumanArtwork(eventForStage5);
+        if (!artwork) throw new Error('Current artwork needs human approval');
+        await persist('invites', { event: {
+          inviteArtworkUrl: artwork, inviteIllustrationUrl: artwork,
+          customInviteImageUrl: '', inviteDesignConceptJson: '{}',
+        } });
+      } else {
+        const [menuItemsForDna, budgetItemsForDna] = await Promise.all([
+          storage.listMenuItems(eventId),
+          storage.listBudgetItems(eventId),
+        ]);
+        const appliedConcept = parseInviteDesignConcept(eventForStage5.inviteDesignConceptJson);
+        const dnaProfile = computeEventDna({
+          eventType: eventForStage5.eventType,
+          menuItems: menuItemsForDna,
+          budgetItems: budgetItemsForDna,
+          appliedConceptDnaHints: appliedConcept?.dnaHints,
+        });
+        const formatRecommendation = recommendInviteFormat(dnaProfile, guestCount);
 
-      const concepts = await deps.generateInviteConcepts({
-        themePrompt: eventForStage5.vibeDescription || eventForStage5.themeName,
-        eventName: eventForStage5.eventName,
-        eventType: eventForStage5.eventType,
-        eventDate: eventForStage5.eventDate,
-        location: eventForStage5.location,
-        hostNames: eventForStage5.hostNames,
-        themeName: eventForStage5.themeName,
-        dnaSummary: dnaSummaryForPrompt(dnaProfile),
-        formatGuidance: formatRecommendation?.conceptGuidance ?? null,
-      });
-      const chosen = selectRecommendedConcept(concepts, dnaProfile);
-      const aspectRatio = chosen.layoutStyle === "banner" ? "16:9" : chosen.layoutStyle === "full-bleed" ? "9:16" : "1:1";
-      const illustrationUrl = await deps.generateIllustration(chosen, aspectRatio);
+        if (run) await run.assertActive();
+        const concepts = await deps.generateInviteConcepts({
+          themePrompt: eventForStage5.vibeDescription || eventForStage5.themeName,
+          eventName: eventForStage5.eventName,
+          eventType: eventForStage5.eventType,
+          eventDate: eventForStage5.eventDate,
+          location: eventForStage5.location,
+          hostNames: eventForStage5.hostNames,
+          themeName: eventForStage5.themeName,
+          dnaSummary: dnaSummaryForPrompt(dnaProfile),
+          formatGuidance: formatRecommendation?.conceptGuidance ?? null,
+        });
+        const chosen = selectRecommendedConcept(concepts, dnaProfile);
+        const aspectRatio = chosen.layoutStyle === "banner" ? "16:9" : chosen.layoutStyle === "full-bleed" ? "9:16" : "1:1";
+        if (run) await run.assertActive();
+        const illustrationUrl = await deps.generateIllustration(chosen, aspectRatio);
 
-      await storage.updateEventById(eventId, {
-        inviteDesignConceptJson: JSON.stringify(chosen),
-        inviteIllustrationUrl: illustrationUrl,
-      });
-      await markStageCompleted(generationId, "invites");
+        await persist('invites', { event: {
+          inviteDesignConceptJson: JSON.stringify(chosen),
+          inviteIllustrationUrl: illustrationUrl,
+        } });
+      }
       completed.add("invites");
     } catch (err) {
-      await failCoarseStage(eventId, generationId, "invites");
+      await fail("invites");
       throw err;
     }
   }
@@ -321,7 +352,7 @@ export async function runMasterPlannerOrchestration(
   /* ---- Stage 6: rule-based checks (validation pass — nothing persisted, matches
    *  the rest of the app's "computed fresh on every read, never stored" convention) ---- */
   if (!completed.has("checks")) {
-    await setDraftStage(eventId, "checks");
+    await stage("checks");
     try {
       const eventForStage6 = (await storage.getEventById(eventId))!;
       const [guestsForChecks, menuItemsForChecks, budgetItemsForChecks, shoppingItemsForChecks, timelineItemsForChecks] =
@@ -359,16 +390,25 @@ export async function runMasterPlannerOrchestration(
         menuItems: menuItemsForChecks,
       });
 
-      await markStageCompleted(generationId, "checks");
+      await persist('checks');
       completed.add("checks");
     } catch (err) {
-      await failCoarseStage(eventId, generationId, "checks");
+      await fail("checks");
       throw err;
     }
   }
 
   /* ---- Done ---- */
-  await setDraftStage(eventId, "done");
-  await storage.updateEventById(eventId, { draftStatus: "ready" });
-  await markGenerationConsumed(generationId);
+  if (run) await run.finish();
+  else {
+    await setDraftStage(eventId, "done");
+    await storage.updateEventById(eventId, { draftStatus: "ready" });
+    await markGenerationConsumed(generationId);
+  }
+  } catch (error) {
+    // Includes startup reads and stage persistence errors outside the narrower
+    // provider catches. A lost/expired claim cannot change a newer run's status.
+    if (run) { try { await run.fail(activeStage); } catch { /* status reads recover expired claims */ } }
+    throw error;
+  }
 }

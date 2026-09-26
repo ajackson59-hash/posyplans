@@ -44,8 +44,8 @@ export async function generateBudgetSuggestionAi(params: {
   themeName: string;
   headcount: number;
   targetBudget?: number | null;
-}): Promise<BudgetSuggestion> {
-  const client = new Anthropic();
+}, options?: { maxRetries?: number }): Promise<BudgetSuggestion> {
+  const client = new Anthropic(options);
   const lines = [
     `Event name: "${params.eventName}"`,
     params.eventType ? `Event type: "${params.eventType}"` : null,

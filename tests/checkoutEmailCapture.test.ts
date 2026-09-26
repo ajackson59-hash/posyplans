@@ -26,6 +26,7 @@ const createStripeSession = vi.fn(async () => ({
 const retrieveStripeSession = vi.fn(async () => ({
   id: "cs_test_123",
   status: "complete",
+  payment_status: "paid",
   mode: "payment",
   metadata: { plan: "spark", ownerToken: OWNER },
   customer_details: { email: "verified@example.com", phone: null },

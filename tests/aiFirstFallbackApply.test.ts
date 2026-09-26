@@ -116,6 +116,7 @@ function appFor(previewStore: InMemoryPreviewStore, usageStore: InMemoryUsageSto
   app.use(express.json());
   const updates: Record<string, unknown>[] = [];
   registerAiFirstRoutes(app, {
+    plusAccess: async () => undefined,
     storage: {
       getEventByOwnerToken: async (token: string) =>
         token === OWNER
