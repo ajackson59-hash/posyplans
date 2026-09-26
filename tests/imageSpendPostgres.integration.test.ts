@@ -55,6 +55,7 @@ beforeAll(async () => {
     for (const statement of statements) await tx.unsafe(statement);
     await tx.unsafe(sessionTables);
     await tx.unsafe(spendMigration);
+    await tx.unsafe(await readFile(new URL('../supabase/migrations/20260926112828_image_spend_bounded_continuation.sql', import.meta.url), 'utf8'));
   });
   initialized = true;
   production = await import('../server/storage');
@@ -68,10 +69,15 @@ beforeAll(async () => {
 }, 30_000);
 
 beforeEach(async () => {
+  await control.unsafe('drop table public.image_spend_continuations cascade');
   await control.unsafe('truncate public.image_spend_requests, public.image_spend_policies, public.customer_artwork_sessions, public.events restart identity cascade');
   await control`insert into public.image_spend_policies(id, paused, stop_reason, request_limit, create_limit, edit_limit)
     values(${guard.IMAGE_SPEND_POLICY}, false, 'synthetic_test_only', 16, 8, 8)`;
   event = await createEvent();
+  const migration = await readFile(new URL('../supabase/migrations/20260926112828_image_spend_bounded_continuation.sql', import.meta.url), 'utf8');
+  for (const name of ['image_spend_continuation_fence','image_spend_continuation_commit_fence','image_spend_continued_request_fence']) await control.unsafe(`drop function if exists public.${name}() cascade`);
+  await control.unsafe('drop function if exists public.image_spend_unknown_continuable(uuid,integer,text,boolean) cascade');
+  await control.unsafe(migration);
 });
 
 afterEach(async () => {
@@ -85,7 +91,9 @@ afterEach(async () => {
 
 afterAll(async () => {
   if (production?.db.$client) await production.db.$client.end({ timeout: 3 });
-  if (initialized) await control.unsafe('drop table public.image_spend_requests, public.image_spend_policies, public.customer_artwork_sessions, public.events cascade');
+  if (initialized) await control.unsafe('drop table public.image_spend_continuations, public.image_spend_requests, public.image_spend_policies, public.customer_artwork_sessions, public.events cascade');
+  for (const name of ['image_spend_continuation_fence','image_spend_continuation_commit_fence','image_spend_continued_request_fence']) await control.unsafe(`drop function if exists public.${name}() cascade`);
+  await control.unsafe('drop function if exists public.image_spend_unknown_continuable(uuid,integer,text,boolean) cascade');
   await control.end({ timeout: 3 });
   vi.unstubAllGlobals();
 });

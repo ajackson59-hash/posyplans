@@ -30,8 +30,9 @@ let requestId: string;
 let eventId: number;
 
 async function dropTestSchema() {
-  await control.unsafe('drop table if exists public.image_spend_reconciliations, public.image_spend_requests, public.image_spend_policies, public.customer_artwork_sessions, public.events cascade');
-  for (const name of ['image_spend_audit_fence', 'image_spend_reconciled_fence', 'image_spend_audit_commit_fence']) {
+  await control.unsafe('drop table if exists public.image_spend_continuations, public.image_spend_reconciliations, public.image_spend_requests, public.image_spend_policies, public.customer_artwork_sessions, public.events cascade');
+  await control.unsafe('drop function if exists public.image_spend_unknown_continuable(uuid,integer,text,boolean) cascade');
+  for (const name of ['image_spend_audit_fence', 'image_spend_reconciled_fence', 'image_spend_audit_commit_fence', 'image_spend_continuation_fence', 'image_spend_continuation_commit_fence', 'image_spend_continued_request_fence']) {
     await control.unsafe(`drop function if exists public.${name}() cascade`);
   }
 }
@@ -45,7 +46,8 @@ beforeAll(async () => {
   const session = await readFile(new URL('../supabase/migrations/20260923174419_customer_artwork_sessions.sql', import.meta.url), 'utf8');
   migrationTexts = [session.replace(/^alter table public\.events add column customer_artwork_enabled boolean not null default false;\s*/, ''),
     await readFile(new URL('../supabase/migrations/20260926022248_image_spend_guard.sql', import.meta.url), 'utf8'),
-    await readFile(new URL('../supabase/migrations/20260926043634_image_spend_reconciliation_audit.sql', import.meta.url), 'utf8')];
+    await readFile(new URL('../supabase/migrations/20260926043634_image_spend_reconciliation_audit.sql', import.meta.url), 'utf8'),
+    await readFile(new URL('../supabase/migrations/20260926112828_image_spend_bounded_continuation.sql', import.meta.url), 'utf8')];
   for (const role of ['anon', 'authenticated', 'service_role']) {
     const found = await control`select rolname from pg_roles where rolname=${role}`;
     if (!found.length) await control.unsafe(`create role ${role} nologin${role === 'service_role' ? ' bypassrls' : ''}`);

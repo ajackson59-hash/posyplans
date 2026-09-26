@@ -8,7 +8,8 @@ import { ownerEventView, restoreEventArtworkReferences, eventArtworkFields, stor
 import { DbCustomerArtworkStore } from './customerArtworkStore';
 import { streamArtwork } from './artworkResponse';
 import { ImageSpendGuardError } from './imageSpendGuard';
-import { CustomerArtworkError, claimCustomerArtwork, currentCustomerCandidate, customerArtworkBriefHash,
+import { MAX_CUSTOMER_UPLOAD_BYTES, uploadCustomerArtwork, useRecoveryTemplate } from './customerArtworkUpload';
+import { CustomerArtworkError, claimCustomerArtwork, currentCustomerCandidate, customerArtworkBriefHash, customerArtworkCandidates,
   customerArtworkApplication, customerArtworkEventEnabled, customerArtworkGenerationEnabled, customerArtworkRequestLimit, customerArtworkView, emptyCustomerArtwork,
   finishCustomerArtwork, recoverCustomerArtwork, selectCustomerArtwork, selectedCustomerArtwork,
   type CustomerArtworkRequestInput, type CustomerArtworkSession, type CustomerArtworkStore } from './customerArtwork';
@@ -36,7 +37,7 @@ export function registerCustomerArtworkRoutes(app: Express, deps: Dependencies =
   const current = async (event: Event) => recoverCustomerArtwork((await sessions.get(event.id)) ?? emptyCustomerArtwork(event), sessions);
   const view = async (row: CustomerArtworkSession, event: Event) => {
     const artwork = customerArtworkView(row, event, env());
-    return { ...artwork, generationEnabled: artwork.generationEnabled && await sessions.spendingAvailable() };
+    return { ...artwork, generationEnabled: artwork.generationEnabled && await sessions.spendingAvailable(event.id) };
   };
   const readiness = async (row: CustomerArtworkSession, event: Event) => {
     const artwork = await view(row, event);
@@ -68,7 +69,7 @@ export function registerCustomerArtworkRoutes(app: Express, deps: Dependencies =
   const dispatch = async (event: Event, row: CustomerArtworkSession, input: CustomerArtworkRequestInput) => {
     // Replayed requests are read-only, including when the spend switch was turned off.
     if (!row.attempts.some(a => a.requestKey === input.requestKey)
-      && (!customerArtworkGenerationEnabled(env()) || customerArtworkRequestLimit(event, env()) === 0 || !await sessions.spendingAvailable()))
+      && (!customerArtworkGenerationEnabled(env()) || customerArtworkRequestLimit(event, env()) === 0 || !await sessions.spendingAvailable(event.id)))
       throw new CustomerArtworkError('Artwork creation is temporarily unavailable. Your saved images are still here.', 503);
     const claim = await claimCustomerArtwork(event, row, input, sessions, env());
     if (claim.request) {
@@ -104,6 +105,20 @@ export function registerCustomerArtworkRoutes(app: Express, deps: Dependencies =
     if (!input.success) throw new CustomerArtworkError('Open the image before keeping it.', 400);
     return res.json(await view(await selectCustomerArtwork(event, await current(event), input.data, sessions), event));
   }));
+  app.post('/api/events/owner/:ownerToken/artwork/upload', owner(async (req, res, event) => {
+    const input = z.object({ version: z.number().int().min(0), briefHash: hashSchema, requestKey: z.string().uuid(),
+      dataUrl: z.string().max(Math.ceil(MAX_CUSTOMER_UPLOAD_BYTES / 3) * 4 + 23) }).strict().safeParse(req.body);
+    if (!input.success) throw new CustomerArtworkError('Choose a JPG or PNG image using the upload control.', 400);
+    const row = await recoverCustomerArtwork(await sessions.create(emptyCustomerArtwork(event)), sessions);
+    return res.json(await view(await uploadCustomerArtwork(event, row, input.data, sessions), event));
+  }));
+  app.post('/api/events/owner/:ownerToken/artwork/template', owner(async (req, res, event) => {
+    const input = z.object({ version: z.number().int().min(0), briefHash: hashSchema, requestKey: z.string().uuid(),
+      templateId: z.literal('elegant-neutral') }).strict().safeParse(req.body);
+    if (!input.success) throw new CustomerArtworkError('Choose an available ready-made design.', 400);
+    const row = await recoverCustomerArtwork(await sessions.create(emptyCustomerArtwork(event)), sessions);
+    return res.json(await view(await useRecoveryTemplate(event, row, input.data, sessions), event));
+  }));
   app.get('/api/events/owner/:ownerToken/artwork/candidates/:id', owner(async (req, res, event) => {
     const row = await current(event), candidate = currentCustomerCandidate(row, event, String(req.params.id));
     if (!candidate || req.query.v !== candidate.imageHash) throw new CustomerArtworkError('That image is no longer available for these details.', 404);
@@ -111,7 +126,7 @@ export function registerCustomerArtworkRoutes(app: Express, deps: Dependencies =
   }));
   app.get('/api/events/owner/:ownerToken/prepayment-preview/asset', owner(async (_req, res, event) => {
     const row = await current(event);
-    const chosen = currentCustomerCandidate(row, event, row.selectedId) ?? [...row.attempts].reverse().map(a => currentCustomerCandidate(row, event, a.id)).find(Boolean);
+    const chosen = currentCustomerCandidate(row, event, row.selectedId) ?? customerArtworkCandidates(row).reverse().map(a => currentCustomerCandidate(row, event, a.id)).find(Boolean);
     if (!chosen) throw new CustomerArtworkError('Your artwork is not ready yet.', 404);
     return streamArtwork(res, Buffer.from(chosen.imageBase64!, 'base64'));
   }, true));

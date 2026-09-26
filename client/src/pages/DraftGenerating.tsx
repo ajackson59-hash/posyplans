@@ -447,7 +447,8 @@ export default function DraftGenerating() {
   if (customerArtwork) paywallCtaLabel = checkoutPending ? 'Starting checkout…'
     : startPrePaymentPreview.isPending || customerArtwork.state === 'generating' ? 'Creating your artwork…'
     : customerArtwork.canContinue ? continueCheckoutLabel
-    : customerCanCreate ? 'Create my artwork preview' : 'Keep an image above to continue';
+    : customerCanCreate ? 'Create my artwork preview' : customerArtwork.candidates.length ? 'Keep an image above to continue'
+    : customerArtwork.uploadAvailable ? 'Choose artwork above to continue' : 'Artwork needs attention';
 
   // Only auto-fire generation once we know this event is allowed to draft
   // (Spark unlocked or Plus). Never before entitlement resolves, and never

@@ -12,5 +12,7 @@ export interface CustomerArtworkView {
   hasSavedPlan: boolean;
   canContinue: boolean;
   supportReference: string | null;
-  candidates: Array<{ id: string; imageHash: string; assetUrl: string; operation: 'create' | 'edit'; correction: string | null }>;
+  uploadAvailable?: boolean;
+  uploadsRemaining?: number;
+  candidates: Array<{ id: string; imageHash: string; assetUrl: string; operation: 'create' | 'edit' | 'upload' | 'template'; correction: string | null }>;
 }

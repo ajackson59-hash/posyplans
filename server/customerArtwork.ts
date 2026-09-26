@@ -33,13 +33,23 @@ export interface CustomerArtworkAttempt {
 }
 export interface CustomerArtworkSession {
   eventId: number; ownerHash: string; version: number; attempts: CustomerArtworkAttempt[];
+  uploads?: CustomerArtworkUpload[];
   selectedId?: string; selections: Array<{ candidateId: string; imageHash: string; briefHash: string; at: number }>;
 }
+/** Owner-supplied recovery pixels are never represented as provider attempts. */
+export interface CustomerArtworkUpload {
+  id: string; requestKey: string; briefHash: string; operation: 'upload' | 'template'; status: 'ready';
+  templateId?: string;
+  imageBase64: string; imageHash: string; uploadedAt: number; inputHash: string;
+  correction?: never;
+}
+export const CUSTOMER_ARTWORK_UPLOAD_LIMIT = 3;
+export const customerArtworkCandidates = (row: CustomerArtworkSession) => [...row.attempts, ...(row.uploads ?? [])];
 export interface CustomerArtworkStore {
   get(eventId: number): Promise<CustomerArtworkSession | undefined>;
   create(row: CustomerArtworkSession): Promise<CustomerArtworkSession>;
   compareAndSet(row: CustomerArtworkSession, expected: number): Promise<boolean>;
-  spendingAvailable(): Promise<boolean>;
+  spendingAvailable(eventId?: number): Promise<boolean>;
   reserveRequest(row: CustomerArtworkSession, expected: number, attempt: CustomerArtworkAttempt, request: ArtworkRequest): Promise<boolean>;
   finishRequest(eventId: number, attempt: CustomerArtworkAttempt, executionId: string): Promise<'handled' | 'unmanaged'>;
 }
@@ -85,7 +95,7 @@ export function emptyCustomerArtwork(event: Event): CustomerArtworkSession {
 }
 export function currentCustomerCandidate(row: CustomerArtworkSession, event: Event, id: string | undefined) {
   if (!sessionBelongsTo(row, event)) return undefined;
-  const candidate = row.attempts.find(a => a.id === id && a.status === 'ready' && a.briefHash === customerArtworkBriefHash(event));
+  const candidate = customerArtworkCandidates(row).find(a => a.id === id && a.status === 'ready' && a.briefHash === customerArtworkBriefHash(event));
   if (!candidate?.imageBase64 || !candidate.imageHash || hash(Buffer.from(candidate.imageBase64, 'base64')) !== candidate.imageHash) return undefined;
   return candidate;
 }
@@ -99,7 +109,7 @@ export function selectedCustomerArtwork(row: CustomerArtworkSession | undefined,
  * image remains available to guests while the host considers another draft. */
 export function isKeptCustomerArtwork(row: CustomerArtworkSession | undefined, event: Event, value: string) {
   return !!row && sessionBelongsTo(row, event) && row.selections.some(s => {
-    const candidate = row.attempts.find(a => a.id === s.candidateId && a.status === 'ready');
+    const candidate = customerArtworkCandidates(row).find(a => a.id === s.candidateId && a.status === 'ready');
     return candidate?.imageBase64 && candidate.imageHash === s.imageHash
       && hash(Buffer.from(candidate.imageBase64, 'base64')) === s.imageHash
       && value === `data:image/png;base64,${candidate.imageBase64}`;
@@ -128,7 +138,7 @@ export async function recoverCustomerArtwork(row: CustomerArtworkSession, store:
 export function customerArtworkView(row: CustomerArtworkSession, event: Event, env: NodeJS.ProcessEnv = process.env): CustomerArtworkView {
   if (!sessionBelongsTo(row, event)) throw new CustomerArtworkError('This artwork is not available.', 404);
   const briefHash = customerArtworkBriefHash(event);
-  const current = row.attempts.filter(a => a.briefHash === briefHash);
+  const current = customerArtworkCandidates(row).filter(a => a.briefHash === briefHash);
   const running = row.attempts.find(a => a.status === 'running');
   const uncertain = row.attempts.find(a => a.status === 'interrupted' || a.status === 'failed');
   const last = current.at(-1);
@@ -146,6 +156,8 @@ export function customerArtworkView(row: CustomerArtworkSession, event: Event, e
     hasSavedPlan: event.draftStatus === 'ready' || event.draftStatus === 'failed_partial',
     canContinue: !!selected && !running,
     supportReference: uncertain?.id ?? null,
+    uploadAvailable: !running && event.draftStatus !== 'generating' && (row.uploads?.length ?? 0) < CUSTOMER_ARTWORK_UPLOAD_LIMIT,
+    uploadsRemaining: Math.max(0, CUSTOMER_ARTWORK_UPLOAD_LIMIT - (row.uploads?.length ?? 0)),
     candidates: current.filter(a => currentCustomerCandidate(row, event, a.id)).map(a => ({
       id: a.id, imageHash: a.imageHash!, operation: a.operation, correction: a.correction ?? null,
       assetUrl: `/api/events/owner/${encodeURIComponent(event.ownerToken)}/artwork/candidates/${a.id}?v=${a.imageHash}`,
@@ -175,6 +187,7 @@ export async function claimCustomerArtwork(event: Event, row: CustomerArtworkSes
   if (input.baseCandidateId) {
     const base = currentCustomerCandidate(row, event, input.baseCandidateId);
     if (!base || input.imageHash !== base.imageHash) throw new CustomerArtworkError('That image has changed. Refresh before editing it.');
+    if (!('prompt' in base)) throw new CustomerArtworkError('This artwork is kept as supplied. Upload a replacement to change it.');
     const correction = input.correction?.trim() ?? '';
     if (correction.length < 5 || correction.length > 2000) throw new CustomerArtworkError('Describe your change in 5–2,000 characters.', 400);
     const ancestors: CustomerArtworkAttempt[] = [];

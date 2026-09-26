@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Check } from 'lucide-react';
+import { readCustomerArtworkFile } from '@/lib/imageUpload';
+import recoveryTemplateUrl from '@/assets/templates/template-elegant-neutral.jpg';
 
 export default function CustomerArtworkPreview({ ownerToken, artwork, refresh, paid = false }: {
   ownerToken: string; artwork: CustomerArtworkView; refresh: () => Promise<unknown>; paid?: boolean;
@@ -17,6 +19,7 @@ export default function CustomerArtworkPreview({ ownerToken, artwork, refresh, p
   const [imageRefresh, setImageRefresh] = useState(0);
   const [correction, setCorrection] = useState('');
   const [message, setMessage] = useState('');
+  const [uploading, setUploading] = useState(false);
   const busy = useRef(false);
   const panel = useRef<HTMLDivElement>(null);
   const latest = artwork.candidates.at(-1);
@@ -42,7 +45,7 @@ export default function CustomerArtworkPreview({ ownerToken, artwork, refresh, p
     mutationFn: ({ path, body }: { path: string; body: unknown }) => apiRequestJson<CustomerArtworkView>('POST', `/api/events/owner/${ownerToken}/artwork/${path}`, body),
     retry: false,
     // The saved artwork state owns progress text, so polling can clear it.
-    onSuccess: (value, { path }) => { saveView(value); setMessage(path === 'select' ? 'Your image is saved. You can continue when you’re ready.' : ''); if (path === 'revise') setCorrection(''); },
+    onSuccess: (value, { path }) => { saveView(value); setMessage(path === 'select' ? 'Your image is saved. You can continue when you’re ready.' : path === 'upload' || path === 'template' ? 'Your artwork is saved. Review it and choose Keep this image to continue.' : ''); if (path === 'revise') setCorrection(''); },
     onError: async (error: Error) => {
       // An uncertain POST is followed by GET only. The server's saved state
       // tells us what happened; neither the mutation nor provider is retried.
@@ -61,14 +64,24 @@ export default function CustomerArtworkPreview({ ownerToken, artwork, refresh, p
       : { requestKey: crypto.randomUUID(), version: artwork.version, briefHash: artwork.briefHash,
         baseCandidateId: displayed.id, imageHash: displayed.imageHash, correction: correction.trim() } });
   };
-  const pending = action.isPending || artwork.state === 'generating';
+  const pending = uploading || action.isPending || artwork.state === 'generating';
   const requestFailed = artwork.state === 'failed' || artwork.state === 'interrupted';
   const selected = displayed?.id === artwork.selectedId;
-  const canRevise = !!displayed && artwork.generationEnabled && artwork.requestsRemaining > 0 && !pending && loadedHash === displayed.imageHash;
+  const canRevise = !!displayed && !['upload', 'template'].includes(displayed.operation) && artwork.generationEnabled && artwork.requestsRemaining > 0 && !pending && loadedHash === displayed.imageHash;
+  const upload = async (file: File) => {
+    if (busy.current || pending || !artwork.uploadAvailable) return;
+    busy.current = true; setUploading(true); setMessage('');
+    try {
+      const dataUrl = await readCustomerArtworkFile(file);
+      action.mutate({ path: 'upload', body: { version: artwork.version, briefHash: artwork.briefHash,
+        requestKey: crypto.randomUUID(), dataUrl } });
+    } catch (error) { busy.current = false; setMessage(error instanceof Error ? error.message : 'Could not read that image.'); }
+    finally { setUploading(false); }
+  };
   return <div ref={panel} className="space-y-5 p-5" data-testid="customer-artwork-preview">
     <div>
       <h2 className="font-serif text-xl font-semibold">Your invitation artwork</h2>
-      <p className="mt-1 text-sm text-muted-foreground">Keep the image you love, or tell Posy what to change.</p>
+      <p className="mt-1 text-sm text-muted-foreground">{displayed ? 'Review your artwork and keep the image you love.' : requestFailed ? 'Your request is saved. Choose a ready-made design or upload artwork to continue.' : 'Create a preview from your request, or use your own artwork.'}</p>
     </div>
     {displayed ? <div className="space-y-3">
       <img key={`${displayed.imageHash}:${imageRefresh}`} src={displayed.assetUrl} alt="Your invitation artwork draft" className="block w-full h-auto rounded-lg"
@@ -78,7 +91,7 @@ export default function CustomerArtworkPreview({ ownerToken, artwork, refresh, p
       {artwork.candidates.length > 1 ? <div className="flex flex-wrap gap-2" aria-label="Saved artwork versions">
         {artwork.candidates.map((c, i) => <Button key={c.id} type="button" size="sm" variant={displayed.id === c.id ? 'default' : 'outline'}
           aria-pressed={displayed.id === c.id} onClick={() => setDisplayedId(c.id)} disabled={action.isPending}>
-          {i === 0 ? 'Original' : `Revision ${i}`}{c.id === artwork.selectedId ? ' · Kept' : ''}
+          {c.operation === 'template' ? 'Ready-made design' : c.operation === 'upload' ? `Your upload ${artwork.candidates.slice(0, i + 1).filter(v => v.operation === 'upload').length}` : i === 0 ? 'Original' : `Revision ${i}`}{c.id === artwork.selectedId ? ' · Kept' : ''}
         </Button>)}
       </div> : null}
       <Button type="button" className="w-full" onClick={() => submit('select')} disabled={pending || selected || loadedHash !== displayed.imageHash}>
@@ -93,18 +106,42 @@ export default function CustomerArtworkPreview({ ownerToken, artwork, refresh, p
     </p> : null}
     {requestFailed ? <div role="alert" className="space-y-2 text-sm">
       <p>{artwork.candidates.length ? 'We couldn’t complete the last artwork request. Your saved images are still available to keep.' : 'We couldn’t create your artwork. Your event details and request are saved.'} No automatic retry was made.</p>
-      <p>New artwork requests are paused. Contact us for help with this request.</p>
+      <p>Image generation is paused for this request. {artwork.uploadAvailable ? 'You can choose a ready-made design, upload your own artwork, or contact us for help.' : 'Keep a saved image or contact us for help.'}</p>
       <a className="text-primary underline" href={`mailto:hello@posyplans.com?subject=${encodeURIComponent(`Artwork help ${artwork.supportReference ?? ''}`)}`}>Get help with this request</a>
       <p className="text-xs text-muted-foreground">Reference: {artwork.supportReference}</p>
     </div> : null}
-    {displayed && artwork.generationEnabled && artwork.requestsRemaining > 0 ? <form className="space-y-3" onSubmit={e => { e.preventDefault(); if (canRevise && correction.trim().length >= 5) submit('revise'); }}>
+    {displayed && !['upload', 'template'].includes(displayed.operation) && artwork.generationEnabled && artwork.requestsRemaining > 0 ? <form className="space-y-3" onSubmit={e => { e.preventDefault(); if (canRevise && correction.trim().length >= 5) submit('revise'); }}>
       <Label htmlFor="artwork-correction">What would you like to change?</Label>
       <Textarea id="artwork-correction" value={correction} onChange={e => setCorrection(e.target.value)} maxLength={2000} disabled={pending}
         placeholder="Describe the detail to change and what you would like to keep." />
       <p className="text-sm text-muted-foreground">Posy will edit this saved image using your complete request. Your previous versions stay available.</p>
       <Button type="submit" variant="outline" className="w-full" disabled={!canRevise || correction.trim().length < 5}>Make this change</Button>
     </form> : null}
-    {!artwork.generationEnabled && !artwork.supportReference ? <p role="status" className="text-sm">New artwork requests are temporarily unavailable. You can still keep a saved image.</p> : null}
+    {displayed?.operation === 'template' ? <p className="text-sm text-muted-foreground">The ready-made design you chose. Your original request remains saved.</p> : null}
+    {displayed?.operation === 'upload' ? <p className="text-sm text-muted-foreground">Your uploaded artwork. Posy has not generated or edited its content.</p> : null}
+    {artwork.uploadAvailable ? <details className="rounded-lg border p-4 text-sm" open={requestFailed && !displayed || undefined}>
+      <summary className="cursor-pointer font-medium">Choose another way to continue</summary>
+      <div className="mt-3 space-y-3">
+        <div className="space-y-2">
+          <p className="font-medium">Elegant neutral · Ready-made design</p>
+          <img src={recoveryTemplateUrl} alt="Ready-made ivory and gold watercolor design" className="w-full rounded-md" loading="lazy" />
+          <p>This is an optional alternative to your saved request. It is not a generated interpretation of your theme.</p>
+          <Button type="button" variant="outline" disabled={pending} onClick={() => {
+            if (busy.current || pending) return; busy.current = true; setMessage('');
+            action.mutate({ path: 'template', body: { version: artwork.version, briefHash: artwork.briefHash,
+              requestKey: crypto.randomUUID(), templateId: 'elegant-neutral' } });
+          }}>Use this ready-made design</Button>
+        </div>
+        <p className="font-medium">Or use my own artwork</p>
+        <p>Your saved request stays intact. Upload an image you have permission to use, review it, then keep it. This does not start image generation.</p>
+        <Label htmlFor="customer-artwork-upload">Choose artwork</Label>
+        <input id="customer-artwork-upload" type="file" accept="image/jpeg,image/png" disabled={pending}
+          className="block w-full text-sm" onChange={e => { const file = e.currentTarget.files?.[0]; e.currentTarget.value = ''; if (file) void upload(file); }} />
+        <p className="text-xs text-muted-foreground">JPG or PNG, up to 10 MB. Both sides at least 512 pixels. Large images are resized proportionally; transparent areas use white. {artwork.uploadsRemaining} saved recovery choices remaining.</p>
+        {uploading ? <p role="status">Preparing your image…</p> : null}
+      </div>
+    </details> : null}
+    {!artwork.generationEnabled && !artwork.supportReference ? <p role="status" className="text-sm">Image generation is temporarily unavailable. {artwork.uploadAvailable ? 'You can choose a ready-made design, upload artwork, or keep a saved image.' : 'You can still keep a saved image.'}</p> : null}
     {!requestFailed ? <p className="text-sm text-muted-foreground">{artwork.requestsRemaining > 0 ? `${artwork.requestsRemaining} artwork ${artwork.requestsRemaining === 1 ? 'request' : 'requests'} remaining for this event.` : 'You’ve reached this event’s artwork limit. Keep a saved image or contact support.'}</p> : null}
     <details className="text-sm"><summary className="cursor-pointer font-medium">Your saved request</summary><p className="mt-2 whitespace-pre-wrap">{artwork.savedBrief}</p></details>
     {message ? <p role="status" className="text-sm">{message}</p> : null}

@@ -22,8 +22,8 @@ export class DbCustomerArtworkStore implements CustomerArtworkStore {
       where event_id=${row.eventId} and version=${expected} returning event_id`);
     return rows.length === 1;
   }
-  async spendingAvailable() {
-    return !imageSpendGuardEnabled(this.env()) || new DbImageSpendStore(this.database).available();
+  async spendingAvailable(eventId?: number) {
+    return !imageSpendGuardEnabled(this.env()) || new DbImageSpendStore(this.database).available(eventId);
   }
   async reserveRequest(row: CustomerArtworkSession, expected: number, attempt: CustomerArtworkAttempt, request: ArtworkRequest) {
     return imageSpendGuardEnabled(this.env())
