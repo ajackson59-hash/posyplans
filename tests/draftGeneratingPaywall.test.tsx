@@ -391,7 +391,7 @@ function customerReadiness(artwork: Omit<typeof customerBase, 'state'> & { state
 }
 describe('customer keeps and revises artwork in the normal paywall', () => {
   it.each(['failed', 'interrupted'])('explains an empty %s result without offering an unavailable retry or phantom saved images', async state => {
-    const artwork = { ...customerBase, state, generationEnabled: false, requestsRemaining: 1, candidates: [] };
+    const artwork = { ...customerBase, state, generationEnabled: false, requestsRemaining: 1, candidates: [], uploadAvailable: true, uploadsRemaining: 3 };
     apiRequestJson.mockImplementation((method: string, url: string) => {
       if (method === 'GET' && url.endsWith('/prepayment-preview/readiness')) return Promise.resolve(customerReadiness(artwork));
       if (method === 'GET' && url.endsWith('/master-planner/entitlement')) return Promise.resolve({ canGenerate: false });
@@ -399,7 +399,9 @@ describe('customer keeps and revises artwork in the normal paywall', () => {
     });
     renderPaywall();
     await screen.findByText(/We couldn’t create your artwork\. Your event details and request are saved/);
-    expect(screen.getByText('New artwork requests are paused. Contact us for help with this request.')).toBeTruthy();
+    expect(screen.getByText('Image generation is paused for this request. You can choose a ready-made design, upload your own artwork, or contact us for help.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Use this ready-made design' })).toBeTruthy();
+    expect(screen.getByLabelText('Choose artwork')).toBeTruthy();
     expect(screen.queryByText(/Your saved images are still available/)).toBeNull();
     expect(screen.queryByText(/1 artwork request remaining/)).toBeNull();
     expect(screen.queryByRole('button', { name: 'Keep this image' })).toBeNull();
