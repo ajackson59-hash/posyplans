@@ -1,5 +1,20 @@
 # Customer artwork quality screen — 23 September 2026
 
+## Latest status — 26 September 2026 UTC
+
+This note supersedes the preparation and four-call status below. Event 75's
+accounting reconciliation committed at **04:36:51 UTC**, retaining the source
+hashes, failed session, unknown provider usage and one physical call. Its
+attributed charge remains unknown; no retry is authorized by reconciliation.
+
+Event 79's case-04 creation delivered successfully in **one provider call**:
+**1,139 text-input tokens and 1,372 image-output tokens**, an estimated
+**$0.046855** at standard rates. The observed click-to-decoded-image upper bound
+was **51.301 seconds**. Agent inspection identified letter-like jacket patches
+that need one targeted saved-source edit. **No human approval is recorded.**
+The cohort now totals **5 of 16 calls: 3 creates + 2 edits**. Generation is
+paused while that correction is prepared; this note does not reopen spending.
+
 ## Accounting evidence received — 26 September 2026 UTC
 
 Both supplied exports have now been matched. The Activity CSV contains exactly
