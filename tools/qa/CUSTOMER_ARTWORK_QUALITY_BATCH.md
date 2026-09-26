@@ -1,5 +1,32 @@
 # Customer artwork quality screen — 23 September 2026
 
+## Accounting evidence received — 26 September 2026 UTC
+
+Both supplied exports have now been matched. The Activity CSV contains exactly
+one non-Batch/default GPT Image 2 request on September 25: 1,200 text-input,
+1,536 image-input and 1,372 image-output tokens, with zero cached tokens. This
+matches Event 74's retained edit. At standard synchronous rates of $5/$8/$30
+per million tokens, its $0.059448 estimate equals the complete exported day's
+cost. September 23's four-request activity likewise matches its $0.213666
+daily cost; only two of those requests belong to the current cohort.
+
+The two exports support **no additional charge recorded as of those exports**.
+They do not provide a permanent, per-request zero-charge receipt for Event 75.
+Preserve its failed output, unknown usage and attributed cost, diagnostics and
+one physical call. No further export is needed solely to resume the existing
+approved screen after audited administrative reconciliation. The separate
+fixed operator transaction records the exact export hashes and retained
+request/session evidence, and leaves the policy paused and counters unchanged.
+
+The correct known-success estimate is **$0.166366**, superseding $0.083183 and
+the historical half-rate Batch assumptions below. Four physical calls remain
+consumed (2 creates + 2 edits), with twelve allocated slots unused. The 16-call
+and $5 planning-reserve authorization remains in force. Event 79 is prepared
+for frozen case 04, KPop trio; its Preview event limit is one creation. Dispatch
+still requires successful migration/CI review, committed accounting evidence,
+the exact current deployment, and a separately verified policy reopening.
+This paragraph records preparation, not execution or visual qualification.
+
 ## Current status — 26 September 2026 UTC
 
 **Artwork qualification is the next launch priority. The approved screen remains

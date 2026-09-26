@@ -25,6 +25,31 @@ permit or reset counters to make work available. Increasing an allowance or
 reopening paid generation requires the corresponding user authorization.
 No code path currently exposes policy management to customers or reviewers.
 
+An administrator can record reviewed provider-export accounting separately from
+provider usage. The additive reconciliation migration introduces the distinct
+`reconciled` ledger state and an append-only `image_spend_reconciliations` audit.
+It grants no runtime or Data API access to the audit table. Audit insertion and
+the exact `unknown` → `reconciled` transition must commit together under a paused
+policy, with the original ledger fields, session payload and policy unchanged.
+Usage remains SQL NULL, the physical call remains counted, and failed artwork
+stays failed. The full exported day's cost is not an attributed request charge.
+The audit includes source hashes, export date, as-of date, contextual evidence,
+reason, original policy/permit snapshots and the saved-session checksum.
+
+The fixed [Event75 operator transaction](sql/reconcile-event75-image-accounting.sql)
+is separate from migrations and application code. It accepts only the reviewed
+four-call cohort, exact Event75 permit/session and matching Event74 usage. It
+records that the supplied exports show no additional failed-request billing as
+of review; it does not claim Event75 cost zero or a final invoice guarantee.
+Run only after independently validating the source hashes and account scope.
+The transaction remains paused and is idempotent only while that exact evidence
+still matches. Its audit and reconciled permit cannot be edited or deleted;
+this also prevents deleting the linked event/policy while evidence is retained.
+No replay, automatic unpause, retry of Event75, counter reset or limit increase
+is part of reconciliation. Every future `unknown` request still blocks work.
+The existing `historical` state continues to mean imported retained usage;
+it is never used to relabel an unknown request as successful or measured.
+
 Before deploying, run type checks, normal regression tests and the disposable
 PostgreSQL suite. Verify the exact Preview branch/deployment identity, policy
 pause, counters, unresolved records, and unchanged saved-session hashes.
