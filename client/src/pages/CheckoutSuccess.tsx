@@ -16,6 +16,7 @@ interface CheckoutConfirmResult {
   returnToken?: string;
   // Plus subscription fields.
   planTier?: string;
+  membershipAccess?: 'event' | 'recovery_required';
   trialEndsAt?: number | null;
   billingInterval?: string | null;
   firedEvent?: AnalyticsEventName | null;
@@ -47,7 +48,8 @@ export default function CheckoutSuccess() {
   });
 
   const isSpark = data?.plan === "spark";
-  const returnToken = data?.returnToken || requestedReturnToken;
+  const needsMembershipRecovery = data?.plan === 'plus' && data.membershipAccess === 'recovery_required';
+  const returnToken = needsMembershipRecovery ? undefined : data?.returnToken || requestedReturnToken;
   const sparkReturnToken = returnToken;
   const isTrial = data?.planTier === "plus_trial";
   const confirmed = isSpark ? data?.unlocked === true : data?.plan === "plus" && (
@@ -59,6 +61,7 @@ export default function CheckoutSuccess() {
   // had no way back to it. Otherwise fall back to the "How do you want to
   // start?" chooser on the homepage.
   const goToGetStarted = () => {
+    if (needsMembershipRecovery) { navigate('/recover'); return; }
     // A Spark purchase unlocks one specific event's plan — take the host
     // straight back to generation so the plan they just paid for gets built.
     if (confirmed && isSpark && sparkReturnToken) {
@@ -151,18 +154,20 @@ export default function CheckoutSuccess() {
                   </p>
                 )}
                 <h1 className="font-serif text-xl font-semibold text-foreground" data-testid="text-checkout-success-title">
-                  {isSpark ? "Your event is unlocked" : isTrial ? "Your Plus trial is active" : "You're on Plus"}
+                  {isSpark ? "Your event is unlocked" : needsMembershipRecovery ? "Your Plus purchase is recorded" : isTrial ? "Your Plus trial is active" : "You're on Plus"}
                 </h1>
                 <p className="text-sm text-muted-foreground" data-testid="text-checkout-success-detail">
                   {isSpark
                     ? "Your plan is ready to build — let's put it together now."
+                    : needsMembershipRecovery ? "Your membership needs to be connected to an event. Recover your paid event or contact us for help. You don't need to purchase again."
                     : isTrial ? "Your Plus trial is active. Head back to your event to use it."
-                    : "Your Plus subscription is active. Head back to any of your events to use it."}
+                    : "Your Plus subscription is active for your event. Head back to keep planning."}
                 </p>
+                {needsMembershipRecovery ? <a href="mailto:hello@posyplans.com?subject=Plus%20access" className="block text-sm text-primary underline underline-offset-2">hello@posyplans.com</a> : null}
               </>
             )}
             <Button className="w-full" data-testid="button-back-home" onClick={goToGetStarted}>
-              {confirmed && isSpark ? "Build my plan" : returnToken ? "Back to my event" : "Start planning"}
+              {needsMembershipRecovery ? "Find my paid event" : confirmed && isSpark ? "Build my plan" : returnToken ? "Back to my event" : "Start planning"}
             </Button>
           </CardContent>
         </Card>

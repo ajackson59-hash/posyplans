@@ -46,7 +46,7 @@ beforeAll(async () => {
   // Drizzle's current events schema already contains this column. Retain the
   // real session-table migration and its constraints/grants exactly as shipped.
   const sessionTables = sessionMigration.replace(/^alter table public\.events add column customer_artwork_enabled boolean not null default false;\s*/, '');
-  const spendMigration = await readFile(new URL('../supabase/migrations/20260926020705_image_spend_guard.sql', import.meta.url), 'utf8');
+  const spendMigration = await readFile(new URL('../supabase/migrations/20260926022248_image_spend_guard.sql', import.meta.url), 'utf8');
   await control.begin(async tx => {
     for (const role of ['anon', 'authenticated', 'service_role']) {
       const found = await tx`select rolname from pg_roles where rolname = ${role}`;

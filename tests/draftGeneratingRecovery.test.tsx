@@ -60,6 +60,23 @@ function generationCalls() {
 }
 
 describe("first-plan recovery requires an explicit resume decision", () => {
+  it("guides an unbound existing member to recovery without typed-email unlock or automatic messages", async () => {
+    mocks.request.mockImplementation(async (method: string, url: string) => {
+      if (method === 'GET' && url.endsWith('/master-planner/entitlement')) return {
+        eventId: 42, freeDraftState: 'none', emailCaptured: true, planTier: 'spark',
+        sparkUnlocked: false, canGenerate: false,
+      };
+      if (method === 'GET' && url === readinessPath) return { ready: false, generationState: 'idle', kind: 'none', pollAfterMs: null };
+      if (method === 'GET' && url.endsWith('/master-planner/status')) return { draftStatus: 'none' };
+      throw Error(`Unexpected request ${method} ${url}`);
+    });
+    show();
+    fireEvent.click(await screen.findByTestId('button-show-plus-access'));
+    expect(screen.getByRole('link', { name: 'Find my paid event' }).getAttribute('href')).toBe('/recover');
+    expect(screen.getByText(/don't need to purchase again/)).toBeTruthy();
+    expect(screen.queryByTestId('input-plus-email')).toBeNull();
+    expect(mocks.request.mock.calls.filter(([method]) => method === 'POST')).toHaveLength(0);
+  });
   it("does not authorize interrupted work on mount, pageshow, or reload; Try again alone sends resume intent", async () => {
     mocks.request.mockImplementation(async (method: string, url: string, body?: { resumeInterrupted: boolean }) => {
       if (method === "POST" && url === generationPath) {

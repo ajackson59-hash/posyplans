@@ -131,12 +131,11 @@ export default function DraftGenerating() {
   const [previewDecodedMs, setPreviewDecodedMs] = useState<number | null>(null);
   const previewCardRef = useRef<HTMLDivElement>(null);
   const [email, setEmail] = useState("");
-  const [plusEmail, setPlusEmail] = useState("");
   // The paywall shows Spark and Plus side by side rather than burying Plus in a
   // secondary link — repeat hosts were only being offered the per-event unlock.
   const [selectedPlan, setSelectedPlan] = useState<"spark" | "plus">("spark");
   const [plusInterval, setPlusInterval] = useState<"annual" | "monthly">("annual");
-  const [showPlusEmail, setShowPlusEmail] = useState(false);
+  const [showPlusHelp, setShowPlusHelp] = useState(false);
   const [demoOpen, setDemoOpen] = useState(false);
   const [previewImageLoaded, setPreviewImageLoaded] = useState(false);
   const [previewImageFailed, setPreviewImageFailed] = useState(false);
@@ -283,33 +282,6 @@ export default function DraftGenerating() {
     },
     onError: (err: Error) => {
       toast({ title: "Couldn't start checkout", description: err.message, variant: "destructive" });
-    },
-  });
-
-  // Existing Plus members reach this event with no captured email on it, so
-  // the gate can't see their plan and shows the paywall. Letting them supply
-  // the email on their Plus plan stamps it onto the event; the refetched
-  // entitlement then flips canGenerate true and the auto-start effect fires.
-  const captureEmail = useMutation({
-    mutationFn: () => {
-      const eventId = entitlement.data?.eventId;
-      if (!eventId) throw new Error("We couldn't load this event just yet — please try again.");
-      return apiRequestJson<EntitlementSummary>("POST", `/api/events/${eventId}/email-capture`, {
-        email: plusEmail,
-        ownerToken,
-      });
-    },
-    onSuccess: (summary) => {
-      entitlement.refetch();
-      if (!summary.canGenerate) {
-        toast({
-          title: "We couldn't find a Plus plan for that email",
-          description: "Double-check the address, or unlock just this event with Spark below.",
-        });
-      }
-    },
-    onError: (err: Error) => {
-      toast({ title: "Couldn't check that email", description: err.message, variant: "destructive" });
     },
   });
 
@@ -602,7 +574,7 @@ export default function DraftGenerating() {
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
               Choose how you’d like Posy to build your complete first draft: pay once for this
-              event, or go Plus for every event you host.
+              event, or choose Plus for more planning options and revisions.
             </p>
           </div>
 
@@ -880,7 +852,7 @@ export default function DraftGenerating() {
 
               <ul className="mt-2.5 space-y-1.5">
                 {[
-                  "Unlimited plans, every event",
+                  "Full planning and revision tools",
                   "Unlimited plan regenerations",
                   "Alternate menu, timeline & invite drafts",
                   "Priority AI generation queue",
@@ -964,7 +936,7 @@ export default function DraftGenerating() {
               <p className="text-center text-xs text-muted-foreground">
                 {selectedPlan === "spark"
                   ? "One-time payment. No subscription, no auto-renew."
-                  : "Cancel anytime. Unlocks this event and every event after."}
+                  : "Cancel anytime. Includes full plan revisions for this event."}
               </p>
             </form>
           ) : (
@@ -975,45 +947,21 @@ export default function DraftGenerating() {
 
           {/* Existing Plus members — collapsed so it doesn't compete with the choice above */}
           <div className="mx-auto max-w-sm text-center" data-testid="already-plus-panel">
-            {!showPlusEmail ? (
+            {!showPlusHelp ? (
               <button
                 type="button"
-                onClick={() => setShowPlusEmail(true)}
-                data-testid="button-show-plus-email"
+                onClick={() => setShowPlusHelp(true)}
+                data-testid="button-show-plus-access"
                 className="text-xs font-medium text-muted-foreground underline underline-offset-2 hover:text-foreground"
               >
-                Already on Plus? Unlock with your Plus email
+                Already on Plus? Find your access
               </button>
             ) : (
-              <form
-                className="space-y-2 rounded-lg border border-border p-4 text-left"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  captureEmail.mutate();
-                }}
-              >
-                <Label htmlFor="plusEmail" className="text-xs">
-                  Email on your Plus plan
-                </Label>
-                <Input
-                  id="plusEmail"
-                  type="email"
-                  required
-                  data-testid="input-plus-email"
-                  placeholder="you@example.com"
-                  value={plusEmail}
-                  onChange={(e) => setPlusEmail(e.target.value)}
-                />
-                <Button
-                  type="submit"
-                  variant="outline"
-                  className="w-full"
-                  data-testid="button-use-plus-email"
-                  disabled={captureEmail.isPending}
-                >
-                  {captureEmail.isPending ? "Checking…" : "Use my Plus email"}
-                </Button>
-              </form>
+              <div className="space-y-3 rounded-lg border border-border p-4 text-left text-sm" data-testid="plus-access-help">
+                <p>Open the event connected to your Plus purchase. You don't need to purchase again.</p>
+                <Link href="/recover" className="block font-medium text-primary underline underline-offset-2">Find my paid event</Link>
+                <p className="text-xs text-muted-foreground">To connect Plus to this new event, contact <a href="mailto:hello@posyplans.com?subject=Plus%20access" className="text-primary underline underline-offset-2">hello@posyplans.com</a>. Your event details are saved.</p>
+              </div>
             )}
           </div>
 

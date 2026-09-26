@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import express from 'express';
 import request from 'supertest';
 import { randomUUID } from 'node:crypto';
-import type { Event, EmailEntitlement } from '@shared/schema';
+import type { Event } from '@shared/schema';
+import type { PlusMembershipAccess } from '../server/plusMembership';
 import type { PlanContent, PlanRegenerationRecord, PlanSnapshot } from '@shared/planRegeneration';
 import type { PlanRegenerationStore } from '../server/planRegenerationStore';
 vi.mock('../server/storage', () => ({ storage: {} }));
@@ -60,9 +61,11 @@ beforeEach(() => {
 });
 function app() {
   const a = express(); a.use(express.json());
-  registerPlanRegenerationRoutes(a, { store, providers, schedule: task => jobs.push(task), events: {
+  registerPlanRegenerationRoutes(a, { store, providers, schedule: task => jobs.push(task),
+    plusAccess: async () => tier ? { subscriptionId: 'sub_proven', customerId: 'cus_proven',
+      planTier: tier, trialEndsAt: null, billingInterval: 'monthly' } as PlusMembershipAccess : undefined,
+    events: {
     getEventByOwnerToken: async token => token === event.ownerToken ? event : undefined,
-    getEmailEntitlement: async () => ({ planTier: tier } as EmailEntitlement),
   } }); return a;
 }
 const path = '/api/events/owner/offline-only-owner/plan-regeneration';
@@ -87,6 +90,12 @@ describe('Plus regeneration HTTP boundary', () => {
   });
   it.each(['spark', 'plus_expired'])('does not treat %s as regeneration entitlement', async value => {
     tier = value;
+    expect((await request(app()).post(path).send({ requestId: randomUUID() })).status).toBe(403);
+    expect(store.reserve).not.toHaveBeenCalled(); expect(jobs).toHaveLength(0);
+  });
+  it('does not let a captured email regenerate a plan without a proven membership', async () => {
+    tier = '';
+    expect((await request(app()).get(path)).body.eligible).toBe(false);
     expect((await request(app()).post(path).send({ requestId: randomUUID() })).status).toBe(403);
     expect(store.reserve).not.toHaveBeenCalled(); expect(jobs).toHaveLength(0);
   });

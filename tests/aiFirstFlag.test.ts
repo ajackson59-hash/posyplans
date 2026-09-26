@@ -31,6 +31,7 @@ function appWith(
     listGuests: async () => [],
   };
   registerAiFirstRoutes(app, {
+    plusAccess: async () => undefined,
     storage,
     previewStore: new InMemoryPreviewStore(),
     usageStore: new InMemoryUsageStore(),

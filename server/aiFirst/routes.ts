@@ -63,6 +63,7 @@ import { runTier1Checks } from "./tier1";
 import { runVisionGate, type VisionGateInput, type VisionVerdict } from "./visionGate";
 import { briefForHostDirection } from "./conceptPreflight";
 import { GOOGLE_ARTWORK_MODEL } from "./artwork";
+import { getEventPlusAccess, hasActivePlusMembership, type PlusMembershipAccess } from '../plusMembership';
 
 /** One breaker and one limiter per process, shared by every event. */
 const breaker = new CircuitBreaker();
@@ -72,8 +73,8 @@ const limiter = new RateLimiter();
  * Paid-access gate for spending on artwork. Mirrors the same rule the
  * legacy Master Planner route enforces (server/masterPlannerEntitlement.ts,
  * canGenerateDraft): an event may only trigger a BILLED generation if it
- * has bought its one-time Spark unlock, or the host's captured email holds
- * an active or trialing Plus subscription. Before this check existed, this
+ * has bought its one-time Spark unlock, or a trusted payment binds this event
+ * to an active or trialing Plus subscription. Before this check existed, this
  * route had no payment gate at all — only kill-switch, rate-limit, and
  * circuit-breaker checks, none of which look at who is paying. An
  * anonymous, unpaid, un-emailed visitor could (and, confirmed in
@@ -95,6 +96,7 @@ function hasGenerationEntitlement(
 }
 
 export interface AiFirstDeps {
+  plusAccess?: (eventId: number) => Promise<PlusMembershipAccess | undefined>;
   storage: {
     getEventByOwnerToken(token: string): Promise<any>;
     updateEventByOwnerToken(token: string, data: Record<string, unknown>): Promise<any>;
@@ -314,8 +316,8 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
         return;
       }
       const email = event.capturedEmail ?? undefined;
-      const entitlement = email ? await deps.storage.getEmailEntitlement(email) : undefined;
-      const tier = entitlement?.planTier as never;
+      const entitlement = await (deps.plusAccess ?? getEventPlusAccess)(event.id);
+      const tier = (hasActivePlusMembership(entitlement) ? entitlement?.planTier : 'spark') as never;
       const usage = await deps.usageStore.snapshot(event.id, email, monthStart());
       // The durable run row, not the process-memory counter, decides whether
       // this event already has an active generation — correct even when this
@@ -498,7 +500,7 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
       }
 
       const email = event.capturedEmail ?? undefined;
-      const entitlement = email ? await deps.storage.getEmailEntitlement(email) : undefined;
+      const entitlement = await (deps.plusAccess ?? getEventPlusAccess)(event.id);
 
       // Paid-access gate: zero provider calls, zero rate-limit consumption,
       // and no run claimed for an event that hasn't bought Spark or an
@@ -514,7 +516,7 @@ export function registerAiFirstRoutes(app: Express, deps: AiFirstDeps): void {
         return;
       }
 
-      const tier = entitlement?.planTier as never;
+      const tier = (hasActivePlusMembership(entitlement) ? entitlement?.planTier : 'spark') as never;
       const usage = await deps.usageStore.snapshot(event.id, email, monthStart());
       // The durable row is the authority on "is a generation already active
       // for this event", not the in-process counter — correct across restarts

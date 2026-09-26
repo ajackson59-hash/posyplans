@@ -5,12 +5,14 @@ import type { Event } from '@shared/schema';
 import { storage } from './storage';
 import { DbPlanRegenerationStore, PlanRegenerationStoreError, type PlanRegenerationStore } from './planRegenerationStore';
 import { defaultPlanRegenerationProviders, planRegenerationView, runPlanRegeneration, type PlanRegenerationDeps } from './planRegeneration';
+import { getEventPlusAccess, hasActivePlusMembership, type PlusMembershipAccess } from './plusMembership';
 
 export interface PlanRegenerationRouteDeps {
   store?: PlanRegenerationStore;
   events?: Pick<typeof storage, 'getEventByOwnerToken' | 'getEmailEntitlement'>;
   providers?: PlanRegenerationDeps;
   schedule?: (job: () => Promise<void>) => void;
+  plusAccess?: (eventId: number) => Promise<PlusMembershipAccess | undefined>;
 }
 
 export function registerPlanRegenerationRoutes(app: Express, deps: PlanRegenerationRouteDeps = {}): void {
@@ -22,10 +24,8 @@ export function registerPlanRegenerationRoutes(app: Express, deps: PlanRegenerat
     try { waitUntil(job); } catch { void job.catch(() => {}); }
   });
   async function eligible(event: Event): Promise<boolean> {
-    if (event.draftStatus !== 'ready' || !event.capturedEmail) return false;
-    const entitlement = await events.getEmailEntitlement(event.capturedEmail);
-    return entitlement?.planTier === 'plus_active'
-      || (entitlement?.planTier === 'plus_trial' && !!entitlement.trialEndsAt && entitlement.trialEndsAt > Date.now());
+    if (event.draftStatus !== 'ready') return false;
+    return hasActivePlusMembership(await (deps.plusAccess ?? getEventPlusAccess)(event.id));
   }
   async function respond(res: Response, event: Event, status = 200) {
     const [allowed, operation] = await Promise.all([eligible(event), repo.read(event.id)]);

@@ -17,6 +17,15 @@ afterEach(() => { cleanup(); client.clear(); });
 function show() { render(<QueryClientProvider client={client}><CheckoutSuccess /></QueryClientProvider>); }
 
 describe("checkout return screen", () => {
+  it('keeps a settled standalone purchase on recovery without trusting a URL event token', async () => {
+    mocks.request.mockResolvedValue({ plan: 'plus', planTier: 'plus_active', membershipAccess: 'recovery_required' });
+    show();
+    expect((await screen.findByTestId('text-checkout-success-title')).textContent).toBe('Your Plus purchase is recorded');
+    expect(screen.getByText(/don't need to purchase again/)).toBeTruthy();
+    fireEvent.click(screen.getByTestId('button-back-home'));
+    expect(mocks.navigate).toHaveBeenCalledWith('/recover');
+    expect(mocks.request.mock.calls.every(([method]) => method === 'GET')).toBe(true);
+  });
   it("keeps pending payment out of success and can retry without a second checkout", async () => {
     mocks.request.mockRejectedValueOnce(new Error("Payment is still being confirmed; do not pay again."))
       .mockResolvedValueOnce({ plan: "plus", planTier: "plus_active", returnToken: "verified-event", email: null });

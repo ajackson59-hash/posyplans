@@ -381,6 +381,7 @@ describe("terminal event ordering", () => {
     const runStore = new InMemoryRunStore();
     let receivedInput: PipelineInput | undefined;
     registerAiFirstRoutes(app, {
+      plusAccess: async () => undefined,
       storage: {
         getEventByOwnerToken: async (token: string) =>
           token === "owner"
@@ -431,6 +432,7 @@ describe("terminal event ordering", () => {
     app.use(express.json());
     const runStore = new InMemoryRunStore();
     registerAiFirstRoutes(app, {
+      plusAccess: async () => undefined,
       storage: {
         getEventByOwnerToken: async () => ({
           id: 1,
@@ -478,6 +480,7 @@ describe("terminal event ordering", () => {
     const runStore = new InMemoryRunStore();
     let pipelineCalls = 0;
     registerAiFirstRoutes(app, {
+      plusAccess: async () => undefined,
       storage: {
         getEventByOwnerToken: async () => ({
           id: 1,

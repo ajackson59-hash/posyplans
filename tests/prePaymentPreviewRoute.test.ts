@@ -61,6 +61,10 @@ const baseEvent = {
 
 let stored: Record<string, unknown>;
 let entitlement: { planTier: string; trialEndsAt?: number | null } | undefined;
+vi.mock("../server/plusMembership", async (original) => ({
+  ...await original<typeof import("../server/plusMembership")>(),
+  getEventPlusAccess: async () => entitlement,
+}));
 
 const generateInviteDesignConcepts = vi.fn(async () => [
   { conceptName: "Test Concept", layoutStyle: "centered" },

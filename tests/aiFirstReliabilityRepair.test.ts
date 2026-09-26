@@ -137,6 +137,7 @@ function appFor(deps: {
   const app = express();
   app.use(express.json());
   registerAiFirstRoutes(app, {
+    plusAccess: async () => undefined,
     storage: deps.storage ?? makeStorage(),
     previewStore: deps.previewStore,
     usageStore: deps.usageStore,

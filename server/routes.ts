@@ -59,6 +59,7 @@ import { detectMissingItems } from "@shared/missingItems";
 import { assessBudgetFeasibility } from "@shared/budgetFeasibility";
 import { eventStyleSummary } from "@shared/eventStyle";
 import { reserveOrResumeFreeDraft, getEntitlementSummary, safeParseStages, canGenerateDraft } from "./masterPlannerEntitlement";
+import { getEventPlusAccess, hasActivePlusMembership, reconcilePlusMembership } from './plusMembership';
 import { runMasterPlannerOrchestration } from "./masterPlannerOrchestrator";
 import type Stripe from "stripe";
 import { parseCookies, serializeConsentCookie } from "./cookies";
@@ -228,18 +229,17 @@ function allowGuestIdentifyAttempt(key: string, now = Date.now()): boolean {
 }
 
 // Defense-in-depth email capture from trusted Stripe moments (checkout confirm
-// / webhook), where we have both a Stripe-verified email and the event. More
-// trustworthy than the typed-in /email-capture route, so it is authoritative:
-// Stripe's verified address replaces provisional or mistyped input and receives
-// the private return link. Persistence failures must remain retryable: Plus
-// resolves access through this email. Email delivery itself stays best effort.
+// / webhook), where the settled purchase supplies billing contact information.
+// This is not proof of mailbox ownership and never grants another membership.
+// The billing address replaces provisional or mistyped input and receives the
+// private return link. Plus authority is stored separately by subscription.
 async function stampCapturedEmailForCheckout(eventId: number, email: string | null | undefined): Promise<void> {
   const normalized = (email ?? "").trim().toLowerCase();
   if (!normalized) return;
   const event = await storage.getEventById(eventId);
   if (!event) return;
   if (event.capturedEmail && event.capturedEmail !== normalized) {
-    console.info(`[email-capture] replacing event ${eventId}'s earlier email with Stripe's verified address`);
+    console.info(`[email-capture] replacing event ${eventId}'s earlier email with its settled billing contact`);
   }
   await persistCapturedEmail(event, normalized);
 }
@@ -1856,9 +1856,9 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
     res.json(summary);
   });
 
-  // Captures the host's email onto an event so the entitlement gate can resolve
-  // their Plus membership (canGenerateDraft looks up capturedEmail in
-  // email_entitlements). This is the route referenced-but-never-built that left
+  // Captures the host's contact/recovery email. A typed address never grants
+  // Plus: membership is bound separately by trusted Stripe settlement. This
+  // is the route referenced-but-never-built that left
   // captured_email NULL on every event. Ownership is proven the same way every
   // other event-mutation route proves it — a valid ownerToken — except the
   // token rides in the body here since the path is eventId-scoped per spec.
@@ -1881,8 +1881,8 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
     const email = typeof req.body?.email === "string" ? req.body.email : "";
     const ownerToken = typeof req.body?.ownerToken === "string" ? req.body.ownerToken : "";
     const normalized = email.trim().toLowerCase();
-    // Basic plausibility check — real verification comes from the Stripe-side
-    // stamping; this just rejects obvious garbage before touching storage.
+    // Contact plausibility only. Neither this nor a matching membership email
+    // proves ownership of a mailbox or grants paid access.
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
       return res.status(400).json({ error: "Please enter a valid email address." });
     }
@@ -1895,8 +1895,8 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
 
     // A valid owner token authorizes correcting the event email. The earlier
     // first-write-wins behavior could permanently bind a typo and prevent an
-    // existing Plus address or Stripe's verified checkout address from taking
-    // ownership. Send the private return link only when the address changes.
+    // billing contact from being corrected. This does not change membership
+    // authority. Send the private return link only when the address changes.
     if (event.capturedEmail && event.capturedEmail !== normalized) {
       console.info(`[email-capture] owner corrected event ${eventId}'s captured email`);
     }
@@ -2035,8 +2035,8 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
     // callers that omit it keep the subscription behavior.
     plan: z.enum(["plus", "spark"]).default("plus"),
     billingInterval: z.enum(["annual", "monthly"]).default("annual"),
-    // For Plus: the event a host was mid-build on, if they upgraded from
-    // inside their dashboard rather than the standalone /pricing page.
+    // Plus checkout requires an originating event until verified membership
+    // linking exists. The handler rejects missing tokens before any writes.
     // For Spark: REQUIRED — the event's ownerToken, since a Spark purchase is
     // event-scoped. Carried through to success_url so checkout can send them
     // back to that event.
@@ -2049,6 +2049,10 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
       return res.status(400).json({ error: "Please provide a valid email and billing option." });
     }
     const { email, plan, billingInterval, returnToken } = parsed.data;
+    if (plan === 'plus' && !returnToken) {
+      return res.status(400).json({ code: 'event_required_for_plus',
+        error: 'Start an event before choosing Plus so your purchase stays connected to it. Already paid? Find your existing event or contact hello@posyplans.com; do not purchase again.' });
+    }
 
     const stripe = getStripe();
     if (!stripe) {
@@ -2059,7 +2063,7 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
 
     // A checkout launched from an event is an explicit owner-authorized email
     // moment. Capture it before handing off to Stripe so an abandoned checkout
-    // is recoverable; Stripe's verified address still wins on confirmation.
+    // is recoverable; the settled billing contact wins on confirmation.
     let returnEvent: Event | undefined;
     if (returnToken) {
       returnEvent = await storage.getEventByOwnerToken(returnToken);
@@ -2069,7 +2073,7 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
       try {
         await persistCapturedEmail(returnEvent, email.toLowerCase());
       } catch (err) {
-        // Stripe confirmation stamps the verified address again, so an email
+        // Stripe confirmation saves the settled billing contact again, so an email
         // persistence outage must not prevent a host from checking out.
         console.error(`[email-capture] couldn't save the checkout email for event ${returnEvent.id}:`, err);
       }
@@ -2140,6 +2144,7 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
   async function fulfillCheckout(sessionId: string, eventSourceUrl?: string) {
     const stripe = getStripe();
     if (!stripe) throw new CheckoutStateError("Checkout is not configured.", 503, "checkout_unconfigured");
+    const observedAt = Date.now();
     const session = await stripe.checkout.sessions.retrieve(sessionId, { expand: ["subscription", "customer"] });
     if (session.status !== "complete") {
       throw new CheckoutStateError("Your payment is still being confirmed. Check again shortly; do not pay again.", 409, "payment_pending");
@@ -2165,9 +2170,8 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
       }
       const unlocked = await storage.markEventSparkUnlocked(ownerToken, session.id);
       if (!unlocked) throw new CheckoutStateError("The purchased event could not be found.", 404, "event_not_found");
-      // Defense-in-depth: stamp the Stripe-verified email onto the event so
-      // the entitlement gate resolves membership even if checkout began
-      // with a typo or a different address. Verified Stripe identity wins.
+      // A settled Spark purchase unlocks only this event. Its billing address
+      // is contact information, never proof of an existing Plus membership.
       if (unlocked) await stampCapturedEmailForCheckout(unlocked.id, email);
       // Server-side Purchase conversion (Meta CAPI). event_id = session.id so
       // it dedupes against the client Pixel fired on the success page.
@@ -2201,6 +2205,28 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
       (!subscription.trial_end || subscription.trial_end * 1000 <= Date.now())
       ? "plus_expired" : planTierFromSubscriptionStatus(subscription.status);
     const billingInterval = session.metadata?.billingInterval as BillingInterval | undefined;
+    const plusReturnToken = session.metadata?.returnToken;
+    const returnEvent = plusReturnToken ? await storage.getEventByOwnerToken(plusReturnToken) : undefined;
+    if (plusReturnToken && !returnEvent) {
+      throw new CheckoutStateError("The purchased event could not be found.", 404, "event_not_found");
+    }
+    const customerId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer?.id;
+    const checkoutCustomerId = typeof session.customer === 'string' ? session.customer : session.customer?.id;
+    if (!customerId || customerId !== checkoutCustomerId || !Number.isFinite(subscription.created)) {
+      throw new CheckoutStateError('The membership identity could not be confirmed.', 409, 'membership_identity_pending');
+    }
+    await reconcilePlusMembership({
+      subscriptionId: subscription.id, customerId, planTier: newPlanTier,
+      trialEndsAt: subscription.trial_end ? subscription.trial_end * 1000 : null,
+      billingInterval: billingInterval ?? null, subscriptionCreatedAt: subscription.created * 1000,
+      observedAt, eventId: returnEvent?.id, source: 'checkout', sourceId: session.id,
+    });
+    const boundAccess = returnEvent ? await getEventPlusAccess(returnEvent.id) : undefined;
+    if (returnEvent && (newPlanTier === 'plus_active' || newPlanTier === 'plus_trial')
+      && !hasActivePlusMembership(boundAccess)) {
+      throw new CheckoutStateError('Your payment is recorded, but access for this event needs to be recovered. Contact hello@posyplans.com; do not purchase again.',
+        409, 'membership_recovery_required');
+    }
     const previous = await storage.getEmailEntitlement(email);
     const isNewTransition = previous?.planTier !== newPlanTier;
     if (newPlanTier === "plus_expired" && previous?.stripeSubscriptionId && previous.stripeSubscriptionId !== subscription.id) {
@@ -2222,14 +2248,9 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
     }
 
     // Defense-in-depth: if this Plus checkout was started from inside a
-    // specific event (returnToken carried through the session metadata),
-    // stamp the verified email onto that event so its entitlement gate
-    // immediately resolves the new Plus membership. Verified Stripe
-    // identity replaces earlier provisional input; persistence failures retry.
-    const plusReturnToken = session.metadata?.returnToken;
-    if (plusReturnToken) {
-      const returnEvent = await storage.getEventByOwnerToken(plusReturnToken);
-      if (!returnEvent) throw new CheckoutStateError("The purchased event could not be found.", 404, "event_not_found");
+    // specific event, save its settled billing contact. The subscription
+    // binding above independently grants membership; contact is not authority.
+    if (returnEvent) {
       await stampCapturedEmailForCheckout(returnEvent.id, email);
     }
 
@@ -2260,8 +2281,9 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
 
     return {
       plan: "plus",
-      planTier: updated.planTier,
-      trialEndsAt: updated.trialEndsAt,
+      planTier: boundAccess?.planTier ?? updated.planTier,
+      trialEndsAt: boundAccess?.trialEndsAt ?? updated.trialEndsAt,
+      membershipAccess: returnEvent ? 'event' : 'recovery_required',
       billingInterval: updated.billingInterval,
       firedEvent,
       eventId: subscription.id,
@@ -2334,12 +2356,11 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
         case "customer.subscription.deleted": {
           const notification = event.data.object as Stripe.Subscription;
           // A notification can arrive out of order; reconcile current state.
+          const observedAt = Date.now();
           const subscription = await stripe.subscriptions.retrieve(notification.id, { expand: ["latest_invoice"] });
           const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
           const customer = await stripe.customers.retrieve(customerId);
           const email = !("deleted" in customer) ? customer.email?.trim().toLowerCase() : undefined;
-          if (!email) break;
-          const previous = await storage.getEmailEntitlement(email);
           const newPlanTier = subscription.status === "trialing" &&
             (!subscription.trial_end || subscription.trial_end * 1000 <= Date.now())
             ? "plus_expired" : planTierFromSubscriptionStatus(subscription.status);
@@ -2348,9 +2369,26 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
           const invoice = subscription.latest_invoice;
           if (newPlanTier === "plus_active" &&
               (!invoice || typeof invoice === "string" || invoice.status !== "paid" || invoice.amount_remaining !== 0)) break;
+          const interval = subscription.items.data[0]?.price?.recurring?.interval;
+          const returnToken = subscription.metadata?.returnToken;
+          const originEvent = returnToken ? await storage.getEventByOwnerToken(returnToken) : undefined;
+          // An exact subscription downgrade must reach its bound events even
+          // if its billing email changed or another subscription shares it.
+          // Only subscriptions marked by Posy's server may grant new access.
+          if (subscription.metadata?.plan === 'plus' || newPlanTier === 'plus_expired') {
+            await reconcilePlusMembership({
+              subscriptionId: subscription.id, customerId, planTier: newPlanTier,
+              trialEndsAt: subscription.trial_end ? subscription.trial_end * 1000 : null,
+              billingInterval: interval === 'month' ? 'monthly' : interval === 'year' ? 'annual' : null,
+              subscriptionCreatedAt: subscription.created * 1000, observedAt,
+              eventId: subscription.metadata?.plan === 'plus' ? originEvent?.id : undefined,
+              source: 'subscription', sourceId: event.id,
+            });
+          }
+          if (!email) break;
+          const previous = await storage.getEmailEntitlement(email);
           if (newPlanTier === "plus_expired" && previous?.stripeSubscriptionId &&
               previous.stripeSubscriptionId !== subscription.id) break;
-          const interval = subscription.items.data[0]?.price?.recurring?.interval;
           await storage.upsertEmailEntitlement(email, {
             planTier: newPlanTier,
             stripeCustomerId: customerId,
@@ -2361,9 +2399,7 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
           });
           const usable = newPlanTier === "plus_active" || (newPlanTier === "plus_trial" &&
             !!subscription.trial_end && subscription.trial_end * 1000 > Date.now());
-          const returnToken = subscription.metadata?.returnToken;
           if (usable && returnToken) {
-            const originEvent = await storage.getEventByOwnerToken(returnToken);
             if (originEvent) await stampCapturedEmailForCheckout(originEvent.id, email);
           }
           if (previous?.planTier === "plus_trial" && newPlanTier === "plus_active") {
