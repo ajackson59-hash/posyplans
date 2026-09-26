@@ -7,6 +7,7 @@ export interface PlusMembershipAccess {
   planTier: 'plus_active' | 'plus_trial' | 'plus_expired';
   trialEndsAt: number | null;
   billingInterval: string | null;
+  bindingSource?: string;
 }
 
 export interface PlusMembershipReconciliation extends PlusMembershipAccess {
@@ -26,10 +27,12 @@ type MembershipRow = {
   subscription_id: string; customer_id: string; plan_tier: PlusMembershipAccess['planTier'];
   trial_ends_at: number | string | null; billing_interval: string | null;
   subscription_created_at: number | string | null; observed_at: number | string;
+  binding_source?: string;
 };
 function access(row: MembershipRow): PlusMembershipAccess {
   return { subscriptionId: row.subscription_id, customerId: row.customer_id, planTier: row.plan_tier,
-    trialEndsAt: row.trial_ends_at === null ? null : Number(row.trial_ends_at), billingInterval: row.billing_interval };
+    trialEndsAt: row.trial_ends_at === null ? null : Number(row.trial_ends_at), billingInterval: row.billing_interval,
+    bindingSource: row.binding_source };
 }
 
 /** Membership authority is private and keyed by the exact Stripe subscription.
@@ -42,7 +45,7 @@ export class DbPlusMembershipStore {
 
   async getEventAccess(eventId: number): Promise<PlusMembershipAccess | undefined> {
     const rows = await (await this.connection()).execute<MembershipRow>(sql`
-      select m.* from public.event_plus_memberships b
+      select m.*, b.source as binding_source from public.event_plus_memberships b
       join public.plus_memberships m on m.subscription_id = b.subscription_id
       where b.event_id = ${eventId}`);
     return rows[0] ? access(rows[0]) : undefined;

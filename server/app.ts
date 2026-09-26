@@ -21,6 +21,7 @@ import { registerEventArtworkRoutes } from "./eventArtworkRoutes";
 import { registerHumanArtworkReviewRoutes } from "./humanArtworkReviewRoutes";
 import { registerCustomerArtworkRoutes } from "./customerArtworkRoutes";
 import { registerPlanRegenerationRoutes } from "./planRegenerationRoutes";
+import { registerPlusLinkRoutes } from "./plusLinkRoutes";
 
 declare module "http" {
   interface IncomingMessage {
@@ -126,6 +127,7 @@ export function ensureRoutesRegistered(app: express.Express, httpServer: Server)
       registerHumanArtworkReviewRoutes(app);
       registerCustomerArtworkRoutes(app);
       registerPlanRegenerationRoutes(app);
+      registerPlusLinkRoutes(app);
       // The quality-locked prepayment preview intentionally precedes the
       // legacy teaser in routes.ts. Raw provider output is never customer-
       // visible: Preview defaults to a deterministic direction card until the

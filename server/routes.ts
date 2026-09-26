@@ -1800,6 +1800,15 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
       return res.status(402).json({ error: "This event needs Spark or Plus to generate a plan." });
     }
 
+    // Linking an existing membership verifies access only. An old tab or a
+    // reload must not turn that change into a paid planner request.
+    const membership = await getEventPlusAccess(event.id);
+    if (membership?.bindingSource === 'email_verification' && event.draftStatus !== 'ready'
+      && req.body?.confirmMembershipStart !== true) {
+      return res.status(409).json({ code: 'explicit_plan_start_required',
+        error: 'Plus is connected. Choose Build my plan when you are ready to start.' });
+    }
+
     // A saved plan is replaced only through the explicit, reviewed Plus flow,
     // including older events whose first-generation ledger may be absent.
     if (event.draftStatus === 'ready') {

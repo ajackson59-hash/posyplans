@@ -113,6 +113,7 @@ async function sendEmail(
     subject: string;
     body: string;
     idempotencyKey?: string;
+    signal?: AbortSignal;
   },
   ctaLabel: string,
   footer: string,
@@ -149,6 +150,7 @@ async function sendEmail(
   try {
     const response = await fetch(RESEND_API_URL, {
       method: "POST",
+      signal: opts.signal,
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
@@ -215,4 +217,20 @@ export async function sendEventRecoveryEmail(opts: {
     "Open event dashboard",
     "This email contains a private Posy event link. If you weren't expecting it, you can ignore it.",
   );
+}
+
+/** Code-only verification mail: no user-supplied event title, owner link or
+ * request Host enters the template. Sending does not alter event contact. */
+export async function sendPlusLinkCodeEmail(opts: {
+  to: string; code: string; challengeId: string;
+}): Promise<SendEmailResult> {
+  if (!/^\d{8}$/.test(opts.code) || !/^[a-f0-9-]{36}$/i.test(opts.challengeId)) {
+    return { ok: false, code: 'invalid_verification_email' };
+  }
+  const result = await sendEmail({
+    to: opts.to, subject: 'Your Posy Plus verification code',
+    body: `Your Posy Plus verification code is:\n\n${opts.code}\n\nEnter this code only in the Posy event where you requested it. It expires in 10 minutes and connects your membership to that event.\n\nNever share this code. If you did not request it, ignore this email. Your membership and events have not been changed.`,
+    idempotencyKey: `plus-link/${opts.challengeId}`, signal: AbortSignal.timeout(10_000),
+  }, 'Posy', 'This code is private. Posy support will never ask you to share it.');
+  return result.ok && !result.providerId ? { ok: false, code: 'email_acceptance_unconfirmed' } : result;
 }

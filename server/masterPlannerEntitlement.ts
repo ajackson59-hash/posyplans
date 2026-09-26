@@ -78,6 +78,7 @@ export async function canGenerateDraft(eventId: number): Promise<DraftAccess> {
 }
 
 export interface EntitlementSummary {
+  requiresExplicitStart: boolean;
   // The event's numeric id, so a client holding only the ownerToken (which is
   // all the entitlement route is keyed by) can address the eventId-scoped
   // /email-capture route without a second round trip.
@@ -116,5 +117,6 @@ export async function getEntitlementSummary(eventId: number): Promise<Entitlemen
     gatedActionsAvailable,
     sparkUnlocked,
     canGenerate: sparkUnlocked || gatedActionsAvailable,
+    requiresExplicitStart: entitlement?.bindingSource === 'email_verification' && event.draftStatus !== 'ready',
   };
 }

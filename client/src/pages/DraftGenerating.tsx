@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequestJson } from "@/lib/queryClient";
 import HumanArtworkReviewStatus from "@/components/HumanArtworkReviewStatus";
 import CustomerArtworkPreview from "@/components/CustomerArtworkPreview";
+import PlusMembershipLink from "@/components/PlusMembershipLink";
 import type { CustomerArtworkView } from "@shared/customerArtwork";
 import { getCheckoutHandoffPhase } from "@/lib/checkoutHandoff";
 import { touchRecentEvent } from "@/lib/eventRecovery";
@@ -38,6 +39,7 @@ interface EntitlementSummary {
   planTier: string;
   sparkUnlocked: boolean;
   canGenerate: boolean;
+  requiresExplicitStart: boolean;
 }
 
 type PrePaymentPreviewKind = "direction-card" | "reference-board" | "approved-image" | "customer-artwork" | "none";
@@ -135,7 +137,6 @@ export default function DraftGenerating() {
   // secondary link — repeat hosts were only being offered the per-event unlock.
   const [selectedPlan, setSelectedPlan] = useState<"spark" | "plus">("spark");
   const [plusInterval, setPlusInterval] = useState<"annual" | "monthly">("annual");
-  const [showPlusHelp, setShowPlusHelp] = useState(false);
   const [demoOpen, setDemoOpen] = useState(false);
   const [previewImageLoaded, setPreviewImageLoaded] = useState(false);
   const [previewImageFailed, setPreviewImageFailed] = useState(false);
@@ -247,8 +248,16 @@ export default function DraftGenerating() {
   );
 
   const startGeneration = useMutation({
-    mutationFn: (resumeInterrupted: boolean = false) =>
-      apiRequestJson("POST", `/api/events/owner/${ownerToken}/master-planner/generate`, { resumeInterrupted }),
+    mutationFn: ({ resumeInterrupted = false, confirmMembershipStart }: { resumeInterrupted?: boolean; confirmMembershipStart?: true } = {}) =>
+      apiRequestJson("POST", `/api/events/owner/${ownerToken}/master-planner/generate`, {
+        resumeInterrupted,
+        ...(confirmMembershipStart ? { confirmMembershipStart } : {}),
+      }),
+    onSuccess: () => {
+      // A verified member may already have read `none` or `failed_partial`.
+      // Refresh that cached status so polling begins after the explicit start.
+      void queryClient.invalidateQueries({ queryKey: ["master-planner-status", ownerToken] });
+    },
   });
 
   // Start a Spark checkout for this specific event, then hand off to Stripe.
@@ -287,7 +296,7 @@ export default function DraftGenerating() {
 
   // Kicks off the real, capped, low-resolution invitation preview without
   // persisting this provisional field value as the event's recovery identity.
-  // Checkout submission and the explicit Plus lookup capture the email later;
+  // Checkout submission captures the email later;
   // Stripe's verified address remains authoritative after payment.
   const startPrePaymentPreview = useMutation({
     mutationFn: (candidateEmail: string) =>
@@ -447,23 +456,25 @@ export default function DraftGenerating() {
     if (startedGenerationRef.current || !ownerToken) return;
     if (checkoutHandoffPhase === "confirming" || checkoutHandoffPhase === "failed") return;
     if (!entitlement.data?.canGenerate) return;
+    if (entitlement.data.requiresExplicitStart) return;
     if (!previewReadiness.isSuccess || humanReviewPending || customerArtworkPending) return;
     startedGenerationRef.current = true;
     if (customerArtwork?.hasSavedPlan) { navigate(`/dashboard/${ownerToken}`); return; }
-    startGeneration.mutate(false);
+    startGeneration.mutate({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ownerToken, entitlement.data?.canGenerate, checkoutHandoffPhase, previewReadiness.isSuccess, humanReviewPending, customerArtworkPending, customerArtwork?.hasSavedPlan]);
+  }, [ownerToken, entitlement.data?.canGenerate, entitlement.data?.requiresExplicitStart, checkoutHandoffPhase, previewReadiness.isSuccess, humanReviewPending, customerArtworkPending, customerArtwork?.hasSavedPlan]);
 
-  const { data: status } = useQuery<MasterPlannerStatus>({
+  const plannerStatus = useQuery<MasterPlannerStatus>({
     queryKey: ["master-planner-status", ownerToken],
     queryFn: () => apiRequestJson<MasterPlannerStatus>("GET", `/api/events/owner/${ownerToken}/master-planner/status`),
-    enabled: !!ownerToken && startGeneration.isSuccess,
+    enabled: !!ownerToken && (startGeneration.isSuccess || entitlement.data?.requiresExplicitStart === true),
     refetchInterval: (query) => {
       const current = query.state.data as MasterPlannerStatus | undefined;
-      if (current?.draftStatus === "ready" || current?.draftStatus === "failed_partial") return false;
+      if (current?.draftStatus === "ready" || current?.draftStatus === "failed_partial" || current?.draftStatus === "none") return false;
       return 2000;
     },
   });
+  const status = plannerStatus.data;
 
   useEffect(() => {
     if (status?.draftStatus === "ready" && ownerToken) {
@@ -561,6 +572,28 @@ export default function DraftGenerating() {
     </div>;
   }
 
+  if (entitlement.data?.canGenerate && entitlement.data.requiresExplicitStart && !startGeneration.isSuccess && !startGeneration.isError && !hasFailed && status?.draftStatus !== "generating" && status?.draftStatus !== "ready") {
+    return <div className="min-h-screen bg-background px-6 py-16">
+      <div className="mx-auto max-w-md space-y-5 text-center" data-testid="plus-ready-to-build">
+        <Wordmark />
+        <h1 className="font-serif text-2xl font-semibold text-foreground">Your Plus access is ready</h1>
+        <p className="text-sm text-muted-foreground">Your event details are saved. Choose when you'd like Posy to build your first plan.</p>
+        {!previewReadiness.isSuccess || !plannerStatus.isSuccess ? <p role="status" className="text-sm text-muted-foreground">Checking your saved progress before starting…</p> : null}
+        {plannerStatus.isError ? <Button variant="outline" onClick={() => { void plannerStatus.refetch(); }}>Check saved progress</Button> : null}
+        <Button
+          type="button"
+          data-testid="button-build-plus-plan"
+          disabled={startGeneration.isPending || !previewReadiness.isSuccess || !plannerStatus.isSuccess || status?.draftStatus !== "none" || humanReviewPending || customerArtworkPending}
+          onClick={() => {
+            if (startGeneration.isPending || !previewReadiness.isSuccess || !plannerStatus.isSuccess || status?.draftStatus !== "none" || humanReviewPending || customerArtworkPending) return;
+            startedGenerationRef.current = true;
+            startGeneration.mutate({ confirmMembershipStart: true });
+          }}
+        >{startGeneration.isPending ? "Starting your plan…" : "Build my plan"}</Button>
+      </div>
+    </div>;
+  }
+
   if (showPaywall) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 py-16">
@@ -577,6 +610,8 @@ export default function DraftGenerating() {
               event, or choose Plus for more planning options and revisions.
             </p>
           </div>
+
+          {ownerToken ? <PlusMembershipLink key={ownerToken} ownerToken={ownerToken} onLinked={() => { void entitlement.refetch(); }} /> : null}
 
           {/* See-how-it-works button — opens demo in a dialog so users stay on the paywall */}
           <div className="text-center">
@@ -945,26 +980,6 @@ export default function DraftGenerating() {
             </p>
           )}
 
-          {/* Existing Plus members — collapsed so it doesn't compete with the choice above */}
-          <div className="mx-auto max-w-sm text-center" data-testid="already-plus-panel">
-            {!showPlusHelp ? (
-              <button
-                type="button"
-                onClick={() => setShowPlusHelp(true)}
-                data-testid="button-show-plus-access"
-                className="text-xs font-medium text-muted-foreground underline underline-offset-2 hover:text-foreground"
-              >
-                Already on Plus? Find your access
-              </button>
-            ) : (
-              <div className="space-y-3 rounded-lg border border-border p-4 text-left text-sm" data-testid="plus-access-help">
-                <p>Open the event connected to your Plus purchase. You don't need to purchase again.</p>
-                <Link href="/recover" className="block font-medium text-primary underline underline-offset-2">Find my paid event</Link>
-                <p className="text-xs text-muted-foreground">To connect Plus to this new event, contact <a href="mailto:hello@posyplans.com?subject=Plus%20access" className="text-primary underline underline-offset-2">hello@posyplans.com</a>. Your event details are saved.</p>
-              </div>
-            )}
-          </div>
-
           <p className="text-center">
             <Link
               href={`/pricing?returnToken=${ownerToken}`}
@@ -1049,7 +1064,7 @@ export default function DraftGenerating() {
             This attempt could not continue. Your saved progress is intact. Choose Try again to continue.
           </p>
           <Button
-            onClick={() => startGeneration.mutate(true)}
+            onClick={() => startGeneration.mutate({ resumeInterrupted: true, ...(entitlement.data?.requiresExplicitStart ? { confirmMembershipStart: true as const } : {}) })}
             disabled={startGeneration.isPending}
             data-testid="button-retry-start"
           >
@@ -1064,7 +1079,7 @@ export default function DraftGenerating() {
             That draft didn’t finish. Completed sections are saved. Try again to continue from the last saved section.
           </p>
           <Button
-            onClick={() => startGeneration.mutate(true)}
+            onClick={() => startGeneration.mutate({ resumeInterrupted: true, ...(entitlement.data?.requiresExplicitStart ? { confirmMembershipStart: true as const } : {}) })}
             disabled={startGeneration.isPending}
             data-testid="button-retry-draft"
           >

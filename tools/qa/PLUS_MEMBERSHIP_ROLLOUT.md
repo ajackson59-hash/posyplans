@@ -1,7 +1,7 @@
 # Exact Plus membership binding — Preview rollout
 
-The prior email-capture route grants Plus after typing a subscriber's address.
-The prepared fix treats contact email separately from paid authority. Two new
+The prior email-capture route granted Plus after typing a subscriber's address.
+The deployed repair treats contact email separately from paid authority. Two
 server-only tables hold exact Stripe subscription state and payment-proven event
 bindings. No client role has table access. Spark unlocks remain event-specific.
 
@@ -68,10 +68,11 @@ historical email-based backfill.
 ## Current limitations
 
 - Existing recovery only sends event owner links; it does not create a new
-  membership authentication session. The prepared UI directs existing members
-  to their paid event/recovery and support, with no automatic message.
-- New-event reuse and standalone Plus access need an explicit proof mechanism
-  before public launch. New standalone Plus purchases are refused before any
+  membership authentication session. Preview now provides the separate inbox
+  verification flow described below; other environments retain recovery/help.
+- New-event reuse and prior standalone Plus access use this verification flow.
+  Actual inbox receipt and live-account acceptance remain release gates.
+  New standalone Plus purchases are refused before any
   Stripe/email/write action; Pricing directs visitors to start an event first.
   Previously settled standalone purchases record their exact subscription but
   explicitly require recovery, never claiming event access. A source owner token is not silently promoted to a
@@ -91,3 +92,62 @@ and cancellation despite changed email. UI tests verify recovery guidance does
 not dispatch messages or generation. The separate disposable-PG suite covers
 same-email event isolation, idempotency/concurrency, exact cancellation,
 stale observations, changed identity, rollback and client-role denials.
+
+## Billing inbox verification — Preview only
+
+`plusLinkRoutes`, `plusMembershipProof`, and `plusLinkStore` implement an
+explicit eight-digit code flow on `codex/launch-blockers` in Vercel Preview.
+Apply `20260926031348_plus_email_verifications.sql` before the application.
+It adds private challenge/rate tables and one binding-source value; it does not
+alter existing customer, event, artwork or subscription data. Production is
+deliberately disabled and has not been migrated for this flow.
+
+The event owner requests a code for their billing email. A fresh read through
+the existing Stripe client verifies the exact customer, configured Plus price,
+environment, paid invoice, or still-valid legacy trial. A legacy email record
+is only an identity hint. Bounded customer/subscription discovery also handles
+prior standalone purchases. Stripe's case-sensitive email lookup can miss
+unusual historical casing; incomplete or uncertain results require support.
+Reads have a two-second request timeout and a ten-second result deadline.
+The SDK may retry an initial closed connection; there is no application retry.
+
+Each code is random, expires after ten minutes, and is stored only as an HMAC
+bound to its challenge, recipient, event, subscription and customer. The HMAC
+key derives from the existing Stripe secret under a separate domain; key
+rotation invalidates outstanding codes. The raw code is only in the explicit
+email and browser input, never logs, URLs or browser storage. New requests are
+limited by durable event and recipient counters (3/hour each), IP (12/hour),
+global (60/hour), and a 60-second cooldown. Each challenge permits five guesses.
+Hourly ceilings are fixed buckets; cooldown serialization spans boundaries.
+
+Requests return the same neutral response before provider lookup. Replaying a
+request UUID does not send again. The existing sender uses a challenge-specific
+idempotency key and ten-second timeout. Uncertain delivery, missing provider ID
+or lost worker remains unredeemable; only a new explicit bounded request can
+try again. Provider acceptance is not evidence of inbox receipt.
+
+Redeeming the code rechecks exact current billing facts outside the database
+transaction, then atomically consumes the code and binds only this event. A
+newer/equal cancellation, conflicting binding, superseded code, wrong event,
+expired code or lost execution claim cannot grant access. Existing verified
+bindings survive contact edits. An unchecked recovery option lets the user
+explicitly save this verified inbox as the event contact only if that field is
+empty; the conditional write commits with the binding. Existing contact is
+never replaced. No checkout confirmation, purchase, analytics, automatic
+recovery email or plan generation occurs in this linking operation.
+
+The saved `email_verification` binding requires a subsequent explicit Build or
+Try again action to start/resume a first plan. Both browser and server enforce
+this after reload or another-tab return. An existing running plan is polled;
+ready plans retain the separate reviewed regeneration path.
+
+Verification uses mocked provider/email/browser tests and disposable PostgreSQL
+concurrency/permissions tests. Hosted checks must not request a real code or
+start a plan without the corresponding authorization. The paid artwork policy
+remains paused and its counters are not reset. No new provider or secret is
+required. Retention cleanup for private challenge recipients/rate records has
+not been scheduled; include this in the broader privacy/retention launch gate.
+
+Keep the new private tables on rollback. An older application may lack the
+explicit-start safeguard, so pause/drain work before rollback and do not treat
+the older build as equivalent protection. Never roll back to email-only access.
