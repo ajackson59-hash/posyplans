@@ -1,5 +1,108 @@
 # Customer artwork quality screen — 23 September 2026
 
+## Current status — 26 September 2026 UTC
+
+**Artwork qualification is the next launch priority. The approved screen remains
+paused after the Event 75 provider failure and unknown billing.** Four of the
+sixteen approved image requests are consumed: **2 creates + 2 edits**. Twelve
+requests remain unused and paused; none is permission to retry the blocked
+request, replace a failed case, reset an event allowance or reopen a prior study.
+The existing **US $5 planning reserve** remains approved, not a provider-enforced
+dollar cap. The prior known token estimate is **$0.083183**; Event 75's charge and
+the combined billed total are unknown.
+
+This section supersedes the September 23 status, pending human-assessment and
+mandatory-benchmark wording preserved below. Read the historical JSON with the
+later acceptance and evidence records; do not overwrite its original observations.
+
+| Case / event | Current evidence and decision |
+| --- | --- |
+| 01 / Event 73 | Alex accepted the corrected construction image: “I think that image is perfect.” The image-specific framing concern is closed. Preserve the original first-pass clipping observation separately; do not rereview, edit or regenerate the accepted revision. |
+| 02 / Event 74 | The accepted Blippi/Meekah base was imported from retained artwork, then one saved-source edit was completed. This proves that revision path, not a fresh case-02 creation. Fresh case 02 remains deferred under the no-repeat instruction; preserve the accepted base and revision. |
+| 03 / Event 75 | One creation returned output moderation with no image and unknown billing. Keep this failure in the record. Do not retry it, reword it to bypass the provider boundary or infer an unreported moderation reason. |
+| 04–08 | Five frozen cases remain unrun: KPop trio, Moana/Maui, photographic dinner, flat vector and lacquer inlay. Preserve their existing order and complete briefs. |
+
+Event 73's observed click-to-decoded-image upper bounds were **58.149 seconds
+for creation and 50.016 seconds for the edit**. The historical **246.856-second**
+combined evaluation interval included **138.691 seconds of agent inspection and
+recording**; it is not four minutes of generation or an uninterrupted customer
+wait. Retain all these measurements without claiming a complete final-image
+90-second journey. Event 74's edit was visibly decoded by **48.394 seconds**;
+this is an observed upper bound and excludes its historical base creation.
+
+### Smallest remaining representative screen
+
+After the provider/accounting stop is resolved, register only fresh private
+events for **04–08**, on the exact current Preview. Use **five creations and
+at most one edit per case when needed: 5–10 requests**, within the remaining
+allowance. A passing image does not need a ceremonial preference edit: the
+retained Event 74 edit already supplies that narrow mechanics evidence. Freeze
+any necessary correction before dispatch, preserve both outputs and record
+first-pass success separately from repair success. A failed or damaging edit,
+provider failure, unknown accounting or integrity failure still stops the screen.
+
+At the ten-request maximum, **two other allocated slots remain unused**: the
+deferred case-02 creation and the unavailable case-03 edit. They are not a
+replacement or retry budget. No new critic, classifier, reference-lookup charge,
+purchase, message, guest publication, merge or Production release is included.
+Keep the current global ledger paused until its recorded stop is resolved;
+changing an event map alone must never reopen spending.
+
+### Acceptance and customer evidence
+
+- Judge the exact full brief: each named identity, required object, explicit
+  quantity, requested treatment and exclusion. Do not invent extra requirements
+  such as one microphone per character or a prohibition on intentional negative
+  space. An internal composition preference cannot reverse an accepted image.
+- Inspect the delivered pixels at normal mobile size and native detail. Faces,
+  anatomy, connections, edges and materials must remain clear for the requested
+  medium, without unintended blur, pixelation, clipping or damaged detail.
+  Preserve the native aspect ratio; do not label a source-only inspection as
+  delivered-image approval.
+- For an edit, verify the frozen change and preservation of previously correct
+  identities, counts, objects and treatment. Keep explicitly, reload and verify
+  the same selected candidate and delivered file hash. Selection, refresh and
+  switching retained versions must not dispatch a provider request.
+- Measure immediately before the actual button click through visibly decoded
+  delivery. Record first creation, edit and fresh-load timing separately from
+  cached recovery, customer decision time and evaluation overhead. Preserve
+  last-not-ready/first-decoded bounds; an interval crossing 90 seconds is
+  indeterminate against that target. Server duration alone is not delivery time.
+- Present one compact review packet with the exact briefs, delivered images,
+  mobile views and useful detail views, plus original/revision comparisons when
+  applicable. Record human **Accept / Needs change / Unsure** separately from
+  agent inspection. Carry prior approvals forward without asking again. Include
+  every failure, missing image, timing result and unknown charge in the scorecard.
+
+Fresh creation currently sends the full brief directly to the image model; it
+does not retrieve canonical character reference pixels or independently verify
+identity before dispatch. Edits attach the saved artwork, not an independently
+verified identity reference. A successfully returned image therefore does not
+itself establish likeness, fidelity or quality.
+
+### Reliability benchmark provenance and limits
+
+The documented **eight directions × at least twenty independent trials,
+at least 95% human-accepted delivery within 90 seconds per direction** originated
+as an assistant-proposed reliability benchmark. The prior thread records it as
+a user-facing plan, but no exact user approval of that numerical launch gate
+has been found. Preserve it as a **proposed, unqualified reliability benchmark**,
+separate from the explicitly approved sixteen-request/$5 screen. It is neither
+authorization to spend on 160 images nor grounds to silently delete the quality
+objective. Any larger paid benchmark needs a concrete scope and budget before
+execution. Completing five new cases cannot prove a 95% rate, arbitrary-prompt
+reliability or resolution of the Frozen provider failure; report those gaps
+plainly before deciding the next release step.
+
+Source records: the canonical Posy continuation checklist and
+`Posy-Event74-Revision-Evidence-2026-09-25.json`,
+`Posy-Event75-Provider-Block-Evidence-2026-09-25.json`, and
+`Posy-Image-Guard-Preview-Evidence-2026-09-26.json`. Event 69's acceptance, all
+closed studies and prior budgets remain unchanged. No routine staff approval
+gate is restored to the customer journey.
+
+## Historical September 23 record — superseded where noted above
+
 Status: **paid allowance approved; case 1 executed; screen stopped with quality
 and cumulative timing gates unmet**. Alex approved the exact 16-request/$5-reserve
 scope, then confirmed the Event 73 Preview settings. Two requests were consumed;
