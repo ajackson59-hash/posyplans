@@ -6,6 +6,7 @@ import { storage } from './storage';
 import { getEntitlementSummary } from './masterPlannerEntitlement';
 import { ownerEventView, restoreEventArtworkReferences, eventArtworkFields, storedEventArtwork } from './eventArtwork';
 import { DbCustomerArtworkStore } from './customerArtworkStore';
+import { streamArtwork } from './artworkResponse';
 import { CustomerArtworkError, claimCustomerArtwork, currentCustomerCandidate, customerArtworkBriefHash,
   customerArtworkApplication, customerArtworkEventEnabled, customerArtworkGenerationEnabled, customerArtworkRequestLimit, customerArtworkView, emptyCustomerArtwork,
   finishCustomerArtwork, recoverCustomerArtwork, selectCustomerArtwork, selectedCustomerArtwork,
@@ -53,6 +54,7 @@ export function registerCustomerArtworkRoutes(app: Express, deps: Dependencies =
         await handler(req, res, event);
       }
       catch (error) {
+        if (res.headersSent) return next(error);
         if (error instanceof CustomerArtworkError) return res.status(error.status).json({ error: error.message });
         // No provider response, raw prompt, credential or image may enter logs/JSON.
         return res.status(503).json({ error: 'We could not confirm that request. Refresh to check your saved artwork before trying again.' });
@@ -100,13 +102,13 @@ export function registerCustomerArtworkRoutes(app: Express, deps: Dependencies =
   app.get('/api/events/owner/:ownerToken/artwork/candidates/:id', owner(async (req, res, event) => {
     const row = await current(event), candidate = currentCustomerCandidate(row, event, String(req.params.id));
     if (!candidate || req.query.v !== candidate.imageHash) throw new CustomerArtworkError('That image is no longer available for these details.', 404);
-    return res.type('png').send(Buffer.from(candidate.imageBase64!, 'base64'));
+    return streamArtwork(res, Buffer.from(candidate.imageBase64!, 'base64'));
   }));
   app.get('/api/events/owner/:ownerToken/prepayment-preview/asset', owner(async (_req, res, event) => {
     const row = await current(event);
     const chosen = currentCustomerCandidate(row, event, row.selectedId) ?? [...row.attempts].reverse().map(a => currentCustomerCandidate(row, event, a.id)).find(Boolean);
     if (!chosen) throw new CustomerArtworkError('Your artwork is not ready yet.', 404);
-    return res.type('png').send(Buffer.from(chosen.imageBase64!, 'base64'));
+    return streamArtwork(res, Buffer.from(chosen.imageBase64!, 'base64'));
   }, true));
   app.post('/api/events/owner/:ownerToken/invite/use-prepayment-preview', owner(async (req, res, event) => {
     const row = await current(event), chosen = selectedCustomerArtwork(row, event);

@@ -6,6 +6,7 @@ import { approvedHumanArtwork } from "./humanArtworkPolicy";
 import { customerArtworkEventEnabled } from "./customerArtwork";
 import { appliedCustomerArtworkIsKept } from "./customerArtworkPolicy";
 import { eventArtworkFields, eventArtworkVersion, storedEventArtwork, type EventArtworkField } from "./eventArtwork";
+import { streamArtwork } from "./artworkResponse";
 
 type ArtworkStorage = Pick<typeof storage, "getEventByOwnerToken" | "getEventByShareSlug">;
 
@@ -38,11 +39,7 @@ export function registerEventArtworkRoutes(app: Express, store: ArtworkStorage =
       const match = /^data:(image\/(?:png|jpeg|webp|gif));base64,([A-Za-z0-9+/]+={0,2})$/.exec(value);
       if (!match) return res.status(404).json({ error: "Artwork not found" });
       const bytes = Buffer.from(match[2], "base64");
-      // Avoid a platform error. Larger originals still need object storage;
-      // never shrink or alter a paid original silently to meet this limit.
-      if (bytes.length > 4_500_000) return res.status(413).json({ error: "This original is too large for direct delivery" });
-      res.setHeader("Content-Type", match[1]);
-      return res.send(bytes);
+      return streamArtwork(res, bytes, match[1] as "image/png" | "image/jpeg" | "image/webp" | "image/gif");
     });
   }
 }

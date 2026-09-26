@@ -11,6 +11,7 @@ import { HUMAN_REVIEW_CHECKS, MAX_HUMAN_ARTWORK_CORRECTIONS, HumanArtworkCorrect
   requestHumanArtwork, requestHumanArtworkCorrection, prepareHumanArtworkRequest, generateHumanArtwork, decideHumanArtwork, isCurrentHumanApproval,
   type HumanArtworkReview, type HumanArtworkReviewStore } from './humanArtworkReview';
 import { humanArtworkReviewPage } from './humanArtworkReviewPage';
+import { streamArtwork } from './artworkResponse';
 
 interface Dependencies {
   reviews?: HumanArtworkReviewStore; events?: Pick<typeof storage, 'getEventByOwnerToken' | 'updateEventById'>;
@@ -70,14 +71,14 @@ export function registerHumanArtworkReviewRoutes(app: Express, deps: Dependencie
     const row = await reviews.get(String(req.params.id));
     const event = row && await events.getEventByOwnerToken(row.ownerToken);
     if (!row?.imageBase64 || !event || !enabled(event)) return res.status(404).json({ error: 'No candidate' });
-    res.setHeader('X-Content-Type-Options','nosniff'); return res.type('png').send(Buffer.from(row.imageBase64,'base64'));
+    return streamArtwork(res, Buffer.from(row.imageBase64,'base64'));
   }));
   app.get('/api/staff/artwork-reviews/:id/previous/:version/asset', staff(async (req,res) => {
     const row = await reviews.get(String(req.params.id));
     const event = row && await events.getEventByOwnerToken(row.ownerToken);
     const previous = /^\d+$/.test(String(req.params.version)) && row?.previousCandidates?.find(c => c.version === Number(req.params.version));
     if (!previous || !previous.imageBase64 || !event || !enabled(event)) return res.status(404).json({ error: 'No retained candidate' });
-    res.setHeader('X-Content-Type-Options','nosniff'); return res.type('png').send(Buffer.from(previous.imageBase64,'base64'));
+    return streamArtwork(res, Buffer.from(previous.imageBase64,'base64'));
   }));
   app.post('/api/staff/artwork-reviews/:id/correction', staff(async (req,res) => {
     const input = z.object({ version: z.number().int(), imageHash: z.string().regex(/^[a-f0-9]{64}$/),
@@ -121,7 +122,7 @@ export function registerHumanArtworkReviewRoutes(app: Express, deps: Dependencie
   app.get('/api/events/owner/:ownerToken/prepayment-preview/asset', owner(async (_req,res,event) => {
     const row = await current(event);
     if (!isCurrentHumanApproval(row,event)) return res.status(404).json({ error: 'Artwork is awaiting human approval.' });
-    return res.type('png').send(Buffer.from(row.imageBase64,'base64'));
+    return streamArtwork(res, Buffer.from(row.imageBase64,'base64'));
   }));
   app.post('/api/events/owner/:ownerToken/invite/use-prepayment-preview', owner(async (_req,res,event) => {
     const row = await current(event);

@@ -27,13 +27,13 @@ const { registerRoutes } = await import("../server/routes");
 const { registerInitialPreviewRoute } = await import("../server/initialPreviewRoute");
 const { registerEventArtworkRoutes } = await import("../server/eventArtworkRoutes");
 
-// A valid, poorly compressible PNG whose base64 alone exceeds 4.5 MB.
-const rgb = Buffer.alloc(1000 * 1300 * 3);
+// A valid, poorly compressible PNG whose binary (not just base64) exceeds 4.5 MB.
+const rgb = Buffer.alloc(1300 * 1600 * 3);
 let seed = 12345;
 for (let i = 0; i < rgb.length; i++) { seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5; rgb[i] = seed & 255; }
 const source = process.env.POSY_QA_ARTWORK_PATH
   ? readFileSync(process.env.POSY_QA_ARTWORK_PATH)
-  : encodePng({ width: 1000, height: 1300, rgb });
+  : encodePng({ width: 1300, height: 1600, rgb });
 const sourcePixels = decodePng(source);
 const measurements: Record<string, unknown>[] = [];
 afterAll(() => {
@@ -88,6 +88,11 @@ describe("approved preview through paid reuse, reload and guest delivery", () =>
     expect(reloaded.body.event).toEqual(applied.body.event);
     const asset = await request(app).get(reloaded.body.event.inviteIllustrationUrl);
     expect(asset.status).toBe(200); expect(Buffer.from(asset.body).equals(source)).toBe(true);
+    expect(source.length).toBeGreaterThan(4_500_000);
+    expect(asset.headers["content-length"]).toBeUndefined();
+    expect(asset.headers["transfer-encoding"]).toBe("chunked");
+    expect(asset.headers["etag"]).toBeUndefined();
+    expect(asset.headers["referrer-policy"]).toBe("no-referrer");
     expect(asset.headers["cache-control"]).toBe("private, no-store");
     expect(Buffer.from(decodePng(asset.body).rgb).equals(Buffer.from(sourcePixels.rgb))).toBe(true);
     const guest = await request(app).get(publicPath);
@@ -152,10 +157,12 @@ describe("approved preview through paid reuse, reload and guest delivery", () =>
     expect((await request(app).get(ownerUrl)).status).toBe(200);
   });
 
-  it("fails clearly on oversized originals and never serves executable inline content", async () => {
+  it("supports HEAD without a body and never serves executable inline content", async () => {
     const app = await makeApp();
-    state.event!.inviteArtworkUrl = `data:image/png;base64,${Buffer.alloc(4_500_001, 1).toString("base64")}`;
-    expect((await request(app).get(eventArtworkUrl(state.event!, "inviteArtworkUrl"))).status).toBe(413);
+    state.event!.inviteArtworkUrl = original;
+    const head = await request(app).head(eventArtworkUrl(state.event!, "inviteArtworkUrl"));
+    expect(head.status).toBe(200); expect(head.text).toBeUndefined();
+    expect(head.headers["cache-control"]).toBe("private, no-store");
     state.event!.inviteArtworkUrl = `data:image/svg+xml;base64,${Buffer.from("<svg><script>alert(1)</script></svg>").toString("base64")}`;
     expect((await request(app).get(eventArtworkUrl(state.event!, "inviteArtworkUrl"))).status).toBe(404);
     expect(state.writes).toBe(0);

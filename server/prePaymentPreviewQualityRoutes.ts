@@ -4,6 +4,7 @@ import type { PreviewFailureReason } from "@shared/previewFailure";
 import { waitUntil } from "@vercel/functions";
 import { z } from "zod";
 import { storage } from "./storage";
+import { streamArtwork } from "./artworkResponse";
 import { DbArtworkAttemptStore } from "./aiFirst/dbStore";
 import type { AiFirstArtworkAttemptStore } from "./aiFirst/artworkAttemptStore";
 import { canGenerateDraft } from "./masterPlannerEntitlement";
@@ -1110,10 +1111,10 @@ export function registerPrePaymentPreviewQualityRoutes(
     const fullBytes = Buffer.from(approved.payload, "base64");
     res.setHeader("Content-Type", "image/png");
 
-    if (await isUnlocked(event)) return res.send(fullBytes);
+    if (await isUnlocked(event)) return streamArtwork(res, fullBytes);
 
     try {
-      return res.send(previewImageBytes(fullBytes, approved.profile));
+      return streamArtwork(res, previewImageBytes(fullBytes, approved.profile));
     } catch (error) {
       const detail = error instanceof PngDecodeError ? error.message : String(error);
       console.error(`[prepayment-preview] approved asset decode failed for event ${event.id}: ${detail}`);

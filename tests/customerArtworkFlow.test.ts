@@ -188,6 +188,30 @@ describe('customer artwork durable request boundary', () => {
 });
 
 describe('customer route integration', () => {
+  it('streams a retained candidate above the buffered limit without changing bytes or scheduling work', async () => {
+    const row = await ready();
+    const rgb = Buffer.alloc(1300 * 1600 * 3);
+    let seed = 91021;
+    for (let i = 0; i < rgb.length; i++) { seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5; rgb[i] = seed & 255; }
+    const large = encodePng({ width: 1300, height: 1600, rgb });
+    row.attempts[0].imageBase64 = large.toString('base64');
+    row.attempts[0].imageHash = createHash('sha256').update(large).digest('hex');
+    await store.compareAndSet(row, row.version); generate.mockClear();
+    const a = app({ POSY_CUSTOMER_ARTWORK_GENERATION: 'false' });
+    const read = await request(a).get(owner + '/artwork');
+    const url = read.body.candidates[0].assetUrl;
+    expect(large.length).toBeGreaterThan(4_500_000);
+    for (const path of [url, owner + '/prepayment-preview/asset']) {
+      const asset = await request(a).get(path);
+      expect(asset.status).toBe(200); expect(asset.body.equals(large)).toBe(true);
+      expect(asset.headers['transfer-encoding']).toBe('chunked');
+      expect(asset.headers['cache-control']).toBe('private, no-store');
+    }
+    expect((await request(a).get(url.replace('synthetic-customer-owner', 'wrong-owner'))).status).toBe(404);
+    event = { ...event, vibeDescription: 'Changed brief invalidates private candidates.' };
+    expect((await request(a).get(url)).status).toBe(404);
+    expect(generate).not.toHaveBeenCalled(); expect(jobs).toHaveLength(0);
+  });
   it('connects create/read/keep/revise/revert/paid reuse without staff, duplicate spend, or exposing private source data', async () => {
     const a = app();
     expect((await request(a).post('/api/checkout/create-session').send({ returnToken: event.ownerToken })).status).toBe(409);
