@@ -12,7 +12,7 @@ vi.mock('@anthropic-ai/sdk',()=>({default:class {constructor(){throw Error('No p
 const network=vi.fn(async()=>{throw Error('No network in continuation tests');});vi.stubGlobal('fetch',network);
 const control=postgres(target,{prepare:false,max:6,connect_timeout:3,idle_timeout:2});
 const policyId='launch-preview-image-v1';
-const migration='20260926112828_image_spend_bounded_continuation.sql';
+const migration='20260926161620_image_spend_bounded_continuation.sql';
 let schema:string[], migrations:string[], production:typeof import('../server/storage'), artwork:typeof import('../server/customerArtwork');
 let spending:InstanceType<typeof import('../server/imageSpendStore').DbImageSpendStore>;
 let sessions:InstanceType<typeof import('../server/customerArtworkStore').DbCustomerArtworkStore>;

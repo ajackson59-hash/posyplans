@@ -47,7 +47,7 @@ beforeAll(async () => {
   migrationTexts = [session.replace(/^alter table public\.events add column customer_artwork_enabled boolean not null default false;\s*/, ''),
     await readFile(new URL('../supabase/migrations/20260926022248_image_spend_guard.sql', import.meta.url), 'utf8'),
     await readFile(new URL('../supabase/migrations/20260926043634_image_spend_reconciliation_audit.sql', import.meta.url), 'utf8'),
-    await readFile(new URL('../supabase/migrations/20260926112828_image_spend_bounded_continuation.sql', import.meta.url), 'utf8')];
+    await readFile(new URL('../supabase/migrations/20260926161620_image_spend_bounded_continuation.sql', import.meta.url), 'utf8')];
   for (const role of ['anon', 'authenticated', 'service_role']) {
     const found = await control`select rolname from pg_roles where rolname=${role}`;
     if (!found.length) await control.unsafe(`create role ${role} nologin${role === 'service_role' ? ' bypassrls' : ''}`);
