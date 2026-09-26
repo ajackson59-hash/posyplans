@@ -7,6 +7,7 @@ import { buildArtworkEditRequest, type ArtworkEditSource } from './aiFirst/artwo
 import { ArtworkNormalizationError, ArtworkProviderError, DEFAULT_ARTWORK_MODEL, generateArtwork, type ArtworkRequest, type ArtworkResult } from './aiFirst/artwork';
 import { previewImageBytes } from './prePaymentPreviewImage';
 import { readPngSize } from './aiFirst/png';
+import { ImageSpendGuardError } from './imageSpendGuard';
 
 export const CUSTOMER_ARTWORK_REQUEST_LIMIT = 4;
 export const CUSTOMER_ARTWORK_JOB_MS = 180_000;
@@ -38,6 +39,9 @@ export interface CustomerArtworkStore {
   get(eventId: number): Promise<CustomerArtworkSession | undefined>;
   create(row: CustomerArtworkSession): Promise<CustomerArtworkSession>;
   compareAndSet(row: CustomerArtworkSession, expected: number): Promise<boolean>;
+  spendingAvailable(): Promise<boolean>;
+  reserveRequest(row: CustomerArtworkSession, expected: number, attempt: CustomerArtworkAttempt, request: ArtworkRequest): Promise<boolean>;
+  finishRequest(eventId: number, attempt: CustomerArtworkAttempt, executionId: string): Promise<'handled' | 'unmanaged'>;
 }
 export class CustomerArtworkError extends Error {
   constructor(message: string, readonly status = 409) { super(message); }
@@ -193,7 +197,8 @@ export async function claimCustomerArtwork(event: Event, row: CustomerArtworkSes
     operation: input.baseCandidateId ? 'edit' : 'create', baseCandidateId: input.baseCandidateId, correction: input.correction?.trim(),
     status: 'running', startedAt: Date.now(), model: request.model!, prompt: request.prompt, input: editSource, providerCalls: null, billing: 'unknown' };
   const next = { ...row, version: row.version + 1, attempts: [...row.attempts, attempt] };
-  if (!await store.compareAndSet(next, row.version)) throw new CustomerArtworkError('Another request changed this artwork. Refresh to see the saved result.');
+  request = { ...request, imageSpendPermit: attempt.id };
+  if (!await store.reserveRequest(next, row.version, attempt, request)) throw new CustomerArtworkError('Another request changed this artwork. Refresh to see the saved result.');
   return { row: next, attempt, request };
 }
 
@@ -202,8 +207,9 @@ export async function finishCustomerArtwork(eventId: number, attempt: CustomerAr
   store: CustomerArtworkStore, generate: typeof generateArtwork = generateArtwork) {
   let finished: CustomerArtworkAttempt;
   let result: ArtworkResult | undefined;
+  const executionId = randomUUID();
   try {
-    result = await generate({ ...request, signal: AbortSignal.timeout(150_000) });
+    result = await generate({ ...request, imageSpendExecution: executionId, signal: AbortSignal.timeout(150_000) });
     const size = readPngSize(result.bytes);
     if (!size || Math.min(size.width, size.height) < 512 || size.width * size.height > 4_000_000) throw new Error('invalid-image');
     const image = previewImageBytes(result.bytes, 'detail-v1');
@@ -211,6 +217,8 @@ export async function finishCustomerArtwork(eventId: number, attempt: CustomerAr
       imageBase64: image.toString('base64'), imageHash: hash(image), telemetry: result.telemetry, durationMs: result.durationMs,
       providerCalls: result.telemetry?.providerRequestCount ?? null, billing: result.telemetry?.responseUsage ? 'usage-recorded' : 'unknown' };
   } catch (error) {
+    // A duplicated worker must not overwrite the legitimate worker's result.
+    if (error instanceof ImageSpendGuardError && error.code === 'duplicate') return;
     const retained = error instanceof ArtworkNormalizationError ? error.result : result;
     finished = { ...attempt, status: 'failed', completedAt: Date.now(),
       failure: error instanceof ArtworkProviderError ? 'provider' : error instanceof Error && error.message === 'invalid-image' ? 'invalid-image' : 'unknown',
@@ -218,8 +226,9 @@ export async function finishCustomerArtwork(eventId: number, attempt: CustomerAr
       sourceBase64: retained?.bytes.toString('base64'), telemetry: retained?.telemetry, durationMs: retained?.durationMs,
       billing: retained?.telemetry?.responseUsage ? 'usage-recorded' : 'unknown',
       diagnostics: error instanceof ArtworkProviderError ? error.diagnostics : undefined,
-      providerCalls: error instanceof ArtworkProviderError ? error.diagnostics.providerRequestCount : retained?.telemetry?.providerRequestCount ?? null };
+      providerCalls: error instanceof ImageSpendGuardError ? 0 : error instanceof ArtworkProviderError ? error.diagnostics.providerRequestCount : retained?.telemetry?.providerRequestCount ?? null };
   }
+  if (await store.finishRequest(eventId, finished, executionId) === 'handled') return;
   // Selection/read recovery can advance the version during the request. Merge
   // only this claimed result, preserving every candidate and customer choice.
   for (let n = 0; n < 4; n++) {

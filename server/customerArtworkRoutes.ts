@@ -7,6 +7,7 @@ import { getEntitlementSummary } from './masterPlannerEntitlement';
 import { ownerEventView, restoreEventArtworkReferences, eventArtworkFields, storedEventArtwork } from './eventArtwork';
 import { DbCustomerArtworkStore } from './customerArtworkStore';
 import { streamArtwork } from './artworkResponse';
+import { ImageSpendGuardError } from './imageSpendGuard';
 import { CustomerArtworkError, claimCustomerArtwork, currentCustomerCandidate, customerArtworkBriefHash,
   customerArtworkApplication, customerArtworkEventEnabled, customerArtworkGenerationEnabled, customerArtworkRequestLimit, customerArtworkView, emptyCustomerArtwork,
   finishCustomerArtwork, recoverCustomerArtwork, selectCustomerArtwork, selectedCustomerArtwork,
@@ -33,9 +34,12 @@ export function registerCustomerArtworkRoutes(app: Express, deps: Dependencies =
   const unlocked = deps.unlocked ?? (async (id: number) => !!(await getEntitlementSummary(id))?.canGenerate);
   const schedule = deps.schedule ?? (task => { const job = task(); try { waitUntil(job); } catch { void job.catch(() => {}); } });
   const current = async (event: Event) => recoverCustomerArtwork((await sessions.get(event.id)) ?? emptyCustomerArtwork(event), sessions);
-  const view = (row: CustomerArtworkSession, event: Event) => customerArtworkView(row, event, env());
-  const readiness = (row: CustomerArtworkSession, event: Event) => {
-    const artwork = view(row, event);
+  const view = async (row: CustomerArtworkSession, event: Event) => {
+    const artwork = customerArtworkView(row, event, env());
+    return { ...artwork, generationEnabled: artwork.generationEnabled && await sessions.spendingAvailable() };
+  };
+  const readiness = async (row: CustomerArtworkSession, event: Event) => {
+    const artwork = await view(row, event);
     return { ready: artwork.candidates.length > 0, kind: artwork.candidates.length ? 'customer-artwork' : 'none',
       generationState: artwork.state === 'generating' ? 'generating' : artwork.candidates.length ? 'ready' : 'idle',
       pollAfterMs: artwork.state === 'generating' ? 2500 : null, checkoutAllowed: artwork.canContinue,
@@ -55,6 +59,7 @@ export function registerCustomerArtworkRoutes(app: Express, deps: Dependencies =
       }
       catch (error) {
         if (res.headersSent) return next(error);
+        if (error instanceof ImageSpendGuardError) return res.status(503).json({ error: error.message });
         if (error instanceof CustomerArtworkError) return res.status(error.status).json({ error: error.message });
         // No provider response, raw prompt, credential or image may enter logs/JSON.
         return res.status(503).json({ error: 'We could not confirm that request. Refresh to check your saved artwork before trying again.' });
@@ -63,7 +68,7 @@ export function registerCustomerArtworkRoutes(app: Express, deps: Dependencies =
   const dispatch = async (event: Event, row: CustomerArtworkSession, input: CustomerArtworkRequestInput) => {
     // Replayed requests are read-only, including when the spend switch was turned off.
     if (!row.attempts.some(a => a.requestKey === input.requestKey)
-      && (!customerArtworkGenerationEnabled(env()) || customerArtworkRequestLimit(event, env()) === 0))
+      && (!customerArtworkGenerationEnabled(env()) || customerArtworkRequestLimit(event, env()) === 0 || !await sessions.spendingAvailable()))
       throw new CustomerArtworkError('Artwork creation is temporarily unavailable. Your saved images are still here.', 503);
     const claim = await claimCustomerArtwork(event, row, input, sessions, env());
     if (claim.request) {
@@ -73,8 +78,8 @@ export function registerCustomerArtworkRoutes(app: Express, deps: Dependencies =
     return claim.row;
   };
 
-  app.get('/api/events/owner/:ownerToken/artwork', owner(async (_req, res, event) => res.json(view(await current(event), event))));
-  app.get('/api/events/owner/:ownerToken/prepayment-preview/readiness', owner(async (_req, res, event) => res.json(readiness(await current(event), event)), true));
+  app.get('/api/events/owner/:ownerToken/artwork', owner(async (_req, res, event) => res.json(await view(await current(event), event))));
+  app.get('/api/events/owner/:ownerToken/prepayment-preview/readiness', owner(async (_req, res, event) => res.json(await readiness(await current(event), event)), true));
   app.post('/api/events/owner/:ownerToken/prepayment-preview', owner(async (req, res, event) => {
     const email = z.object({ email: z.string().trim().email() }).strict().safeParse(req.body);
     if (!email.success) throw new CustomerArtworkError('Enter a valid email address.', 400);
@@ -84,20 +89,20 @@ export function registerCustomerArtworkRoutes(app: Express, deps: Dependencies =
     row = await recoverCustomerArtwork(row, sessions);
     const briefHash = customerArtworkBriefHash(event);
     // Returning to the same first-look action never buys a second first image.
-    if (row.attempts.some(a => a.briefHash === briefHash)) return res.json(readiness(row, event));
+    if (row.attempts.some(a => a.briefHash === briefHash)) return res.json(await readiness(row, event));
     row = await dispatch(event, row, { requestKey: `initial:${briefHash}`, version: row.version, briefHash });
-    return res.status(202).json(readiness(row, event));
+    return res.status(202).json(await readiness(row, event));
   }, true));
   app.post('/api/events/owner/:ownerToken/artwork/revise', owner(async (req, res, event) => {
     const input = revisionInput.safeParse(req.body);
     if (!input.success) throw new CustomerArtworkError('Describe the change to your saved image in 5–2,000 characters.', 400);
     const row = await dispatch(event, await current(event), input.data);
-    return res.status(202).json(view(row, event));
+    return res.status(202).json(await view(row, event));
   }));
   app.post('/api/events/owner/:ownerToken/artwork/select', owner(async (req, res, event) => {
     const input = selectionInput.safeParse(req.body);
     if (!input.success) throw new CustomerArtworkError('Open the image before keeping it.', 400);
-    return res.json(view(await selectCustomerArtwork(event, await current(event), input.data, sessions), event));
+    return res.json(await view(await selectCustomerArtwork(event, await current(event), input.data, sessions), event));
   }));
   app.get('/api/events/owner/:ownerToken/artwork/candidates/:id', owner(async (req, res, event) => {
     const row = await current(event), candidate = currentCustomerCandidate(row, event, String(req.params.id));
@@ -112,10 +117,11 @@ export function registerCustomerArtworkRoutes(app: Express, deps: Dependencies =
   }, true));
   app.post('/api/events/owner/:ownerToken/invite/use-prepayment-preview', owner(async (req, res, event) => {
     const row = await current(event), chosen = selectedCustomerArtwork(row, event);
-    if (!chosen || !view(row, event).canContinue) throw new CustomerArtworkError('Keep an image before adding it to your invitation.');
+    const artworkView = await view(row, event);
+    if (!chosen || !artworkView.canContinue) throw new CustomerArtworkError('Keep an image before adding it to your invitation.');
     const input = selectionInput.safeParse(req.body);
     if (!input.success || input.data.version !== row.version || input.data.candidateId !== row.selectedId
-      || input.data.imageHash !== view(row, event).selectedHash || input.data.briefHash !== customerArtworkBriefHash(event))
+      || input.data.imageHash !== artworkView.selectedHash || input.data.briefHash !== customerArtworkBriefHash(event))
       throw new CustomerArtworkError('Your kept image changed. Refresh before applying it.');
     if (!await unlocked(event.id)) throw new CustomerArtworkError('Unlock this event first.', 402);
     if (event.draftStatus === 'generating') throw new CustomerArtworkError('Your plan is being saved. Please wait before applying artwork.');
@@ -127,7 +133,7 @@ export function registerCustomerArtworkRoutes(app: Express, deps: Dependencies =
     if (!event || !enabled(event)) return next();
     privateResponse(res);
     try {
-      if (!view(await current(event), event).canContinue) return res.status(409).json({ error: 'Keep your artwork before building your plan.' });
+      if (!(await view(await current(event), event)).canContinue) return res.status(409).json({ error: 'Keep your artwork before building your plan.' });
       return next();
     } catch { return res.status(503).json({ error: 'We could not confirm your saved artwork. Please refresh.' }); }
   });
@@ -138,7 +144,7 @@ export function registerCustomerArtworkRoutes(app: Express, deps: Dependencies =
     if (!event || !enabled(event)) return next();
     privateResponse(res);
     try {
-      if (!view(await current(event), event).canContinue) return res.status(409).json({ error: 'Keep your artwork before continuing to checkout.' });
+      if (!(await view(await current(event), event)).canContinue) return res.status(409).json({ error: 'Keep your artwork before continuing to checkout.' });
       return next();
     } catch { return res.status(503).json({ error: 'We could not confirm your saved artwork. Please refresh.' }); }
   });

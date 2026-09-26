@@ -18,6 +18,9 @@ const sha = (value: string | Buffer) => createHash('sha256').update(value).diges
 afterEach(() => vi.unstubAllGlobals());
 
 class MemoryStore implements CustomerArtworkStore {
+  async spendingAvailable() { return true; }
+  async reserveRequest(row: CustomerArtworkSession, version: number) { return this.compareAndSet(row, version); }
+  async finishRequest(): Promise<'unmanaged'> { return 'unmanaged'; }
   rows = new Map<number, CustomerArtworkSession>();
   async get(id: number) { return structuredClone(this.rows.get(id)); }
   async create(row: CustomerArtworkSession) {

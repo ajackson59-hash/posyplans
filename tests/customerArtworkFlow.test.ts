@@ -14,6 +14,10 @@ const { registerCustomerArtworkRoutes } = await import('../server/customerArtwor
 const { eventArtworkUrl } = await import('../server/eventArtwork');
 
 class MemoryStore implements CustomerArtworkStore {
+  spendingAllowed = true;
+  async spendingAvailable() { return this.spendingAllowed; }
+  async reserveRequest(row: CustomerArtworkSession, version: number) { return this.compareAndSet(row, version); }
+  async finishRequest(): Promise<'unmanaged'> { return 'unmanaged'; }
   rows = new Map<number, CustomerArtworkSession>();
   async get(id: number) { return structuredClone(this.rows.get(id)); }
   async create(row: CustomerArtworkSession) { if (!this.rows.has(row.eventId)) this.rows.set(row.eventId, structuredClone(row)); return (await this.get(row.eventId))!; }
@@ -188,6 +192,19 @@ describe('customer artwork durable request boundary', () => {
 });
 
 describe('customer route integration', () => {
+  it('pauses cross-event creation while retaining reads and kept choices without consuming another event allowance', async () => {
+    let row = await ready(); row = await selectCustomerArtwork(event, row, selection(row), store);
+    generate.mockClear(); store.spendingAllowed = false;
+    const a = app();
+    const view = await request(a).get(owner + '/artwork');
+    expect(view.body).toMatchObject({ generationEnabled: false, canContinue: true });
+    expect((await request(a).get(view.body.candidates[0].assetUrl)).status).toBe(200);
+    expect((await request(a).post(owner + '/artwork/revise').send(revision(row))).status).toBe(503);
+    expect((await store.get(event.id))!.attempts).toHaveLength(1);
+    expect(jobs).toHaveLength(0); expect(generate).not.toHaveBeenCalled();
+    paid = true;
+    expect((await request(a).post(owner + '/invite/use-prepayment-preview').send(selection(row))).status).toBe(200);
+  });
   it('streams a retained candidate above the buffered limit without changing bytes or scheduling work', async () => {
     const row = await ready();
     const rgb = Buffer.alloc(1300 * 1600 * 3);

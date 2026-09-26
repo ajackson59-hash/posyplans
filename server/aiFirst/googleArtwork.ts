@@ -3,6 +3,7 @@
 import { createHash } from "node:crypto";
 import { decode as decodeJpeg } from "jpeg-js";
 import { decodePng, encodePng, readPngSize } from "./png";
+import { authorizeImageDispatch } from "../imageSpendGuard";
 import {
   GOOGLE_ARTWORK_MODEL, ArtworkProviderError, ArtworkNormalizationError, sizeForAspect,
   type ArtworkRequest, type ArtworkResult,
@@ -56,21 +57,26 @@ export async function generateGoogleArtwork(request: ArtworkRequest): Promise<Ar
     operation: request.referenceImages?.length ? "edit" : "request", providerRequestCount: 1,
     providerDurationMs: Date.now() - started, promptSha256: createHash("sha256").update(request.prompt).digest("hex"),
   }, privateMessage(message));
+  const init: RequestInit = {
+    method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey }, signal,
+    body: JSON.stringify({
+      model: GOOGLE_ARTWORK_MODEL,
+      input: [{ type: "text", text: request.prompt }, ...(request.referenceImages ?? []).map(ref => ({
+        type: "image", mime_type: ref.mimeType, data: ref.bytes.toString("base64"),
+      }))],
+      response_format: { type: "image", mime_type: request.outputFormat === "png" ? "image/png" : "image/jpeg",
+        aspect_ratio: request.aspectRatio, image_size: "1K" },
+      // Posy retains its own approved source for subsequent edits.
+      store: false, stream: false,
+    }),
+  };
+  signal.throwIfAborted();
+  // Also guard direct calls to this adapter. A denied permit is not a
+  // provider transport failure and must not be reported as one paid request.
+  await authorizeImageDispatch(request);
   let response: Response;
   try {
-    response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
-      method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey }, signal,
-      body: JSON.stringify({
-        model: GOOGLE_ARTWORK_MODEL,
-        input: [{ type: "text", text: request.prompt }, ...(request.referenceImages ?? []).map(ref => ({
-          type: "image", mime_type: ref.mimeType, data: ref.bytes.toString("base64"),
-        }))],
-        response_format: { type: "image", mime_type: request.outputFormat === "png" ? "image/png" : "image/jpeg",
-          aspect_ratio: request.aspectRatio, image_size: "1K" },
-        // Posy retains its own approved source for subsequent edits.
-        store: false, stream: false,
-      }),
-    });
+    response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", init);
   } catch {
     throw failure(0, signal.aborted ? "request_aborted" : "transport_error", null);
   }

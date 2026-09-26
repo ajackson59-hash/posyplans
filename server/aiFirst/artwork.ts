@@ -14,6 +14,7 @@
 import { decode as decodeJpeg } from "jpeg-js";
 import { createHash } from "node:crypto";
 import { encodePng } from "./png";
+import { authorizeImageDispatch } from "../imageSpendGuard";
 
 export type OpenAiArtworkModel = "gpt-image-1" | "gpt-image-1.5" | "gpt-image-2";
 export const GOOGLE_ARTWORK_MODEL = "gemini-3.1-flash-image" as const;
@@ -60,6 +61,10 @@ export interface ArtworkRequest {
   signal?: AbortSignal;
   /** Preview budgets count provider requests, including transient HTTP failures. */
   maxTransientRetries?: 0 | 1;
+  /** Server-only, one-use durable dispatch claim. Never sent to a provider. */
+  imageSpendPermit?: string;
+  /** Fresh worker identity; only the winning dispatch may persist its result. */
+  imageSpendExecution?: string;
 }
 
 export interface ArtworkResult {
@@ -352,10 +357,12 @@ export async function generateArtwork(request: ArtworkRequest): Promise<ArtworkR
 
   const maxRetries = request.maxTransientRetries ?? MAX_TRANSIENT_RETRIES;
   for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
-    const response = await fetch(
-      endpoint,
-      requestInit(request, apiKey, model, quality, size, usesReferenceImages),
-    );
+    const init = requestInit(request, apiKey, model, quality, size, usesReferenceImages);
+    request.signal?.throwIfAborted();
+    // Every physical dispatch crosses the durable guard, including a retry.
+    // Build the body first so a local serialization failure cannot spend a claim.
+    await authorizeImageDispatch(request);
+    const response = await fetch(endpoint, init);
 
     if (response.ok) {
       const data = (await response.json()) as { data?: { b64_json?: string }[]; usage?: unknown };
