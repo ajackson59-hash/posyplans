@@ -114,7 +114,8 @@ describe('audited bounded continuation of unrelated artwork tests',()=>{
  });
  it('lets customer upload/selection metadata evolve without altering the audited failed attempt',async()=>{
   await reviewed();await unpause();
-  await control`update public.customer_artwork_sessions set version=version+1,payload=jsonb_set(payload,'{uploads}','[]'::jsonb) where event_id=${failed.id}`;
+  const row=(await sessions.get(failed.id))!;
+  expect(await sessions.compareAndSet({...row,version:row.version+1,uploads:[]},row.version)).toBe(true);
   expect(await spending.available(allowed[0].id)).toBe(true);
  });
  it('makes audit immutable and denies client/service-role administration',async()=>{
