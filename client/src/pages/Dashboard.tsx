@@ -62,6 +62,8 @@ import {
 import InviteDesignPicker from "@/components/InviteDesignPicker";
 import CustomerArtworkDesigner from "@/components/CustomerArtworkDesigner";
 import { useCustomerArtwork } from "@/hooks/useCustomerArtwork";
+import { useDashboardNavigation } from "@/hooks/useDashboardNavigation";
+import InvitationOverview from "@/components/InvitationOverview";
 import PlanningAlerts from "@/components/PlanningAlerts";
 import PlanRegenerationPanel from "@/components/PlanRegenerationPanel";
 import AiDraftedBadge from "@/components/AiDraftedBadge";
@@ -183,7 +185,7 @@ export default function Dashboard() {
   });
   const recommendedTone = inviteFormatQuery.data?.recommendation?.recommendedTone ?? null;
 
-  const [activeTab, setActiveTab] = useState("theme");
+  const { activeTab, setActiveTab } = useDashboardNavigation(ownerToken, Boolean(data));
 
   // Some buttons live above the tab section (Readiness, Next Actions, Theme tab
   // "Go to Shopping List" links) and only switch the active tab without moving
@@ -646,25 +648,6 @@ export default function Dashboard() {
   const { event, guests } = data;
   const hasInvitationDesign = hasSelectedInvitationDesign(event);
   const invitationJourneyState = getInvitationJourneyState(event);
-  const invitationCallout =
-    invitationJourneyState === "live"
-      ? {
-          title: "Your invitation is live",
-          detail: "Preview the guest experience, manage RSVP settings, or update the design and wording at any time.",
-          action: "Manage invitation",
-        }
-      : invitationJourneyState === "draft"
-        ? {
-            title: "Your invitation is ready to finish",
-            detail: "Review the design and wording, choose your RSVP settings, then publish it for guests.",
-            action: "Finish invitation",
-          }
-        : {
-            title: "Create your invitation",
-            detail: "Posy already has your event style. Start with a custom idea, choose a ready-made design, or upload your own.",
-            action: "Create invitation",
-          };
-
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border">
@@ -835,6 +818,12 @@ export default function Dashboard() {
           )}
         </div>
 
+        <InvitationOverview
+          event={event}
+          ownerToken={ownerToken}
+          onOpenEditor={() => navigateToTab("guests", "invitation-design-section")}
+        />
+
         {event.draftStatus === "ready" ? <PlanRegenerationPanel key={ownerToken} ownerToken={ownerToken} /> : null}
 
         {retainedReviewRequest && (
@@ -881,31 +870,6 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         )}
-
-        <Card className="border-primary/25 bg-primary/[0.03]" data-testid="card-invitation-next-step">
-          <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-start gap-3">
-              <div className="mt-0.5 rounded-full bg-primary/10 p-2 text-primary">
-                <Mail className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="font-serif text-lg font-semibold text-foreground">
-                  {invitationCallout.title}
-                </p>
-                <p className="mt-0.5 max-w-2xl text-sm text-muted-foreground">
-                  {invitationCallout.detail}
-                </p>
-              </div>
-            </div>
-            <Button
-              className="shrink-0"
-              onClick={() => navigateToTab("guests", "invitation-design-section")}
-              data-testid="button-open-invitation-workspace"
-            >
-              {invitationCallout.action}
-            </Button>
-          </CardContent>
-        </Card>
 
         {/* Readiness */}
         <ReadinessMoment ownerToken={ownerToken} eventDate={event.eventDate} onNavigate={navigateToTab} />
@@ -1062,7 +1026,7 @@ export default function Dashboard() {
                 <Palette className="mr-1.5 h-3.5 w-3.5" /> Theme
               </TabsTrigger>
               <TabsTrigger value="guests" data-testid="tab-guests">
-                <Users className="mr-1.5 h-3.5 w-3.5" /> Guests &amp; Invites
+                <Users className="mr-1.5 h-3.5 w-3.5" /> Invitation &amp; Guests
               </TabsTrigger>
               <TabsTrigger value="budget" data-testid="tab-budget">
                 <Wallet className="mr-1.5 h-3.5 w-3.5" /> Budget
@@ -1091,7 +1055,7 @@ export default function Dashboard() {
           <CardHeader>
             <div>
               <CardTitle className="flex items-center gap-2 font-serif text-lg">
-                <Mail className="h-4 w-4 text-primary" /> Create your invitation
+                <Mail className="h-4 w-4 text-primary" /> {hasInvitationDesign ? "Your invitation" : "Create your invitation"}
               </CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">
                 Choose the design first, then confirm the wording and RSVP details. Posy keeps it all together on one shareable page.
