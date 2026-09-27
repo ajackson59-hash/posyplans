@@ -5,7 +5,7 @@
 
 ## 1. Who this policy covers
 
-This Privacy Policy explains how the individual or entity operating Posy ("**Posy**," "**we**," "**us**") collects, uses, shares, and protects personal information when you use the Posy website ([posyplans.com](https://posyplans.com)) and app (the "**Service**"). It applies to hosts who plan events with Posy and to guests whose information a host enters into the Service.
+This Privacy Policy explains how Posy ("**we**," "**us**") collects, uses, shares, and protects personal information when you use the Posy website ([posyplans.com](https://posyplans.com)) and app (the "**Service**"). It applies to hosts who plan events with Posy and to guests whose information a host enters into the Service.
 
 ## 2. Information we collect
 

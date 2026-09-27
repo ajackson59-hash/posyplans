@@ -5,7 +5,7 @@
 
 ## 1. Who we are and what this agreement covers
 
-These Terms of Service ("**Terms**") are a legal agreement between you ("**you**," "**host**," or "**user**") and the individual or entity operating Posy ("**Posy**," "**we**," "**us**," or "**our**"), governing your access to and use of the Posy website ([posyplans.com](https://posyplans.com)), app, and related services (the "**Service**").
+These Terms of Service ("**Terms**") are a legal agreement between you ("**you**," "**host**," or "**user**") and Posy ("**we**," "**us**," or "**our**"), governing your access to and use of the Posy website ([posyplans.com](https://posyplans.com)), app, and related services (the "**Service**").
 
 By creating an event, accessing an event link, or otherwise using the Service, you agree to these Terms. If you don't agree, don't use the Service.
 

@@ -55,7 +55,10 @@ not a repaired generator. Do not silently choose a reduced launch promise.
 4. **Close actual policy facts.** Public pages now use hello@posyplans.com,
    disclose the integrated providers, distinguish image limits from full-plan
    regeneration, and omit internal authoring notes. `legal-publication-review.md`
-   retains the unresolved operator identity and retention-process questions.
+   records the owner's decision to display Posy for now and the unresolved
+   retention-process question. Registration is not yet completed; the owner
+   intends to register after launch. Do not repeat the displayed-name question
+   or treat this copy choice as a legal determination about registration timing.
    Removing draft UI is not legal approval or proof of an operational deletion
    process. Do not enable optional marketing/SMS merely to complete a checklist.
 

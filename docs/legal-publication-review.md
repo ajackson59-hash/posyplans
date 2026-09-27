@@ -4,7 +4,7 @@ Internal draft notes moved out of customer-facing pages. This cleanup is not a l
 
 ## Concrete facts still requiring owner/operational closure
 
-- Confirm the legal operator name; the current copy identifies the operator only as Posy. Do not invent an LLC or use a private address.
+- Owner decision, September 27 at 16:34 EDT: use **Posy** in the public Terms and Privacy Policy for now. The owner states the business is not yet registered and intends to register after launch. This settles the displayed-name choice; do not request a personal name again or publish one. No registered entity, LLC, corporation, or registered assumed name is asserted. The wording change does not determine applicable registration or operator-disclosure requirements. Revisit entity details when registration is confirmed.
 - The published privacy policy promises retention for 12 months after last activity. No event-wide retention/deletion worker was located in the inspected server code or migrations. Confirm the actual manual/automated process and policy before Production; do not claim deletion is implemented.
 - Support contact is the established hello@posyplans.com. Do not send a test message without authorization.
 - Code integrates Anthropic, OpenAI/Google artwork, Resend email, Twilio SMS, Vercel hosting and Supabase storage. Naming them does not attest to signed agreements, configured SMS delivery, or any external-provider legal status.
