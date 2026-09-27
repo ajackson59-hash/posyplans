@@ -14,7 +14,7 @@ beforeEach(() => {
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 describe("private structured image provider diagnostics", () => {
-  it.each(["input", "output", "unknown"])("retains the %s moderation stage beyond a long reflected message, without retaining private content", async (stage) => {
+  it.each(["input", "output", "unknown"])("retains the %s moderation stage without logging private content", async (stage) => {
     fetchMock.mockResolvedValue(new Response(JSON.stringify({ error: {
       message: `${prompt} ${"x".repeat(400)} private-test-key`, code: "moderation_blocked",
       type: "image_generation_user_error", moderation_details: {
@@ -33,6 +33,40 @@ describe("private structured image provider diagnostics", () => {
     const logged = JSON.stringify(vi.mocked(console.warn).mock.calls) + JSON.stringify(error) + error.message;
     expect(logged).not.toContain(prompt);
     expect(logged).not.toContain("private-test-key");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    { details: {}, state: "absent", filtered: false },
+    { details: { categories: [] }, state: "empty", filtered: false },
+    { details: { categories: "unexpected" }, state: "invalid", filtered: false },
+    { details: { categories: ["new_provider_category"] }, state: "present", filtered: true },
+  ])("records $state categories without confusing filtered details with provider omission", async ({ details, state, filtered }) => {
+    const body = JSON.stringify({ error: { code: "moderation_blocked", moderation_details: details,
+      message: `${prompt}; private-test-key; sk-syntheticotherkey123; Bearer synthetic-token` } });
+    fetchMock.mockResolvedValue(new Response(body, { status: 400 }));
+    const error = await generateArtwork(request).catch(error => error) as ArtworkProviderError;
+    expect(error.diagnostics).toMatchObject({ moderationCategories: [],
+      moderationCategoriesState: state, moderationCategoriesFiltered: filtered });
+    expect(error.privateProviderResponse).toMatchObject({ bodySha256: createHash("sha256").update(body).digest("hex"),
+      bodyBytes: Buffer.byteLength(body), truncated: false });
+    const retained = error.privateProviderResponse!.bodyRedacted;
+    expect(retained).toContain(prompt);
+    expect(retained).not.toMatch(/private-test-key|sk-syntheticotherkey123|Bearer synthetic-token/);
+    expect(retained).toContain("[REDACTED_API_KEY]");
+    expect(Object.keys(error)).not.toContain("privateProviderResponse");
+    expect(JSON.stringify(error)).not.toContain(prompt);
+    expect(JSON.stringify(vi.mocked(console.warn).mock.calls)).not.toContain(prompt);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("bounds private non-JSON error retention and keeps the complete-body fingerprint", async () => {
+    const body = `<html>${prompt}${"x".repeat(20_000)}</html>`;
+    fetchMock.mockResolvedValue(new Response(body, { status: 503 }));
+    const error = await generateArtwork({ ...request, maxTransientRetries: 0 }).catch(error => error) as ArtworkProviderError;
+    expect(error.privateProviderResponse).toEqual({ bodyRedacted: body.slice(0,16_384),
+      bodySha256: createHash("sha256").update(body).digest("hex"), bodyBytes: Buffer.byteLength(body), truncated: true });
+    expect(error.message).not.toContain(prompt);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 

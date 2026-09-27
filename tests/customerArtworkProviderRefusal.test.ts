@@ -34,7 +34,7 @@ class MemoryStore implements CustomerArtworkStore {
 }
 
 const syntheticKey = 'synthetic-private-provider-key';
-const privateMessage = 'Synthetic provider message that must not leave the adapter';
+const privateMessage = 'Synthetic provider message retained only in the private attempt';
 const providerRequestId = 'req_syntheticmoderation123456';
 const event = {
   id: 99501, ownerToken: 'synthetic-refusal-owner', customerArtworkEnabled: true,
@@ -112,7 +112,11 @@ describe('current customer initial-create moderation refusal', () => {
     expect(failed.completedAt).toBeGreaterThanOrEqual(failed.startedAt);
     expect(failed.sourceBase64).toBeUndefined(); expect(failed.imageBase64).toBeUndefined();
     expect(failed.imageHash).toBeUndefined(); expect(failed.telemetry).toBeUndefined();
-    expect(JSON.stringify(persisted)).not.toContain(privateMessage);
+    expect(failed.privateProviderResponse?.bodyRedacted).toContain(privateMessage);
+    expect(failed.privateProviderResponse?.bodyRedacted).toContain('[REDACTED_API_KEY]');
+    expect(failed.privateProviderResponse?.bodySha256).toMatch(/^[a-f0-9]{64}$/);
+    expect(failed.diagnostics?.moderationCategoriesState).toBe(categories.length ? 'present' : 'empty');
+    expect(failed.diagnostics?.moderationCategoriesFiltered).toBe(categories.includes(privateMessage));
     expect(JSON.stringify(persisted)).not.toContain(syntheticKey);
     expect(reserve).toHaveBeenCalledTimes(1);
     expect(vi.mocked(authorizeImageDispatch)).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({

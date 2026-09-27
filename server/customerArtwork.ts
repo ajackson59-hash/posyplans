@@ -30,6 +30,8 @@ export interface CustomerArtworkAttempt {
   providerCalls: number | null; billing: 'usage-recorded' | 'unknown';
   telemetry?: ArtworkResult['telemetry']; durationMs?: number; failure?: 'provider' | 'invalid-image' | 'unknown';
   diagnostics?: ArtworkProviderError['diagnostics'];
+  /** Only the private session payload retains this; customer DTOs omit it. */
+  privateProviderResponse?: ArtworkProviderError['privateProviderResponse'];
 }
 export interface CustomerArtworkSession {
   eventId: number; ownerHash: string; version: number; attempts: CustomerArtworkAttempt[];
@@ -239,6 +241,7 @@ export async function finishCustomerArtwork(eventId: number, attempt: CustomerAr
       sourceBase64: retained?.bytes.toString('base64'), telemetry: retained?.telemetry, durationMs: retained?.durationMs,
       billing: retained?.telemetry?.responseUsage ? 'usage-recorded' : 'unknown',
       diagnostics: error instanceof ArtworkProviderError ? error.diagnostics : undefined,
+      privateProviderResponse: error instanceof ArtworkProviderError ? error.privateProviderResponse : undefined,
       providerCalls: error instanceof ImageSpendGuardError ? 0 : error instanceof ArtworkProviderError ? error.diagnostics.providerRequestCount : retained?.telemetry?.providerRequestCount ?? null };
   }
   if (await store.finishRequest(eventId, finished, executionId) === 'handled') return;

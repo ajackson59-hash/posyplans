@@ -110,6 +110,9 @@ export interface ArtworkProviderDiagnostics {
   requestId: string | null;
   moderationStage: "input" | "output" | "unknown";
   moderationCategories: string[];
+  /** Distinguish missing provider detail from an empty list or local filtering. */
+  moderationCategoriesState?: "absent" | "invalid" | "empty" | "present";
+  moderationCategoriesFiltered?: boolean;
   /** A confirmed refusal, without exposing the provider's private message. */
   contentPolicyBlocked?: boolean;
   model: ArtworkModel;
@@ -122,15 +125,26 @@ export interface ArtworkProviderDiagnostics {
   promptSha256: string;
 }
 
+/** Server-private support evidence. Never include in a response or routine log. */
+export interface PrivateArtworkProviderResponse {
+  bodyRedacted: string;
+  bodySha256: string;
+  bodyBytes: number;
+  truncated: boolean;
+}
+
 /** Provider messages can echo private prompts. Public/loggable diagnostics
  * contain only identifiers. An optional credential-redacted message is
  * non-enumerable and may be retained only by owner-private evaluation storage. */
 export class ArtworkProviderError extends Error {
   declare readonly privateProviderMessage?: string;
-  constructor(readonly diagnostics: ArtworkProviderDiagnostics, privateProviderMessage?: string) {
+  declare readonly privateProviderResponse?: PrivateArtworkProviderResponse;
+  constructor(readonly diagnostics: ArtworkProviderDiagnostics, privateProviderMessage?: string,
+    privateProviderResponse?: PrivateArtworkProviderResponse) {
     super(`${diagnostics.model} ${diagnostics.operation} failed (${diagnostics.status}): ${diagnostics.code ?? diagnostics.type ?? "provider_error"}${diagnostics.requestId ? `; request ${diagnostics.requestId}` : ""}`);
     this.name = "ArtworkProviderError";
     if (privateProviderMessage) Object.defineProperty(this, "privateProviderMessage", { value: privateProviderMessage });
+    if (privateProviderResponse) Object.defineProperty(this, "privateProviderResponse", { value: privateProviderResponse });
   }
 }
 
@@ -151,14 +165,27 @@ function providerFailure(
   const details = error.moderation_details;
   const stage = details?.moderation_stage;
   const allowedCategories = new Set(["harassment", "self-harm", "sexual", "violence"]);
+  const categories = details?.categories;
+  const retainedCategories: string[] = Array.isArray(categories)
+    ? Array.from(new Set<string>(categories.filter((value: unknown): value is string => typeof value === "string" && allowedCategories.has(value)))) : [];
+  // Keep the response needed by support in the already-private attempt record,
+  // bounded and credential-redacted. Hash the original to identify exact evidence.
+  const apiKey = process.env.OPENAI_API_KEY;
+  const redacted = (apiKey ? body.split(apiKey).join("[REDACTED_API_KEY]") : body)
+    .replace(/\bsk-[A-Za-z0-9_-]{8,}\b/g, "[REDACTED_API_KEY]")
+    .replace(/\bBearer\s+[A-Za-z0-9._~-]+/gi, "Bearer [REDACTED_API_KEY]");
+  const privateResponse = { bodyRedacted: redacted.slice(0, 16_384),
+    bodySha256: createHash("sha256").update(body).digest("hex"),
+    bodyBytes: Buffer.byteLength(body), truncated: redacted.length > 16_384 };
   return new ArtworkProviderError({
     ...context, status: response.status, code: identifier(error.code), type: identifier(error.type), requestId,
     moderationStage: stage === "input" || stage === "output" ? stage : "unknown",
-    moderationCategories: Array.isArray(details?.categories)
-      ? Array.from(new Set<string>(details.categories.filter((value: unknown): value is string => typeof value === "string" && allowedCategories.has(value)))) : [],
+    moderationCategories: retainedCategories,
+    moderationCategoriesState: categories === undefined ? "absent" : !Array.isArray(categories) ? "invalid" : categories.length ? "present" : "empty",
+    moderationCategoriesFiltered: Array.isArray(categories) && categories.some(value => typeof value !== "string" || !allowedCategories.has(value)),
     outputFormat: request.outputFormat ?? "png",
     promptSha256: createHash("sha256").update(request.prompt).digest("hex"),
-  });
+  }, undefined, privateResponse);
 }
 
 const SIZE_FOR_ASPECT: Record<ArtworkAspectRatio, ArtworkSize> = {

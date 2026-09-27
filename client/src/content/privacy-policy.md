@@ -1,17 +1,11 @@
 # Posy — Privacy Policy
 
 **Effective date:** July 16, 2026
-**Last updated:** July 16, 2026
-
-> **Before you publish this:** This draft is scoped to what Posy actually collects today (event data, host email, guest contact info, optional SMS, and — once wired — payment data via a processor and AI processing via an AI provider). The brand name (Posy, posyplans.com, @posyplans) is now locked in. Two items are still genuinely open and are called out inline below: (1) the formal legal entity that will operate under the Posy brand (LLC, corporation, sole proprietorship, etc.) hasn't been named yet, and (2) the contact email, which currently points to the founder's personal inbox as an interim measure. Update both once finalized, and have a licensed attorney review this before you rely on it, especially since you expect users outside the U.S.
-
----
+**Last updated:** September 27, 2026
 
 ## 1. Who this policy covers
 
 This Privacy Policy explains how the individual or entity operating Posy ("**Posy**," "**we**," "**us**") collects, uses, shares, and protects personal information when you use the Posy website ([posyplans.com](https://posyplans.com)) and app (the "**Service**"). It applies to hosts who plan events with Posy and to guests whose information a host enters into the Service.
-
-*The formal legal entity name that operates Posy will be added here once it's finalized (LLC, corporation, or sole proprietorship registration is still pending).*
 
 ## 2. Information we collect
 
@@ -25,8 +19,8 @@ This Privacy Policy explains how the individual or entity operating Posy ("**Pos
 - Names, email addresses, and/or phone numbers that a host adds for RSVP and reminder purposes. Guests do not create their own Posy account; their information is provided and controlled by the host who invited them.
 
 **Collected automatically:**
-- Standard technical data — IP address, browser type, device type, and usage patterns — via Cloudflare Web Analytics, and only if you've consented to analytics through our cookie banner.
-- AI processing data — when Posy generates theme, budget, menu, timeline, or invitation suggestions, the relevant event details are sent to our AI provider, Anthropic, to generate that content. See Section 4.
+- Standard technical and usage data — such as browser/device information and page or conversion events — through configured analytics tools (Cloudflare Web Analytics and Google Analytics), only after analytics consent. If configured, Meta Pixel loads only after separate marketing consent.
+- AI processing data — relevant event details and, for image edits, the selected source artwork are sent to the AI provider used for that feature. Planning uses Anthropic; artwork features use OpenAI or Google. We retain artwork versions and request diagnostics privately to support saved designs and investigate failures. See Section 4.
 
 ## 3. How we use your information
 
@@ -48,11 +42,12 @@ We share information with the following categories of service providers ("**sub-
 
 | Provider type | Purpose | Data involved |
 |---|---|---|
-| AI provider (Anthropic) | Generates theme, budget, menu, timeline, and invitation drafts | Event details relevant to the specific suggestion (e.g., theme, budget total, guest count) — not full guest contact lists |
+| AI providers (Anthropic, OpenAI, Google) | Generate planning suggestions and artwork, according to the feature used | Relevant event details, artwork prompts and selected source images for editing — not full guest contact lists |
 | Payment processor (Stripe, Inc.) | Processes Plus subscription payments | Billing details, subscription status |
-| SMS/email delivery provider (not yet selected) | Sends RSVP texts/emails and reminders | Guest name, phone/email, event details needed for the message |
-| Hosting/infrastructure provider (not yet selected) | Runs and stores the Service | All data stored in the Service |
-| Analytics provider (Cloudflare Web Analytics) | Understands product usage (page views, performance) | Technical/usage data, not typically guest PII |
+| Email delivery (Resend); SMS delivery (Twilio), when enabled | Send event invitations, recovery and verification emails, and enabled reminders | Recipient contact details and event details needed for the message |
+| Hosting and database infrastructure (Vercel, Supabase) | Run and store the Service | Data stored in the Service, including event data, saved artwork and private request diagnostics |
+| Analytics providers (Cloudflare Web Analytics, Google Analytics), when configured and consented | Understand product usage, page views and conversion events | Technical and usage data |
+| Marketing measurement (Meta Pixel), when configured and separately consented | Measures marketing and conversion activity | Browser and conversion-event data |
 
 We do not permit these providers to use your data for their own purposes beyond providing their service to us. We may also disclose information if required by law, to protect our rights, or in connection with a merger, acquisition, or sale of assets (with notice to you where required).
 
@@ -80,7 +75,7 @@ Depending on where you live, you may have the right to:
 - **California residents (CCPA/CPRA):** the right to know what we collect, to delete it, and to opt out of the sale or sharing of personal information. **We do not sell or share personal information for cross-context behavioral advertising.**
 - **EU/EEA/UK residents (GDPR):** the rights above, plus the right to lodge a complaint with your local data protection authority. Our lawful basis for processing is generally contract performance (providing the Service you signed up for), legitimate interest (product improvement, security), and consent (marketing, SMS).
 
-To exercise any of these rights, contact us at ajackson59@gmail.com. We will respond within the timeframe required by applicable law (for example, 30 days under GDPR, 45 days under CCPA), and may ask you to verify your identity first.
+To exercise any of these rights, contact us at [hello@posyplans.com](mailto:hello@posyplans.com). We will respond within the timeframe required by applicable law (for example, 30 days under GDPR, 45 days under CCPA), and may ask you to verify your identity first.
 
 ## 9. Data security
 
@@ -92,7 +87,7 @@ Our servers and service providers are located in the United States. If you acces
 
 ## 11. Cookies and similar technologies
 
-We use cookies and similar technologies to understand how the Service is used, including Cloudflare Web Analytics, which does not itself set cookies. Analytics is only activated if you consent through the cookie banner shown when you first visit the Service. You can review or change your choice at any time using "Manage Preferences" in that banner, or through your browser settings.
+We use cookies and similar technologies to understand how the Service is used. Configured analytics tools (Cloudflare Web Analytics and Google Analytics) activate only after analytics consent. Configured marketing measurement (Meta Pixel) requires separate marketing consent. You can review your choices using "Manage Preferences" in the cookie banner or your browser settings.
 
 ## 12. Changes to this policy
 
@@ -100,14 +95,4 @@ We may update this Privacy Policy from time to time. If we make material changes
 
 ## 13. Contact us
 
-Questions about this Privacy Policy or your data? Contact us at ajackson59@gmail.com.
-
----
-
-## Still open before publishing
-
-- **Legal entity name** — the brand (Posy, posyplans.com) is locked in, but the formal registered entity operating it (LLC, corporation, or sole proprietorship) hasn't been named yet; add it to Section 1 once formed.
-- **Contact email** — currently `ajackson59@gmail.com` as an interim measure; swap for a dedicated support/privacy inbox (e.g. an @posyplans.com address) before real launch.
-- **SMS/email delivery provider and hosting/infrastructure provider** — not yet selected; name them in the Section 4 table once chosen, and get their DPAs on file.
-- Confirm Stripe's and Anthropic's own data-processing agreements are on file as your sub-processor terms.
-- **Have a licensed attorney review this, especially the GDPR/CCPA sections, before collecting data from EU/UK or California residents at scale.**
+Questions about this Privacy Policy or your data? Contact us at [hello@posyplans.com](mailto:hello@posyplans.com).
