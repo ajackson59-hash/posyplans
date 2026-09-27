@@ -55,7 +55,7 @@ beforeAll(async () => {
   initialized = true;
   production = await import('../server/storage');
   const { DbImageSpendStore } = await import('../server/imageSpendStore');
-  spending = new DbImageSpendStore(production.db);
+  spending = new DbImageSpendStore(production.db, { VERCEL_ENV: 'preview', VERCEL_GIT_COMMIT_REF: 'codex/launch-blockers' });
 }, 30_000);
 
 beforeEach(async () => {

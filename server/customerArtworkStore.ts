@@ -23,16 +23,16 @@ export class DbCustomerArtworkStore implements CustomerArtworkStore {
     return rows.length === 1;
   }
   async spendingAvailable(eventId?: number) {
-    return !imageSpendGuardEnabled(this.env()) || new DbImageSpendStore(this.database).available(eventId);
+    return !imageSpendGuardEnabled(this.env()) || new DbImageSpendStore(this.database, this.env()).available(eventId);
   }
   async reserveRequest(row: CustomerArtworkSession, expected: number, attempt: CustomerArtworkAttempt, request: ArtworkRequest) {
     return imageSpendGuardEnabled(this.env())
-      ? new DbImageSpendStore(this.database).reserve(row, expected, attempt, request)
+      ? new DbImageSpendStore(this.database, this.env()).reserve(row, expected, attempt, request)
       : this.compareAndSet(row, expected);
   }
   async finishRequest(eventId: number, attempt: CustomerArtworkAttempt, executionId: string): Promise<'handled' | 'unmanaged'> {
     if (!imageSpendGuardEnabled(this.env())) return 'unmanaged';
-    await new DbImageSpendStore(this.database).finish(eventId, attempt, executionId);
+    await new DbImageSpendStore(this.database, this.env()).finish(eventId, attempt, executionId);
     return 'handled';
   }
 }

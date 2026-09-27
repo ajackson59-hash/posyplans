@@ -3,6 +3,13 @@
 This is the current, finite release handoff. Older QA runbooks describe past
 experiments and do not reopen completed customer checks or authorize new spend.
 
+Update after the owner's 16:51 EDT instruction: Production controls have been
+prepared with separate opt-ins and a paused zero-allowance policy. Read-only live
+inventory found missing schemas, four legacy Plus identities requiring exact
+payment provenance, and a missing Production Stripe webhook secret. The exact
+inventory, additive migration manifest, configuration and shutdown sequence are
+in `production-release-readiness.md`. No Production change has been made.
+
 ## Completed and preserved
 
 - Accepted artwork: construction, Blippi/Meekah, KPop, garden photography,
@@ -36,16 +43,17 @@ not a repaired generator. Do not silently choose a reduced launch promise.
 ## Production handoff requirements
 
 1. **Enable the tested workflow deliberately.** `customerArtworkRolloutEnabled`
-   and `customerArtworkEventEnabled` in `server/customerArtwork.ts` currently
-   require Preview and `codex/launch-blockers`. A Production deployment alone
-   would use other behavior. Prepare a separate, default-off Production rollout
-   after the launch scope is settled; preserve saved events and existing access.
+   and `customerArtworkEventEnabled` now support a separate, default-off
+   Production rollout. Preview flags and event IDs cannot enable it. Apply the
+   reviewed schemas and protect existing paid access before deployment; enable
+   only in the separately authorized release window.
 2. **Provision an approved Production request budget.** The durable policy and
-   `imageSpendGuardEnabled` are Preview-specific. Do not reuse the exhausted
+   `imageSpendGuardEnabled` now includes Production, where every adapter fails
+   closed unless explicitly enabled with a valid Production permit. Do not reuse the exhausted
    Preview allowance, reset its counters or remove the pause. Production needs
    its own reviewed limits, failure handling and provider-boundary enforcement.
-   Global serialization/pause in the qualification policy is not evidence of
-   public multi-customer capacity. No such capacity test is claimed.
+   Production has bounded concurrent reservations; unknown outcomes still pause
+   new work. Database concurrency tests are not provider capacity qualification.
 3. **Reconcile migrations and existing memberships before enforcement.** Use
    `tools/qa/PLUS_MEMBERSHIP_ROLLOUT.md` for the evidence-bound preservation
    requirements. Inventory the target schema and paid bindings read-only, prepare

@@ -30,6 +30,7 @@ export interface PlusLinkDependencies {
 }
 
 export function plusLinkEnabled(env: NodeJS.ProcessEnv) {
+  if (env.VERCEL_ENV === 'production') return env.POSY_PRODUCTION_PLUS_LINK === 'true';
   return env.VERCEL_ENV === 'preview' && env.VERCEL_GIT_COMMIT_REF === 'codex/launch-blockers';
 }
 function key(env: NodeJS.ProcessEnv): Buffer {

@@ -1,13 +1,27 @@
 import { createHash } from 'node:crypto';
 import type { ArtworkRequest } from './aiFirst/artwork';
 
-// One durable envelope across events, browsers and deployments of this branch.
-// This is a request ceiling for guarded Preview code, not an account dollar cap.
+// Separate durable envelopes. Neither installation nor deployment grants spend.
+// These are request ceilings, not provider-account dollar caps.
 export const IMAGE_SPEND_POLICY = 'launch-preview-image-v1';
+export const PRODUCTION_IMAGE_SPEND_POLICY = 'launch-production-image-v1';
 export const imageSpendUuid = (value: unknown): value is string => typeof value === 'string'
   && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 export function imageSpendGuardEnabled(env: NodeJS.ProcessEnv = process.env) {
-  return env.VERCEL_ENV === 'preview' && env.VERCEL_GIT_COMMIT_REF === 'codex/launch-blockers';
+  return env.VERCEL_ENV === 'production'
+    || (env.VERCEL_ENV === 'preview' && env.VERCEL_GIT_COMMIT_REF === 'codex/launch-blockers');
+}
+export function imageSpendPolicyId(env: NodeJS.ProcessEnv = process.env) {
+  if (env.VERCEL_ENV === 'production') return PRODUCTION_IMAGE_SPEND_POLICY;
+  return imageSpendGuardEnabled(env) ? IMAGE_SPEND_POLICY : undefined;
+}
+export function imageSpendDispatchEnabled(env: NodeJS.ProcessEnv = process.env) {
+  return env.VERCEL_ENV !== 'production' || env.POSY_PRODUCTION_ARTWORK_GENERATION === 'true';
+}
+/** Bounded concurrent reservations; invalid configuration closes new work. */
+export function productionImageConcurrency(env: NodeJS.ProcessEnv = process.env) {
+  const raw = env.POSY_PRODUCTION_IMAGE_CONCURRENCY ?? '1';
+  return /^[1-8]$/.test(raw) ? Number(raw) : 0;
 }
 export class ImageSpendGuardError extends Error {
   constructor(readonly code: 'blocked' | 'duplicate' | 'unavailable') {
@@ -34,11 +48,11 @@ export function imageSpendFingerprint(request: ArtworkRequest): string {
 }
 
 /** Every image adapter calls this immediately before its physical HTTP call.
- * No permit is available to legacy/staff/research paths in this closed cohort.
+ * No permit is available to legacy/staff/research paths in guarded deployments.
  * A reserved permit is consumed once; it is never renewed on timeout/reload. */
 export async function authorizeImageDispatch(request: ArtworkRequest): Promise<void> {
   if (!imageSpendGuardEnabled()) return;
-  if (!imageSpendUuid(request.imageSpendPermit) || !imageSpendUuid(request.imageSpendExecution)
+  if (!imageSpendDispatchEnabled() || !imageSpendUuid(request.imageSpendPermit) || !imageSpendUuid(request.imageSpendExecution)
     || request.maxTransientRetries !== 0) throw new ImageSpendGuardError('blocked');
   request.signal?.throwIfAborted();
   try {

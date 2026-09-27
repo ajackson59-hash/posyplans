@@ -275,3 +275,16 @@ describe('saved Plus link status', () => {
     expect(test.access).not.toHaveBeenCalled(); expect(test.store.readLatest).not.toHaveBeenCalled();
   });
 });
+
+
+describe('Production Plus linking opt-in', () => {
+  it('uses the same proof and one-time-code flow only after explicit Production enablement', async () => {
+    const test = setup();
+    test.env.VERCEL_ENV = 'production'; test.env.POSY_PRODUCTION_PLUS_LINK = 'true';
+    expect((await test.start()).status).toBe(202);
+    await test.drain();
+    expect(test.resolve).toHaveBeenCalledTimes(1); expect(test.send).toHaveBeenCalledTimes(1);
+    expect((await test.confirm()).status).toBe(200);
+    expect(test.refresh).toHaveBeenCalledTimes(1); expect(test.store.finishVerification).toHaveBeenCalledTimes(1);
+  });
+});

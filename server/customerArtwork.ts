@@ -59,24 +59,29 @@ export class CustomerArtworkError extends Error {
   constructor(message: string, readonly status = 409) { super(message); }
 }
 
-/** Rollout and spending are independent. Existing human approvals always win.
- * Keep this Preview-only until the separately agreed quality/release gates pass. */
+/** Enrollment and spending are independent. Production requires its own opt-in.
+ * Existing enrolled events stay readable when new enrollment is switched off. */
 export function customerArtworkRolloutEnabled(env: NodeJS.ProcessEnv = process.env) {
+  if (env.VERCEL_ENV === 'production') return env.POSY_PRODUCTION_ARTWORK_FLOW === 'true';
   return env.VERCEL_ENV === 'preview' && env.VERCEL_GIT_COMMIT_REF === 'codex/launch-blockers'
     && env.POSY_CUSTOMER_ARTWORK_FLOW !== 'false';
 }
 export function customerArtworkEventEnabled(event: Event, env: NodeJS.ProcessEnv = process.env) {
+  // Preview evaluation IDs are never enrollment authority in Production.
+  if (env.VERCEL_ENV === 'production') return event.customerArtworkEnabled === true;
   const ids = (env.POSY_CUSTOMER_ARTWORK_EVENT_IDS ?? '').split(',').map(x => x.trim()).filter(Boolean);
   return env.VERCEL_ENV === 'preview' && env.VERCEL_GIT_COMMIT_REF === 'codex/launch-blockers'
     && !humanReviewEventEnabled(event, env)
     && (event.customerArtworkEnabled === true || (env.POSY_CUSTOMER_ARTWORK_FLOW === 'true' && ids.includes(String(event.id))));
 }
 export function customerArtworkGenerationEnabled(env: NodeJS.ProcessEnv = process.env) {
+  if (env.VERCEL_ENV === 'production') return env.POSY_PRODUCTION_ARTWORK_GENERATION === 'true';
   return env.POSY_CUSTOMER_ARTWORK_GENERATION === 'true';
 }
 /** Optional Preview evaluation envelope. Caps count every lifetime claim, not
  * just successful images. A present but invalid map closes all new spending. */
 export function customerArtworkRequestLimit(event: Event, env: NodeJS.ProcessEnv = process.env) {
+  if (env.VERCEL_ENV === 'production') return CUSTOMER_ARTWORK_REQUEST_LIMIT;
   const encoded = env.POSY_CUSTOMER_ARTWORK_EVALUATION_LIMITS;
   if (encoded === undefined) return CUSTOMER_ARTWORK_REQUEST_LIMIT;
   try {

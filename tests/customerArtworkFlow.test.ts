@@ -5,7 +5,7 @@ import express from 'express';
 import request from 'supertest';
 import type { Event } from '@shared/schema';
 import { encodePng } from '../server/aiFirst/png';
-import { claimCustomerArtwork, customerArtworkBriefHash, customerArtworkEventEnabled, customerArtworkView, emptyCustomerArtwork,
+import { claimCustomerArtwork, customerArtworkBriefHash, customerArtworkEventEnabled, customerArtworkGenerationEnabled, customerArtworkRolloutEnabled, customerArtworkRequestLimit, customerArtworkView, emptyCustomerArtwork,
   finishCustomerArtwork, isKeptCustomerArtwork, recoverCustomerArtwork, selectCustomerArtwork, selectedCustomerArtwork,
   type CustomerArtworkSession, type CustomerArtworkStore } from '../server/customerArtwork';
 vi.mock('../server/storage', () => ({ storage: {}, db: {} }));
@@ -287,5 +287,28 @@ describe('customer route integration', () => {
     expect(selectedCustomerArtwork(row, event)).toBeNull();
     expect(isKeptCustomerArtwork(row, event, applied)).toBe(true);
     expect(isKeptCustomerArtwork(row, { ...event, ownerToken: 'rotated' }, applied)).toBe(false);
+  });
+});
+
+describe('Production artwork rollout isolation', () => {
+  const productionEnv = { ...env, VERCEL_ENV: 'production' };
+  it('does not enroll from Preview flags or event IDs, and keeps lifetime limits separate', () => {
+    expect(customerArtworkRolloutEnabled(productionEnv)).toBe(false);
+    expect(customerArtworkGenerationEnabled(productionEnv)).toBe(false);
+    expect(customerArtworkEventEnabled(event, productionEnv)).toBe(false);
+    expect(customerArtworkRolloutEnabled({ ...productionEnv, POSY_PRODUCTION_ARTWORK_FLOW: 'true' })).toBe(true);
+    expect(customerArtworkGenerationEnabled({ ...productionEnv, POSY_PRODUCTION_ARTWORK_GENERATION: 'true' })).toBe(true);
+    expect(customerArtworkRequestLimit(event, { ...productionEnv, POSY_CUSTOMER_ARTWORK_EVALUATION_LIMITS: '{}' })).toBe(4);
+  });
+  it('retains saved artwork, selection and replay when enrollment and generation are off', async () => {
+    event.customerArtworkEnabled = true;
+    const row = await ready();
+    const server = app({ ...productionEnv, POSY_PRODUCTION_ARTWORK_FLOW: 'false', POSY_PRODUCTION_ARTWORK_GENERATION: 'false' });
+    expect((await request(server).post(`${owner}/artwork/select`).send(selection(row))).status).toBe(200);
+    const view = await request(server).get(`${owner}/artwork`);
+    expect(view.body).toMatchObject({ generationEnabled: false, canContinue: true, selectedId: row.attempts[0].id });
+    expect((await request(server).get(view.body.candidates[0].assetUrl)).status).toBe(200);
+    expect((await request(server).post(`${owner}/artwork/revise`).send(revision(await store.get(event.id) as CustomerArtworkSession))).status).toBe(503);
+    expect(jobs).toHaveLength(0); expect(generate).toHaveBeenCalledTimes(1);
   });
 });

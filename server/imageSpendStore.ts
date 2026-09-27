@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm';
 import { db } from './storage';
 import type { ArtworkRequest } from './aiFirst/artwork';
 import type { CustomerArtworkAttempt, CustomerArtworkSession } from './customerArtwork';
-import { IMAGE_SPEND_POLICY, ImageSpendGuardError, imageSpendFingerprint, imageSpendUuid } from './imageSpendGuard';
+import { ImageSpendGuardError, imageSpendDispatchEnabled, imageSpendFingerprint, imageSpendPolicyId, imageSpendUuid, productionImageConcurrency } from './imageSpendGuard';
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type Policy = { paused: boolean; request_limit: number; create_limit: number; edit_limit: number;
@@ -12,32 +12,52 @@ type Policy = { paused: boolean; request_limit: number; create_limit: number; ed
  * writers take policy then session locks in that order. No automatic refunds,
  * expiring reservations, environment-derived budget resets or client grants. */
 export class DbImageSpendStore {
-  constructor(private readonly database: Pick<typeof db, 'transaction' | 'execute'> = db) {}
+  constructor(private readonly database: Pick<typeof db, 'transaction' | 'execute'> = db,
+    private readonly env: NodeJS.ProcessEnv = process.env) {}
+
+  private get policyId() {
+    const id = imageSpendPolicyId(this.env);
+    if (!id) throw new ImageSpendGuardError('blocked');
+    return id;
+  }
+  private capacity(eventId?: number, operation?: 'create' | 'edit', excluding?: string) {
+    const id = this.policyId;
+    if (this.env.VERCEL_ENV === 'production') {
+      // Production never inherits a Preview moderation/billing continuation.
+      // Unknown outcomes retain their charge and stop new work. Concurrent,
+      // known in-flight requests are bounded separately from the lifetime cap.
+      return sql`not exists(select 1 from public.image_spend_requests where policy_id=${id} and state='unknown')
+        and (select count(*) from public.image_spend_requests where policy_id=${id}
+          and state in ('reserved','dispatched')
+          and (${excluding ?? null}::uuid is null or id<>${excluding ?? null}::uuid)) < ${productionImageConcurrency(this.env)}`;
+    }
+    return sql`not exists(select 1 from public.image_spend_requests where policy_id=${id}
+      and (${excluding ?? null}::uuid is null or id<>${excluding ?? null}::uuid)
+      and (state in ('reserved','dispatched') or (state='unknown' and not
+        public.image_spend_unknown_continuable(id,${eventId ?? null},${operation ?? null},${!!excluding}))))`;
+  }
 
   private async policy(tx: Transaction): Promise<Policy> {
-    const [row] = await tx.execute(sql`select * from public.image_spend_policies where id=${IMAGE_SPEND_POLICY} for update`);
+    const [row] = await tx.execute(sql`select * from public.image_spend_policies where id=${this.policyId} for update`);
     if (!row) throw new ImageSpendGuardError('blocked');
     return row as unknown as Policy;
   }
-  private async unresolved(tx: Transaction, eventId?: number, operation?: 'create' | 'edit') {
-    const rows = await tx.execute(sql`select id from public.image_spend_requests where policy_id=${IMAGE_SPEND_POLICY}
-      and (state in ('reserved','dispatched') or (state='unknown' and not
-        public.image_spend_unknown_continuable(id,${eventId ?? null},${operation ?? null},false))) limit 1`);
-    return rows.length > 0;
+  private async unresolved(tx: Transaction, eventId?: number, operation?: 'create' | 'edit', excluding?: string) {
+    const [row] = await tx.execute(sql`select ${this.capacity(eventId, operation, excluding)} as available`);
+    return row?.available !== true;
   }
   async available(eventId?: number): Promise<boolean> {
+    if (!imageSpendDispatchEnabled(this.env)) return false;
     try {
       const [row] = await this.database.execute(sql`select not paused and requests_reserved < request_limit
         and (creates_reserved < create_limit or edits_reserved < edit_limit)
-        and not exists(select 1 from public.image_spend_requests where policy_id=${IMAGE_SPEND_POLICY}
-          and (state in ('reserved','dispatched') or (state='unknown' and not
-            public.image_spend_unknown_continuable(id,${eventId ?? null},null,false)))) as available
-        from public.image_spend_policies where id=${IMAGE_SPEND_POLICY}`);
+        and ${this.capacity(eventId)} as available
+        from public.image_spend_policies where id=${this.policyId}`);
       return row?.available === true;
     } catch { return false; } // Missing migration/connectivity cannot enable spending.
   }
   async reserve(row: CustomerArtworkSession, expected: number, attempt: CustomerArtworkAttempt, request: ArtworkRequest): Promise<boolean> {
-    if (request.maxTransientRetries !== 0 || request.imageSpendPermit !== attempt.id) throw new ImageSpendGuardError('blocked');
+    if (!imageSpendDispatchEnabled(this.env) || request.maxTransientRetries !== 0 || request.imageSpendPermit !== attempt.id) throw new ImageSpendGuardError('blocked');
     return this.database.transaction(async tx => {
       const policy = await this.policy(tx);
       if (policy.paused || policy.requests_reserved >= policy.request_limit || await this.unresolved(tx, row.eventId, attempt.operation)
@@ -47,29 +67,26 @@ export class DbImageSpendStore {
         where event_id=${row.eventId} and version=${expected} returning event_id`);
       if (!changed.length) return false;
       await tx.execute(sql`insert into public.image_spend_requests(id,policy_id,event_id,operation,model,fingerprint,state)
-        values(${attempt.id}::uuid,${IMAGE_SPEND_POLICY},${row.eventId},${attempt.operation},${request.model ?? 'gpt-image-2'},${imageSpendFingerprint(request)},'reserved')`);
+        values(${attempt.id}::uuid,${this.policyId},${row.eventId},${attempt.operation},${request.model ?? 'gpt-image-2'},${imageSpendFingerprint(request)},'reserved')`);
       await tx.execute(sql`update public.image_spend_policies set requests_reserved=requests_reserved+1,
         creates_reserved=creates_reserved+${attempt.operation === 'create' ? 1 : 0},
-        edits_reserved=edits_reserved+${attempt.operation === 'edit' ? 1 : 0},updated_at=now() where id=${IMAGE_SPEND_POLICY}`);
+        edits_reserved=edits_reserved+${attempt.operation === 'edit' ? 1 : 0},updated_at=now() where id=${this.policyId}`);
       return true;
     });
   }
   async claimDispatch(request: ArtworkRequest): Promise<void> {
-    if (request.maxTransientRetries !== 0 || !imageSpendUuid(request.imageSpendPermit)
+    if (!imageSpendDispatchEnabled(this.env) || request.maxTransientRetries !== 0 || !imageSpendUuid(request.imageSpendPermit)
       || !imageSpendUuid(request.imageSpendExecution)) throw new ImageSpendGuardError('blocked');
     await this.database.transaction(async tx => {
       const policy = await this.policy(tx);
       const [permit] = await tx.execute(sql`select * from public.image_spend_requests where id=${request.imageSpendPermit}::uuid
-        and policy_id=${IMAGE_SPEND_POLICY} for update`);
+        and policy_id=${this.policyId} for update`);
       if (!permit) throw new ImageSpendGuardError('blocked');
       if (permit.state !== 'reserved') throw new ImageSpendGuardError('duplicate');
       if (policy.paused || permit.fingerprint !== imageSpendFingerprint(request)
         || permit.model !== (request.model ?? 'gpt-image-2')) throw new ImageSpendGuardError('blocked');
-      // Any imported/other uncertain request blocks this permit too.
-      const other = await tx.execute(sql`select id from public.image_spend_requests where policy_id=${IMAGE_SPEND_POLICY}
-        and id<>${request.imageSpendPermit}::uuid and (state in ('reserved','dispatched') or (state='unknown' and not
-          public.image_spend_unknown_continuable(id,${permit.event_id},${permit.operation},true))) limit 1`);
-      if (other.length) throw new ImageSpendGuardError('blocked');
+      if (await this.unresolved(tx, permit.event_id == null ? undefined : Number(permit.event_id), permit.operation as 'create' | 'edit', request.imageSpendPermit))
+        throw new ImageSpendGuardError('blocked');
       await tx.execute(sql`update public.image_spend_requests set state='dispatched',dispatched_at=now(),execution_id=${request.imageSpendExecution}::uuid
         where id=${request.imageSpendPermit}::uuid`);
     });
@@ -78,7 +95,7 @@ export class DbImageSpendStore {
     await this.database.transaction(async tx => {
       await this.policy(tx);
       const [permit] = await tx.execute(sql`select * from public.image_spend_requests
-        where id=${finished.id}::uuid and policy_id=${IMAGE_SPEND_POLICY} and event_id=${eventId} for update`);
+        where id=${finished.id}::uuid and policy_id=${this.policyId} and event_id=${eventId} for update`);
       if (!permit || !['reserved','dispatched'].includes(String(permit.state))) return;
       // Even a loser whose authorization timed out must not poison a live
       // winner. Only the worker that committed dispatch owns its outcome.
@@ -99,7 +116,7 @@ export class DbImageSpendStore {
       await tx.execute(sql`update public.image_spend_requests set state=${state},completed_at=now(),
         provider_calls=${finished.providerCalls},usage=${known ? JSON.stringify(usage) : null}::jsonb where id=${finished.id}::uuid`);
       if (!known || finished.status !== 'ready') await tx.execute(sql`update public.image_spend_policies set paused=true,
-        stop_reason=${noDispatch ? 'dispatch_blocked' : known ? 'image_failed' : 'provider_billing_unknown'},updated_at=now() where id=${IMAGE_SPEND_POLICY}`);
+        stop_reason=${noDispatch ? 'dispatch_blocked' : known ? 'image_failed' : 'provider_billing_unknown'},updated_at=now() where id=${this.policyId}`);
     });
   }
 }

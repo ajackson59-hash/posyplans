@@ -1,5 +1,14 @@
 # Exact Plus membership binding — Preview rollout
 
+**September 27 Production preparation:** read-only Production inventory now
+exists in `docs/production-release-readiness.md`: two legacy active rows and
+two expired-trial rows retain exact Stripe identities, but their current payment
+facts and original event mappings have not been independently verified. No
+Production backfill or migration has run. Production inbox linking now has the
+separate default-off `POSY_PRODUCTION_PLUS_LINK` opt-in; the Preview behavior is
+unchanged. Historical “not inventoried” statements below describe September 26.
+The completed user billing/linking/cancellation tests are not reopened.
+
 The prior email-capture route granted Plus after typing a subscriber's address.
 The deployed repair treats contact email separately from paid authority. Two
 server-only tables hold exact Stripe subscription state and payment-proven event

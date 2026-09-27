@@ -178,7 +178,31 @@ describe('real helper scope through the provider adapters', () => {
   });
 
   it.each([
-    ['Production', 'production', 'codex/launch-blockers'],
+    ['OpenAI', () => generateArtwork(request)],
+    ['Google', () => generateGoogleArtwork({ ...request, model: GOOGLE_ARTWORK_MODEL })],
+    ['legacy illustration', () => generateInviteIllustration(concept, '9:16')],
+  ] as const)('blocks Production %s by default even if Preview switches are copied', async (_name, dispatch) => {
+    vi.stubEnv('VERCEL_ENV', 'production');
+    vi.stubEnv('POSY_CUSTOMER_ARTWORK_GENERATION', 'true');
+    vi.stubEnv('POSY_PRODUCTION_ARTWORK_GENERATION', undefined);
+    await realHelper();
+    await expect(dispatch()).rejects.toMatchObject({ code: 'blocked' });
+    expect(claimDispatch).not.toHaveBeenCalled(); expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('still requires a committed permit when Production generation is explicitly enabled', async () => {
+    vi.stubEnv('VERCEL_ENV', 'production');
+    vi.stubEnv('POSY_PRODUCTION_ARTWORK_GENERATION', 'true');
+    await realHelper();
+    await expect(generateArtwork({ ...request, imageSpendPermit: undefined })).rejects.toMatchObject({ code: 'blocked' });
+    expect(fetchMock).not.toHaveBeenCalled();
+    await generateArtwork(request);
+    expect(claimDispatch).toHaveBeenCalledExactlyOnceWith(request);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(claimDispatch.mock.invocationCallOrder[0]).toBeLessThan(fetchMock.mock.invocationCallOrder[0]);
+  });
+
+  it.each([
     ['another Preview branch', 'preview', 'some-other-branch'],
     ['missing branch', 'preview', undefined],
     ['missing environment', undefined, 'codex/launch-blockers'],

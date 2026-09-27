@@ -64,7 +64,7 @@ beforeAll(async () => {
   const { DbCustomerArtworkStore } = await import('../server/customerArtworkStore');
   const { DbImageSpendStore } = await import('../server/imageSpendStore');
   sessions = new DbCustomerArtworkStore(production.db, () => preview);
-  spending = new DbImageSpendStore(production.db);
+  spending = new DbImageSpendStore(production.db, { VERCEL_ENV: 'preview', VERCEL_GIT_COMMIT_REF: 'codex/launch-blockers' });
   [migrationDefaults] = await control`select * from public.image_spend_policies where id = ${guard.IMAGE_SPEND_POLICY}`;
 }, 30_000);
 
@@ -371,5 +371,99 @@ describe('cross-event image spending on disposable PostgreSQL', () => {
         has_table_privilege('service_role', ${qualified}, 'delete') as can_delete`;
       expect(Object.values(server)).toEqual([true, true, true, true]);
     }
+  });
+});
+
+
+describe('isolated Production spending on disposable PostgreSQL', () => {
+  const live = { VERCEL_ENV: 'production', POSY_PRODUCTION_ARTWORK_GENERATION: 'true',
+    POSY_PRODUCTION_IMAGE_CONCURRENCY: '2' };
+  async function liveStores(overrides: NodeJS.ProcessEnv = {}) {
+    const { DbImageSpendStore } = await import('../server/imageSpendStore');
+    const { DbCustomerArtworkStore } = await import('../server/customerArtworkStore');
+    const migration = await readFile(new URL('../supabase/migrations/20260927205625_production_artwork_policy.sql', import.meta.url), 'utf8');
+    await control.unsafe(migration);
+    const env = { ...live, ...overrides };
+    return { spend: new DbImageSpendStore(production.db, env),
+      sessions: new DbCustomerArtworkStore(production.db, () => env), env };
+  }
+  const livePolicy = async () => (await control`select * from public.image_spend_policies where id=${guard.PRODUCTION_IMAGE_SPEND_POLICY}`)[0];
+  async function syntheticAllowance() {
+    await control`update public.image_spend_policies set paused=false,request_limit=4,create_limit=3,edit_limit=1,
+      stop_reason='disposable_test_only' where id=${guard.PRODUCTION_IMAGE_SPEND_POLICY}`;
+  }
+
+  it('installs Production paused at zero and never borrows an open Preview allowance or resets counters', async () => {
+    const live = await liveStores();
+    expect(await livePolicy()).toMatchObject({ paused: true, request_limit: 0, create_limit: 0, edit_limit: 0 });
+    expect(await live.spend.available()).toBe(false);
+    const claim = await pending();
+    await expect(live.sessions.reserveRequest(claim.next, claim.original.version, claim.attempt, claim.request)).rejects.toMatchObject({ code: 'blocked' });
+    await control`delete from public.image_spend_policies where id=${guard.PRODUCTION_IMAGE_SPEND_POLICY}`;
+    expect(await live.spend.available()).toBe(false);
+    await expect(live.sessions.reserveRequest(claim.next, claim.original.version, claim.attempt, claim.request)).rejects.toMatchObject({ code: 'blocked' });
+    await liveStores(); await syntheticAllowance();
+    await live.sessions.reserveRequest(claim.next, claim.original.version, claim.attempt, claim.request);
+    const before = await livePolicy();
+    await liveStores();
+    expect(await livePolicy()).toEqual(before);
+    expect((await policy()).requests_reserved).toBe(0);
+    await expect(spending.claimDispatch(claim.request)).rejects.toMatchObject({ code: 'blocked' });
+  });
+
+  it('bounds concurrent distinct events, consumes each permit once and preserves late results after shutdown', async () => {
+    const live = await liveStores(); await syntheticAllowance();
+    const claims = await Promise.all([event, await createEvent(), await createEvent()].map(item => pending(item)));
+    const reserved = await Promise.allSettled(claims.map(c => live.sessions.reserveRequest(c.next, c.original.version, c.attempt, c.request)));
+    expect(reserved.filter(r => r.status==='fulfilled' && r.value)).toHaveLength(2);
+    expect((await livePolicy()).requests_reserved).toBe(2);
+    const winners = claims.filter((_c,i) => reserved[i].status==='fulfilled');
+    await Promise.all(winners.map(c => live.spend.claimDispatch(c.request)));
+    await expect(live.spend.claimDispatch(winners[0].request)).rejects.toMatchObject({ code: 'duplicate' });
+    live.env.POSY_PRODUCTION_ARTWORK_GENERATION = 'false';
+    await live.sessions.finishRequest(winners[0].next.eventId, knownResult(winners[0]), winners[0].request.imageSpendExecution!);
+    expect((await live.sessions.get(winners[0].next.eventId))?.attempts[0].status).toBe('ready');
+    expect(await live.spend.available()).toBe(false);
+    live.env.POSY_PRODUCTION_ARTWORK_GENERATION = 'true';
+    expect(await live.spend.available()).toBe(true);
+    const third = claims.find((_c,i) => reserved[i].status==='rejected')!;
+    expect(await live.sessions.reserveRequest(third.next, third.original.version, third.attempt, third.request)).toBe(true);
+    expect((await livePolicy()).requests_reserved).toBe(3);
+    expect((await policy()).requests_reserved).toBe(0);
+  });
+
+  it('retains unknown billing and pauses Production without mutating the Preview policy', async () => {
+    const live = await liveStores(); await syntheticAllowance();
+    const before = await policy(); const c = await pending();
+    await live.sessions.reserveRequest(c.next, c.original.version, c.attempt, c.request);
+    await live.spend.claimDispatch(c.request);
+    await live.sessions.finishRequest(event.id, { ...c.attempt, status: 'failed', providerCalls: 1,
+      completedAt: Date.now(), failure: 'provider' }, c.request.imageSpendExecution!);
+    expect(await livePolicy()).toMatchObject({ paused: true, requests_reserved: 1, stop_reason: 'provider_billing_unknown' });
+    expect(await policy()).toEqual(before);
+    await control`update public.image_spend_policies set paused=false where id=${guard.PRODUCTION_IMAGE_SPEND_POLICY}`;
+    expect(await live.spend.available()).toBe(false);
+  });
+
+  it.each(['0','9','2.5','unlimited',''])('fails closed on invalid concurrency %s', async concurrency => {
+    const live = await liveStores({ POSY_PRODUCTION_IMAGE_CONCURRENCY: concurrency }); await syntheticAllowance();
+    const c = await pending();
+    expect(await live.spend.available()).toBe(false);
+    await expect(live.sessions.reserveRequest(c.next,c.original.version,c.attempt,c.request)).rejects.toMatchObject({ code: 'blocked' });
+    expect((await livePolicy()).requests_reserved).toBe(0);
+  });
+
+  it('keeps a paused Preview policy independent and blocks disabled Production before reservation', async () => {
+    const live = await liveStores({ POSY_PRODUCTION_ARTWORK_GENERATION: 'false' }); await syntheticAllowance();
+    const c = await pending();
+    await control`update public.image_spend_policies set paused=true where id=${guard.IMAGE_SPEND_POLICY}`;
+    await expect(live.sessions.reserveRequest(c.next,c.original.version,c.attempt,c.request)).rejects.toMatchObject({ code: 'blocked' });
+    expect((await livePolicy()).requests_reserved).toBe(0);
+    live.env.POSY_PRODUCTION_ARTWORK_GENERATION='true';
+    expect(await live.spend.available()).toBe(true);
+    expect(await live.sessions.reserveRequest(c.next,c.original.version,c.attempt,c.request)).toBe(true);
+    live.env.POSY_PRODUCTION_ARTWORK_GENERATION='false';
+    await expect(live.spend.claimDispatch(c.request)).rejects.toMatchObject({ code: 'blocked' });
+    expect((await ledger())[0].state).toBe('reserved');
   });
 });
