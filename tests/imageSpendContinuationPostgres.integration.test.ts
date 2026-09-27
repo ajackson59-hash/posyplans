@@ -30,7 +30,7 @@ beforeAll(async()=>{
   migrations[0]=migrations[0].replace(/^alter table public\.events add column customer_artwork_enabled boolean not null default false;\s*/,'');
   for(const role of ['anon','authenticated','service_role'])if(!(await control`select rolname from pg_roles where rolname=${role}`).length)await control.unsafe(`create role ${role} nologin${role==='service_role'?' bypassrls':''}`);
   production=await import('../server/storage');artwork=await import('../server/customerArtwork');
-  spending=new(await import('../server/imageSpendStore')).DbImageSpendStore(production.db);
+  spending=new(await import('../server/imageSpendStore')).DbImageSpendStore(production.db,{VERCEL_ENV:'preview',VERCEL_GIT_COMMIT_REF:'codex/launch-blockers'});
   sessions=new(await import('../server/customerArtworkStore')).DbCustomerArtworkStore(production.db,()=>({VERCEL_ENV:'preview',VERCEL_GIT_COMMIT_REF:'codex/launch-blockers'}));
 },30000);
 beforeEach(async()=>{
