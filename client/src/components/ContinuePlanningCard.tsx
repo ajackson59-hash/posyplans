@@ -11,8 +11,8 @@ import { CalendarDays, X } from "lucide-react";
 // Homepage affordance for returning hosts: if this browser has recently
 // started events (tracked in localStorage via eventRecovery), offer a quick
 // way straight back into each dashboard. Reads storage once on mount and
-// hydrates each token from the API; anything that no longer resolves is
-// quietly forgotten so a deleted/invalid event never lingers.
+// hydrates each token from the API. Only confirmed missing events are
+// forgotten; temporary failures must not erase the host's way back in.
 export default function ContinuePlanning() {
   // Guard the initial read: getRecentEvents already swallows storage errors,
   // but keeping it in lazy state means we touch storage exactly once.
@@ -80,7 +80,7 @@ function EventRow({
   onInvalid: (token: string) => void;
   onForget: (token: string) => void;
 }) {
-  const { data, isError } = useQuery({
+  const { data, isError, error, refetch, isFetching } = useQuery({
     queryKey: ["/api/events/owner", token],
     queryFn: () =>
       apiRequestJson<{ event: EventRecord }>(
@@ -90,14 +90,34 @@ function EventRow({
     retry: false,
   });
 
-  // A token that no longer resolves (deleted or invalid) is dropped from the
-  // list and forgotten, so it never shows a broken row again.
-  useEffect(() => {
-    if (isError) onInvalid(token);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isError]);
+  const isMissing = isError && error instanceof Error
+    && "status" in error && error.status === 404;
 
-  if (isError || !data?.event) return null;
+  // An offline browser, expired session, or temporary server failure does not
+  // establish that an event is gone. Retain its private link for recovery.
+  useEffect(() => {
+    if (isMissing) onInvalid(token);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMissing]);
+
+  if (isMissing) return null;
+
+  if (isError || (isFetching && !data?.event)) {
+    return (
+      <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border p-3">
+        <p role="status" className="min-w-0 flex-1 text-sm text-muted-foreground">
+          {isFetching ? "Loading your saved event…" : "We couldn't load your saved event. Your link is still saved."}
+        </p>
+        {isError && (
+          <Button size="sm" disabled={isFetching} onClick={() => void refetch()}>
+            {isFetching ? "Trying again…" : "Try again"}
+          </Button>
+        )}
+      </div>
+    );
+  }
+
+  if (!data?.event) return null;
 
   const event = event2Label(data.event);
 
