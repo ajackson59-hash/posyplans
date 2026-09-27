@@ -25,7 +25,6 @@ Posy currently offers:
 
 - **Spark (one-time purchase):** a single $9.99 payment that unlocks one event — its AI-drafted plan plus the full logistics core (planning, checklists, timeline, budget, menu, and guest tools) for that event. Spark is per event and does not renew.
 - **Plus (paid membership):** unlimited full plan regenerations, EventDNA (a persistent taste profile carried across your events), the full Event Identity System, and Event Readiness Score. Plus is billed monthly ($11.99/month) or annually ($99/year), with annual billing as the default option.
-- **Concierge (coming soon):** a fully human-assisted planning tier. Not yet available — this section will be updated when it launches.
 
 Artwork generation and revision requests have separate limits shown in the artwork workspace. A Plus membership does not provide unlimited image requests.
 

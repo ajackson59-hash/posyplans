@@ -41,3 +41,13 @@ Internal draft notes moved out of customer-facing pages. This cleanup is not a l
 - **SMS delivery provider** — not yet selected; name them here and in the Privacy Policy's sub-processor table once chosen.
 - **Legal entity name and contact email** — same open items as the Terms of Service and Privacy Policy.
 - **Have a licensed attorney review this before SMS ships to real users — TCPA enforcement risk is real and this is the highest-risk page on the site.**
+
+### refund-policy.md
+
+> **Before you publish this:** This draft states Posy's actual refund terms for both Spark (one-time) and Plus (subscription), expanded into its own page so it has a direct link. Two items are still open and called out inline below: (1) the formal legal entity operating Posy hasn't been named yet, and (2) the contact email currently points to the founder's personal inbox as an interim measure. See the checklist at the bottom. This is a working draft, not a substitute for review by a licensed attorney before it governs real transactions.
+
+
+- **Legal entity name** — add once the entity operating Posy is formally registered.
+- **Contact email** — currently `ajackson59@gmail.com` as an interim measure; swap for a dedicated billing/support inbox before real launch.
+- **Self-serve cancellation** — update Section 5 once a Stripe customer portal or in-app cancel button ships.
+- **Have a licensed attorney review this alongside the Terms of Service before it governs real transactions.**
