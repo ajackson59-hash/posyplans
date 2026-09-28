@@ -85,7 +85,7 @@ export class MasterPlannerRunStore {
         // First-plan stages can set their own presentation fields, never access
         // tokens, payment data, invite publication, or captured contact details.
         const writable = ['themeName', 'paletteColors', 'eventIdentity', 'inviteArtworkUrl',
-          'inviteIllustrationUrl', 'customInviteImageUrl', 'inviteDesignConceptJson'] as const;
+          'inviteIllustrationUrl', 'customInviteImageUrl', 'inviteRenderMode', 'inviteDesignConceptJson'] as const;
         const changes: Partial<Event> = {};
         for (const key of writable) if (patch.event[key] !== undefined) changes[key] = patch.event[key];
         if (Object.keys(changes).length) await tx.update(events).set(changes).where(eq(events.id, this.eventId));

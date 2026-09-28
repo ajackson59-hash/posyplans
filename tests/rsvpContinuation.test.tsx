@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Route, Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
+import { buildThemedConcept, LAUNCH_THEMES } from "@shared/themeCatalog";
 
 const mocks = vi.hoisted(() => ({ request: vi.fn(), toast: vi.fn() }));
 vi.mock("@/lib/queryClient", () => ({ apiRequest: mocks.request }));
@@ -31,6 +32,30 @@ function show(eventOverrides = {}, guestOverrides = {}) {
 beforeEach(() => vi.resetAllMocks());
 
 describe("RSVP continuation", () => {
+  it.each(['banner', 'full-bleed', 'split', 'centered', 'backdrop'] as const)(
+    'keeps applied artwork uncropped on confirmation after an old %s layout', async layoutStyle => {
+      mocks.request.mockResolvedValue({ json: async () => guest('Maya Rivera', {
+        rsvpStatus: 'yes', attendingCount: 1, attendingAdults: 1, attendingChildren: 0 }) });
+      show({ inviteRenderMode: 'customer-artwork', inviteArtworkUrl: '/selected-portrait.png',
+        inviteIllustrationUrl: '/old-image.png',
+        inviteDesignConceptJson: JSON.stringify({ ...buildThemedConcept(LAUNCH_THEMES[0]), layoutStyle }) });
+      const open = await screen.findByTestId('button-open-envelope');
+      vi.useFakeTimers();
+      try {
+        fireEvent.click(open);
+        await act(async () => { vi.advanceTimersByTime(10000); });
+      } finally { vi.useRealTimers(); }
+      await screen.findByTestId('text-selected-guest');
+      fireEvent.click(screen.getByTestId('button-rsvp-yes'));
+      fireEvent.click(screen.getByTestId('button-submit-rsvp'));
+      const image = await screen.findByTestId('img-thank-you-artwork');
+      expect(image.getAttribute('src')).toBe('/selected-portrait.png');
+      expect(image.className).toContain('h-auto');
+      expect(image.className).not.toMatch(/object-cover|aspect-|rounded-full/);
+      expect(screen.getByTestId('card-thank-you').querySelector('[style*="background-image"]')).toBeNull();
+    },
+  );
+
   it("keeps a plus-one allowance to two people across adults and children", async () => {
     show({ rsvpRestriction: "plus_one" });
     await screen.findByTestId("text-selected-guest");

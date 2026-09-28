@@ -258,6 +258,7 @@ describe('customer route integration', () => {
     paid = true;
     expect((await request(a).post(owner + '/invite/use-prepayment-preview').send(selection(row))).status).toBe(200);
     expect(event.inviteArtworkUrl).toBe(selectedCustomerArtwork(row, event));
+    expect(event.inviteRenderMode).toBe('customer-artwork');
     expect(JSON.parse(event.inviteDesignConceptJson).fontPairingId).toBe('editorial-serif');
     expect(isKeptCustomerArtwork(row, event, event.inviteArtworkUrl)).toBe(true);
     expect((await request(a).patch(owner).send({ inviteArtworkUrl: eventArtworkUrl(event, 'inviteArtworkUrl'), inviteSubject: 'Edited copy' })).status).toBe(418);

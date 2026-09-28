@@ -231,6 +231,10 @@ describe('production stores on disposable PostgreSQL', () => {
     await active.completeStage('menu', { menuItems: [{ itemName: 'Duplicate stage output' }] });
     expect((await normal.listMenuItems(event.id)).map(item => item.itemName)).toEqual(['Family recipe', 'Current worker output']);
     expect(JSON.parse((await normal.getGeneration(first.id))!.completedStages)).toEqual(['menu']);
+    await active.completeStage('invites', { event: { inviteArtworkUrl: '/saved-customer-artwork.png',
+      inviteRenderMode: 'customer-artwork', inviteSubject: 'Must not overwrite saved wording' } });
+    expect(await normal.getEventById(event.id)).toMatchObject({ inviteArtworkUrl: '/saved-customer-artwork.png',
+      inviteRenderMode: 'customer-artwork', inviteSubject: event.inviteSubject });
   });
 
   it('denies client roles access while granting only server access to private candidates', async () => {

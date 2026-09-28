@@ -4,6 +4,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Route, Router, Switch } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 import { buildThemedConcept, LAUNCH_THEMES } from "@shared/themeCatalog";
+import { conceptBodyStyle, conceptHeadingStyle } from "@shared/inviteDesign";
+import { resolveThemeView } from "@/lib/themeInvite";
 import type { EventRecord } from "@/lib/types";
 
 const request = vi.fn();
@@ -61,6 +63,38 @@ function show(event = savedEvent, options: { path?: string; rejectOwner?: boolea
 afterEach(() => vi.useRealTimers());
 
 describe("private host invitation preview", () => {
+  for (const path of ["/dashboard/private-owner/invitation-preview", "/rsvp/draft-share"]) {
+    it.each(["banner", "full-bleed", "split", "centered", "backdrop"] as const)(
+      `shows applied artwork without an old %s crop at ${path}`, async (layoutStyle) => {
+        const concept = { ...buildThemedConcept(LAUNCH_THEMES[0]), layoutStyle };
+        const event = { ...savedEvent, inviteStatus: "published" as const,
+          inviteRenderMode: "customer-artwork", inviteDesignConceptJson: JSON.stringify(concept),
+          inviteIllustrationUrl: "/old-illustration.png" };
+        show(event, { path });
+        const image = await screen.findByTestId("img-rsvp-artwork");
+        expect(image.getAttribute("src")).toBe(savedEvent.inviteArtworkUrl);
+        expect(image.className).toContain("h-auto");
+        expect(image.className).not.toMatch(/object-cover|aspect-|rounded-full/);
+        expect(screen.queryByTestId("card-theme-invite")).toBeNull();
+        expect(resolveThemeView(event)).toBeNull();
+        const font = (value: string | undefined) => value?.replace(/['"]/g, "");
+        expect(font(screen.getByText(savedEvent.inviteSubject).style.fontFamily)).toBe(font(conceptHeadingStyle(concept).fontFamily));
+        expect(font(screen.getByText(savedEvent.inviteMessage).style.fontFamily)).toBe(font(conceptBodyStyle(concept).fontFamily));
+        // Styling and the envelope survive; applying an image changes no wording.
+        expect(screen.getByTestId("button-open-envelope")).toBeTruthy();
+        expect(request).not.toHaveBeenCalled();
+      },
+    );
+  }
+
+  it("keeps a normal curated theme and an empty-image legacy event on their existing renderer", async () => {
+    const event = { ...savedEvent, inviteDesignConceptJson: JSON.stringify(buildThemedConcept(LAUNCH_THEMES[0])) };
+    show(event);
+    expect(await screen.findByTestId("card-theme-invite")).toBeTruthy();
+    expect(resolveThemeView(event)).not.toBeNull();
+    expect(resolveThemeView({ ...event, inviteRenderMode: "customer-artwork", inviteArtworkUrl: "" })).not.toBeNull();
+  });
+
   it("shows the saved draft with owner artwork without requesting public or guest routes", async () => {
     const { query } = show();
     const image = await screen.findByTestId("img-rsvp-artwork");

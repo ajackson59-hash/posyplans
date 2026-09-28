@@ -11,6 +11,7 @@ import { EVENT_TYPES, RSVP_RESTRICTION_OPTIONS } from "@/lib/types";
 import { buildEventDetailsUpdate } from "@/lib/eventDetails";
 import { touchRecentEvent } from "@/lib/eventRecovery";
 import { applyInviteTokens, INVITE_TOKENS, INVITE_TONES, type InviteTone } from "@shared/inviteTokens";
+import { hasAppliedCustomerArtwork } from "@shared/customerArtwork";
 import { suggestRsvpDeadline } from "@shared/rsvpDeadline";
 import { Wordmark } from "@/components/Logo";
 import AskPosy from "@/components/AskPosy";
@@ -1375,7 +1376,7 @@ export default function Dashboard() {
             ) : (
               (() => {
                 const concept = parseInviteDesignConcept(event.inviteDesignConceptJson);
-                if (concept) {
+                if (concept && !hasAppliedCustomerArtwork(event)) {
                   return (
                     <div className="rounded-md" style={conceptBorderStyle(concept)} data-testid="card-invite-concept-display">
                       {event.inviteIllustrationUrl && concept.layoutStyle === "banner" && (
@@ -1457,7 +1458,7 @@ export default function Dashboard() {
                   );
                 }
                 return (
-                  <div>
+                  <div style={concept ? conceptBorderStyle(concept) : undefined}>
                     {event.inviteArtworkUrl && (
                       <img
                         src={event.inviteArtworkUrl}
@@ -1468,7 +1469,7 @@ export default function Dashboard() {
                     )}
                     <p
                       className="text-sm font-medium text-foreground"
-                      style={getInviteHeadingStyle(
+                      style={concept ? conceptHeadingStyle(concept) : getInviteHeadingStyle(
                         event.inviteFontFamily || DEFAULT_INVITE_FONT_ID,
                         resolveInviteAccentColor(event.inviteAccentColor, parsePalette(event.paletteColors)),
                       )}
@@ -1477,7 +1478,7 @@ export default function Dashboard() {
                     </p>
                     <p
                       className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground"
-                      style={getInviteBodyStyle(event.inviteFontFamily || DEFAULT_INVITE_FONT_ID)}
+                      style={concept ? conceptBodyStyle(concept) : getInviteBodyStyle(event.inviteFontFamily || DEFAULT_INVITE_FONT_ID)}
                     >
                       {applyInviteTokens(event.inviteMessage, previewCtx)}
                     </p>

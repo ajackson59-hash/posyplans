@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import type { Event } from '@shared/schema';
-import type { CustomerArtworkView } from '@shared/customerArtwork';
+import { CUSTOMER_ARTWORK_RENDER_MODE, type CustomerArtworkView } from '@shared/customerArtwork';
 import { humanArtworkBrief, humanReviewEventEnabled } from './humanArtworkReview';
 import { buildArtworkConstraints } from './aiFirst/prompt';
 import { buildArtworkEditRequest, type ArtworkEditSource } from './aiFirst/artworkEdit';
@@ -129,6 +129,7 @@ export function customerArtworkApplication(event: Event, artwork: string) {
   // Old model approval metadata must not be attributed to customer-selected pixels.
   delete concept.aiFirst;
   return { inviteArtworkUrl: artwork, inviteIllustrationUrl: artwork, customInviteImageUrl: '',
+    inviteRenderMode: CUSTOMER_ARTWORK_RENDER_MODE,
     inviteDesignConceptJson: JSON.stringify(concept) };
 }
 

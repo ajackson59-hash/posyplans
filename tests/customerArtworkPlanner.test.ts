@@ -21,6 +21,7 @@ it('reuses selected pixels, keeps saved styling and never labels the customer’
   state.selected = 'data:image/png;base64,c3ludGhldGlj'; const deps = { generateInviteConcepts: vi.fn(), generateIllustration: vi.fn() };
   await runMasterPlannerOrchestration(99002, 1, deps as any);
   expect(state.event.inviteArtworkUrl).toBe(state.selected); expect(state.event.inviteIllustrationUrl).toBe(state.selected);
+  expect(state.event.inviteRenderMode).toBe('customer-artwork');
   expect(JSON.parse(state.event.inviteDesignConceptJson)).toEqual({ fontPairingId: 'editorial-serif' });
   expect(deps.generateInviteConcepts).not.toHaveBeenCalled(); expect(deps.generateIllustration).not.toHaveBeenCalled();
 });

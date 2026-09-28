@@ -4,6 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import type { EventRecord, RsvpStatus } from "@/lib/types";
 import { applyInviteTokens } from "@shared/inviteTokens";
+import { hasAppliedCustomerArtwork } from "@shared/customerArtwork";
 import { DEFAULT_INVITE_FONT_ID, resolveInviteAccentColor, getInviteHeadingStyle, getInviteBodyStyle } from "@/lib/inviteStyles";
 import { parseInviteDesignConcept, conceptHeadingStyle, conceptBodyStyle, conceptBorderStyle } from "@shared/inviteDesign";
 import { deriveThemeDna, isLinerPattern, isStampStyle, envelopeFinish, flapAnimationMs, ENVELOPE_LINGER_MS, ENVELOPE_TURN_MS } from "@shared/themeDna";
@@ -372,6 +373,7 @@ function RsvpInvitation({ shareSlug, guestToken, previewEvent }: {
   // When active we deliberately drop the concept so no Posy border, font
   // overlay, or backdrop treatment is applied anywhere on this page.
   const customMode = event.inviteRenderMode === "custom" && !!event.customInviteImageUrl;
+  const appliedArtwork = hasAppliedCustomerArtwork(event);
   const concept = customMode ? null : parseInviteDesignConcept(event.inviteDesignConceptJson);
   // A curated launch theme renders through the same composed-portrait component
   // the host designed with, so what they approved is exactly what arrives.
@@ -518,7 +520,7 @@ function RsvpInvitation({ shareSlug, guestToken, previewEvent }: {
           </div>
         ) : (
         <Card className="overflow-hidden border-card-border" style={concept ? conceptBorderStyle(concept) : undefined}>
-          {concept ? (
+          {concept && !appliedArtwork ? (
             <>
               {event.inviteIllustrationUrl && concept.layoutStyle === "banner" && (
                 <img
@@ -639,7 +641,7 @@ function RsvpInvitation({ shareSlug, guestToken, previewEvent }: {
               <CardContent className="p-5">
                 <p
                   className="text-sm font-medium text-foreground"
-                  style={getInviteHeadingStyle(
+                  style={concept ? conceptHeadingStyle(concept) : getInviteHeadingStyle(
                     event.inviteFontFamily || DEFAULT_INVITE_FONT_ID,
                     resolveInviteAccentColor(event.inviteAccentColor, parsePalette(event.paletteColors)),
                   )}
@@ -654,7 +656,7 @@ function RsvpInvitation({ shareSlug, guestToken, previewEvent }: {
                 </p>
                 <p
                   className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground"
-                  style={getInviteBodyStyle(event.inviteFontFamily || DEFAULT_INVITE_FONT_ID)}
+                  style={concept ? conceptBodyStyle(concept) : getInviteBodyStyle(event.inviteFontFamily || DEFAULT_INVITE_FONT_ID)}
                 >
                   {applyInviteTokens(event.inviteMessage, {
                     guestName: recipient?.name.split(" ")[0],
@@ -685,28 +687,31 @@ function RsvpInvitation({ shareSlug, guestToken, previewEvent }: {
             style={concept ? conceptBorderStyle(concept) : undefined}
             data-testid="card-thank-you"
           >
-            {concept && event.inviteIllustrationUrl && concept.layoutStyle === "banner" && (
+            {appliedArtwork && (
+              <img src={event.inviteArtworkUrl} alt="" data-testid="img-thank-you-artwork" className="block h-auto w-full" />
+            )}
+            {concept && !appliedArtwork && event.inviteIllustrationUrl && concept.layoutStyle === "banner" && (
               <img src={event.inviteIllustrationUrl} alt="" data-testid="img-thank-you-artwork" className="h-32 w-full object-cover" />
             )}
-            {concept && event.inviteIllustrationUrl && concept.layoutStyle === "centered" && (
+            {concept && !appliedArtwork && event.inviteIllustrationUrl && concept.layoutStyle === "centered" && (
               <div className="flex justify-center pt-6">
                 <img src={event.inviteIllustrationUrl} alt="" data-testid="img-thank-you-artwork" className="h-20 w-20 rounded-full object-cover" />
               </div>
             )}
-            {concept && event.inviteIllustrationUrl && concept.layoutStyle === "split" && (
+            {concept && !appliedArtwork && event.inviteIllustrationUrl && concept.layoutStyle === "split" && (
               <img src={event.inviteIllustrationUrl} alt="" data-testid="img-thank-you-artwork" className="h-24 w-full object-cover" />
             )}
             <CardContent
               className="p-6 text-center"
               style={
-                concept && event.inviteIllustrationUrl && concept.layoutStyle === "backdrop"
+                concept && !appliedArtwork && event.inviteIllustrationUrl && concept.layoutStyle === "backdrop"
                   ? { backgroundImage: `url(${event.inviteIllustrationUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
                   : undefined
               }
             >
               <div
                 className={
-                  concept && event.inviteIllustrationUrl && concept.layoutStyle === "backdrop" ? "rounded-md bg-white/85 p-3" : undefined
+                  concept && !appliedArtwork && event.inviteIllustrationUrl && concept.layoutStyle === "backdrop" ? "rounded-md bg-white/85 p-3" : undefined
                 }
               >
                 <CheckCircle2 className="mx-auto h-8 w-8 text-secondary" />
