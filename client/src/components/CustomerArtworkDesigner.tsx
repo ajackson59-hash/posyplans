@@ -4,8 +4,8 @@ import { apiRequestJson } from '@/lib/queryClient';
 import CustomerArtworkPreview from './CustomerArtworkPreview';
 import { Button } from './ui/button';
 
-export default function CustomerArtworkDesigner({ ownerToken, artwork, refresh }: {
-  ownerToken: string; artwork: CustomerArtworkView; refresh: () => Promise<unknown>;
+export default function CustomerArtworkDesigner({ ownerToken, artwork, usesSavedArtworkLayout, refresh }: {
+  ownerToken: string; artwork: CustomerArtworkView; usesSavedArtworkLayout: boolean; refresh: () => Promise<unknown>;
 }) {
   const client = useQueryClient();
   const apply = useMutation({
@@ -18,7 +18,9 @@ export default function CustomerArtworkDesigner({ ownerToken, artwork, refresh }
       await Promise.allSettled([refresh(), client.invalidateQueries({ queryKey: [`/api/events/owner/${ownerToken}`] })]);
     },
   });
-  const applied = !!artwork.selectedId && artwork.selectedId === artwork.appliedId;
+  // A pre-fix event can already store these pixels but still use a legacy crop.
+  // Reapplying upgrades its display setting without generating another image.
+  const applied = !!artwork.selectedId && artwork.selectedId === artwork.appliedId && usesSavedArtworkLayout;
   return <div className="rounded-xl border border-border">
     <CustomerArtworkPreview ownerToken={ownerToken} artwork={artwork} refresh={refresh} paid />
     <div className="space-y-2 border-t border-border p-5">

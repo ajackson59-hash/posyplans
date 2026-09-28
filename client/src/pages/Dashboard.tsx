@@ -1064,7 +1064,7 @@ export default function Dashboard() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {customerArtwork ? <CustomerArtworkDesigner ownerToken={ownerToken} artwork={customerArtwork}
+            {customerArtwork ? <CustomerArtworkDesigner ownerToken={ownerToken} artwork={customerArtwork} usesSavedArtworkLayout={hasAppliedCustomerArtwork(event)}
               refresh={() => artworkReadiness.refetch({ throwOnError: true })} />
             : artworkReadiness.isPending ? <p className="text-sm">Loading your saved artwork…</p>
             : artworkReadiness.isError ? <Button variant="outline" onClick={() => artworkReadiness.refetch()}>Reload saved artwork</Button>
