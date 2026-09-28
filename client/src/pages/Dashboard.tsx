@@ -206,6 +206,7 @@ export default function Dashboard() {
   };
 
   const [editingInvite, setEditingInvite] = useState(false);
+  const [changingInviteDesign, setChangingInviteDesign] = useState(false);
   const [subjectDraft, setSubjectDraft] = useState("");
   const [messageDraft, setMessageDraft] = useState("");
   const [artworkDraft, setArtworkDraft] = useState("");
@@ -1059,20 +1060,37 @@ export default function Dashboard() {
                 <Mail className="h-4 w-4 text-primary" /> {hasInvitationDesign ? "Your invitation" : "Create your invitation"}
               </CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">
-                Choose the design first, then confirm the wording and RSVP details. Posy keeps it all together on one shareable page.
+                {hasInvitationDesign
+                  ? "Review your saved invitation, update the wording, and confirm your RSVP details."
+                  : "Choose the design first, then confirm the wording and RSVP details. Posy keeps it all together on one shareable page."}
               </p>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {customerArtwork ? <CustomerArtworkDesigner ownerToken={ownerToken} artwork={customerArtwork} usesSavedArtworkLayout={hasAppliedCustomerArtwork(event)}
-              refresh={() => artworkReadiness.refetch({ throwOnError: true })} />
-            : artworkReadiness.isPending ? <p className="text-sm">Loading your saved artwork…</p>
-            : artworkReadiness.isError ? <Button variant="outline" onClick={() => artworkReadiness.refetch()}>Reload saved artwork</Button>
-            : <InviteDesignPicker
-              ownerToken={ownerToken}
-              event={event}
-              onReviewEventStyle={() => navigateToTab("theme", "event-style-section")}
-            />}
+            {hasInvitationDesign && (
+              <Button
+                variant="outline"
+                size="sm"
+                aria-expanded={changingInviteDesign}
+                aria-controls="invitation-design-options"
+                onClick={() => setChangingInviteDesign((open) => !open)}
+              >
+                {changingInviteDesign ? "Done choosing design" : "Change design"}
+              </Button>
+            )}
+            {(!hasInvitationDesign || changingInviteDesign) && (
+              <div id="invitation-design-options">
+                {customerArtwork ? <CustomerArtworkDesigner ownerToken={ownerToken} artwork={customerArtwork} usesSavedArtworkLayout={hasAppliedCustomerArtwork(event)}
+                  refresh={() => artworkReadiness.refetch({ throwOnError: true })} />
+                : artworkReadiness.isPending ? <p className="text-sm">Loading your saved artwork…</p>
+                : artworkReadiness.isError ? <Button variant="outline" onClick={() => artworkReadiness.refetch()}>Reload saved artwork</Button>
+                : <InviteDesignPicker
+                  ownerToken={ownerToken}
+                  event={event}
+                  onReviewEventStyle={() => navigateToTab("theme", "event-style-section")}
+                />}
+              </div>
+            )}
 
             <div className="flex flex-col gap-3 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
               <div>
