@@ -23,6 +23,7 @@ import { EVENT_TYPES } from "@/lib/types";
 import type { EventRecord } from "@/lib/types";
 import { touchRecentEvent } from "@/lib/eventRecovery";
 import { useToast } from "@/hooks/use-toast";
+import { useEventActivity } from "@/hooks/useEventActivity";
 import { Sparkles, ArrowLeft, ArrowRight, Loader2, RefreshCw } from "lucide-react";
 
 const STEPS = ["basics", "vibe", "sizing", "review"] as const;
@@ -48,6 +49,8 @@ export default function Intake() {
   const { toast } = useToast();
 
   const [ownerToken, setOwnerToken] = useState(params.ownerToken || "");
+  const [confirmedActivityToken, setConfirmedActivityToken] = useState<string>();
+  useEventActivity(confirmedActivityToken, Boolean(confirmedActivityToken));
   const [step, setStep] = useState<Step>("basics");
   const [creating, setCreating] = useState(!params.ownerToken);
   const [startError, setStartError] = useState<string | null>(null);
@@ -101,6 +104,7 @@ export default function Intake() {
       ownerTokenRef.current = token;
       createdHereRef.current = true;
       setOwnerToken(token);
+      setConfirmedActivityToken(token);
       touchRecentEvent(token);
       navigate(`/intake/${token}`, { replace: true });
       clearPendingEventStartKey(startKey);
@@ -140,6 +144,7 @@ export default function Intake() {
           `/api/events/owner/${resumeToken}`,
         );
         const event = data.event;
+        setConfirmedActivityToken(resumeToken);
         const edited = editedRef.current;
         if (!edited.has("eventName")) setEventName(event.eventName || "");
         if (!edited.has("eventType")) setEventType(event.eventType || "Birthday Party");

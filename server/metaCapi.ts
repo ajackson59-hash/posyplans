@@ -4,7 +4,10 @@
 // delivery is resilient to ad-blockers and lost client sessions, which the
 // browser Pixel alone is not.
 //
-// Fully inert until BOTH the pixel id and META_CAPI_ACCESS_TOKEN are set. The
+// Fully inert unless the caller supplies verified marketing consent AND the
+// pixel id and META_CAPI_ACCESS_TOKEN are set. Current checkout/webhook callers
+// have no verified consent signal, so server-side tracking stays disabled.
+// Browser Pixel consent handling is independent and unchanged. The
 // access token is read from process.env server-side only and is NEVER exposed
 // to the client, logged, or embedded here. Every call is wrapped so a Meta
 // outage or misconfiguration can never throw into — and therefore never break
@@ -38,6 +41,10 @@ function hashPii(value: string | null | undefined, digitsOnly = false): string |
 }
 
 export interface MetaPurchaseParams {
+  /** Only true when backed by the person's current, separately verified
+   * marketing consent. Payment, billing contact details, webhook delivery and
+   * an unverified client flag are not consent. No existing caller supplies this. */
+  marketingConsent?: boolean;
   email: string | null | undefined;
   phone?: string | null;
   value: number;
@@ -47,10 +54,14 @@ export interface MetaPurchaseParams {
   actionSource?: string;
 }
 
-/** Send a server-side Purchase event to the Meta Conversions API. No-ops (with
- *  a debug log) when the pixel id or access token isn't configured, and never
- *  throws — checkout must complete regardless of Meta's availability. */
+/** Send only with independently verified marketing consent. This helper does
+ * not verify or persist consent; any future integration must do that before
+ * passing true. Missing/false consent returns before reading configuration,
+ * hashing contact details or making a network request. Never throws — checkout
+ * must complete regardless of Meta's availability. */
 export async function sendMetaPurchaseEvent(params: MetaPurchaseParams): Promise<void> {
+  if (params.marketingConsent !== true) return;
+
   const token = accessToken();
   const id = pixelId();
   if (!token || !id) {

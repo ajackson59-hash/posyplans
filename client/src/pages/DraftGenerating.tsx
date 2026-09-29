@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams, useLocation } from "wouter";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEventActivity } from "@/hooks/useEventActivity";
 import { apiRequestJson } from "@/lib/queryClient";
 import HumanArtworkReviewStatus from "@/components/HumanArtworkReviewStatus";
 import CustomerArtworkPreview from "@/components/CustomerArtworkPreview";
@@ -202,6 +203,7 @@ export default function DraftGenerating() {
       apiRequestJson<EntitlementSummary>("GET", `/api/events/owner/${ownerToken}/master-planner/entitlement`),
     enabled: !!ownerToken,
   });
+  useEventActivity(ownerToken, entitlement.isSuccess);
 
   const previewReadiness = useQuery<PrePaymentPreviewReadiness>({
     queryKey: ["prepayment-preview-readiness", ownerToken],

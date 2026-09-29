@@ -64,6 +64,7 @@ import InviteDesignPicker from "@/components/InviteDesignPicker";
 import CustomerArtworkDesigner from "@/components/CustomerArtworkDesigner";
 import { useCustomerArtwork } from "@/hooks/useCustomerArtwork";
 import { useDashboardNavigation } from "@/hooks/useDashboardNavigation";
+import { useEventActivity } from "@/hooks/useEventActivity";
 import InvitationOverview from "@/components/InvitationOverview";
 import PlanningAlerts from "@/components/PlanningAlerts";
 import PlanRegenerationPanel from "@/components/PlanRegenerationPanel";
@@ -132,6 +133,7 @@ export default function Dashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data, isLoading } = useEventData(ownerToken);
+  useEventActivity(ownerToken, Boolean(data?.event));
   const artworkReadiness = useCustomerArtwork(ownerToken);
   const customerArtwork = artworkReadiness.data?.customerArtwork;
   const retainedReviewRequest = useMemo(() => {

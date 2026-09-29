@@ -40,7 +40,6 @@ const PLUS_FEATURES = [
   "Unlimited full plan regenerations",
   "Alternate menu, timeline, and invite drafts",
   "AI cascade suggestions across every tab",
-  "Priority AI generation queue",
 ];
 
 const CONCIERGE_FEATURES = [

@@ -22,6 +22,7 @@ import { registerHumanArtworkReviewRoutes } from "./humanArtworkReviewRoutes";
 import { registerCustomerArtworkRoutes } from "./customerArtworkRoutes";
 import { registerPlanRegenerationRoutes } from "./planRegenerationRoutes";
 import { registerPlusLinkRoutes } from "./plusLinkRoutes";
+import { registerRetentionActivityRoutes } from "./retentionActivityRoutes";
 
 declare module "http" {
   interface IncomingMessage {
@@ -119,6 +120,7 @@ export function registerApiNotFoundHandler(app: express.Express): void {
 export function ensureRoutesRegistered(app: express.Express, httpServer: Server): Promise<void> {
   if (!readyPromise) {
     readyPromise = (async () => {
+      registerRetentionActivityRoutes(app);
       // Register small reliability-sensitive endpoints first. The recovery
       // route intentionally precedes its legacy equivalent in routes.ts so it
       // can provide accurate service health and a traceable support reference.

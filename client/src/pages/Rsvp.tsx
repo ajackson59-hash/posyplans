@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { useEventActivity } from "@/hooks/useEventActivity";
 import { CheckCircle2, HelpCircle, Mail, MessageSquareText, Search, UserRound, XCircle } from "lucide-react";
 import CountStepper from "@/components/CountStepper";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -75,6 +76,7 @@ export function InvitationPreview() {
     queryKey: [`/api/events/owner/${ownerToken}`],
     enabled: Boolean(ownerToken),
   });
+  useEventActivity(ownerToken, Boolean(data?.event));
 
   if (isLoading) {
     return <div className="mx-auto max-w-lg px-6 py-16"><Skeleton className="h-32 w-full" /></div>;

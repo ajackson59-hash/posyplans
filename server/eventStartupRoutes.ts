@@ -103,6 +103,8 @@ export interface EventStartPersistence {
 
 const databasePersistence: EventStartPersistence = {
   async tryInsert(input) {
+    // The database creation-activity trigger commits tracking with this insert;
+    // an idempotent replay performs no insert and does not reset retention.
     const rows = await criticalDb
       .insert(events)
       .values({
