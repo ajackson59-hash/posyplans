@@ -56,6 +56,7 @@ must not be retried to work around that limitation.
 | --- | --- | --- |
 | POSY_PRODUCTION_ARTWORK_FLOW | off | Enrolls new events only when exactly true; Preview ID lists never enroll Production events. |
 | POSY_PRODUCTION_ARTWORK_GENERATION | off | Blocks Production at both request reservation and the physical provider boundary; every legacy adapter is covered too. |
+| POSY_PRODUCTION_ARTWORK_REQUEST_LIMIT | 4 | Configurable per-event lifetime AI allowance, including the first preview and image edits. Accepts integers 1–100; malformed values stop new requests. Independent of Preview evaluation envelopes and shared spending limits. |
 | POSY_PRODUCTION_IMAGE_CONCURRENCY | 1 | Accepts integers 1–8; malformed values close new requests. Counts reserved and dispatched work atomically under the policy lock. |
 | POSY_PRODUCTION_PLUS_LINK | off | Enables the same tested payment-proof and one-time inbox-code flow only when exactly true. |
 | PUBLIC_APP_ORIGIN | unset | Set https://posyplans.com for custom-domain same-origin Plus verification. |
@@ -65,7 +66,11 @@ Previously enrolled events retain their saved workspace, selection and images
 when enrollment or generation is disabled. Valid late completions remain
 persistable after shutdown; duplicate workers cannot overwrite the winner.
 New generation requires both an explicit environment opt-in and a separately
-approved, unpaused database allowance. Per-event lifetime requests remain four.
+approved, unpaused database allowance. Per-event lifetime requests default to four;
+an explicitly configured six permits one first image plus five image edits per
+event, while the shared policy can still stop requests earlier. Subscription
+renewal does not reset an event's allowance. Invitation wording changes do not
+consume image requests. No allowance change is enabled by this source update.
 Requests retain the same model, quality, full brief, source pixels and zero
 automatic retries; this patch does not fix provider refusals.
 

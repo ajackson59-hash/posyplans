@@ -10,6 +10,7 @@ import { readPngSize } from './aiFirst/png';
 import { ImageSpendGuardError } from './imageSpendGuard';
 
 export const CUSTOMER_ARTWORK_REQUEST_LIMIT = 4;
+export const CUSTOMER_ARTWORK_MAX_REQUEST_LIMIT = 100;
 export const CUSTOMER_ARTWORK_JOB_MS = 180_000;
 type Brief = ReturnType<typeof humanArtworkBrief>;
 const hash = (value: string | Buffer) => createHash('sha256').update(value).digest('hex');
@@ -78,10 +79,17 @@ export function customerArtworkGenerationEnabled(env: NodeJS.ProcessEnv = proces
   if (env.VERCEL_ENV === 'production') return env.POSY_PRODUCTION_ARTWORK_GENERATION === 'true';
   return env.POSY_CUSTOMER_ARTWORK_GENERATION === 'true';
 }
-/** Optional Preview evaluation envelope. Caps count every lifetime claim, not
- * just successful images. A present but invalid map closes all new spending. */
+/** Caps count every lifetime claim, including the first preview. Production's
+ * per-event allowance is independent of the shared durable spending policy.
+ * Invalid configuration closes new requests without hiding saved artwork. */
 export function customerArtworkRequestLimit(event: Event, env: NodeJS.ProcessEnv = process.env) {
-  if (env.VERCEL_ENV === 'production') return CUSTOMER_ARTWORK_REQUEST_LIMIT;
+  if (env.VERCEL_ENV === 'production') {
+    const encoded = env.POSY_PRODUCTION_ARTWORK_REQUEST_LIMIT;
+    if (encoded === undefined) return CUSTOMER_ARTWORK_REQUEST_LIMIT;
+    if (!/^[1-9]\d*$/.test(encoded)) return 0;
+    const limit = Number(encoded);
+    return Number.isSafeInteger(limit) && limit <= CUSTOMER_ARTWORK_MAX_REQUEST_LIMIT ? limit : 0;
+  }
   const encoded = env.POSY_CUSTOMER_ARTWORK_EVALUATION_LIMITS;
   if (encoded === undefined) return CUSTOMER_ARTWORK_REQUEST_LIMIT;
   try {

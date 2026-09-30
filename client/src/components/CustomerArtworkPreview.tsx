@@ -142,7 +142,10 @@ export default function CustomerArtworkPreview({ ownerToken, artwork, refresh, p
       </div>
     </details> : null}
     {!artwork.generationEnabled && !artwork.supportReference ? <p role="status" className="text-sm">Image generation is temporarily unavailable. {artwork.uploadAvailable ? 'You can choose a ready-made design, upload artwork, or keep a saved image.' : 'You can still keep a saved image.'}</p> : null}
-    {!requestFailed && artwork.generationEnabled ? <p className="text-sm text-muted-foreground">{artwork.requestsRemaining > 0 ? `${artwork.requestsRemaining} artwork ${artwork.requestsRemaining === 1 ? 'request' : 'requests'} remaining for this event.` : 'You’ve reached this event’s artwork limit. Keep a saved image or contact support.'}</p> : null}
+    {!requestFailed && artwork.generationEnabled ? <div className="text-sm text-muted-foreground">
+      <p>{artwork.requestsRemaining > 0 ? `${artwork.requestsRemaining} artwork ${artwork.requestsRemaining === 1 ? 'request' : 'requests'} remaining for this event.` : 'You’ve reached this event’s artwork limit. Keep a saved image or contact support.'}</p>
+      <p>Your first image and each AI image revision use a request. Changing invitation wording does not.</p>
+    </div> : null}
     <details className="text-sm"><summary className="cursor-pointer font-medium">Your saved request</summary><p className="mt-2 whitespace-pre-wrap">{artwork.savedBrief}</p></details>
     {message ? <p role="status" className="text-sm">{message}</p> : null}
     <Button type="button" variant="ghost" size="sm" disabled={action.isPending} onClick={async () => {
