@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "deploymentSha": "4692dd00be30cef9bd942d480aa7e895e6cd554b",
+  "renderPath": "text-first",
+  "cases": [{
+    "id": "blippi-meekah-soft-play-baseline",
+    "cohort": "named-child",
+    "briefDigest": "7fb9b309c7f8b30cccc616ec189ed0d53ec0f2260d7d9a02b94260ad1414ed1c",
+    "trialIds": ["qa-event-34"]
+  }],
+  "results": [{
+    "trialId": "qa-event-34",
+    "deploymentSha": "4692dd00be30cef9bd942d480aa7e895e6cd554b",
+    "renderPath": "text-first",
+    "briefDigest": "7fb9b309c7f8b30cccc616ec189ed0d53ec0f2260d7d9a02b94260ad1414ed1c",
+    "evidence": "live",
+    "outcome": "approved",
+    "firstApprovedMs": 132186,
+    "terminalMs": null,
+    "automatedPass": true,
+    "reviewedAssetHash": "afad8f95e35a58240819cdc2d6a499427d9066400c9d17d85b158e1dd6345a28",
+    "deliveredAssetHash": "afad8f95e35a58240819cdc2d6a499427d9066400c9d17d85b158e1dd6345a28",
+    "humanReview": "pending",
+    "humanReviewedAssetHash": null,
+    "imageProviderRequests": 2,
+    "criticRequests": null,
+    "recordedCostUsdMicros": 330000,
+    "allInCostUsdMicros": null
+  }]
+}

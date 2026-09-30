@@ -1,3 +1,4 @@
+import { visionFixtureAllPresent } from "./helpers/visionRequestRequirements";
 // Final PR #3 reliability controls. Every provider dependency is faked;
 // this file cannot make OpenAI or Anthropic calls.
 
@@ -89,8 +90,8 @@ function oneConceptClient(): Anthropic {
             delta: { type: "text_delta", text: `${conceptQuartet(direction).map((item) => JSON.stringify(item)).join("\n")}\n` },
           };
         })(),
-      create: async () => ({
-        content: [{ type: "text", text: JSON.stringify(passingVision) }],
+      create: async (request: any) => ({
+        content: [{ type: "text", text: JSON.stringify(visionFixtureAllPresent(request, passingVision)) }],
         usage: { input_tokens: 1000, output_tokens: 100 },
       }),
     },
@@ -380,6 +381,7 @@ describe("terminal event ordering", () => {
     const runStore = new InMemoryRunStore();
     let receivedInput: PipelineInput | undefined;
     registerAiFirstRoutes(app, {
+      plusAccess: async () => undefined,
       storage: {
         getEventByOwnerToken: async (token: string) =>
           token === "owner"
@@ -430,6 +432,7 @@ describe("terminal event ordering", () => {
     app.use(express.json());
     const runStore = new InMemoryRunStore();
     registerAiFirstRoutes(app, {
+      plusAccess: async () => undefined,
       storage: {
         getEventByOwnerToken: async () => ({
           id: 1,
@@ -477,6 +480,7 @@ describe("terminal event ordering", () => {
     const runStore = new InMemoryRunStore();
     let pipelineCalls = 0;
     registerAiFirstRoutes(app, {
+      plusAccess: async () => undefined,
       storage: {
         getEventByOwnerToken: async () => ({
           id: 1,

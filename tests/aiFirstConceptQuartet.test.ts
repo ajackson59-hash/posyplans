@@ -1,3 +1,4 @@
+import { visionFixtureAllPresent } from "./helpers/visionRequestRequirements";
 // Regression for the seven-attempt construction failure.
 //
 // All providers are fakes. The important boundary is that the entire creative
@@ -10,7 +11,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { parseAiFirstConcept, type AiFirstConcept } from "@shared/aiFirstInvite";
 import type { EventBrief } from "../server/aiFirst/brief";
 import { allErrorsAreSingleConcept, preflightConceptQuartet } from "../server/aiFirst/conceptQuartet";
-import { subjectFamiliesForBrief } from "../server/aiFirst/conceptPreflight";
+import { subjectFamiliesForBrief, concreteSubjectReviewRequirementsForBrief } from "../server/aiFirst/conceptPreflight";
 import { runConceptOnlyProof } from "../server/aiFirst/conceptOnlyProof";
 import { runAiFirstPipeline } from "../server/aiFirst/pipeline";
 import { InMemoryPreviewStore } from "../server/aiFirst/previewStore";
@@ -127,7 +128,8 @@ const passingVision = {
   briefFidelity: 5,
   compositionQuality: 5,
   ageAppropriate: 5,
-  requiredPresent: [{ requirement: "construction identity", present: true }],
+  requiredPresent: concreteSubjectReviewRequirementsForBrief(CONSTRUCTION_REVIEW_BRIEF)
+    .map((requirement) => ({ requirement, present: true })),
   excludedFound: [],
   notes: "fixture pass",
 };
@@ -142,8 +144,8 @@ function quartetClient(concepts: AiFirstConcept[], onEmit?: () => void): Anthrop
             yield { type: "content_block_delta", delta: { type: "text_delta", text: `${JSON.stringify(item)}\n` } };
           }
         })(),
-      create: async () => ({
-        content: [{ type: "text", text: JSON.stringify(passingVision) }],
+      create: async (request: any) => ({
+        content: [{ type: "text", text: JSON.stringify(visionFixtureAllPresent(request, passingVision)) }],
         usage: { input_tokens: 1, output_tokens: 1 },
       }),
     },

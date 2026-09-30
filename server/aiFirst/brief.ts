@@ -12,6 +12,7 @@
 
 import type { Event } from "@shared/schema";
 import { DNA_AXES, type DnaAxis } from "@shared/eventDna";
+import { explicitSceneExclusions, explicitSceneRequirements } from "./hostVisualRequirements";
 
 export interface BriefRequirements {
   /** Must be visibly present. Audited against the finished artwork. */
@@ -147,17 +148,17 @@ function parseColors(raw: string): string[] {
 const UNIVERSAL_EXCLUSIONS = [
   "generated text, letters, words or numbers",
   "logos, signatures or watermarks",
-  "clip art or generic template graphics",
-  "stock photography",
-  "plastic-looking 3D render objects",
+  "unrequested generic clip art or template substitutions",
+  "unrequested stock-photo substitutions for the host's visual direction",
+  "unintended plastic-looking materials that contradict the requested medium",
   "printed paper margins, mats or card frames inside the artwork",
 ];
 
 /** Extra exclusions for young children's parties. */
-const CHILD_EXCLUSIONS = ["babyish or infantile imagery", "repetitive rounded cartoon shapes", "visual kitsch"];
+const CHILD_EXCLUSIONS = ["unrequested infantile treatment", "accidentally repeated cartoon shapes", "unrequested visual kitsch"];
 
 /** Extra exclusions for grown-up milestone events. */
-const ADULT_EXCLUSIONS = ["cartoon characters", "childish motifs", "novelty party imagery"];
+const ADULT_EXCLUSIONS = ["unrequested childish treatment", "novelty motifs that contradict the host's adult event direction"];
 
 const MOTIF_STOPWORDS = new Set([
   "a", "an", "and", "the", "with", "for", "of", "in", "on", "at", "to", "very", "really",
@@ -189,8 +190,10 @@ export function classifyRequirements(input: {
   const preferred: string[] = [];
   const age = ageFromMilestone(input.milestone);
 
-  const themeIdentity = input.themeName.trim() || input.vibe.trim();
+  const themeIdentity = input.themeName.trim();
   if (themeIdentity) required.push(`the ${themeIdentity} visual identity, unmistakably present`);
+  else if (input.vibe.trim()) required.push("the complete host direction, including every requested subject and scene detail");
+  required.push(...explicitSceneRequirements(input.vibe));
   if (input.colors.length > 0) required.push(`the stated colour family: ${input.colors.join(", ")}`);
   if (input.milestone) {
     required.push(
@@ -200,12 +203,12 @@ export function classifyRequirements(input: {
     );
   }
 
-  for (const motif of motifsFrom(input.vibe, input.themeName)) {
-    preferred.push(`a restrained interpretation of "${motif}"`);
-  }
+  // Free prose is not a bag of motifs. Words such as "third", "original",
+  // or an excluded subject must not become additional visual preferences.
+  // The full host text stays binding in HOST WORDS and in the review brief.
   preferred.push(`${input.formality} styling`, "modern stationery finish");
 
-  const excluded = [...UNIVERSAL_EXCLUSIONS];
+  const excluded = [...UNIVERSAL_EXCLUSIONS, ...explicitSceneExclusions(input.vibe)];
   if (age !== null && age <= 12) excluded.push(...CHILD_EXCLUSIONS);
   else if (age !== null) excluded.push(...ADULT_EXCLUSIONS);
 

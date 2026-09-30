@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useLocation } from "wouter";
 import { apiRequestJson } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,31 +16,39 @@ const EMAIL_LOOKS_VALID = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  * image endpoint on the way to checkout.
  */
 export default function DirectCheckoutShortcut() {
+  const [location] = useLocation();
   const { toast } = useToast();
   const [mount, setMount] = useState<HTMLElement | null>(null);
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
-    if (!window.location.pathname.startsWith("/draft-generating/")) {
+    if (!location.startsWith("/draft-generating/")) {
       setMount(null);
       return;
     }
 
     const locate = () => {
       const primary = document.querySelector<HTMLElement>("[data-testid='button-unlock-spark']");
-      setMount(primary?.parentElement ?? null);
+      // The owning page opts in only after readiness confirms this is a
+      // legacy optional-preview flow. Human review cannot be skipped.
+      setMount(primary?.dataset.directCheckoutAllowed === "true" ? primary.parentElement : null);
     };
 
     locate();
     const observer = new MutationObserver(locate);
-    observer.observe(document.body, { childList: true, subtree: true });
+    observer.observe(document.body, {
+      childList: true, subtree: true, attributes: true,
+      attributeFilter: ["data-direct-checkout-allowed"],
+    });
     return () => observer.disconnect();
-  }, []);
+  }, [location]);
 
   if (!mount) return null;
 
   const beginCheckout = async () => {
-    const ownerToken = window.location.pathname.split("/draft-generating/")[1]?.split("/")[0] ?? "";
+    const primary = document.querySelector<HTMLElement>("[data-testid='button-unlock-spark']");
+    if (primary?.dataset.directCheckoutAllowed !== "true") return;
+    const ownerToken = location.split("/draft-generating/")[1]?.split("/")[0] ?? "";
     const email = (document.querySelector<HTMLInputElement>("[data-testid='input-spark-email']")?.value ?? "").trim();
     if (!ownerToken || !EMAIL_LOOKS_VALID.test(email)) {
       document.querySelector<HTMLInputElement>("[data-testid='input-spark-email']")?.focus();

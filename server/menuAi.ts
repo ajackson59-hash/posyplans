@@ -46,8 +46,8 @@ export async function generateMenuAi(params: {
   themeName: string;
   vibeDescription?: string;
   guestCount: number;
-}): Promise<MenuSuggestion> {
-  const client = new Anthropic();
+}, options?: { maxRetries?: number }): Promise<MenuSuggestion> {
+  const client = new Anthropic(options);
   const lines = [
     `Event name: "${params.eventName}"`,
     params.eventType ? `Event type: "${params.eventType}"` : null,

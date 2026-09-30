@@ -1,0 +1,29 @@
+# Closed separated reviewer validation — 16 September 2026
+
+## Outcome and offline repair
+
+The approved batch ran on `2d6dab796a800b0d68b273ef4288b09e52568e6f` after all twenty frozen preflights matched. Its first request, `craft-elsa`, made one physical provider attempt and returned HTTP 400 in 405 ms, with no message receipt or usage. The client endpoint returned the retained stopped result successfully. Claim 332, result 333 and terminal closure 334 are saved in Preview. The remaining nineteen requests were not sent. Cost is unknown, not zero. The incomplete component fields are consequences of the missing provider response, not observations about Elsa. No visual accuracy conclusion is available.
+
+The dataset and original registration remain permanently closed and immutable. Twenty-eight historical/source rows and five event rows match their pre-run full-row snapshots. No new artwork, retries, replacements, customer promotion or Production changes occurred.
+
+Offline inspection identified unsupported `minimum`/`maximum` keywords in both new output schemas. Anthropic's [structured-output documentation](https://platform.claude.com/docs/en/build-with-claude/structured-outputs#json-schema-limitations) says these numeric constraints return 400; numeric enums are supported. This is a verified request defect consistent with the observed status, but the exact provider error message was not retained, so it is not proof of the server's specific diagnosis.
+
+The two packet versions now use an integer enum of 1–5. Their instructions, images, briefs, criteria, validators and thresholds are unchanged. Two offline regressions inspect the actual SDK-serialized request against the documented schema subset; both failed on `minimum` before the repair. Local validator bounds remain enforced. The SDK's generic transform is not used because this installed version also strips supported enums. The twenty original registered fingerprints were **not** updated: the corrected builders do not reopen or enable this closed study. Any new paid validation needs a fresh concrete scope and registration. No corrected request has been sent to the provider.
+
+## Historical approved scope
+
+The owner approved the concrete proposal: the same eight saved images and twelve full briefs through private Posy Preview to Anthropic Claude Sonnet4.6, at most twenty reviews with a fresh $2.50 planning reserve. No new images, classifiers, repairs, retries, replacements, merge or Production change. This allowance is separate from both permanently closed cross-theme studies.
+
+The rubric, schema, request builders and validators are frozen at `5feb80e025b44ec4cf2b862a3473b250435bc554`. `separatedReviewRegistration.json` binds the twenty prepared request fingerprints, schema/image hashes, twelve context digests, pairings and per-call reserves. Source pixels, written character descriptions and host briefs are unchanged. Expected identity/quality labels remain outside requests. One image-only craft call is reused across each paired identity/medium brief. Eight craft plus twelve fidelity calls is the complete allowance.
+
+Order is fixed: craft Elsa, fidelity Elsa/Elsa and Elsa/Anna; craft Olaf, fidelity Olaf/Olaf and Olaf/Sven; craft Rumi, fidelity Rumi/Rumi and Rumi/Zoey; craft gallery, fidelity vector and watercolor; then craft and fidelity for construction, KPop Candidate B, Scene A and the lettering negative. No reranking, tuning or replacements mid-study.
+
+`separated-review-20260916-v1` uses fresh durable per-request claims in the existing owner-private artwork-attempt store. A request cannot run before all predecessors have reconciled results from the same deployment. The request bytes are checked again inside the SDK fetch, with one physical fetch maximum and SDK retries disabled. Candidate bytes and full evidence are read back after each write. Every row uses the calibration model, rejected status and no preview ID, so customer promotion remains unavailable even for a passing result.
+
+The server verifies exact hashes, model, normal end_turn, one text response, complete raw JSON and positive integer usage. Unaccounted cache usage, provider failure, incomplete output, malformed or contradictory reports, changed inputs, budget overrun and failed evidence retention stop and close the study. Complete honest uncertainty remains a rejected image and permits the next unrelated request. A valid negative artwork assessment does not itself stop the study. Both separate components must pass for a combined model pass; no score is raised or replaced.
+
+The fresh reserve is $2.50, not a provider-enforced dollar cap. Per-request planning reserves sum to $1.713 with 15,000 input tokens each plus bounded output maxima at standard $3/$15 per million input/output tokens. Actual usage is measured and reconciled per call; unknown usage remains unknown. A following call is blocked unless its reserve fits the remaining allowance. All calls complete or the first required failure closes the dataset; unused calls cannot be resumed under that closed allowance.
+
+This is retained-image reviewer validation, not fresh generation or launch qualification. Official character labels establish identity only. Scene A likeness/finish and Candidate B polish/purchase approvals remain positive and limited to their original assessment scope. The gallery's full human quality is unset; an earlier tentative gradient/texture defect claim was withdrawn. Do not relabel accepted human judgments, old model results or unrun cases to improve the outcome.
+
+Retain full component and combined reports, receipt bindings, physical counts, usage, timing, closure and before/after snapshots. Report validity separately from actual visual agreement. Existing customer reviewer calls and Production remain unchanged. The original eight-direction, twenty-plus-trials, 95%-human-approved-within-90-seconds release gate remains open.

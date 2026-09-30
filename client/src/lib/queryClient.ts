@@ -47,8 +47,9 @@ export async function apiRequestJson<T = any>(
   });
   const parsed = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const err = new Error(parsed?.error || `Request failed (${res.status})`) as Error & { authUrl?: string };
+    const err = new Error(parsed?.error || `Request failed (${res.status})`) as Error & { authUrl?: string; status: number };
     err.authUrl = parsed?.authUrl;
+    err.status = res.status;
     throw err;
   }
   return parsed as T;

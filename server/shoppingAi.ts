@@ -43,8 +43,8 @@ export async function generateShoppingAi(params: {
   themeName: string;
   guestCount: number;
   menuItems: { course: string; itemName: string }[];
-}): Promise<ShoppingSuggestion> {
-  const client = new Anthropic();
+}, options?: { maxRetries?: number }): Promise<ShoppingSuggestion> {
+  const client = new Anthropic(options);
   const menuSummary =
     params.menuItems.length > 0
       ? params.menuItems.map((m) => `${m.course}: ${m.itemName}`).join("; ")

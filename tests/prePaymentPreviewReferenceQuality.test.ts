@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { Event } from "@shared/schema";
 import type { Tier1Result } from "../server/aiFirst/tier1";
 import type { VisionVerdict } from "../server/aiFirst/visionGate";
+import { encodePng, readPngSize } from "../server/aiFirst/png";
 import { generateQualityLockedPreview } from "../server/prePaymentPreviewQuality";
 
 const event = {
@@ -14,6 +15,12 @@ const event = {
   paletteColors: "[]",
   estimatedGuestCount: 24,
 } as unknown as Event;
+
+function generatedPng(fill: number, width = 630, height = 1120): Buffer {
+  const rgb = new Uint8Array(width * height * 3);
+  rgb.fill(fill);
+  return encodePng({ width, height, rgb });
+}
 
 const tier1: Tier1Result = {
   passed: true,
@@ -55,12 +62,12 @@ describe("reference-led preview quality", () => {
     }];
     const generateImage = vi.fn()
       .mockResolvedValueOnce({
-        bytes: Buffer.alloc(50_000, 1),
+        bytes: generatedPng(1),
         dataUrl: "data:image/png;base64,FIRST",
         durationMs: 100,
       })
       .mockResolvedValueOnce({
-        bytes: Buffer.alloc(50_000, 2),
+        bytes: generatedPng(2),
         dataUrl: "data:image/png;base64,SECOND",
         durationMs: 100,
       });
@@ -78,7 +85,8 @@ describe("reference-led preview quality", () => {
 
     expect(result.kind).toBe("approved-image");
     if (result.kind !== "approved-image") throw new Error("expected approved image");
-    expect(result.dataUrl).toBe("data:image/png;base64,SECOND");
+    expect(result.dataUrl).toMatch(/^data:image\/png;base64,/);
+    expect(readPngSize(Buffer.from(result.dataUrl.split(",")[1], "base64"))).toEqual({ width: 630, height: 1120 });
     expect(result.model).toBe("gpt-image-1.5");
     expect(generateImage).toHaveBeenCalledTimes(2);
     expect(generateImage.mock.calls[0][0]).toEqual(expect.objectContaining({
@@ -100,7 +108,7 @@ describe("reference-led preview quality", () => {
 
   it("keeps generic no-reference preview generation on GPT Image 2 at medium quality", async () => {
     const generateImage = vi.fn(async () => ({
-      bytes: Buffer.alloc(50_000, 2),
+      bytes: generatedPng(2),
       dataUrl: "data:image/png;base64,APPROVED",
       durationMs: 100,
     }));

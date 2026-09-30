@@ -321,19 +321,20 @@ export function boxDownsampleRgb(image: DecodedImage, targetLongEdge: number): D
 
 /**
  * Minimal PNG encoder: IHDR (8-bit truecolour, colour type 2) + one IDAT
- * (filter-byte-0 scanlines, deflated) + IEND. The inverse of decodePng's
+ * (None or lossless Sub scanlines, deflated) + IEND. The inverse of decodePng's
  * IHDR/IDAT/IEND handling above, kept equally small on purpose — this only
  * ever needs to round-trip images this module itself produced or read.
  */
-export function encodePng(image: DecodedImage): Buffer {
+export function encodePng(image: DecodedImage, filter: "none" | "sub" = "none"): Buffer {
   const { width, height, rgb } = image;
   const stride = width * 3;
   const raw = Buffer.alloc((stride + 1) * height);
   for (let y = 0; y < height; y += 1) {
     const rowStart = y * (stride + 1);
-    raw[rowStart] = 0; // filter type "None"
+    raw[rowStart] = filter === "sub" ? 1 : 0;
     for (let x = 0; x < stride; x += 1) {
-      raw[rowStart + 1 + x] = rgb[y * stride + x];
+      const left = filter === "sub" && x >= 3 ? rgb[y * stride + x - 3] : 0;
+      raw[rowStart + 1 + x] = (rgb[y * stride + x] - left + 256) & 255;
     }
   }
 

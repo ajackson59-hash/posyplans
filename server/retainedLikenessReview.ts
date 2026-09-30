@@ -1,0 +1,232 @@
+/** One authorized reviewer calibration; no generation or customer activation. */
+import { createHash } from "node:crypto";
+import type { Event } from "@shared/schema";
+import { REVIEW_CALIBRATION_MODEL, type AiFirstArtworkAttemptStore, type ArtworkAttemptInput } from "./aiFirst/artworkAttemptStore";
+import { prepareReviewReferences, type ReviewReference } from "./aiFirst/reviewReferences";
+import { runVisionGate, type VisionVerdict } from "./aiFirst/visionGate";
+import { namedReferenceIdentityNotes } from "./namedReferenceResolver";
+import { buildQualityLockedPreviewBrief, customerVisiblePreviewBytes, detectNamedCreativeReferenceSync } from "./prePaymentPreviewQuality";
+import { SCENE_LIKENESS_EXPERIMENT } from "./retainedSceneRepaint";
+import { IDENTITY_COMPARISON_VERSION } from "./aiFirst/identityComparison";
+import { BLIND_LIKENESS_VERSION, runBlindLikenessReview, type BlindLikenessVerdict } from "./aiFirst/blindLikenessReview";
+
+const hash = (value: string | Buffer) => createHash("sha256").update(value).digest("hex");
+export const RETAINED_LIKENESS_REVIEW = {
+  datasetId: "meekah-reference-review-20260912-v1", eventId: 61,
+  sourceAttemptId: "293", referenceAttemptId: "289",
+  sourceHash: "3ed9ff2d1da11a7a8553272b071b16c521519efa638649ffb3c0bda430f6cc9e",
+  reviewedHash: "7d16340d64c38bf1a24f218b5db3f5e59666d6b1e2ff3d57ce26e972f18181f0",
+  hostBriefHash: SCENE_LIKENESS_EXPERIMENT.hostBriefHash,
+  referenceHash: SCENE_LIKENESS_EXPERIMENT.identity.sha256,
+};
+type ReviewRegistration = typeof RETAINED_LIKENESS_REVIEW & {
+  sourceStage?: "completed" | "identity-reference";
+  expectedIdentity?: boolean;
+  requireFeatureComparison?: boolean;
+  reviewerVersion?: string;
+  requiresCompletedDataset?: string;
+  streamDiagnostics?: boolean;
+  reviewKind?: "reference-only";
+  sourceInput?: "registered-preview";
+  originalSourceHash?: string;
+};
+/** New two-control authorization; previous review/generation claims are never reused. */
+export const FEATURE_COMPARISON_CONTROLS: Record<"mismatched" | "matched", ReviewRegistration> = {
+  mismatched: { ...RETAINED_LIKENESS_REVIEW, datasetId: "meekah-feature-comparison-20260912-v1-mismatched",
+    expectedIdentity: false, requireFeatureComparison: true },
+  matched: { ...RETAINED_LIKENESS_REVIEW, datasetId: "meekah-feature-comparison-20260912-v1-matched",
+    sourceAttemptId: "289", sourceStage: "identity-reference", sourceHash: RETAINED_LIKENESS_REVIEW.referenceHash,
+    reviewedHash: "942f52abc84831a9a606df2036a7bbd1d0e600927adfe072e45f6e0833fbb3c6",
+    expectedIdentity: true, requireFeatureComparison: true },
+};
+// First v1 dispatch (records296/297) returned a provider schema error. The
+// registered stop rule closes the pair; the unattempted match is not spare budget.
+const CLOSED_FEATURE_COMPARISON_DATASETS = new Set(Object.values(FEATURE_COMPARISON_CONTROLS).map(row => row.datasetId));
+
+/** User approved the corrected-schema pair after reviewing the v1 failure. */
+export const FEATURE_COMPARISON_V2_CONTROLS: Record<"mismatched" | "matched", ReviewRegistration> = {
+  mismatched: { ...FEATURE_COMPARISON_CONTROLS.mismatched,
+    datasetId: "meekah-feature-comparison-20260912-v2-mismatched", reviewerVersion: "reference-feature-comparison-v2" },
+  matched: { ...FEATURE_COMPARISON_CONTROLS.matched,
+    datasetId: "meekah-feature-comparison-20260912-v2-matched", reviewerVersion: "reference-feature-comparison-v2",
+    requiresCompletedDataset: "meekah-feature-comparison-20260912-v2-mismatched" },
+};
+
+/** September 14 continuation: measure the stable-schema pair without reopening old claims. */
+export const STREAM_COMPARISON_CONTROLS: Record<"mismatched" | "matched", ReviewRegistration> = {
+  mismatched: { ...FEATURE_COMPARISON_V2_CONTROLS.mismatched,
+    datasetId: "meekah-stream-comparison-20260914-v1-mismatched", streamDiagnostics: true },
+  matched: { ...FEATURE_COMPARISON_V2_CONTROLS.matched,
+    datasetId: "meekah-stream-comparison-20260914-v1-matched", streamDiagnostics: true,
+    requiresCompletedDataset: "meekah-stream-comparison-20260914-v1-mismatched" },
+};
+
+/** New reference-only comparison; all earlier combined-review claims stay consumed. */
+export const BLIND_COMPARISON_CONTROLS: Record<"mismatched" | "matched", ReviewRegistration> = {
+  mismatched: { ...STREAM_COMPARISON_CONTROLS.mismatched,
+    datasetId: "meekah-reference-only-20260914-v1-mismatched", reviewKind: "reference-only", reviewerVersion: BLIND_LIKENESS_VERSION },
+  matched: { ...STREAM_COMPARISON_CONTROLS.matched,
+    datasetId: "meekah-reference-only-20260914-v1-matched", reviewKind: "reference-only", reviewerVersion: BLIND_LIKENESS_VERSION,
+    requiresCompletedDataset: "meekah-reference-only-20260914-v1-mismatched" },
+};
+
+/** One accepted illustration, labeled by the owner before the reference-only review. */
+export const ACCEPTED_ILLUSTRATION_CONTROL: ReviewRegistration = {
+  ...RETAINED_LIKENESS_REVIEW,
+  datasetId: "meekah-accepted-illustration-20260914-v1",
+  sourceAttemptId: "registered-illustration-1-preview", sourceInput: "registered-preview",
+  sourceHash: "2d7c5da9009852b821431222c6c4bbbf76ab1049d78b225c1dce743c64bd262e",
+  reviewedHash: "2d7c5da9009852b821431222c6c4bbbf76ab1049d78b225c1dce743c64bd262e",
+  originalSourceHash: "06497230e29f57e2fabc95099fbe1eb3ba58f2f53e5e07ed59a4c573d2be7db9",
+  expectedIdentity: true, reviewKind: "reference-only", reviewerVersion: BLIND_LIKENESS_VERSION,
+};
+
+export async function runRetainedLikenessReview(event: Event, store: AiFirstArtworkAttemptStore,
+  options: { environment?: NodeJS.ProcessEnv; signal?: AbortSignal; review?: typeof runVisionGate;
+    blindReview?: typeof runBlindLikenessReview;
+    candidate?: Buffer;
+    registration?: ReviewRegistration } = {}) {
+  const registration: ReviewRegistration = options.registration ?? RETAINED_LIKENESS_REVIEW;
+  const environment = options.environment ?? process.env;
+  const referenceOnly = registration.reviewKind === "reference-only";
+  const blocked = (reason: string) => ({ kind: "blocked" as const, reason, customerActivation: "disabled" as const });
+  if (CLOSED_FEATURE_COMPARISON_DATASETS.has(registration.datasetId)) return blocked("feature-comparison-v1-closed-after-provider-error");
+  if (registration.reviewerVersion && registration.reviewerVersion !== (referenceOnly ? BLIND_LIKENESS_VERSION : IDENTITY_COMPARISON_VERSION)) return blocked("feature-comparison-version-mismatch");
+  if (environment.VERCEL_ENV !== "preview" || environment.VERCEL_GIT_COMMIT_REF !== "codex/launch-blockers" ||
+      event.id !== registration.eventId || !event.ownerToken || !store.recordOnce || options.signal?.aborted ||
+      event.eventName !== "Artwork evaluation" || event.eventType !== "Artwork evaluation" || event.inviteStatus !== "draft" ||
+      event.themeName !== "" || event.paletteColors !== "[]" || hash(event.vibeDescription) !== registration.hostBriefHash) {
+    return blocked("likeness-review-context-mismatch");
+  }
+  if (registration.requiresCompletedDataset) {
+    const completed = (await store.listForOwner(event.id, event.ownerToken)).filter(row =>
+      row.runId === registration.requiresCompletedDataset && row.reviewEvidence?.customerEvaluation?.stage === "completed");
+    const prior = completed[0], proof = prior?.reviewEvidence?.customerEvaluation;
+    const priorBlind = proof?.blindReview as BlindLikenessVerdict | undefined;
+    if (completed.length !== 1 || prior.status !== "rejected" || prior.previewId ||
+        proof?.customerActivation !== "disabled" || proof.reviewerVersion !== registration.reviewerVersion ||
+        proof.deploymentSha !== (environment.VERCEL_GIT_COMMIT_SHA ?? null) || proof.referenceHash !== registration.referenceHash ||
+        proof.criticRequests !== 1 || proof.referenceVerified !== true ||
+        !(referenceOnly ? ["identity-control-correct"] : ["identity-control-correct", "identity-control-incorrect"]).includes(String(proof.outcome)) ||
+        (referenceOnly ? proof.reviewKind !== "reference-only" || priorBlind?.unavailable !== false || priorBlind.decision !== "mismatch"
+          : prior.reviewEvidence?.verdict?.unavailable !== false)) return blocked("feature-comparison-prerequisite-unavailable");
+  }
+  const registeredPreview = registration.sourceInput === "registered-preview";
+  if (registeredPreview && (!referenceOnly || !options.candidate || options.candidate.length > 800_000 ||
+      hash(options.candidate) !== registration.sourceHash || registration.sourceHash !== registration.reviewedHash)) {
+    return blocked("likeness-review-registered-preview-mismatch");
+  }
+  const [source, reference] = await Promise.all([
+    registeredPreview ? Promise.resolve(undefined) : store.findById(event.id, event.ownerToken, registration.sourceAttemptId),
+    store.findById(event.id, event.ownerToken, registration.referenceAttemptId),
+  ]);
+  if (!reference || reference.status !== "rejected" || reference.previewId || reference.runId !== SCENE_LIKENESS_EXPERIMENT.datasetId ||
+      reference.reviewEvidence?.customerEvaluation?.stage !== "identity-reference" ||
+      reference.assetHash !== registration.referenceHash ||
+      (!registeredPreview && (!source || source.status !== "rejected" || source.previewId ||
+        source.runId !== SCENE_LIKENESS_EXPERIMENT.datasetId || source.assetHash !== registration.sourceHash ||
+        source.reviewEvidence?.customerEvaluation?.stage !== (registration.sourceStage ?? "completed")))) {
+    return blocked("likeness-review-source-mismatch");
+  }
+  const sourceBytes = registeredPreview ? Buffer.from(options.candidate!) : Buffer.from(source!.assetBytesBase64, "base64");
+  const identityBytes = Buffer.from(reference.assetBytesBase64, "base64");
+  if (hash(sourceBytes) !== registration.sourceHash || hash(identityBytes) !== registration.referenceHash) {
+    return blocked("likeness-review-input-integrity");
+  }
+  const reviewed = customerVisiblePreviewBytes(sourceBytes);
+  if (hash(reviewed) !== registration.reviewedHash) return blocked("likeness-review-teaser-integrity");
+  const referenceImages: ReviewReference[] = [{ bytes: identityBytes, sha256: registration.referenceHash,
+    sourceUrl: SCENE_LIKENESS_EXPERIMENT.identity.sourceUrl, role: "identity", subject: "Meekah",
+    region: "The named co-host's face, hair and visible natural proportions; identity only" }];
+  try { prepareReviewReferences(referenceImages); } catch { return blocked("likeness-review-reference-invalid"); }
+  const named = detectNamedCreativeReferenceSync(event.vibeDescription);
+  const { brief, concept } = await buildQualityLockedPreviewBrief(event, named ? namedReferenceIdentityNotes(named) : "", named);
+  // The user's negative judgment and this expected result never enter the model request.
+  const evidence: Record<string, unknown> = { ...registration, stage: "claimed", expectedMeekahIdentity: registration.expectedIdentity ?? false,
+    imageProviderCalls: 0, classifierRequests: 0, criticRequests: null,
+    deploymentSha: environment.VERCEL_GIT_COMMIT_SHA ?? null, customerActivation: "disabled",
+    uninterruptedCustomerLatencyMs: null };
+  let verdict: VisionVerdict | undefined;
+  const base: ArtworkAttemptInput = { eventId: event.id, ownerToken: event.ownerToken,
+    runId: registration.datasetId, directionIndex: 0, attempt: 0, status: "rejected", previewId: null,
+    bytes: sourceBytes, concept, model: REVIEW_CALIBRATION_MODEL, quality: "not-applicable", size: null,
+    costUsdMicros: 0, failureCodes: ["calibration-only-no-customer-approval"], tier1Findings: [], visionScores: null };
+  const save = async (stage: string) => {
+    evidence.stage = stage;
+    const saved = await store.recordOnce!({ ...base, idempotencyKey: `${registration.datasetId}:${stage}`,
+      visionScores: verdict?.scores ?? null, reviewEvidence: { version: 1, reviewedAssetHash: registration.reviewedHash,
+        verdict: verdict ?? null, generationDurationMs: 0, customerEvaluation: structuredClone(evidence) } });
+    if (!saved.created || !saved.record) throw new Error("likeness-review-claim-or-retention");
+    const read = await store.findById(event.id, event.ownerToken, saved.record.id);
+    if (!read || read.status !== "rejected" || read.previewId || read.assetHash !== registration.sourceHash ||
+        hash(Buffer.from(read.assetBytesBase64, "base64")) !== registration.sourceHash ||
+        JSON.stringify(read.reviewEvidence?.customerEvaluation) !== JSON.stringify(evidence)) {
+      throw new Error("likeness-review-claim-or-retention");
+    }
+    return read.id;
+  };
+  try { await save("claimed"); } catch { return blocked("likeness-review-already-claimed-or-retention-failed"); }
+  const signal = AbortSignal.any([AbortSignal.timeout(45_000), ...(options.signal ? [options.signal] : [])]);
+  const started = Date.now();
+  try {
+    signal.throwIfAborted();
+    if (referenceOnly) {
+      // Explicit pixel-only arguments: never forward brief, concept, reference labels or expected outcomes.
+      const review = await (options.blindReview ?? runBlindLikenessReview)({ candidate: reviewed, reference: identityBytes, signal });
+      evidence.blindReview = review;
+      evidence.criticRequests = review.requestCount;
+      evidence.criticUsage = review.usage;
+      evidence.criticMs = review.durationMs;
+      const referenceVerified = review.inputHashes.reference === registration.referenceHash && review.inputHashes.candidate === registration.reviewedHash;
+      evidence.referenceVerified = referenceVerified;
+      const accounted = referenceVerified && !signal.aborted && !review.unavailable && review.requestCount === 1 &&
+        review.version === BLIND_LIKENESS_VERSION && review.scope === "reference-likeness-only" &&
+        review.requestTimings.length === 1 && review.requestTimings[0].outcome === "completed" && review.requestTimings[0].usageStatus === "complete" &&
+        [review.usage.inputTokens, review.usage.outputTokens].every(n => Number.isSafeInteger(n) && n >= 0);
+      const identityCorrect = accounted && review.comparison?.valid === true && review.issues.length === 0 &&
+        review.decision === (registration.expectedIdentity ? "match" : "mismatch");
+      evidence.identityCorrect = Boolean(identityCorrect);
+      evidence.outcome = !accounted ? "review-unavailable" : identityCorrect ? "identity-control-correct" : "identity-control-incorrect";
+      evidence.elapsedMs = Date.now() - started;
+      const attemptId = await save("completed");
+      return { kind: "reviewed" as const, attemptId, review, evidence };
+    }
+    verdict = await (options.review ?? runVisionGate)({ bytes: reviewed, brief, concept, referenceImages,
+      reviewMode: "teaser", maxFormatRepairs: 0, signal, streamDiagnostics: registration.streamDiagnostics });
+    evidence.criticRequests = verdict.requestCount ?? null;
+    evidence.criticUsage = verdict.usage;
+    evidence.criticMs = verdict.durationMs;
+    const proof = verdict.referenceEvidence;
+    const referenceVerified = proof?.length === 1 && proof[0].role === "identity" &&
+      "subject" in proof[0] && proof[0].subject === "Meekah" && proof[0].sha256 === registration.referenceHash;
+    const timingAccounted = !registration.streamDiagnostics || (verdict.requestTimings?.length === 1 &&
+      verdict.requestTimings[0].outcome === "completed" && verdict.requestTimings[0].usageStatus === "complete");
+    const accounted = timingAccounted && referenceVerified && !signal.aborted && !verdict.unavailable && verdict.requestCount === 1 &&
+      [verdict.usage.inputTokens, verdict.usage.outputTokens].every(n => Number.isSafeInteger(n) && n >= 0);
+    const observed = verdict.requiredPresent.find(row => row.requirement.startsWith("Meekah "));
+    const mismatchDetected = accounted && observed?.present === false && Boolean(observed.evidence?.trim()) &&
+      verdict.teaserChecks?.identity.required === true && verdict.teaserChecks.identity.accurate === false;
+    evidence.referenceVerified = Boolean(referenceVerified);
+    evidence.mismatchDetected = Boolean(mismatchDetected);
+    evidence.outcome = !accounted ? "review-unavailable" : mismatchDetected ? "likeness-mismatch-detected" : "likeness-mismatch-missed";
+    if (registration.requireFeatureComparison) {
+      const comparison = verdict.identityComparison;
+      const target = comparison?.comparisons.find(row => row.subject === "Meekah" && row.referenceIndex === 1);
+      const expected = registration.expectedIdentity === true;
+      const identityCorrect = accounted && comparison?.version === IDENTITY_COMPARISON_VERSION && comparison.valid &&
+        comparison.comparisons.length === 1 && target?.decision === (expected ? "match" : "mismatch") &&
+        observed?.present === expected && Boolean(observed.evidence?.trim()) &&
+        (expected || verdict.teaserChecks?.identity.accurate === false);
+      evidence.identityCorrect = Boolean(identityCorrect);
+      evidence.outcome = !accounted ? "review-unavailable" : identityCorrect ? "identity-control-correct" : "identity-control-incorrect";
+    }
+    evidence.elapsedMs = Date.now() - started;
+    const attemptId = await save("completed");
+    return { kind: "reviewed" as const, attemptId, verdict, evidence };
+  } catch {
+    evidence.outcome = "review-unavailable";
+    evidence.elapsedMs = Date.now() - started;
+    const attemptId = await save("unavailable");
+    return { kind: "unavailable" as const, attemptId, evidence };
+  }
+}

@@ -23,10 +23,24 @@ import { EVENT_TYPES } from "@/lib/types";
 import type { EventRecord } from "@/lib/types";
 import { touchRecentEvent } from "@/lib/eventRecovery";
 import { useToast } from "@/hooks/use-toast";
+import { useEventActivity } from "@/hooks/useEventActivity";
 import { Sparkles, ArrowLeft, ArrowRight, Loader2, RefreshCw } from "lucide-react";
 
 const STEPS = ["basics", "vibe", "sizing", "review"] as const;
 type Step = (typeof STEPS)[number];
+
+// Keep diagnostics useful without copying response bodies, private URLs,
+// owner tokens or event details into browser logs.
+function reportIntakeSaveFailure(error: unknown, step: Step) {
+  const statusMatch = error instanceof Error ? /^([45]\d\d):/.exec(error.message) : null;
+  console.warn("[Posy] Intake save failed", JSON.stringify({
+    step,
+    status: statusMatch ? Number(statusMatch[1]) : null,
+    category: statusMatch ? "http_rejection"
+      : error instanceof SyntaxError ? "invalid_response"
+      : error instanceof TypeError ? "connection_or_client_error" : "unknown",
+  }));
+}
 
 const STEP_LABELS: Record<Step, string> = {
   basics: "The basics",
@@ -48,6 +62,8 @@ export default function Intake() {
   const { toast } = useToast();
 
   const [ownerToken, setOwnerToken] = useState(params.ownerToken || "");
+  const [confirmedActivityToken, setConfirmedActivityToken] = useState<string>();
+  useEventActivity(confirmedActivityToken, Boolean(confirmedActivityToken));
   const [step, setStep] = useState<Step>("basics");
   const [creating, setCreating] = useState(!params.ownerToken);
   const [startError, setStartError] = useState<string | null>(null);
@@ -101,6 +117,7 @@ export default function Intake() {
       ownerTokenRef.current = token;
       createdHereRef.current = true;
       setOwnerToken(token);
+      setConfirmedActivityToken(token);
       touchRecentEvent(token);
       navigate(`/intake/${token}`, { replace: true });
       clearPendingEventStartKey(startKey);
@@ -140,6 +157,7 @@ export default function Intake() {
           `/api/events/owner/${resumeToken}`,
         );
         const event = data.event;
+        setConfirmedActivityToken(resumeToken);
         const edited = editedRef.current;
         if (!edited.has("eventName")) setEventName(event.eventName || "");
         if (!edited.has("eventType")) setEventType(event.eventType || "Birthday Party");
@@ -213,7 +231,8 @@ export default function Intake() {
     try {
       await saveIntake.mutateAsync({ token, patch });
       if (next) setStep(next);
-    } catch {
+    } catch (error) {
+      reportIntakeSaveFailure(error, step);
       toast({
         title: "Couldn't save that step",
         description: "Your progress up to the previous step is still safe. Please try again.",
@@ -240,7 +259,8 @@ export default function Intake() {
     onSuccess: (token) => {
       navigate(`/draft-generating/${token}`);
     },
-    onError: () => {
+    onError: (error) => {
+      reportIntakeSaveFailure(error, "review");
       // Startup failures already have a calm, persistent inline recovery. Only
       // show a save error once an event token actually exists.
       if (ownerTokenRef.current) {

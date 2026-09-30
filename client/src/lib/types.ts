@@ -19,8 +19,8 @@ export interface EventRecord {
   inviteDesignConceptJson: string;
   inviteIllustrationUrl: string;
   // Full-custom invite: a finished design used as-is, with no Posy styling.
-  // inviteRenderMode === "custom" activates it; "" (or absent, for events
-  // created before this feature) keeps today's concept-driven rendering.
+  // "custom" shows the finished upload; "customer-artwork" shows the applied
+  // saved image at full aspect ratio. Empty/absent keeps legacy concept layouts.
   customInviteImageUrl?: string;
   inviteRenderMode?: string;
   // Coordinated design suite (see shared/themeDna.ts). Empty/absent means

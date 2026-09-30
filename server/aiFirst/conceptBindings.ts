@@ -5,7 +5,7 @@
 import type { AiFirstConcept, FocalStrategy } from "@shared/aiFirstInvite";
 import { canonicalTypeGeometry, validateLayoutBeforeGeneration } from "@shared/aiFirstLayout";
 import type { EventBrief } from "./brief";
-import { subjectFamiliesForBrief } from "./conceptPreflight";
+import { hasRequestedConstructionMachine, subjectFamiliesForBrief } from "./conceptPreflight";
 
 function escaped(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -90,6 +90,13 @@ function appendSentence(value: string, sentence: string, maxLength: number): str
   return `${trimmed.slice(0, available).trimEnd()}${suffix}`;
 }
 
+function appendArtworkSentence(value: string, sentence: string): string {
+  const appended = `${value.trim()} ${sentence}.`;
+  // If it cannot fit intact, leave it for the existing text-only preflight
+  // correction. Event facts never justify deleting creative instructions.
+  return appended.length <= 1200 ? appended : value;
+}
+
 export function bindConceptsToBrief(
   candidates: readonly AiFirstConcept[],
   brief: EventBrief,
@@ -115,7 +122,7 @@ export function bindConceptsToBrief(
       description = appendSentence(description, `Created for a ${milestonePhrase}`, 220);
     }
     if (milestone && !milestone.test(prompt)) {
-      prompt = appendSentence(prompt, `Artwork for a ${milestonePhrase} celebration`, 1200);
+      prompt = appendArtworkSentence(prompt, `Artwork for a ${milestonePhrase} celebration`);
     }
 
     if (construction && candidate.focalStrategy) {
@@ -125,7 +132,7 @@ export function bindConceptsToBrief(
       // ordered construction subject map, so enforce its three machine-free
       // lanes deterministically before the whole-quartet gate. The iconic
       // detail remains the sole model-led machinery direction.
-      if (candidate.focalStrategy !== "iconic-detail" && NAMED_CONSTRUCTION_MACHINE.test(artBrief)) {
+      if (!hasRequestedConstructionMachine(brief) && candidate.focalStrategy !== "iconic-detail" && NAMED_CONSTRUCTION_MACHINE.test(artBrief)) {
         medium = medium
           .replace(NAMED_CONSTRUCTION_MACHINE_GLOBAL, "")
           .replace(/\s{2,}/g, " ")
@@ -136,7 +143,7 @@ export function bindConceptsToBrief(
 
       const boundArtBrief = `${medium} ${composition} ${prompt}`;
       const cueCount = CONSTRUCTION_GROUPS.filter((pattern) => pattern.test(boundArtBrief)).length;
-      if (cueCount < 2) prompt = appendSentence(prompt, CONSTRUCTION_BINDINGS[candidate.focalStrategy], 1200);
+      if (cueCount < 2) prompt = appendArtworkSentence(prompt, CONSTRUCTION_BINDINGS[candidate.focalStrategy]);
       if (!/\b(construction|builder|job ?site|building site|hard hat|dump truck|excavator|bulldozer)\b/i.test(description)) {
         description = appendSentence(description, "An unmistakable construction and little-builder direction", 220);
       }
