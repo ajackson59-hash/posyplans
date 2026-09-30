@@ -33,13 +33,13 @@ type Step = (typeof STEPS)[number];
 // owner tokens or event details into browser logs.
 function reportIntakeSaveFailure(error: unknown, step: Step) {
   const statusMatch = error instanceof Error ? /^([45]\d\d):/.exec(error.message) : null;
-  console.warn("[Posy] Intake save failed", {
+  console.warn("[Posy] Intake save failed", JSON.stringify({
     step,
     status: statusMatch ? Number(statusMatch[1]) : null,
     category: statusMatch ? "http_rejection"
       : error instanceof SyntaxError ? "invalid_response"
       : error instanceof TypeError ? "connection_or_client_error" : "unknown",
-  });
+  }));
 }
 
 const STEP_LABELS: Record<Step, string> = {
