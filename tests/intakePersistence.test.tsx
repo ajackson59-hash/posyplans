@@ -187,9 +187,9 @@ describe("Intake — clearing a previously-saved budget", () => {
       apiRequest.mockRejectedValueOnce(error);
       apiRequest.mockClear();
       fireEvent.click(screen.getByTestId("button-intake-next-basics"));
-      await waitFor(() => expect(warning).toHaveBeenCalledWith("[Posy] Intake save failed", JSON.stringify({
-        step: "basics", category, status,
-      })));
+      await waitFor(() => expect(warning).toHaveBeenCalled());
+      expect(warning.mock.calls[0][0]).toBe("[Posy] Intake save failed");
+      expect(JSON.parse(warning.mock.calls[0][1])).toEqual({ step: "basics", category, status });
       expect(valueOf("input-intake-event-name")).toBe("Private event name");
       expect(screen.queryByTestId("input-intake-vibe")).toBeNull();
       expect(apiRequest).toHaveBeenCalledTimes(1);
