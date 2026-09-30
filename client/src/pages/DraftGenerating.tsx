@@ -893,7 +893,6 @@ export default function DraftGenerating() {
                   "Full planning and revision tools",
                   "Unlimited plan regenerations",
                   "Alternate menu, timeline & invite drafts",
-                  "Priority AI generation queue",
                 ].map((f) => (
                   <li key={f} className="flex items-start gap-1.5 text-xs text-muted-foreground">
                     <Check className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
