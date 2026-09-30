@@ -92,6 +92,52 @@ it('keeps and revises an imported original through the customer HTTP routes with
 });
 
 describe('customer artwork durable request boundary', () => {
+  it('keeps Production allowance separate from Preview limits and spending enablement', () => {
+    const production = { VERCEL_ENV: 'production', POSY_CUSTOMER_ARTWORK_EVALUATION_LIMITS: '{"99002":1}' };
+    expect(customerArtworkRequestLimit(event, production)).toBe(4);
+    expect(customerArtworkRequestLimit(event, { ...production, POSY_PRODUCTION_ARTWORK_REQUEST_LIMIT: '6' })).toBe(6);
+    expect(customerArtworkRequestLimit(event, { ...env, POSY_PRODUCTION_ARTWORK_REQUEST_LIMIT: '6' })).toBe(4);
+    expect(customerArtworkGenerationEnabled({ ...production, POSY_PRODUCTION_ARTWORK_REQUEST_LIMIT: '6' })).toBe(false);
+  });
+  it.each(['', '0', '-1', '1.5', '6 ', ' 6', '06', 'Infinity', '101', '9007199254740993'])(
+    'closes new Production requests for invalid allowance %s', async limit => {
+      event = { ...event, customerArtworkEnabled: true };
+      const server = app({ VERCEL_ENV: 'production', POSY_PRODUCTION_ARTWORK_GENERATION: 'true',
+        POSY_PRODUCTION_ARTWORK_REQUEST_LIMIT: limit });
+      expect((await request(server).get(`${owner}/artwork`)).body.generationEnabled).toBe(false);
+      expect((await request(server).post(`${owner}/prepayment-preview`).send({ email: 'offline@example.com' })).status).toBe(503);
+      expect(jobs).toHaveLength(0); expect(generate).not.toHaveBeenCalled();
+    });
+  it('allows three paid events one first image and five edits each with a configured six-request allowance', async () => {
+    paid = true;
+    const server = app({ VERCEL_ENV: 'production', POSY_PRODUCTION_ARTWORK_GENERATION: 'true',
+      POSY_PRODUCTION_ARTWORK_REQUEST_LIMIT: '6' });
+    for (const id of [99002, 99003, 99004]) {
+      event = { ...base, id, customerArtworkEnabled: true };
+      expect((await request(server).post(`${owner}/prepayment-preview`).send({ email: 'offline@example.com' })).status).toBe(202);
+      await jobs.shift()!();
+      for (let edit = 0; edit < 5; edit++) {
+        const row = (await store.get(id))!;
+        expect((await request(server).post(`${owner}/artwork/revise`).send(revision(row))).status).toBe(202);
+        await jobs.shift()!();
+      }
+      const row = (await store.get(id))!;
+      expect(row.attempts).toHaveLength(6);
+      expect((await request(server).post(`${owner}/artwork/revise`).send(revision(row))).status).toBe(429);
+      expect((await request(server).post(`${owner}/artwork/select`).send(selection(row, 5))).status).toBe(200);
+      expect((await request(server).get(`${owner}/artwork`)).body).toMatchObject({ requestsRemaining: 0, canContinue: true });
+    }
+    expect(generate).toHaveBeenCalledTimes(18);
+    expect(jobs).toHaveLength(0);
+  });
+  it('still blocks configured Production requests when the shared spend policy is unavailable', async () => {
+    event = { ...event, customerArtworkEnabled: true };
+    store.spendingAllowed = false;
+    const server = app({ VERCEL_ENV: 'production', POSY_PRODUCTION_ARTWORK_GENERATION: 'true',
+      POSY_PRODUCTION_ARTWORK_REQUEST_LIMIT: '6' });
+    expect((await request(server).post(`${owner}/prepayment-preview`).send({ email: 'offline@example.com' })).status).toBe(503);
+    expect(jobs).toHaveLength(0); expect(generate).not.toHaveBeenCalled();
+  });
   it.each(['', '{}', 'null', '[]', 'invalid', '{"99003":2}', '{"99002":0}', '{"99002":5}',
     '{"99002":"2"}', '{"99002":1.5}', '{"99002":2,"bad":1}', '{"099002":2}'])(
     'rejects an absent event or invalid evaluation allowance before scheduling: %s', async limits => {
