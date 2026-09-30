@@ -174,6 +174,31 @@ describe("Intake — genuine resume path", () => {
 });
 
 describe("Intake — clearing a previously-saved budget", () => {
+  it.each([
+    [new Error("403: private response with owner-token-abc and host@example.test"), "http_rejection", 403],
+    [new TypeError("Failed to fetch private owner-token-abc"), "connection_or_client_error", null],
+    [new SyntaxError("Unexpected token in private response"), "invalid_response", null],
+  ])("preserves an unsaved step and logs only safe failure metadata: %s", async (error, category, status) => {
+    const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      apiRequestJson.mockResolvedValue({ event: { ...SERVER_DEFAULTS, eventName: "Private event name" } });
+      renderIntake(`/intake/${TOKEN}`);
+      await screen.findByTestId("input-intake-event-name");
+      apiRequest.mockRejectedValueOnce(error);
+      apiRequest.mockClear();
+      fireEvent.click(screen.getByTestId("button-intake-next-basics"));
+      await waitFor(() => expect(warning).toHaveBeenCalledWith("[Posy] Intake save failed", {
+        step: "basics", category, status,
+      }));
+      expect(valueOf("input-intake-event-name")).toBe("Private event name");
+      expect(screen.queryByTestId("input-intake-vibe")).toBeNull();
+      expect(apiRequest).toHaveBeenCalledTimes(1);
+      expect(JSON.stringify(warning.mock.calls)).not.toMatch(/owner-token|host@|Private event|private response/);
+    } finally {
+      warning.mockRestore();
+    }
+  });
+
   // QA found that a host who set a budget, then went back and cleared the
   // field, kept the old budget on the server: the client only included
   // `budgetCeiling` in the PATCH body when it parsed to a number, so an
