@@ -11,6 +11,18 @@ import type { Request } from 'express';
 import { createServer } from "node:http";
 import type { Server } from "node:http";
 import { registerRoutes } from "./routes";
+import { registerInitialPreviewRoute } from "./initialPreviewRoute";
+import { registerSmsInvitationRoutes } from "./smsInvitationRoutes";
+import { registerEventStartupRoutes } from "./eventStartupRoutes";
+import { registerEmailDiagnosticRoutes } from "./emailDiagnosticRoutes";
+import { registerEventRecoveryRoutes } from "./eventRecoveryRoutes";
+import { registerPrePaymentPreviewQualityRoutes } from "./prePaymentPreviewQualityRoutes";
+import { registerEventArtworkRoutes } from "./eventArtworkRoutes";
+import { registerHumanArtworkReviewRoutes } from "./humanArtworkReviewRoutes";
+import { registerCustomerArtworkRoutes } from "./customerArtworkRoutes";
+import { registerPlanRegenerationRoutes } from "./planRegenerationRoutes";
+import { registerPlusLinkRoutes } from "./plusLinkRoutes";
+import { registerRetentionActivityRoutes } from "./retentionActivityRoutes";
 
 declare module "http" {
   interface IncomingMessage {
@@ -33,15 +45,6 @@ function redactSensitivePath(path: string): string {
   return path
     .replace(/(\/owner\/)[^/]+/g, "$1[REDACTED]")
     .replace(/(\/guest\/)[^/]+/g, "$1[REDACTED]");
-}
-
-function redactSensitiveJson(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(redactSensitiveJson);
-  if (!value || typeof value !== "object") return value;
-  return Object.fromEntries(Object.entries(value as Record<string, unknown>).map(([key, entry]) => {
-    if (/token/i.test(key)) return [key, "[REDACTED]"];
-    return [key, redactSensitiveJson(entry)];
-  }));
 }
 
 // Builds a fresh Express app + companion http.Server, wired with the shared
@@ -80,22 +83,12 @@ export function createExpressApp(): { app: express.Express; httpServer: Server }
   app.use((req, res, next) => {
     const start = Date.now();
     const path = redactSensitivePath(req.path);
-    let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-    const originalResJson = res.json;
-    res.json = function (bodyJson, ...args) {
-      capturedJsonResponse = bodyJson;
-      return originalResJson.apply(res, [bodyJson, ...args]);
-    };
-
     res.on("finish", () => {
       const duration = Date.now() - start;
       if (path.startsWith("/api")) {
-        let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-        if (capturedJsonResponse) {
-          logLine += ` :: ${JSON.stringify(redactSensitiveJson(capturedJsonResponse))}`;
-        }
-
+        // Never copy response bodies into logs: credentials can be nested in
+        // URLs, and bodies also carry email, guest details and artwork bytes.
+        const logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
         log(logLine);
       }
     });
@@ -127,7 +120,26 @@ export function registerApiNotFoundHandler(app: express.Express): void {
 export function ensureRoutesRegistered(app: express.Express, httpServer: Server): Promise<void> {
   if (!readyPromise) {
     readyPromise = (async () => {
+      registerRetentionActivityRoutes(app);
+      // Register small reliability-sensitive endpoints first. The recovery
+      // route intentionally precedes its legacy equivalent in routes.ts so it
+      // can provide accurate service health and a traceable support reference.
+      registerEventStartupRoutes(app);
+      registerEventRecoveryRoutes(app);
+      registerHumanArtworkReviewRoutes(app);
+      registerCustomerArtworkRoutes(app);
+      registerPlanRegenerationRoutes(app);
+      registerPlusLinkRoutes(app);
+      // The quality-locked prepayment preview intentionally precedes the
+      // legacy teaser in routes.ts. Raw provider output is never customer-
+      // visible: Preview defaults to a deterministic direction card until the
+      // strict GPT Image 2 + vision benchmark is explicitly enabled.
+      registerPrePaymentPreviewQualityRoutes(app);
+      registerEventArtworkRoutes(app);
       await registerRoutes(httpServer, app);
+      registerInitialPreviewRoute(app);
+      registerSmsInvitationRoutes(app);
+      registerEmailDiagnosticRoutes(app);
       registerApiNotFoundHandler(app);
 
       app.use((err: any, _req: Request, res: Response, next: NextFunction) => {

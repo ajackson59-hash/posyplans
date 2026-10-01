@@ -73,11 +73,13 @@ describe("boxDownsampleRgb", () => {
 
   it("genuinely destroys detail: a downsampled quadrant image no longer has sharp boundaries", () => {
     const original = quadrantImage(400);
-    const small = boxDownsampleRgb(original, 24);
+    // Use an odd target so the centre output pixel necessarily spans the
+    // source quadrant boundary. An even 24px grid can align perfectly at 50%,
+    // which tests geometry rather than whether area averaging is working.
+    const small = boxDownsampleRgb(original, 23);
 
-    // At this target size the box windows straddle quadrant boundaries, so
-    // averaged pixels near the centre must be a blend, not a pure channel —
-    // proof the four flat colours were actually mixed, not just resized.
+    // The centre box straddles all four quadrants, so the resulting pixel must
+    // be blended rather than one of the source's pure 0/255 channel values.
     const midX = Math.floor(small.width / 2);
     const midY = Math.floor(small.height / 2);
     const i = (midY * small.width + midX) * 3;

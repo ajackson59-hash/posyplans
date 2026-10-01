@@ -1,0 +1,58 @@
+{
+  "status": "prepared_not_applied",
+  "target_project": "jvioxjetpqafkbwqihto",
+  "observed_production_commit": "db829a1353340eab3444cd9efc14c6779c46159e",
+  "observed_production_deployment": "dpl_JDVZRMLpPEbfoP6LREzQxdZKikAi",
+  "production_spending_authorized": false,
+  "migrations": [
+    {
+      "path": "supabase/migrations/20260831040000_ai_first_artwork_attempt_idempotency.sql",
+      "sha256": "839f4576fa212a9dd93f98bfd93aaab515b46bfab546f9bf9e28a1c296bc22fe"
+    },
+    {
+      "path": "supabase/migrations/20260917224730_human_artwork_reviews.sql",
+      "sha256": "f8d780dd0ed4afb0e1bfc591bdfa80d9671e0fe33c67751a598e31e508e19905"
+    },
+    {
+      "path": "supabase/migrations/20260923174419_customer_artwork_sessions.sql",
+      "sha256": "4718892f847b410b984d65e1da2ac1698310832da22a6869574cef48653ad323"
+    },
+    {
+      "path": "supabase/migrations/20260925042025_staged_plan_regenerations.sql",
+      "sha256": "33bc123be1039f846af58678d32bb67cf9a9385653e534125e099eadc2fa8c8c"
+    },
+    {
+      "path": "supabase/migrations/20260926022248_image_spend_guard.sql",
+      "sha256": "3854a84b98f5e8257e2a4f024ea4486d973de4bea2f0cc12799b7291f305615b"
+    },
+    {
+      "path": "supabase/migrations/20260926022655_verified_plus_memberships.sql",
+      "sha256": "7b7910c7ef8785f72c11dc235384df0e0ac6b65a7f549665563b571025367430"
+    },
+    {
+      "path": "supabase/migrations/20260926031348_plus_email_verifications.sql",
+      "sha256": "a140e5b20bed3420a6f3545d3747d2843db4d93f7d89d72f8a882fa76fff46cb"
+    },
+    {
+      "path": "supabase/migrations/20260926043634_image_spend_reconciliation_audit.sql",
+      "sha256": "385803b06fc6b47b60c89c134f03277e4a2ab0b670a221ab6eccf10b0b11dc98"
+    },
+    {
+      "path": "supabase/migrations/20260926161620_image_spend_bounded_continuation.sql",
+      "sha256": "c17dc4191838da2cbcd0d59d95d703f9e40af44730188f8eec0093ed2021134a"
+    },
+    {
+      "path": "supabase/migrations/20260927205625_production_artwork_policy.sql",
+      "sha256": "88fcb0bbae98c01f6ac3a9936f7018984bccb28d6c25c6212ce3f9df006f9059"
+    }
+  ],
+  "stop_conditions": [
+    "Target/schema/history drift",
+    "Any duplicate non-null legacy image idempotency key",
+    "Unresolved existing paid membership provenance",
+    "Provider/image launch scope not accepted",
+    "Production Stripe live mode, products and webhook not verified",
+    "Retention/deletion process not closed",
+    "Missing final Production release authorization"
+  ]
+}

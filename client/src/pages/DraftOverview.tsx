@@ -14,6 +14,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import type { ReadinessScoreResult } from "@shared/readinessScore";
+import { useEventActivity } from "@/hooks/useEventActivity";
 
 // Design Spec §1, State 3 — "the single most important screen in this
 // spec." A one-page synthesis a host lands on right after the AI Master
@@ -51,6 +52,7 @@ export default function DraftOverview() {
     queryKey: [`/api/events/owner/${ownerToken}/master-planner/draft-overview`],
     enabled: !!ownerToken,
   });
+  useEventActivity(ownerToken, Boolean(data));
 
   if (isLoading || !data) {
     return (

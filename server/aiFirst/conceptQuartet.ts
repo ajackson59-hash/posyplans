@@ -9,8 +9,9 @@
 import { buildArtworkPrompt, type AiFirstConcept, type FocalStrategy } from "@shared/aiFirstInvite";
 import { validateLayoutBeforeGeneration } from "@shared/aiFirstLayout";
 import type { EventBrief } from "./brief";
-import { preflightConceptForBrief, subjectFamiliesForBrief } from "./conceptPreflight";
+import { hasRequestedConstructionMachine, preflightConceptForBrief, subjectFamiliesForBrief } from "./conceptPreflight";
 import { buildArtworkConstraints } from "./prompt";
+import { conflictsWithRequestedMedium, resolveArtDirection } from "./artDirection";
 
 export const REQUIRED_CONCEPT_QUARTET_SIZE = 4;
 
@@ -132,10 +133,6 @@ function milestonePattern(milestone: string): RegExp | null {
 }
 
 function dominantMachine(concept: AiFirstConcept): string | null {
-  // Provider prompts are the spend boundary. A concept cannot hide a
-  // repeated hero machine in `art.prompt` while keeping `composition`
-  // generic: every strategy is judged from the complete art brief that will
-  // actually be sent to the image model.
   const focalText = `${concept.art.medium} ${concept.art.composition} ${concept.art.prompt}`;
   return MACHINE_PATTERNS.find(([, pattern]) => pattern.test(focalText))?.[0] ?? null;
 }
@@ -166,6 +163,7 @@ export function preflightConceptQuartet(
   const explicitBackyardCelebration = BACKYARD_CUE.test(identity);
   const milestone = milestonePattern(brief.milestone);
   const construction = subjectFamiliesForBrief(brief).some((family) => family.id === "construction");
+  const requestedMachine = construction && hasRequestedConstructionMachine(brief);
 
   if (candidates.length !== REQUIRED_CONCEPT_QUARTET_SIZE) {
     errors.push(
@@ -175,6 +173,9 @@ export function preflightConceptQuartet(
 
   concepts.forEach((concept, index) => {
     const label = `concept ${index + 1} (${concept.conceptName})`;
+    if (conflictsWithRequestedMedium(brief, concept.art.medium)) {
+      addPerConceptError(index, `${label} substitutes another medium for the host-requested artwork treatment`);
+    }
     const artBrief = `${concept.art.medium} ${concept.art.composition} ${concept.art.prompt}`;
     const subject = preflightConceptForBrief(concept, brief);
     const layout = validateLayoutBeforeGeneration(concept);
@@ -201,7 +202,7 @@ export function preflightConceptQuartet(
     }
 
     if (construction && concept.focalStrategy) {
-      if (!CONSTRUCTION_STRATEGY_CUES[concept.focalStrategy].test(artBrief)) {
+      if (!requestedMachine && !CONSTRUCTION_STRATEGY_CUES[concept.focalStrategy].test(artBrief)) {
         addPerConceptError(index, `${label} does not deliver its ${concept.focalStrategy} construction strategy`);
       }
       const cueGroups = CONSTRUCTION_CUE_GROUPS.filter((pattern) => pattern.test(artBrief)).length;
@@ -212,14 +213,21 @@ export function preflightConceptQuartet(
   if (concepts.length === REQUIRED_CONCEPT_QUARTET_SIZE) {
     addUniquenessError(errors, "focal strategies", concepts.map((concept) => concept.focalStrategy ?? ""));
     addUniquenessError(errors, "visual moods", concepts.map((concept) => concept.visualMood ?? ""));
-    addUniquenessError(errors, "illustration media", concepts.map((concept) => mediumFamily(concept.art.medium)));
+    // Four distinct illustration media remain the ideal designed set, but
+    // medium is a creative-variety signal rather than a rendering safety
+    // boundary. At least three are required; one intentional repeat is allowed
+    // when it gives the named theme a stronger, more coherent result.
+    const media = concepts.map((concept) => mediumFamily(concept.art.medium));
+    if (!resolveArtDirection(brief).requestedTreatment && uniqueCount(media) < 3) {
+      errors.push("quartet should aim for 4 distinct illustration media; at least 3 are required");
+    }
     addUniquenessError(errors, "style lanes", concepts.map((concept) => concept.styleLaneId));
     addUniquenessError(errors, "font pairings", concepts.map((concept) => concept.fontPairingId));
     addUniquenessError(errors, "focal compositions", concepts.map((concept) => concept.art.composition));
     addUniquenessError(errors, "concept names", concepts.map((concept) => concept.conceptName));
     addUniquenessError(errors, "layouts", concepts.map((concept) => concept.layoutStyle), 3);
 
-    if (construction) {
+    if (construction && !requestedMachine) {
       const machineLed = concepts.map(dominantMachine).filter((machine): machine is string => Boolean(machine));
       if (machineLed.length > 2) errors.push("quartet repeats machine-led construction artwork in more than two directions");
       for (const machine of Array.from(new Set(machineLed))) {
@@ -253,12 +261,6 @@ export function preflightConceptQuartet(
   return { passed: errors.length === 0, errors, concepts, reviewCards, perConceptErrors };
 }
 
-/**
- * True when every remaining error is attributable to a single concept — i.e.
- * dropping the bad concept(s) would leave a set with zero outstanding errors.
- * Whole-quartet errors (uniqueness/count checks) are never per-concept, so
- * this is false whenever one of those fired.
- */
 export function allErrorsAreSingleConcept(preflight: ConceptQuartetPreflight): boolean {
   const perConceptTotal = Array.from(preflight.perConceptErrors.values()).reduce((sum, list) => sum + list.length, 0);
   return perConceptTotal === preflight.errors.length;

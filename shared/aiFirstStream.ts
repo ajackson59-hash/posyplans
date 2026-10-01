@@ -9,10 +9,8 @@
 
 import type { AiFirstConcept, ConceptSource } from "./aiFirstInvite";
 
-/** How many directions a complete run delivers. The client's copy depends on it. */
 export const TARGET_DIRECTION_COUNT = 4;
 
-/** The exact host-facing progress strings. Each is emitted from a real transition. */
 export const PROGRESS_MESSAGES = {
   understanding: "Understanding the event's visual direction…",
   reviewingConcepts: "Comparing four creative directions before artwork…",
@@ -28,17 +26,13 @@ export interface StreamTier1Finding {
   message: string;
 }
 
-/** Every scored dimension must clear this. There is deliberately no overall. */
 export const MIN_DIMENSION_SCORE = 4;
 
-/**
- * Host-facing terminal for a paid artwork that Posy correctly refused to
- * show. It is shared by server and browser so a dropped SSE connection can
- * recover the same truth from the durable run row without falling back to a
- * misleading browser "Network error".
- */
 export const QUALITY_REJECTION_MESSAGE =
   "Posy rejected this artwork because it didn't clearly deliver your theme at the required quality. Nothing was applied, and no automatic retry was made.";
+
+export const CONCEPT_RETRY_MESSAGE =
+  "Posy couldn't get a strong enough set of invitation directions from that attempt. Nothing was applied. Try the direction again or tell Posy what matters most to keep.";
 
 export function hostFacingGenerationError(message: string): string {
   if (
@@ -46,6 +40,14 @@ export function hostFacingGenerationError(message: string): string {
     /invitation generation delivered 0 of \d+ promised directions/i.test(message)
   ) {
     return QUALITY_REJECTION_MESSAGE;
+  }
+  if (
+    /creative quartet failed zero-image preflight/i.test(message) ||
+    /concept provider returned \d+/i.test(message) ||
+    /quartet must use \d+ distinct/i.test(message) ||
+    /concept generation failed:/i.test(message)
+  ) {
+    return CONCEPT_RETRY_MESSAGE;
   }
   return message;
 }
@@ -87,9 +89,7 @@ export interface FinishedDirection {
   illustrationUrl: string;
   overlay: AiFirstConcept["minOverlay"];
   artworkOpacity?: number;
-  /** Every attempt, including the ones that failed. Nothing is concealed. */
   attempts: StreamAttempt[];
-  /** True when the bytes came from the preview store rather than a new call. */
   reusedPreview: boolean;
   msFromStart: number;
 }
@@ -100,13 +100,11 @@ export interface RunSummary {
   billedImages: number;
   reusedImages: number;
   retries: number;
-  /** Estimated image-output plus critic-token cost; image prompt/input tokens are additional. */
   costUsd: number;
   msToFirstConcept: number | null;
   msToFirstDirection: number | null;
   msToAllDirections: number | null;
   conceptRejections: number;
-  /** Set when the gate could not run in full — never presented as a pass. */
   degraded: string[];
 }
 
@@ -118,11 +116,6 @@ export type PipelineEvent =
   | { type: "done"; summary: RunSummary; at: number }
   | { type: "error"; message: string; at: number };
 
-/**
- * Splits an SSE body into events. Kept here so the browser reader and any
- * test harness agree on framing — a partial `data:` line at a chunk boundary
- * is the failure this exists to make impossible.
- */
 export class SseParser {
   private buffer = "";
 
@@ -142,8 +135,8 @@ export class SseParser {
         try {
           out.push(JSON.parse(payload) as PipelineEvent);
         } catch {
-          // A frame we cannot parse is dropped rather than shown as an error:
-          // the run itself is still healthy and the next frame will arrive.
+          // A malformed display frame is dropped; the durable run remains the
+          // source of truth and the next valid frame can still arrive.
         }
       }
       cut = this.buffer.indexOf("\n\n");

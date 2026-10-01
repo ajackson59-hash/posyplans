@@ -11,6 +11,7 @@ import {
   type ThemeSelection,
 } from "@shared/themeCatalog";
 import { parseInviteDesignConcept } from "@shared/inviteDesign";
+import { hasAppliedCustomerArtwork } from "@shared/customerArtwork";
 import { applyInviteTokens } from "@shared/inviteTokens";
 import { readAiFirstSnapshot, themeFromSnapshot } from "@shared/aiFirstTheme";
 import type { EventRecord } from "./types";
@@ -27,6 +28,9 @@ export interface ThemeView {
 
 /** The applied theme for an event, or null if it isn't using one. */
 export function resolveThemeView(event: EventRecord): ThemeView | null {
+  // Keep the saved concept's styling, but never substitute its old theme image
+  // for artwork the host explicitly applied through the saved-image flow.
+  if (hasAppliedCustomerArtwork(event)) return null;
   const concept = parseInviteDesignConcept(event.inviteDesignConceptJson);
   if (!concept) return null;
 

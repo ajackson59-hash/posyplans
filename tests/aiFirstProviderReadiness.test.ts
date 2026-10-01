@@ -148,6 +148,7 @@ function reviewApp(input: {
   const runStore = new InMemoryRunStore();
   const artworkAttemptStore = new InMemoryArtworkAttemptStore();
   registerAiFirstRoutes(app, {
+    plusAccess: async () => undefined,
     storage: {
       getEventByOwnerToken: async (token: string) =>
         token === OWNER

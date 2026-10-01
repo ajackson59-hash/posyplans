@@ -1,17 +1,11 @@
 # Posy — Terms of Service
 
 **Effective date:** July 22, 2026
-**Last updated:** July 22, 2026
-
-> **Before you publish this:** This is a working draft built for Posy's actual product (Spark/Plus tiers, event-link access, AI-assisted planning, SMS/RSVP features). It is a solid starting point, not a substitute for review by a licensed attorney in your state before you take payment or collect personal data from the public. The brand name (Posy, posyplans.com, @posyplans) is now locked in. Two items are still genuinely open and are called out inline below: (1) the formal legal entity that will operate under the Posy brand hasn't been named yet, and (2) the contact email, which currently points to the founder's personal inbox as an interim measure. See the checklist at the bottom for the full remaining list.
-
----
+**Last updated:** September 27, 2026
 
 ## 1. Who we are and what this agreement covers
 
-These Terms of Service ("**Terms**") are a legal agreement between you ("**you**," "**host**," or "**user**") and the individual or entity operating Posy ("**Posy**," "**we**," "**us**," or "**our**"), governing your access to and use of the Posy website ([posyplans.com](https://posyplans.com)), app, and related services (the "**Service**").
-
-*The formal legal entity name that operates Posy will be added here once it's finalized (LLC, corporation, or sole proprietorship registration is still pending).*
+These Terms of Service ("**Terms**") are a legal agreement between you ("**you**," "**host**," or "**user**") and Posy ("**we**," "**us**," or "**our**"), governing your access to and use of the Posy website ([posyplans.com](https://posyplans.com)), app, and related services (the "**Service**").
 
 By creating an event, accessing an event link, or otherwise using the Service, you agree to these Terms. If you don't agree, don't use the Service.
 
@@ -30,14 +24,15 @@ We ask for your email address at key moments (for example, saving, exporting, or
 Posy currently offers:
 
 - **Spark (one-time purchase):** a single $9.99 payment that unlocks one event — its AI-drafted plan plus the full logistics core (planning, checklists, timeline, budget, menu, and guest tools) for that event. Spark is per event and does not renew.
-- **Plus (paid membership):** unlimited AI generations, EventDNA (a persistent taste profile carried across your events), the full Event Identity System, and Event Readiness Score. Plus is billed monthly ($11.99/month) or annually ($99/year), with annual billing as the default option.
-- **Concierge (coming soon):** a fully human-assisted planning tier. Not yet available — this section will be updated when it launches.
+- **Plus (paid membership):** unlimited full plan regenerations, EventDNA (a persistent taste profile carried across your events), the full Event Identity System, and Event Readiness Score. Plus is billed monthly ($11.99/month) or annually ($99/year), with annual billing as the default option.
+
+Artwork generation and revision requests have separate limits shown in the artwork workspace. A Plus membership does not provide unlimited image requests.
 
 **Billing.** Plus is billed monthly or annually, depending on the plan you select, and subscriptions renew automatically until canceled. Spark is a one-time charge per event and does not renew.
 
-**Cancellation.** You may cancel a Plus subscription at any time. Your subscription remains active until the end of your current billing period, and no future renewals are charged after cancellation. (A self-serve cancellation option inside your Dashboard is planned but not live yet — for now, cancel by emailing us at ajackson59@gmail.com.)
+**Cancellation.** You may cancel a Plus subscription at any time. Your subscription remains active until the end of your current billing period, and no future renewals are charged after cancellation. (A self-serve cancellation option inside your Dashboard is planned but not live yet — for now, cancel by emailing us at [hello@posyplans.com](mailto:hello@posyplans.com).)
 
-**Refunds.** Because Posy delivers AI-generated plans and premium features immediately, charges are generally non-refundable. This applies to Spark (a one-time digital unlock) and Plus (immediate access to premium features). One exception: if the AI plan for a Spark event fails to generate, contact us and we'll refund the Spark charge in full. If you believe you were charged in error, contact us at ajackson59@gmail.com and we'll make it right.
+**Refunds.** Because Posy delivers AI-generated plans and premium features immediately, charges are generally non-refundable. This applies to Spark (a one-time digital unlock) and Plus (immediate access to premium features). One exception: if the AI plan for a Spark event fails to generate, contact us and we'll refund the Spark charge in full. If you believe you were charged in error, contact us at [hello@posyplans.com](mailto:hello@posyplans.com) and we'll make it right.
 
 **Price changes.** Introductory or "launch" pricing is offered for a limited time and may increase for new members. If you are already a paying member when a price increase takes effect, you will keep your current price for as long as your subscription stays active without a lapse. We'll notify you in advance of any price change that affects you.
 
@@ -90,7 +85,7 @@ You may stop using the Service at any time. We may suspend or terminate your acc
 
 ## 14. Governing law
 
-These Terms are governed by the laws of the State of New York, without regard to conflict-of-laws principles. (Revisit this once the operating entity's state of formation is finalized alongside the pending name change.)
+These Terms are governed by the laws of the State of New York, without regard to conflict-of-laws principles.
 
 ## 15. Changes to these Terms
 
@@ -98,14 +93,4 @@ We may update these Terms from time to time. If we make material changes, we'll 
 
 ## 16. Contact
 
-Questions about these Terms? Contact us at ajackson59@gmail.com.
-
----
-
-## Still open before publishing
-
-- **Legal entity name and state of formation** — the brand (Posy, posyplans.com) is locked in, but the formal registered entity operating it hasn't been named yet; add both to Section 1 and Section 14 once formed, and confirm New York still governs or update accordingly.
-- **Contact email** — currently `ajackson59@gmail.com` as an interim measure; swap for a dedicated support inbox (e.g. an @posyplans.com address) before real launch.
-- **Self-serve cancellation** — Section 4 currently routes cancellations to email since no in-app billing/cancel flow exists yet; update once a Stripe customer portal or in-app cancel button ships.
-- Liability cap in Section 11 ($100 / 12 months) is a placeholder default — revisit for your actual risk tolerance.
-- **Have a licensed attorney in your state review this before it governs real transactions.**
+Questions about these Terms? Contact us at [hello@posyplans.com](mailto:hello@posyplans.com).

@@ -11,6 +11,7 @@ import { EVENT_TYPES, RSVP_RESTRICTION_OPTIONS } from "@/lib/types";
 import { buildEventDetailsUpdate } from "@/lib/eventDetails";
 import { touchRecentEvent } from "@/lib/eventRecovery";
 import { applyInviteTokens, INVITE_TOKENS, INVITE_TONES, type InviteTone } from "@shared/inviteTokens";
+import { hasAppliedCustomerArtwork } from "@shared/customerArtwork";
 import { suggestRsvpDeadline } from "@shared/rsvpDeadline";
 import { Wordmark } from "@/components/Logo";
 import AskPosy from "@/components/AskPosy";
@@ -60,7 +61,13 @@ import {
   getInviteBodyStyle,
 } from "@/lib/inviteStyles";
 import InviteDesignPicker from "@/components/InviteDesignPicker";
+import CustomerArtworkDesigner from "@/components/CustomerArtworkDesigner";
+import { useCustomerArtwork } from "@/hooks/useCustomerArtwork";
+import { useDashboardNavigation } from "@/hooks/useDashboardNavigation";
+import { useEventActivity } from "@/hooks/useEventActivity";
+import InvitationOverview from "@/components/InvitationOverview";
 import PlanningAlerts from "@/components/PlanningAlerts";
+import PlanRegenerationPanel from "@/components/PlanRegenerationPanel";
 import AiDraftedBadge from "@/components/AiDraftedBadge";
 import ReadinessScoreCard from "@/components/ReadinessScoreCard";
 import NextActions from "@/components/NextActions";
@@ -126,6 +133,9 @@ export default function Dashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data, isLoading } = useEventData(ownerToken);
+  useEventActivity(ownerToken, Boolean(data?.event));
+  const artworkReadiness = useCustomerArtwork(ownerToken);
+  const customerArtwork = artworkReadiness.data?.customerArtwork;
   const retainedReviewRequest = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
     const attemptId = params.get("retainedReviewAttempt");
@@ -178,7 +188,7 @@ export default function Dashboard() {
   });
   const recommendedTone = inviteFormatQuery.data?.recommendation?.recommendedTone ?? null;
 
-  const [activeTab, setActiveTab] = useState("theme");
+  const { activeTab, setActiveTab } = useDashboardNavigation(ownerToken, Boolean(data));
 
   // Some buttons live above the tab section (Readiness, Next Actions, Theme tab
   // "Go to Shopping List" links) and only switch the active tab without moving
@@ -198,6 +208,7 @@ export default function Dashboard() {
   };
 
   const [editingInvite, setEditingInvite] = useState(false);
+  const [changingInviteDesign, setChangingInviteDesign] = useState(false);
   const [subjectDraft, setSubjectDraft] = useState("");
   const [messageDraft, setMessageDraft] = useState("");
   const [artworkDraft, setArtworkDraft] = useState("");
@@ -327,7 +338,7 @@ export default function Dashboard() {
       await apiRequest("PATCH", `/api/events/owner/${ownerToken}`, {
         inviteSubject: subjectDraft,
         inviteMessage: messageDraft,
-        inviteArtworkUrl: artworkDraft,
+        ...(customerArtwork ? {} : { inviteArtworkUrl: artworkDraft }),
         inviteFontFamily: fontDraft,
         inviteAccentColor: accentColorDraft,
       });
@@ -641,25 +652,6 @@ export default function Dashboard() {
   const { event, guests } = data;
   const hasInvitationDesign = hasSelectedInvitationDesign(event);
   const invitationJourneyState = getInvitationJourneyState(event);
-  const invitationCallout =
-    invitationJourneyState === "live"
-      ? {
-          title: "Your invitation is live",
-          detail: "Preview the guest experience, manage RSVP settings, or update the design and wording at any time.",
-          action: "Manage invitation",
-        }
-      : invitationJourneyState === "draft"
-        ? {
-            title: "Your invitation is ready to finish",
-            detail: "Review the design and wording, choose your RSVP settings, then publish it for guests.",
-            action: "Finish invitation",
-          }
-        : {
-            title: "Create your invitation",
-            detail: "Posy already has your event style. Start with a custom idea, choose a ready-made design, or upload your own.",
-            action: "Create invitation",
-          };
-
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border">
@@ -830,6 +822,14 @@ export default function Dashboard() {
           )}
         </div>
 
+        <InvitationOverview
+          event={event}
+          ownerToken={ownerToken}
+          onOpenEditor={() => navigateToTab("guests", "invitation-design-section")}
+        />
+
+        {event.draftStatus === "ready" ? <PlanRegenerationPanel key={ownerToken} ownerToken={ownerToken} /> : null}
+
         {retainedReviewRequest && (
           <Card className="border-primary/30 bg-primary/[0.04]" data-testid="card-retained-artwork-review">
             <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
@@ -874,31 +874,6 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         )}
-
-        <Card className="border-primary/25 bg-primary/[0.03]" data-testid="card-invitation-next-step">
-          <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-start gap-3">
-              <div className="mt-0.5 rounded-full bg-primary/10 p-2 text-primary">
-                <Mail className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="font-serif text-lg font-semibold text-foreground">
-                  {invitationCallout.title}
-                </p>
-                <p className="mt-0.5 max-w-2xl text-sm text-muted-foreground">
-                  {invitationCallout.detail}
-                </p>
-              </div>
-            </div>
-            <Button
-              className="shrink-0"
-              onClick={() => navigateToTab("guests", "invitation-design-section")}
-              data-testid="button-open-invitation-workspace"
-            >
-              {invitationCallout.action}
-            </Button>
-          </CardContent>
-        </Card>
 
         {/* Readiness */}
         <ReadinessMoment ownerToken={ownerToken} eventDate={event.eventDate} onNavigate={navigateToTab} />
@@ -1055,7 +1030,7 @@ export default function Dashboard() {
                 <Palette className="mr-1.5 h-3.5 w-3.5" /> Theme
               </TabsTrigger>
               <TabsTrigger value="guests" data-testid="tab-guests">
-                <Users className="mr-1.5 h-3.5 w-3.5" /> Guests &amp; Invites
+                <Users className="mr-1.5 h-3.5 w-3.5" /> Invitation &amp; Guests
               </TabsTrigger>
               <TabsTrigger value="budget" data-testid="tab-budget">
                 <Wallet className="mr-1.5 h-3.5 w-3.5" /> Budget
@@ -1084,19 +1059,40 @@ export default function Dashboard() {
           <CardHeader>
             <div>
               <CardTitle className="flex items-center gap-2 font-serif text-lg">
-                <Mail className="h-4 w-4 text-primary" /> Create your invitation
+                <Mail className="h-4 w-4 text-primary" /> {hasInvitationDesign ? "Your invitation" : "Create your invitation"}
               </CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">
-                Choose the design first, then confirm the wording and RSVP details. Posy keeps it all together on one shareable page.
+                {hasInvitationDesign
+                  ? "Review your saved invitation, update the wording, and confirm your RSVP details."
+                  : "Choose the design first, then confirm the wording and RSVP details. Posy keeps it all together on one shareable page."}
               </p>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <InviteDesignPicker
-              ownerToken={ownerToken}
-              event={event}
-              onReviewEventStyle={() => navigateToTab("theme", "event-style-section")}
-            />
+            {hasInvitationDesign && (
+              <Button
+                variant="outline"
+                size="sm"
+                aria-expanded={changingInviteDesign}
+                aria-controls="invitation-design-options"
+                onClick={() => setChangingInviteDesign((open) => !open)}
+              >
+                {changingInviteDesign ? "Done choosing design" : "Change design"}
+              </Button>
+            )}
+            {(!hasInvitationDesign || changingInviteDesign) && (
+              <div id="invitation-design-options">
+                {customerArtwork ? <CustomerArtworkDesigner ownerToken={ownerToken} artwork={customerArtwork} usesSavedArtworkLayout={hasAppliedCustomerArtwork(event)}
+                  refresh={() => artworkReadiness.refetch({ throwOnError: true })} />
+                : artworkReadiness.isPending ? <p className="text-sm">Loading your saved artwork…</p>
+                : artworkReadiness.isError ? <Button variant="outline" onClick={() => artworkReadiness.refetch()}>Reload saved artwork</Button>
+                : <InviteDesignPicker
+                  ownerToken={ownerToken}
+                  event={event}
+                  onReviewEventStyle={() => navigateToTab("theme", "event-style-section")}
+                />}
+              </div>
+            )}
 
             <div className="flex flex-col gap-3 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -1161,7 +1157,7 @@ export default function Dashboard() {
                   )}
                 </div>
 
-                <div>
+                {!customerArtwork ? <div>
                   <Label>Custom artwork (optional)</Label>
                   <p className="mt-1 text-xs text-muted-foreground">
                     Choose a ready-made template, upload your own photo or designed invite, or leave blank to use the plain themed card.
@@ -1251,6 +1247,8 @@ export default function Dashboard() {
                     />
                   </div>
                 </div>
+
+                : <p className="text-sm text-muted-foreground">Use the saved artwork controls above to revise your image.</p>}
 
                 <div>
                   <Label>Font style</Label>
@@ -1366,7 +1364,7 @@ export default function Dashboard() {
                       src={artworkDraft}
                       alt=""
                       data-testid="img-invite-preview-artwork"
-                      className="mt-2 h-40 w-full rounded-md border border-border object-cover"
+                      className="mx-auto mt-2 h-auto w-full max-w-xl rounded-md border border-border"
                     />
                   )}
                   <p
@@ -1398,7 +1396,7 @@ export default function Dashboard() {
             ) : (
               (() => {
                 const concept = parseInviteDesignConcept(event.inviteDesignConceptJson);
-                if (concept) {
+                if (concept && !hasAppliedCustomerArtwork(event)) {
                   return (
                     <div className="rounded-md" style={conceptBorderStyle(concept)} data-testid="card-invite-concept-display">
                       {event.inviteIllustrationUrl && concept.layoutStyle === "banner" && (
@@ -1480,18 +1478,18 @@ export default function Dashboard() {
                   );
                 }
                 return (
-                  <div>
+                  <div style={concept ? conceptBorderStyle(concept) : undefined}>
                     {event.inviteArtworkUrl && (
                       <img
                         src={event.inviteArtworkUrl}
                         alt=""
                         data-testid="img-invite-artwork"
-                        className="mb-3 h-40 w-full rounded-md border border-border object-cover"
+                        className="mx-auto mb-3 h-auto w-full max-w-xl rounded-md border border-border"
                       />
                     )}
                     <p
                       className="text-sm font-medium text-foreground"
-                      style={getInviteHeadingStyle(
+                      style={concept ? conceptHeadingStyle(concept) : getInviteHeadingStyle(
                         event.inviteFontFamily || DEFAULT_INVITE_FONT_ID,
                         resolveInviteAccentColor(event.inviteAccentColor, parsePalette(event.paletteColors)),
                       )}
@@ -1500,7 +1498,7 @@ export default function Dashboard() {
                     </p>
                     <p
                       className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground"
-                      style={getInviteBodyStyle(event.inviteFontFamily || DEFAULT_INVITE_FONT_ID)}
+                      style={concept ? conceptBodyStyle(concept) : getInviteBodyStyle(event.inviteFontFamily || DEFAULT_INVITE_FONT_ID)}
                     >
                       {applyInviteTokens(event.inviteMessage, previewCtx)}
                     </p>
@@ -1610,7 +1608,7 @@ export default function Dashboard() {
                       <Copy className="mr-1.5 h-3.5 w-3.5" /> Copy link
                     </Button>
                     <Button asChild size="sm" variant="outline">
-                      <a href={`/rsvp/${event.shareSlug}`} target="_blank" rel="noreferrer">
+                      <a href={`/dashboard/${encodeURIComponent(ownerToken)}/invitation-preview`} target="_blank" rel="noreferrer">
                         Preview <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
                       </a>
                     </Button>

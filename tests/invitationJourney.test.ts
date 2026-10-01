@@ -78,7 +78,8 @@ describe("dashboard invitation journey", () => {
 
   it("offers a visible invitation entry point before the long planning sections", () => {
     const source = fs.readFileSync(path.resolve("client/src/pages/Dashboard.tsx"), "utf8");
-    expect(source.indexOf('data-testid="card-invitation-next-step"')).toBeLessThan(
+    expect(source.indexOf('<InvitationOverview')).toBeGreaterThan(-1);
+    expect(source.indexOf('<InvitationOverview')).toBeLessThan(
       source.indexOf("{/* Readiness */}"),
     );
   });
