@@ -123,7 +123,7 @@ export default function Pricing() {
             data-testid="link-pricing-see-demo"
           >
             <Play className="h-3.5 w-3.5 text-primary" />
-            See what Posy does in 30 seconds
+            Watch an event take shape
           </button>
         </div>
 
