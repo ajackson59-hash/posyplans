@@ -15,6 +15,8 @@ const { eventArtworkUrl } = await import('../server/eventArtwork');
 
 class MemoryStore implements CustomerArtworkStore {
   spendingAllowed = true;
+  busy = false;
+  async spendingStatus() { return this.busy ? 'busy' as const : this.spendingAllowed ? 'available' as const : 'paused' as const; }
   async spendingAvailable() { return this.spendingAllowed; }
   async reserveRequest(row: CustomerArtworkSession, version: number) { return this.compareAndSet(row, version); }
   async finishRequest(): Promise<'unmanaged'> { return 'unmanaged'; }
@@ -92,6 +94,51 @@ it('keeps and revises an imported original through the customer HTTP routes with
 });
 
 describe('customer artwork durable request boundary', () => {
+  it('protects paid edits and keeps the first preview selectable before purchase', async () => {
+    event = { ...event, customerArtworkEnabled: true };
+    const server = app({ VERCEL_ENV: 'production', POSY_PRODUCTION_ARTWORK_GENERATION: 'true',
+      POSY_PRODUCTION_ARTWORK_REQUEST_LIMIT: '6' });
+    expect((await request(server).post(`${owner}/prepayment-preview`).send({ email: 'offline@example.com' })).status).toBe(202);
+    await jobs.shift()!();
+    let row = (await store.get(event.id))!;
+    const input = revision(row);
+    expect((await request(server).get(`${owner}/artwork`)).body).toMatchObject({ availability: 'payment-required', requestsRemaining: 5 });
+    expect((await request(server).post(`${owner}/artwork/revise`).send(input)).status).toBe(402);
+    expect((await store.get(event.id))?.attempts).toHaveLength(1);
+    expect(jobs).toHaveLength(0);
+    expect((await request(server).post(`${owner}/artwork/select`).send(selection(row))).status).toBe(200);
+    expect((await request(server).get(`${owner}/prepayment-preview/readiness`)).body.checkoutAllowed).toBe(true);
+    paid = true;
+    row = (await store.get(event.id))!;
+    const paidInput = revision(row);
+    expect((await request(server).post(`${owner}/artwork/revise`).send(paidInput)).status).toBe(202);
+    await jobs.shift()!();
+    paid = false;
+    // A subscription expiring never turns a replay into another provider call.
+    expect((await request(server).post(`${owner}/artwork/revise`).send(paidInput)).status).toBe(202);
+    event = { ...event, vibeDescription: 'A changed brief does not reset the free preview.' };
+    expect((await request(server).post(`${owner}/prepayment-preview`).send({ email: 'offline@example.com' })).status).toBe(402);
+    expect((await store.get(event.id))?.attempts).toHaveLength(2);
+    expect(generate).toHaveBeenCalledTimes(2); expect(jobs).toHaveLength(0);
+  });
+  it('reports busy capacity, polls reads only and consumes no request while waiting', async () => {
+    event = { ...event, customerArtworkEnabled: true }; store.busy = true;
+    const server = app({ VERCEL_ENV: 'production', POSY_PRODUCTION_ARTWORK_GENERATION: 'true',
+      POSY_PRODUCTION_ARTWORK_REQUEST_LIMIT: '6' });
+    const blocked = await request(server).post(`${owner}/prepayment-preview`).send({ email: 'offline@example.com' });
+    expect(blocked.status).toBe(429); expect(blocked.headers['retry-after']).toBe('5');
+    expect(blocked.body.code).toBe('busy');
+    for (let n = 0; n < 3; n++) {
+      expect((await request(server).get(`${owner}/prepayment-preview/readiness`)).body).toMatchObject({
+        pollAfterMs: 5000, customerArtwork: { availability: 'busy', generationEnabled: false, requestsRemaining: 6 },
+      });
+    }
+    expect((await store.get(event.id))?.attempts).toHaveLength(0);
+    expect(generate).not.toHaveBeenCalled(); expect(jobs).toHaveLength(0);
+    store.busy = false;
+    expect((await request(server).get(`${owner}/artwork`)).body).toMatchObject({ availability: 'available', generationEnabled: true });
+    expect(jobs).toHaveLength(0);
+  });
   it('keeps Production allowance separate from Preview limits and spending enablement', () => {
     const production = { VERCEL_ENV: 'production', POSY_CUSTOMER_ARTWORK_EVALUATION_LIMITS: '{"99002":1}' };
     expect(customerArtworkRequestLimit(event, production)).toBe(4);

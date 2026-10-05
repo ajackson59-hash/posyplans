@@ -1,5 +1,6 @@
 /** Display intent only; selection and payment are verified separately on the server. */
 export const CUSTOMER_ARTWORK_RENDER_MODE = 'customer-artwork';
+export type ArtworkAvailability = 'available' | 'busy' | 'paused' | 'capacity' | 'payment-required';
 export function hasAppliedCustomerArtwork(event: { inviteRenderMode?: string; inviteArtworkUrl?: string }) {
   return event.inviteRenderMode === CUSTOMER_ARTWORK_RENDER_MODE && !!event.inviteArtworkUrl;
 }
@@ -10,6 +11,7 @@ export interface CustomerArtworkView {
   briefHash: string;
   savedBrief: string;
   generationEnabled: boolean;
+  availability?: ArtworkAvailability;
   requestsRemaining: number;
   state: 'empty' | 'generating' | 'ready' | 'failed' | 'interrupted' | 'brief-changed';
   selectedId: string | null;

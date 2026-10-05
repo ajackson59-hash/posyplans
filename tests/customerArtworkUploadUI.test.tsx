@@ -10,6 +10,36 @@ afterEach(()=>{cleanup();vi.clearAllMocks();});
 const failed:CustomerArtworkView={version:2,briefHash:'a'.repeat(64),savedBrief:'Exact original scene request',generationEnabled:false,requestsRemaining:0,state:'failed',selectedId:null,selectedHash:null,appliedId:null,hasSavedPlan:false,canContinue:false,supportReference:'failure-reference',candidates:[],uploadAvailable:true,uploadsRemaining:3};
 const uploaded:CustomerArtworkView={...failed,version:3,uploadsRemaining:2,candidates:[{id:'upload-id',imageHash:'b'.repeat(64),assetUrl:'/private/upload.png',operation:'upload',correction:null}]};
 describe('artwork upload recovery controls',()=>{
+ it('explains busy availability without sending a request or discarding a typed edit',()=>{
+  const client = new QueryClient();
+  const view: CustomerArtworkView = { ...uploaded, state: 'ready', supportReference: null, requestsRemaining: 5,
+    generationEnabled: true, availability: 'available', candidates: [{ ...uploaded.candidates[0], operation: 'create' }] };
+  const draw = (artwork: CustomerArtworkView) => <QueryClientProvider client={client}><CustomerArtworkPreview
+    ownerToken="synthetic-owner" artwork={artwork} refresh={vi.fn()} /></QueryClientProvider>;
+  const ui = render(draw(view));
+  fireEvent.load(screen.getByTestId('customer-artwork-image'));
+  fireEvent.change(screen.getByLabelText('What would you like to change?'), { target: { value: 'Keep the garden and add pink peonies.' } });
+  ui.rerender(draw({ ...view, generationEnabled: false, availability: 'busy' }));
+  expect(screen.getByText(/checking availability automatically/)).toBeTruthy();
+  expect((screen.getByRole('button', { name: 'Make this change' }) as HTMLButtonElement).disabled).toBe(true);
+  expect((screen.getByRole('button', { name: 'Keep this image' }) as HTMLButtonElement).disabled).toBe(false);
+  ui.rerender(draw(view));
+  expect((screen.getByLabelText('What would you like to change?') as HTMLTextAreaElement).value).toBe('Keep the garden and add pink peonies.');
+  expect((screen.getByRole('button', { name: 'Make this change' }) as HTMLButtonElement).disabled).toBe(false);
+  expect(mocks.request).not.toHaveBeenCalled(); client.clear();
+ });
+ it('keeps the free preview and explains unlocking without exposing an edit control',()=>{
+  const client = new QueryClient();
+  render(<QueryClientProvider client={client}><CustomerArtworkPreview ownerToken="synthetic-owner" artwork={{
+    ...uploaded, state: 'ready', supportReference: null, availability: 'payment-required', requestsRemaining: 5,
+    candidates: [{ ...uploaded.candidates[0], operation: 'create' }],
+  }} refresh={vi.fn()} /></QueryClientProvider>);
+  expect(screen.getByText(/first preview is included/)).toBeTruthy();
+  expect(screen.queryByRole('button', { name: 'Make this change' })).toBeNull();
+  fireEvent.load(screen.getByTestId('customer-artwork-image'));
+  expect((screen.getByRole('button', { name: 'Keep this image' }) as HTMLButtonElement).disabled).toBe(false);
+  expect(mocks.request).not.toHaveBeenCalled(); client.clear();
+ });
  it('explains a generation hold without inviting an unavailable creation or claiming unused quota is exhausted',()=>{
   const client=new QueryClient();render(<QueryClientProvider client={client}><CustomerArtworkPreview ownerToken="synthetic-owner" artwork={{...failed,state:'empty',supportReference:null}} refresh={vi.fn()} /></QueryClientProvider>);
   expect(screen.getByText('Your request is saved. Choose a ready-made design or upload artwork to continue.')).toBeTruthy();

@@ -2,6 +2,7 @@ import type { Express, Request, Response, NextFunction } from 'express';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 import type { Event } from '@shared/schema';
+import type { ArtworkAvailability } from '@shared/customerArtwork';
 import { storage } from './storage';
 import { getEntitlementSummary } from './masterPlannerEntitlement';
 import { ownerEventView, restoreEventArtworkReferences, eventArtworkFields, storedEventArtwork } from './eventArtwork';
@@ -37,13 +38,19 @@ export function registerCustomerArtworkRoutes(app: Express, deps: Dependencies =
   const current = async (event: Event) => recoverCustomerArtwork((await sessions.get(event.id)) ?? emptyCustomerArtwork(event), sessions);
   const view = async (row: CustomerArtworkSession, event: Event) => {
     const artwork = customerArtworkView(row, event, env());
-    return { ...artwork, generationEnabled: artwork.generationEnabled && await sessions.spendingAvailable(event.id) };
+    const paid = env().VERCEL_ENV !== 'production' || await unlocked(event.id);
+    const operation = artwork.candidates.some(c => c.operation === 'create' || c.operation === 'edit') ? 'edit' : 'create';
+    const availability: ArtworkAvailability = !artwork.generationEnabled ? 'paused'
+      : !paid && row.attempts.length > 0 ? 'payment-required'
+      : sessions.spendingStatus ? await sessions.spendingStatus(event.id, operation, paid)
+      : await sessions.spendingAvailable(event.id) ? 'available' : 'paused';
+    return { ...artwork, availability, generationEnabled: availability === 'available' };
   };
   const readiness = async (row: CustomerArtworkSession, event: Event) => {
     const artwork = await view(row, event);
     return { ready: artwork.candidates.length > 0, kind: artwork.candidates.length ? 'customer-artwork' : 'none',
       generationState: artwork.state === 'generating' ? 'generating' : artwork.candidates.length ? 'ready' : 'idle',
-      pollAfterMs: artwork.state === 'generating' ? 2500 : null, checkoutAllowed: artwork.canContinue,
+      pollAfterMs: artwork.state === 'generating' ? 2500 : artwork.availability === 'busy' ? 5000 : null, checkoutAllowed: artwork.canContinue,
       customerArtwork: artwork, namedReference: null, savedBrief: artwork.savedBrief };
   };
   const privateResponse = (res: Response) => {
@@ -60,18 +67,28 @@ export function registerCustomerArtworkRoutes(app: Express, deps: Dependencies =
       }
       catch (error) {
         if (res.headersSent) return next(error);
-        if (error instanceof ImageSpendGuardError) return res.status(503).json({ error: error.message });
+        if (error instanceof ImageSpendGuardError) {
+          if (error.code === 'busy') res.setHeader('Retry-After', '5');
+          return res.status(error.code === 'busy' ? 429 : error.code === 'payment-required' ? 402 : 503).json({ error: error.message, code: error.code });
+        }
         if (error instanceof CustomerArtworkError) return res.status(error.status).json({ error: error.message });
         // No provider response, raw prompt, credential or image may enter logs/JSON.
         return res.status(503).json({ error: 'We could not confirm that request. Refresh to check your saved artwork before trying again.' });
       }
     };
   const dispatch = async (event: Event, row: CustomerArtworkSession, input: CustomerArtworkRequestInput) => {
+    const paid = env().VERCEL_ENV !== 'production' || await unlocked(event.id);
     // Replayed requests are read-only, including when the spend switch was turned off.
     if (!row.attempts.some(a => a.requestKey === input.requestKey)
-      && (!customerArtworkGenerationEnabled(env()) || customerArtworkRequestLimit(event, env()) === 0 || !await sessions.spendingAvailable(event.id)))
+      && (!customerArtworkGenerationEnabled(env()) || customerArtworkRequestLimit(event, env()) === 0
+        || (!sessions.spendingStatus && !await sessions.spendingAvailable(event.id))))
       throw new CustomerArtworkError('Artwork creation is temporarily unavailable. Your saved images are still here.', 503);
-    const claim = await claimCustomerArtwork(event, row, input, sessions, env());
+    const replay = row.attempts.some(a => a.requestKey === input.requestKey);
+    if (!replay && sessions.spendingStatus) {
+      const status = await sessions.spendingStatus(event.id, input.baseCandidateId ? 'edit' : 'create', paid);
+      if (status !== 'available') throw new ImageSpendGuardError(status === 'busy' || status === 'payment-required' ? status : 'blocked');
+    }
+    const claim = await claimCustomerArtwork(event, row, input, sessions, env(), paid);
     if (claim.request) {
       try { schedule(() => (deps.finish ?? finishCustomerArtwork)(event.id, claim.attempt, claim.request!, sessions)); }
       catch { /* Retain the claim; timed read recovery must not dispatch it again. */ }

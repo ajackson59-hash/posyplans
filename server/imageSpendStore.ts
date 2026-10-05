@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { db } from './storage';
+import type { ArtworkAvailability } from '@shared/customerArtwork';
 import type { ArtworkRequest } from './aiFirst/artwork';
 import type { CustomerArtworkAttempt, CustomerArtworkSession } from './customerArtwork';
 import { ImageSpendGuardError, imageSpendDispatchEnabled, imageSpendFingerprint, imageSpendPolicyId, imageSpendUuid, productionImageConcurrency } from './imageSpendGuard';
@@ -56,13 +57,42 @@ export class DbImageSpendStore {
       return row?.available === true;
     } catch { return false; } // Missing migration/connectivity cannot enable spending.
   }
-  async reserve(row: CustomerArtworkSession, expected: number, attempt: CustomerArtworkAttempt, request: ArtworkRequest): Promise<boolean> {
+  /** Keep the final 20% of initial-image capacity for unlocked events. With
+   * the approved 25-create envelope this protects five initial images. Edits
+   * are paid-only. This never adds capacity or resets lifetime counters. */
+  private async statusFor(database: Pick<typeof db, 'execute'>, policy: Policy, eventId: number,
+    operation: 'create' | 'edit', paid: boolean): Promise<ArtworkAvailability> {
+    if (policy.paused || !imageSpendDispatchEnabled(this.env)) return 'paused';
+    if (policy.requests_reserved >= policy.request_limit
+      || (operation === 'create' ? policy.creates_reserved >= policy.create_limit : policy.edits_reserved >= policy.edit_limit)) return 'capacity';
+    if (this.env.VERCEL_ENV === 'production') {
+      if (productionImageConcurrency(this.env) < 1) return 'paused';
+      if (!paid) {
+        const [used] = await database.execute(sql`select exists(select 1 from public.image_spend_requests
+          where policy_id=${this.policyId} and event_id=${eventId}) as requested`);
+        if (operation === 'edit' || used?.requested) return 'payment-required';
+        if (policy.creates_reserved >= policy.create_limit - Math.ceil(policy.create_limit / 5)) return 'capacity';
+      }
+    }
+    const [work] = await database.execute(sql`select ${this.capacity(eventId, operation)} as available,
+      exists(select 1 from public.image_spend_requests where policy_id=${this.policyId} and state='unknown') as uncertain`);
+    if (work?.available === true) return 'available';
+    return this.env.VERCEL_ENV === 'production' && work?.uncertain === false ? 'busy' : 'paused';
+  }
+  async status(eventId: number, operation: 'create' | 'edit', paid: boolean): Promise<ArtworkAvailability> {
+    try {
+      const [policy] = await this.database.execute(sql`select * from public.image_spend_policies where id=${this.policyId}`);
+      return policy ? await this.statusFor(this.database, policy as unknown as Policy, eventId, operation, paid) : 'paused';
+    } catch { return 'paused'; }
+  }
+  async reserve(row: CustomerArtworkSession, expected: number, attempt: CustomerArtworkAttempt, request: ArtworkRequest, paid = false): Promise<boolean> {
     if (!imageSpendDispatchEnabled(this.env) || request.maxTransientRetries !== 0 || request.imageSpendPermit !== attempt.id) throw new ImageSpendGuardError('blocked');
     return this.database.transaction(async tx => {
       const policy = await this.policy(tx);
-      if (policy.paused || policy.requests_reserved >= policy.request_limit || await this.unresolved(tx, row.eventId, attempt.operation)
-        || (attempt.operation === 'create' ? policy.creates_reserved >= policy.create_limit : policy.edits_reserved >= policy.edit_limit))
-        throw new ImageSpendGuardError('blocked');
+      const status = await this.statusFor(tx, policy, row.eventId, attempt.operation, paid);
+      if (status !== 'available') throw new ImageSpendGuardError(status === 'busy' || status === 'payment-required' ? status : 'blocked');
+      if (this.env.VERCEL_ENV === 'production' && !paid && row.attempts.length > 1)
+        throw new ImageSpendGuardError('payment-required');
       const changed = await tx.execute(sql`update public.customer_artwork_sessions set version=${row.version},payload=${JSON.stringify(row)}::jsonb
         where event_id=${row.eventId} and version=${expected} returning event_id`);
       if (!changed.length) return false;
