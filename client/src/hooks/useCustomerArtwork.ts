@@ -8,6 +8,7 @@ export function useCustomerArtwork(ownerToken: string) {
     queryFn: () => apiRequestJson<{ customerArtwork?: CustomerArtworkView; generationState?: string; pollAfterMs?: number }>(
       'GET', `/api/events/owner/${ownerToken}/prepayment-preview/readiness`),
     enabled: !!ownerToken, retry: false, refetchOnWindowFocus: true, refetchOnReconnect: true,
-    refetchInterval: query => query.state.data?.customerArtwork?.state === 'generating' ? 2500 : false,
+    refetchInterval: query => query.state.data?.customerArtwork?.state === 'generating' ? 2500
+      : query.state.data?.customerArtwork?.availability === 'busy' ? 5000 : false,
   });
 }

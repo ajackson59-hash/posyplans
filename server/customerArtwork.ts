@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import type { Event } from '@shared/schema';
-import { CUSTOMER_ARTWORK_RENDER_MODE, type CustomerArtworkView } from '@shared/customerArtwork';
+import { CUSTOMER_ARTWORK_RENDER_MODE, type ArtworkAvailability, type CustomerArtworkView } from '@shared/customerArtwork';
 import { humanArtworkBrief, humanReviewEventEnabled } from './humanArtworkReview';
 import { buildArtworkConstraints } from './aiFirst/prompt';
 import { buildArtworkEditRequest, type ArtworkEditSource } from './aiFirst/artworkEdit';
@@ -53,7 +53,8 @@ export interface CustomerArtworkStore {
   create(row: CustomerArtworkSession): Promise<CustomerArtworkSession>;
   compareAndSet(row: CustomerArtworkSession, expected: number): Promise<boolean>;
   spendingAvailable(eventId?: number): Promise<boolean>;
-  reserveRequest(row: CustomerArtworkSession, expected: number, attempt: CustomerArtworkAttempt, request: ArtworkRequest): Promise<boolean>;
+  spendingStatus?(eventId: number, operation: 'create' | 'edit', paid: boolean): Promise<ArtworkAvailability>;
+  reserveRequest(row: CustomerArtworkSession, expected: number, attempt: CustomerArtworkAttempt, request: ArtworkRequest, paid?: boolean): Promise<boolean>;
   finishRequest(eventId: number, attempt: CustomerArtworkAttempt, executionId: string): Promise<'handled' | 'unmanaged'>;
 }
 export class CustomerArtworkError extends Error {
@@ -185,7 +186,7 @@ export interface CustomerArtworkRequestInput {
   requestKey: string; version: number; briefHash: string; baseCandidateId?: string; imageHash?: string; correction?: string;
 }
 export async function claimCustomerArtwork(event: Event, row: CustomerArtworkSession, input: CustomerArtworkRequestInput, store: CustomerArtworkStore,
-  env: NodeJS.ProcessEnv = process.env) {
+  env: NodeJS.ProcessEnv = process.env, paid = false) {
   if (!sessionBelongsTo(row, event)) throw new CustomerArtworkError('This artwork is not available.', 404);
   // A lost response, duplicate click or replay can only return the saved operation.
   const existing = row.attempts.find(a => a.requestKey === input.requestKey);
@@ -198,6 +199,8 @@ export async function claimCustomerArtwork(event: Event, row: CustomerArtworkSes
   if (row.version !== input.version || input.briefHash !== customerArtworkBriefHash(event)) throw new CustomerArtworkError('Your details changed. Refresh before requesting artwork.');
   if (row.attempts.some(a => a.status !== 'ready')) throw new CustomerArtworkError('The last request needs to finish or be checked. Your saved images are still available.');
   if (row.attempts.length >= customerArtworkRequestLimit(event, env)) throw new CustomerArtworkError('You have reached this event’s artwork limit. Keep a saved image or contact support.', 429);
+  if (env.VERCEL_ENV === 'production' && !paid && (input.baseCandidateId || row.attempts.length > 0))
+    throw new ImageSpendGuardError('payment-required');
   const brief = humanArtworkBrief(event);
   let request: ArtworkRequest, editSource: ArtworkEditSource | undefined;
   if (input.baseCandidateId) {
@@ -227,7 +230,7 @@ export async function claimCustomerArtwork(event: Event, row: CustomerArtworkSes
     status: 'running', startedAt: Date.now(), model: request.model!, prompt: request.prompt, input: editSource, providerCalls: null, billing: 'unknown' };
   const next = { ...row, version: row.version + 1, attempts: [...row.attempts, attempt] };
   request = { ...request, imageSpendPermit: attempt.id };
-  if (!await store.reserveRequest(next, row.version, attempt, request)) throw new CustomerArtworkError('Another request changed this artwork. Refresh to see the saved result.');
+  if (!await store.reserveRequest(next, row.version, attempt, request, paid)) throw new CustomerArtworkError('Another request changed this artwork. Refresh to see the saved result.');
   return { row: next, attempt, request };
 }
 

@@ -24,8 +24,10 @@ export function productionImageConcurrency(env: NodeJS.ProcessEnv = process.env)
   return /^[1-8]$/.test(raw) ? Number(raw) : 0;
 }
 export class ImageSpendGuardError extends Error {
-  constructor(readonly code: 'blocked' | 'duplicate' | 'unavailable') {
-    super('Artwork creation is paused. Your saved images are still available.');
+  constructor(readonly code: 'blocked' | 'duplicate' | 'unavailable' | 'busy' | 'payment-required') {
+    super(code === 'busy' ? 'The artwork service is busy. Please wait for availability before trying again. No artwork request was used.'
+      : code === 'payment-required' ? 'Your first preview is included. Unlock this event to request more artwork.'
+      : 'Artwork creation is paused. Your saved images are still available.');
     this.name = 'ImageSpendGuardError';
   }
 }

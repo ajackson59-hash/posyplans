@@ -414,7 +414,7 @@ describe('isolated Production spending on disposable PostgreSQL', () => {
   it('bounds concurrent distinct events, consumes each permit once and preserves late results after shutdown', async () => {
     const live = await liveStores(); await syntheticAllowance();
     const claims = await Promise.all([event, await createEvent(), await createEvent()].map(item => pending(item)));
-    const reserved = await Promise.allSettled(claims.map(c => live.sessions.reserveRequest(c.next, c.original.version, c.attempt, c.request)));
+    const reserved = await Promise.allSettled(claims.map(c => live.sessions.reserveRequest(c.next, c.original.version, c.attempt, c.request, true)));
     expect(reserved.filter(r => r.status==='fulfilled' && r.value)).toHaveLength(2);
     expect((await livePolicy()).requests_reserved).toBe(2);
     const winners = claims.filter((_c,i) => reserved[i].status==='fulfilled');
@@ -427,7 +427,7 @@ describe('isolated Production spending on disposable PostgreSQL', () => {
     live.env.POSY_PRODUCTION_ARTWORK_GENERATION = 'true';
     expect(await live.spend.available()).toBe(true);
     const third = claims.find((_c,i) => reserved[i].status==='rejected')!;
-    expect(await live.sessions.reserveRequest(third.next, third.original.version, third.attempt, third.request)).toBe(true);
+    expect(await live.sessions.reserveRequest(third.next, third.original.version, third.attempt, third.request, true)).toBe(true);
     expect((await livePolicy()).requests_reserved).toBe(3);
     expect((await policy()).requests_reserved).toBe(0);
   });
@@ -443,6 +443,58 @@ describe('isolated Production spending on disposable PostgreSQL', () => {
     expect(await policy()).toEqual(before);
     await control`update public.image_spend_policies set paused=false where id=${guard.PRODUCTION_IMAGE_SPEND_POLICY}`;
     expect(await live.spend.available()).toBe(false);
+  });
+
+  it('reserves five of 25 initial images for unlocked events and protects all edit capacity atomically', async () => {
+    const live = await liveStores({ POSY_PRODUCTION_IMAGE_CONCURRENCY: '1' });
+    await control`update public.image_spend_policies set paused=false,request_limit=150,create_limit=25,edit_limit=125,
+      requests_reserved=19,creates_reserved=19,stop_reason='disposable_test_only' where id=${guard.PRODUCTION_IMAGE_SPEND_POLICY}`;
+    const claims = await Promise.all([event, await createEvent(), await createEvent()].map(item => pending(item)));
+    const results = await Promise.allSettled(claims.map(c => live.sessions.reserveRequest(c.next,c.original.version,c.attempt,c.request,false)));
+    expect(results.filter(r => r.status === 'fulfilled' && r.value)).toHaveLength(1);
+    expect(await livePolicy()).toMatchObject({ requests_reserved: 20, creates_reserved: 20, edits_reserved: 0 });
+    const winner = claims.find((_c, i) => results[i].status === 'fulfilled')!;
+    const other = claims.find((_c, i) => results[i].status === 'rejected')!;
+    expect(await live.spend.status(other.next.eventId, 'create', false)).toBe('capacity');
+    expect(await live.spend.status(other.next.eventId, 'create', true)).toBe('busy');
+    await live.spend.claimDispatch(winner.request);
+    await live.sessions.finishRequest(winner.next.eventId, knownResult(winner), winner.request.imageSpendExecution!);
+    expect(await live.spend.status(other.next.eventId, 'create', true)).toBe('available');
+    const base = (await live.sessions.get(winner.next.eventId))!;
+    const edited = await pending({ ...event, id: winner.next.eventId }, 'edit', base);
+    await expect(live.sessions.reserveRequest(edited.next,edited.original.version,edited.attempt,edited.request,false))
+      .rejects.toMatchObject({ code: 'payment-required' });
+    // Paid status is supplied by the server's entitlement check, never the browser.
+    expect(await live.sessions.reserveRequest(edited.next,edited.original.version,edited.attempt,edited.request,true)).toBe(true);
+    await live.spend.claimDispatch(edited.request);
+    await live.sessions.finishRequest(edited.next.eventId, knownResult(edited), edited.request.imageSpendExecution!);
+    for (let n = 0; n < 5; n++) {
+      const c = await pending(await createEvent());
+      expect(await live.sessions.reserveRequest(c.next,c.original.version,c.attempt,c.request,true)).toBe(true);
+      await live.spend.claimDispatch(c.request);
+      await live.sessions.finishRequest(c.next.eventId,knownResult(c),c.request.imageSpendExecution!);
+    }
+    expect(await livePolicy()).toMatchObject({ requests_reserved: 26, creates_reserved: 25, edits_reserved: 1 });
+    expect(await live.spend.status(other.next.eventId, 'create', true)).toBe('capacity');
+    expect(await live.spend.status(winner.next.eventId, 'edit', true)).toBe('available');
+    const denied = await pending(await createEvent());
+    await expect(live.sessions.reserveRequest(denied.next,denied.original.version,denied.attempt,denied.request,true))
+      .rejects.toMatchObject({ code: 'blocked' });
+    expect((await livePolicy()).requests_reserved).toBe(26);
+    expect((await policy()).requests_reserved).toBe(0);
+  });
+
+  it('does not reset an unpaid event’s first-look allowance when its brief changes', async () => {
+    const live = await liveStores(); await syntheticAllowance();
+    const c = await pending();
+    await live.sessions.reserveRequest(c.next,c.original.version,c.attempt,c.request,false);
+    await live.spend.claimDispatch(c.request);
+    await live.sessions.finishRequest(event.id,knownResult(c),c.request.imageSpendExecution!);
+    expect(await live.spend.status(event.id, 'create', false)).toBe('payment-required');
+    const next = await pending(event, 'create', (await live.sessions.get(event.id))!);
+    await expect(live.sessions.reserveRequest(next.next,next.original.version,next.attempt,next.request,false))
+      .rejects.toMatchObject({ code: 'payment-required' });
+    expect((await livePolicy()).requests_reserved).toBe(1);
   });
 
   it.each(['0','9','2.5','unlimited',''])('fails closed on invalid concurrency %s', async concurrency => {

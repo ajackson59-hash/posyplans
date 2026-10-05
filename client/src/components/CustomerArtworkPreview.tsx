@@ -20,6 +20,8 @@ export default function CustomerArtworkPreview({ ownerToken, artwork, refresh, p
   const [correction, setCorrection] = useState('');
   const [message, setMessage] = useState('');
   const [uploading, setUploading] = useState(false);
+  const serviceBusy = artwork.availability === 'busy';
+  const needsPayment = artwork.availability === 'payment-required';
   const busy = useRef(false);
   const panel = useRef<HTMLDivElement>(null);
   const latest = artwork.candidates.at(-1);
@@ -38,7 +40,7 @@ export default function CustomerArtworkPreview({ ownerToken, artwork, refresh, p
       customerArtwork: value, checkoutAllowed: value.canContinue,
       generationState: value.state === 'generating' ? 'generating' : value.candidates.length ? 'ready' : 'idle',
       kind: value.candidates.length ? 'customer-artwork' : 'none', ready: value.candidates.length > 0,
-      pollAfterMs: value.state === 'generating' ? 2500 : null,
+      pollAfterMs: value.state === 'generating' ? 2500 : value.availability === 'busy' ? 5000 : null,
     }));
   };
   const action = useMutation({
@@ -49,7 +51,7 @@ export default function CustomerArtworkPreview({ ownerToken, artwork, refresh, p
     onError: async (error: Error) => {
       // An uncertain POST is followed by GET only. The server's saved state
       // tells us what happened; neither the mutation nor provider is retried.
-      setMessage('We lost the response. Checking your saved artwork before another request…');
+      setMessage('Checking availability and your saved artwork before another request…');
       try { const value = await apiRequestJson<CustomerArtworkView>('GET', `/api/events/owner/${ownerToken}/artwork`); saveView(value);
         setMessage(value.state === 'generating' ? 'Your saved request was found. No new request was sent.' : `${error.message} Your saved status has been refreshed. No request was repeated.`); }
       catch { setMessage('We could not reconnect. Refresh the saved status before making another request.'); }
@@ -81,7 +83,7 @@ export default function CustomerArtworkPreview({ ownerToken, artwork, refresh, p
   return <div ref={panel} className="space-y-5 p-5" data-testid="customer-artwork-preview">
     <div>
       <h2 className="font-serif text-xl font-semibold">Your invitation artwork</h2>
-      <p className="mt-1 text-sm text-muted-foreground">{displayed ? 'Review your artwork and keep the image you love.' : requestFailed || !artwork.generationEnabled ? 'Your request is saved. Choose a ready-made design or upload artwork to continue.' : 'Create a preview from your request, or use your own artwork.'}</p>
+      <p className="mt-1 text-sm text-muted-foreground">{displayed ? 'Review your artwork and keep the image you love.' : serviceBusy ? 'Your event details are saved while we check artwork availability.' : requestFailed || !artwork.generationEnabled ? 'Your request is saved. Choose a ready-made design or upload artwork to continue.' : 'Create a preview from your request, or use your own artwork.'}</p>
     </div>
     {displayed ? <div className="space-y-3">
       <img key={`${displayed.imageHash}:${imageRefresh}`} src={displayed.assetUrl} alt="Your invitation artwork draft" className="block w-full h-auto rounded-lg"
@@ -110,7 +112,7 @@ export default function CustomerArtworkPreview({ ownerToken, artwork, refresh, p
       <a className="text-primary underline" href={`mailto:hello@posyplans.com?subject=${encodeURIComponent(`Artwork help ${artwork.supportReference ?? ''}`)}`}>Get help with this request</a>
       <p className="text-xs text-muted-foreground">Reference: {artwork.supportReference}</p>
     </div> : null}
-    {displayed && !['upload', 'template'].includes(displayed.operation) && artwork.generationEnabled && artwork.requestsRemaining > 0 ? <form className="space-y-3" onSubmit={e => { e.preventDefault(); if (canRevise && correction.trim().length >= 5) submit('revise'); }}>
+    {displayed && !['upload', 'template'].includes(displayed.operation) && (artwork.generationEnabled || serviceBusy) && artwork.requestsRemaining > 0 ? <form className="space-y-3" onSubmit={e => { e.preventDefault(); if (canRevise && correction.trim().length >= 5) submit('revise'); }}>
       <Label htmlFor="artwork-correction">What would you like to change?</Label>
       <Textarea id="artwork-correction" value={correction} onChange={e => setCorrection(e.target.value)} maxLength={2000} disabled={pending}
         placeholder="Describe the detail to change and what you would like to keep." />
@@ -141,8 +143,10 @@ export default function CustomerArtworkPreview({ ownerToken, artwork, refresh, p
         {uploading ? <p role="status">Preparing your image…</p> : null}
       </div>
     </details> : null}
-    {!artwork.generationEnabled && !artwork.supportReference ? <p role="status" className="text-sm">Image generation is temporarily unavailable. {artwork.uploadAvailable ? 'You can choose a ready-made design, upload artwork, or keep a saved image.' : 'You can still keep a saved image.'}</p> : null}
-    {!requestFailed && artwork.generationEnabled ? <div className="text-sm text-muted-foreground">
+    {serviceBusy && artwork.state !== 'generating' ? <p role="status" className="text-sm">The artwork service is busy. We’re checking availability automatically. When it’s available, you can submit your request. Waiting does not use an artwork request.</p> : null}
+    {needsPayment ? <p role="status" className="text-sm">Your first preview is included. Keep your image and unlock this event to make further artwork changes.</p> : null}
+    {!artwork.generationEnabled && !serviceBusy && !needsPayment && !artwork.supportReference ? <p role="status" className="text-sm">Image generation is temporarily unavailable. {artwork.uploadAvailable ? 'You can choose a ready-made design, upload artwork, or keep a saved image.' : 'You can still keep a saved image.'}</p> : null}
+    {!requestFailed && (artwork.generationEnabled || serviceBusy || needsPayment) ? <div className="text-sm text-muted-foreground">
       <p>{artwork.requestsRemaining > 0 ? `${artwork.requestsRemaining} artwork ${artwork.requestsRemaining === 1 ? 'request' : 'requests'} remaining for this event.` : 'You’ve reached this event’s artwork limit. Keep a saved image or contact support.'}</p>
       <p>Your first image and each AI image revision use a request. Changing invitation wording does not.</p>
     </div> : null}

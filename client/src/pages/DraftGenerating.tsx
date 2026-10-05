@@ -217,7 +217,7 @@ export default function DraftGenerating() {
     refetchOnReconnect: true,
     refetchInterval: (query) => {
       const current = query.state.data as PrePaymentPreviewReadiness | undefined;
-      return current?.generationState === "generating"
+      return current?.generationState === "generating" || current?.customerArtwork?.availability === 'busy'
         ? current.pollAfterMs ?? 2500
         : false;
     },

@@ -25,9 +25,13 @@ export class DbCustomerArtworkStore implements CustomerArtworkStore {
   async spendingAvailable(eventId?: number) {
     return !imageSpendGuardEnabled(this.env()) || new DbImageSpendStore(this.database, this.env()).available(eventId);
   }
-  async reserveRequest(row: CustomerArtworkSession, expected: number, attempt: CustomerArtworkAttempt, request: ArtworkRequest) {
+  async spendingStatus(eventId: number, operation: 'create' | 'edit', paid: boolean) {
+    return !imageSpendGuardEnabled(this.env()) ? 'available' as const
+      : new DbImageSpendStore(this.database, this.env()).status(eventId, operation, paid);
+  }
+  async reserveRequest(row: CustomerArtworkSession, expected: number, attempt: CustomerArtworkAttempt, request: ArtworkRequest, paid = false) {
     return imageSpendGuardEnabled(this.env())
-      ? new DbImageSpendStore(this.database, this.env()).reserve(row, expected, attempt, request)
+      ? new DbImageSpendStore(this.database, this.env()).reserve(row, expected, attempt, request, paid)
       : this.compareAndSet(row, expected);
   }
   async finishRequest(eventId: number, attempt: CustomerArtworkAttempt, executionId: string): Promise<'handled' | 'unmanaged'> {
