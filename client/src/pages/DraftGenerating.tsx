@@ -995,12 +995,12 @@ export default function DraftGenerating() {
 
         {/* Demo dialog — opens in-place so users see how Posy works without leaving the paywall */}
         <Dialog open={demoOpen} onOpenChange={setDemoOpen}>
-          <DialogContent className="max-w-2xl overflow-y-auto max-h-[90vh]">
+          <DialogContent className="max-w-4xl overflow-y-auto max-h-[90vh]">
             <DialogHeader>
               <DialogTitle>See how Posy builds your plan</DialogTitle>
               <DialogDescription>
-                Watch Posy turn one sentence into a complete event plan — timeline, guests,
-                invitation concepts, envelope customization, and checklist — in 30 seconds.
+                See an example artwork preview, then how unlocking your event leads to a planning
+                draft, artwork changes, and a saved invitation. This walkthrough uses saved images.
               </DialogDescription>
             </DialogHeader>
             <AIDemoShowcase bare autoPlay />

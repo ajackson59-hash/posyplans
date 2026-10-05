@@ -123,7 +123,7 @@ export default function Pricing() {
             data-testid="link-pricing-see-demo"
           >
             <Play className="h-3.5 w-3.5 text-primary" />
-            See what Posy does in 30 seconds
+            Watch an event take shape
           </button>
         </div>
 
@@ -329,11 +329,11 @@ export default function Pricing() {
         >
           <DialogHeader>
             <DialogTitle className="font-serif text-xl">
-              Tell her once. Watch her build the whole plan.
+              See your event take shape
             </DialogTitle>
             <DialogDescription>
-              Describe your event and Posy builds the timeline, guest list, invitation design, and
-              checklist — then you fine-tune the invite live.
+              Follow a garden dinner from its first artwork preview to an unlocked plan,
+              an image refinement, and a saved invitation.
             </DialogDescription>
           </DialogHeader>
           {demoOpen && <AIDemoShowcase bare autoPlay />}
