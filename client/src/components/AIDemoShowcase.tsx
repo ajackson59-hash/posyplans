@@ -124,6 +124,15 @@ export default function AIDemoShowcase({ bare = false, autoPlay = false }: { bar
       aria-current={index === step ? "step" : undefined} aria-label={`Step ${index + 1}: ${item.label}`} onClick={() => goTo(index)}>
       <span>{index < step ? <Check size={13} aria-hidden /> : index + 1}</span><span>{item.label}</span>
     </button>)}</nav>
+    <div className="posy-demo-controls">
+      <Button type="button" variant="ghost" onClick={togglePlayback} aria-label={playing ? "Pause walkthrough" : finished ? "Replay walkthrough" : "Play walkthrough"}>
+        {playing ? <Pause size={16} aria-hidden /> : finished ? <RotateCcw size={16} aria-hidden /> : <Play size={16} aria-hidden />}
+        <span>{playing ? "Pause" : finished ? "Replay" : "Play demo"}</span>
+      </Button>
+      <span data-testid="demo-step-label">{step + 1} of {STEPS.length} · {current.label}</span>
+      <div className="posy-demo-arrows"><Button type="button" variant="ghost" size="icon" aria-label="Previous step" disabled={step === 0} onClick={() => goTo(step - 1)}><ArrowLeft size={18} /></Button>
+        <Button type="button" variant="ghost" size="icon" aria-label="Next step" disabled={step === STEPS.length - 1} onClick={() => goTo(step + 1)}><ArrowRight size={18} /></Button></div>
+    </div>
     <div className="posy-demo-body">
       <div className="posy-demo-story" aria-live={playing ? "off" : "polite"}>
         <span className="posy-demo-eyebrow">{String(step + 1).padStart(2, "0")} / {String(STEPS.length).padStart(2, "0")}</span>
@@ -132,15 +141,6 @@ export default function AIDemoShowcase({ bare = false, autoPlay = false }: { bar
         <div className="posy-demo-story-note"><span aria-hidden>✦</span><span>{current.note}</span></div>
       </div>
       <div className="posy-demo-scene" data-testid="demo-canvas"><div key={step} className="posy-demo-scene-content"><Scene step={step} edited={edited} onEdit={value => { setEdited(value); setPlaying(false); }} /></div></div>
-    </div>
-    <div className="posy-demo-controls">
-      <Button type="button" variant="ghost" onClick={togglePlayback} aria-label={playing ? "Pause walkthrough" : finished ? "Replay walkthrough" : "Play walkthrough"}>
-        {playing ? <Pause size={16} aria-hidden /> : finished ? <RotateCcw size={16} aria-hidden /> : <Play size={16} aria-hidden />}
-        <span>{playing ? "Pause" : finished ? "Replay" : "Play"}</span>
-      </Button>
-      <span data-testid="demo-step-label">{step + 1} of {STEPS.length} · {current.label}</span>
-      <div className="posy-demo-arrows"><Button type="button" variant="ghost" size="icon" aria-label="Previous step" disabled={step === 0} onClick={() => goTo(step - 1)}><ArrowLeft size={18} /></Button>
-        <Button type="button" variant="ghost" size="icon" aria-label="Next step" disabled={step === STEPS.length - 1} onClick={() => goTo(step + 1)}><ArrowRight size={18} /></Button></div>
     </div>
     <div className="posy-demo-caption"><p>Illustrative walkthrough with actual Posy-generated artwork. Steps are shortened; generation times and results vary.</p><a href="/intake">Start your event <ArrowRight size={15} aria-hidden /></a></div>
   </div>;
