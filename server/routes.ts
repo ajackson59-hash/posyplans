@@ -2103,6 +2103,9 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
           ...USD_CHECKOUT_SESSION_DEFAULTS,
           customer_email: email,
           line_items: [{ price: sparkPriceId, quantity: 1 }],
+          // Stripe validates eligibility and redemption limits and exposes
+          // "Add promotion code", including no-card, 100%-off checkouts.
+          allow_promotion_codes: true,
           success_url: `${origin}/draft-generating/${encodeURIComponent(returnToken)}?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${origin}/draft-generating/${encodeURIComponent(returnToken)}?checkout=cancelled`,
           metadata: { plan: "spark", ownerToken: returnToken },
@@ -2184,10 +2187,13 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
       if (unlocked) await stampCapturedEmailForCheckout(unlocked.id, email);
       // Server-side Purchase conversion (Meta CAPI). event_id = session.id so
       // it dedupes against the client Pixel fired on the success page.
+      // Complimentary and discounted events must report the amount actually
+      // settled, rather than counting the advertised price as revenue.
+      const purchaseValue = (session.amount_total ?? Math.round(CHECKOUT_PRICES.spark * 100)) / 100;
       await sendMetaPurchaseEvent({
         email,
         phone: session.customer_details?.phone,
-        value: CHECKOUT_PRICES.spark,
+        value: purchaseValue,
         currency: "USD",
         eventId: session.id,
         eventSourceUrl,
@@ -2199,7 +2205,7 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
         returnToken: ownerToken,
         firedEvent: "spark_unlocked",
         eventId: session.id,
-        value: CHECKOUT_PRICES.spark,
+        value: purchaseValue,
       };
     }
 

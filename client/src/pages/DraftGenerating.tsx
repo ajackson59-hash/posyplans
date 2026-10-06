@@ -948,6 +948,11 @@ export default function DraftGenerating() {
                   When you continue to checkout, Posy will also email your private return link.
                 </p>
               </div>
+              {selectedPlan === "spark" && (
+                <p className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm text-foreground" data-testid="spark-promotion-code-help">
+                  Have a complimentary or discount code? Choose <strong>Add promotion code</strong> on the next checkout screen and apply it before you finish. Your updated total will appear there.
+                </p>
+              )}
               {previewIsVisible && (
                 <button
                   type="button"

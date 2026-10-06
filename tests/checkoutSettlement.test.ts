@@ -120,7 +120,38 @@ describe("payment settlement boundaries", () => {
     fixture.session.amount_total = 0; fixture.session.payment_status = "no_payment_required";
     const result = await request(await appForTest()).get("/api/checkout/confirm?sessionId=cs_test_local");
     expect(result.status).toBe(200); expect(result.body.unlocked).toBe(true);
+    expect(result.body.value).toBe(0);
+    expect(calls.purchase).toHaveBeenCalledWith(expect.objectContaining({ value: 0 }));
     expect(calls.reconcile).not.toHaveBeenCalled(); expect(fixture.boundSubscriptionId).toBeUndefined();
+  });
+  it("reports the settled discount amount rather than the Spark list price", async () => {
+    fixture.session.amount_total = 499;
+    const result = await request(await appForTest()).get("/api/checkout/confirm?sessionId=cs_test_local");
+    expect(result.status).toBe(200); expect(result.body.value).toBe(4.99);
+    expect(calls.purchase).toHaveBeenCalledWith(expect.objectContaining({ value: 4.99 }));
+  });
+  it("fulfills a complimentary event from the signed webhook without requiring a browser return", async () => {
+    fixture.session.amount_total = 0; fixture.session.payment_status = "no_payment_required";
+    const app = await appForTest();
+    expect((await notification(app, "checkout.session.completed")).status).toBe(200);
+    expect(fixture.event?.sparkUnlockedAt).toBeTruthy();
+    expect((await request(app).get(`${path}/master-planner/entitlement`)).body.canGenerate).toBe(true);
+    expect(calls.purchase).toHaveBeenCalledWith(expect.objectContaining({ value: 0 }));
+    expect(calls.reconcile).not.toHaveBeenCalled();
+  });
+  it("offers Stripe's promotion-code entry for Spark without granting access before settlement", async () => {
+    const app = await appForTest();
+    const result = await request(app).post("/api/checkout/create-session")
+      .send({ email: "typed@example.test", plan: "spark", returnToken: owner });
+    expect(result.status).toBe(200);
+    expect(calls.create).toHaveBeenCalledWith(expect.objectContaining({
+      mode: "payment", allow_promotion_codes: true,
+      line_items: [{ price: "price_spark", quantity: 1 }],
+      metadata: { plan: "spark", ownerToken: owner },
+    }));
+    expect(calls.create.mock.calls[0][0].payment_method_collection).toBeUndefined();
+    expect(fixture.event?.sparkUnlockedAt).toBeNull();
+    expect((await request(app).get(`${path}/master-planner/entitlement`)).body.canGenerate).toBe(false);
   });
   it("rejects another product or an absent event without claiming an unlock", async () => {
     const app = await appForTest(); fixture.session.metadata.plan = "other";
@@ -207,6 +238,7 @@ describe("payment settlement boundaries", () => {
     const app = await appForTest();
     expect((await request(app).post("/api/checkout/create-session").send({ email: "typed@example.test", plan: "plus", billingInterval: "monthly", returnToken: owner })).status).toBe(200);
     expect(calls.create).toHaveBeenCalledWith(expect.objectContaining({ subscription_data: { metadata: { plan: "plus", billingInterval: "monthly", returnToken: owner } } }));
+    expect(calls.create.mock.calls[0][0].allow_promotion_codes).toBeUndefined();
     expect(calls.reconcile).not.toHaveBeenCalled(); expect(fixture.boundSubscriptionId).toBeUndefined();
     expect((await request(app).get(`${path}/master-planner/entitlement`)).body.canGenerate).toBe(false);
   });
