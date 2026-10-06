@@ -999,8 +999,8 @@ export default function DraftGenerating() {
             <DialogHeader>
               <DialogTitle>See how Posy builds your plan</DialogTitle>
               <DialogDescription>
-                See an example artwork preview, then how unlocking your event leads to a planning
-                draft, artwork changes, and a saved invitation. This walkthrough uses saved images.
+                See how Posy helps you organize the details, change your invitation image,
+                and invite your guests—in 30 seconds.
               </DialogDescription>
             </DialogHeader>
             <AIDemoShowcase bare autoPlay />
