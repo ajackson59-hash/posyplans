@@ -65,7 +65,7 @@
   .posy-story-result { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 24px; }
   .posy-story-dialogue { text-align: left; align-self: center; max-width: 290px; padding-left: 14px; }.posy-story-speaker { font-size: 11px; }.posy-story-dialogue h3 { font-size: 32px; line-height: 1.14; margin-top: 12px; }.posy-story-desktop-note { display: block; font-size: 13px; line-height: 1.65; margin-top: 15px; color: #69785f; }
   .posy-story-invitation { max-height: 314px; padding: 9px; }.posy-story-invitation-title strong { font-size: 16px; }.posy-story-invitation-title span { font-size: 7px; }
-  .posy-story-card { padding: 13px 15px; }.posy-story-card h5 { font-size: 14px; }.posy-story-card p { font-size: 12px; }.posy-story-plan h4 { font-size: 28px; }.posy-story-plan-note { font-size: 11px; }
+  .posy-story-card { padding: 11px 15px; }.posy-story-card h5 { font-size: 14px; }.posy-story-card p { font-size: 12px; }.posy-story-plan h4 { font-size: 28px; }.posy-story-plan-note { font-size: 11px; }
   .posy-story-chapters { padding: 0 22px; gap: 12px; }.posy-story-chapters button { font-size: 12px; min-height: 51px; }.posy-story-caption { text-align: center; padding: 5px 22px 12px; }
 }
 @media (min-width: 640px) { .posy-story-section { padding: 48px 24px; }.posy-story-intro h2 { font-size: 36px; }.posy-story-intro p { font-size: 15px; }.posy-story-intro { margin-bottom: 25px; } }
