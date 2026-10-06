@@ -332,7 +332,7 @@ export default function Pricing() {
               See your event take shape
             </DialogTitle>
             <DialogDescription>
-              See how Posy turns your idea into an event plan and an invitation—in 30 seconds.
+              Tell Posy your idea. See your invitation, change the mood, and bring your plan together.
             </DialogDescription>
           </DialogHeader>
           {demoOpen && <AIDemoShowcase bare autoPlay />}
