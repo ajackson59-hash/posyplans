@@ -2044,6 +2044,7 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
     // callers that omit it keep the subscription behavior.
     plan: z.enum(["plus", "spark"]).default("plus"),
     billingInterval: z.enum(["annual", "monthly"]).default("annual"),
+    promotionCode: z.string().trim().max(64).optional(),
     // Plus checkout requires an originating event until verified membership
     // linking exists. The handler rejects missing tokens before any writes.
     // For Spark: REQUIRED — the event's ownerToken, since a Spark purchase is
@@ -2057,7 +2058,10 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
     if (!parsed.success) {
       return res.status(400).json({ error: "Please provide a valid email and billing option." });
     }
-    const { email, plan, billingInterval, returnToken } = parsed.data;
+    const { email, plan, billingInterval, returnToken, promotionCode } = parsed.data;
+    if (promotionCode && plan !== "spark") {
+      return res.status(400).json({ error: "Complimentary and discount codes apply to Spark. Choose Spark to use your code." });
+    }
     if (plan === 'plus' && !returnToken) {
       return res.status(400).json({ code: 'event_required_for_plus',
         error: 'Start an event before choosing Plus so your purchase stays connected to it. Already paid? Find your existing event or contact hello@posyplans.com; do not purchase again.' });
@@ -2098,17 +2102,33 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
         return res.status(400).json({ error: "This event couldn't be found for checkout. Please try again from your event." });
       }
       try {
+        // Resolve the customer-facing code with Stripe, never with a local
+        // entitlement bypass. Invalid codes must not open a full-price session.
+        let promotionId: string | undefined;
+        if (promotionCode) {
+          const promotions = await stripe.promotionCodes.list({ code: promotionCode, active: true, limit: 1 });
+          promotionId = promotions.data[0]?.id;
+          if (!promotionId) {
+            return res.status(400).json({ error: "This code is invalid, expired, or fully used. Check it and try again." });
+          }
+        }
         const session = await stripe.checkout.sessions.create({
           mode: "payment",
           ...USD_CHECKOUT_SESSION_DEFAULTS,
           customer_email: email,
           line_items: [{ price: sparkPriceId, quantity: 1 }],
+          // Stripe validates eligibility and redemption limits and exposes
+          // "Add promotion code", including no-card, 100%-off checkouts.
+          ...(promotionId ? { discounts: [{ promotion_code: promotionId }] } : { allow_promotion_codes: true }),
           success_url: `${origin}/draft-generating/${encodeURIComponent(returnToken)}?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${origin}/draft-generating/${encodeURIComponent(returnToken)}?checkout=cancelled`,
           metadata: { plan: "spark", ownerToken: returnToken },
         });
         return res.json({ url: session.url });
       } catch (err) {
+        if (promotionCode && (err as { type?: string })?.type === "StripeInvalidRequestError") {
+          return res.status(400).json({ error: "This code can't be used for this event. It may be expired or fully used. Check it and try again." });
+        }
         console.error("Stripe Spark checkout session creation failed:", err);
         return res.status(502).json({ error: "Couldn't start checkout. Please try again." });
       }
@@ -2184,10 +2204,13 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
       if (unlocked) await stampCapturedEmailForCheckout(unlocked.id, email);
       // Server-side Purchase conversion (Meta CAPI). event_id = session.id so
       // it dedupes against the client Pixel fired on the success page.
+      // Complimentary and discounted events must report the amount actually
+      // settled, rather than counting the advertised price as revenue.
+      const purchaseValue = (session.amount_total ?? Math.round(CHECKOUT_PRICES.spark * 100)) / 100;
       await sendMetaPurchaseEvent({
         email,
         phone: session.customer_details?.phone,
-        value: CHECKOUT_PRICES.spark,
+        value: purchaseValue,
         currency: "USD",
         eventId: session.id,
         eventSourceUrl,
@@ -2199,7 +2222,7 @@ const illustrationUrl = await generateInviteIllustrationWithQualityGate(
         returnToken: ownerToken,
         firedEvent: "spark_unlocked",
         eventId: session.id,
-        value: CHECKOUT_PRICES.spark,
+        value: purchaseValue,
       };
     }
 
