@@ -332,8 +332,7 @@ export default function Pricing() {
               See your event take shape
             </DialogTitle>
             <DialogDescription>
-              Follow a garden dinner from its first artwork preview to an unlocked plan,
-              an image refinement, and a saved invitation.
+              See how Posy turns your idea into an event plan and an invitation—in 30 seconds.
             </DialogDescription>
           </DialogHeader>
           {demoOpen && <AIDemoShowcase bare autoPlay />}

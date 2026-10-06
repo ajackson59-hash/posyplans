@@ -13,14 +13,14 @@ describe('public product walkthrough', () => {
     const fetch = vi.fn(); vi.stubGlobal('fetch', fetch);
     render(<AIDemoShowcase bare />);
     fireEvent.click(screen.getByRole('button', { name: 'Play walkthrough' }));
-    act(() => vi.advanceTimersByTime(8000));
-    expect(screen.getByTestId('demo-step-heading').textContent).toContain('come to life');
+    act(() => vi.advanceTimersByTime(5000));
+    expect(screen.getByTestId('demo-step-heading').textContent).toContain('See your invitation image');
     fireEvent.click(screen.getByRole('button', { name: 'Pause walkthrough' }));
     act(() => vi.advanceTimersByTime(16000));
-    expect(screen.getByTestId('demo-step-label').textContent).toBe('2 of 6 · Preview');
-    fireEvent.click(screen.getByRole('button', { name: 'Step 5: Refine' }));
+    expect(screen.getByTestId('demo-step-label').textContent).toBe('2 of 6');
+    fireEvent.click(screen.getByRole('button', { name: 'Step 5: Make changes' }));
     expect(screen.getByRole('img').getAttribute('src')).toBe('/demo/garden-warmer.webp');
-    fireEvent.click(screen.getByRole('button', { name: 'Original' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Before' }));
     expect(screen.getByRole('img').getAttribute('src')).toBe('/demo/garden-original.webp');
     expect(fetch).not.toHaveBeenCalled();
   });
@@ -28,25 +28,27 @@ describe('public product walkthrough', () => {
     vi.mocked(window.matchMedia).mockReturnValue({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() } as unknown as MediaQueryList);
     render(<AIDemoShowcase bare autoPlay />);
     act(() => vi.advanceTimersByTime(60000));
-    expect(screen.getByTestId('demo-step-label').textContent).toBe('1 of 6 · Describe');
-    fireEvent.click(screen.getByRole('button', { name: 'Step 3: Unlock' }));
-    expect(screen.getByText('The full plan and further artwork requests require an unlock.')).toBeTruthy();
+    expect(screen.getByTestId('demo-step-label').textContent).toBe('1 of 6');
+    fireEvent.click(screen.getByRole('button', { name: 'Step 3: Choose plan' }));
+    expect(screen.getByText('Payment gives you the full plan and image editing.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Next step' }));
-    expect(screen.getByTestId('demo-step-label').textContent).toBe('4 of 6 · Plan');
+    expect(screen.getByTestId('demo-step-label').textContent).toBe('4 of 6');
   });
-  it('finishes without looping and replays only on request', () => {
+  it('finishes in 30 seconds without looping and replays only on request', () => {
     render(<AIDemoShowcase bare autoPlay />);
-    for (let i = 0; i < 6; i++) act(() => vi.advanceTimersByTime(8000));
+    for (let i = 0; i < 5; i++) act(() => vi.advanceTimersByTime(5000));
+    expect(screen.getByRole('button', { name: 'Pause walkthrough' })).toBeTruthy();
+    act(() => vi.advanceTimersByTime(5000));
     expect(screen.getByRole('button', { name: 'Next step' }).hasAttribute('disabled')).toBe(true);
     expect(screen.getByRole('button', { name: 'Replay walkthrough' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Replay walkthrough' }));
-    expect(screen.getByTestId('demo-step-label').textContent).toBe('1 of 6 · Describe');
+    expect(screen.getByTestId('demo-step-label').textContent).toBe('1 of 6');
   });
   it('keeps the same start link and discloses the example when embedded or standalone', () => {
     const ui = render(<AIDemoShowcase />);
     expect(document.querySelector('#see-posy-build')).not.toBeNull();
     expect(screen.getByRole('link', { name: 'Start your event' }).getAttribute('href')).toBe('/intake');
-    expect(screen.getByText(/Illustrative walkthrough with actual Posy-generated artwork/)).toBeTruthy();
+    expect(screen.getByText(/A 30-second example using images made with Posy/)).toBeTruthy();
     ui.rerender(<AIDemoShowcase bare />);
     expect(document.querySelector('#see-posy-build')).toBeNull();
     expect(screen.getByRole('link', { name: 'Start your event' }).getAttribute('href')).toBe('/intake');
