@@ -134,6 +134,7 @@ export default function DraftGenerating() {
   const [previewDecodedMs, setPreviewDecodedMs] = useState<number | null>(null);
   const previewCardRef = useRef<HTMLDivElement>(null);
   const [email, setEmail] = useState("");
+  const [promotionCode, setPromotionCode] = useState("");
   // The paywall shows Spark and Plus side by side rather than burying Plus in a
   // secondary link — repeat hosts were only being offered the per-event unlock.
   const [selectedPlan, setSelectedPlan] = useState<"spark" | "plus">("spark");
@@ -269,6 +270,7 @@ export default function DraftGenerating() {
         email,
         plan: "spark",
         returnToken: ownerToken,
+        ...(promotionCode.trim() ? { promotionCode: promotionCode.trim() } : {}),
       }),
     onSuccess: (result) => {
       window.location.href = result.url;
@@ -428,7 +430,7 @@ export default function DraftGenerating() {
 
   const continueCheckoutLabel =
     selectedPlan === "spark"
-      ? "Continue to checkout — $9.99"
+      ? promotionCode.trim() ? "Continue with code" : "Continue to checkout — $9.99"
       : `Continue to Plus — ${plusInterval === "annual" ? "$99/yr" : "$11.99/mo"}`;
   let paywallCtaLabel = "Show me my personalized first look";
   if (checkoutPending) {
@@ -440,7 +442,7 @@ export default function DraftGenerating() {
   } else if (previewIsVisible) {
     paywallCtaLabel =
       selectedPlan === "spark"
-        ? "Unlock this event — $9.99"
+        ? promotionCode.trim() ? "Continue with code" : "Unlock this event — $9.99"
         : `Subscribe to Plus — ${plusInterval === "annual" ? "$99/yr" : "$11.99/mo"}`;
   }
   if (humanReviewPending) paywallCtaLabel = startPrePaymentPreview.isPending
@@ -949,9 +951,15 @@ export default function DraftGenerating() {
                 </p>
               </div>
               {selectedPlan === "spark" && (
-                <p className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm text-foreground" data-testid="spark-promotion-code-help">
-                  Have a complimentary or discount code? Choose <strong>Add promotion code</strong> on the next checkout screen and apply it before you finish. Your updated total will appear there.
-                </p>
+                <div className="rounded-lg border border-primary/20 bg-primary/5 p-3" data-testid="spark-promotion-code-help">
+                  <Label htmlFor="sparkPromotionCode">Complimentary or discount code (optional)</Label>
+                  <Input id="sparkPromotionCode" name="promotionCode" type="text" autoComplete="off" autoCapitalize="characters" spellCheck={false}
+                    maxLength={64} value={promotionCode} disabled={checkoutPending} placeholder="Enter your code"
+                    aria-describedby="sparkPromotionCodeHelp" data-testid="input-spark-promotion-code"
+                    onChange={e => { setPromotionCode(e.target.value); startSparkCheckout.reset(); }} />
+                  <p id="sparkPromotionCodeHelp" className="mt-1.5 text-xs text-muted-foreground">Your code will be applied before checkout. Check your updated total before confirming.</p>
+                  {startSparkCheckout.isError && <p role="alert" className="mt-2 text-sm text-destructive">{startSparkCheckout.error.message}</p>}
+                </div>
               )}
               {previewIsVisible && (
                 <button

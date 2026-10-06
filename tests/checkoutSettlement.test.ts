@@ -13,11 +13,12 @@ process.env.STRIPE_SECRET_KEY = "sk_test_local_fixture_only";
 const fixture = vi.hoisted(() => ({ event: null as Event | null, entitlement: undefined as EmailEntitlement | undefined,
   session: {} as any, subscription: {} as any, writes: 0, failEmail: false, customerEmail: "verified@example.test" as string | null,
   boundSubscriptionId: undefined as string | undefined, subscriptions: new Map<string, PlusMembershipAccess>() }));
-const calls = vi.hoisted(() => ({ create: vi.fn(), retrieve: vi.fn(), subscription: vi.fn(), email: vi.fn(), analytics: vi.fn(), purchase: vi.fn(), reconcile: vi.fn() }));
+const calls = vi.hoisted(() => ({ create: vi.fn(), promotions: vi.fn(), retrieve: vi.fn(), subscription: vi.fn(), email: vi.fn(), analytics: vi.fn(), purchase: vi.fn(), reconcile: vi.fn() }));
 const signingSecret = "whsec_local_fixture_only";
 const sdk = new Stripe("sk_test_local_fixture_only");
 vi.mock("../server/stripe", async (original) => ({ ...await original<typeof import("../server/stripe")>(),
   getStripe: () => ({ checkout: { sessions: { create: calls.create, retrieve: calls.retrieve } },
+    promotionCodes: { list: calls.promotions },
     subscriptions: { retrieve: calls.subscription }, customers: { retrieve: async () => ({ id: "cus_local", email: fixture.customerEmail }) },
     webhooks: sdk.webhooks }),
   getPriceId: (interval: string) => `price_${interval}`, getSparkPriceId: () => "price_spark",
@@ -100,6 +101,7 @@ beforeEach(() => {
   calls.retrieve.mockImplementation(async () => fixture.session);
   calls.subscription.mockImplementation(async () => fixture.subscription);
   calls.create.mockResolvedValue({ url: "https://checkout.stripe.test/local" });
+  calls.promotions.mockResolvedValue({ data: [{ id: "promo_valid_local" }] });
   calls.email.mockResolvedValue({ ok: true }); calls.purchase.mockResolvedValue({ ok: true });
 });
 
@@ -152,6 +154,34 @@ describe("payment settlement boundaries", () => {
     expect(calls.create.mock.calls[0][0].payment_method_collection).toBeUndefined();
     expect(fixture.event?.sparkUnlockedAt).toBeNull();
     expect((await request(app).get(`${path}/master-planner/entitlement`)).body.canGenerate).toBe(false);
+  });
+  it("resolves a entered code in Stripe and opens checkout with that discount already applied", async () => {
+    const result = await request(await appForTest()).post("/api/checkout/create-session")
+      .send({ email: "typed@example.test", plan: "spark", returnToken: owner, promotionCode: "  posy5  " });
+    expect(result.status).toBe(200);
+    expect(calls.promotions).toHaveBeenCalledWith({ code: "posy5", active: true, limit: 1 });
+    expect(calls.create).toHaveBeenCalledWith(expect.objectContaining({ discounts: [{ promotion_code: "promo_valid_local" }] }));
+    expect(calls.create.mock.calls[0][0].allow_promotion_codes).toBeUndefined();
+    expect(fixture.event?.sparkUnlockedAt).toBeNull();
+  });
+  it("does not fall back to a full-price session when the code cannot be found", async () => {
+    calls.promotions.mockResolvedValueOnce({ data: [] });
+    const result = await request(await appForTest()).post("/api/checkout/create-session")
+      .send({ email: "typed@example.test", plan: "spark", returnToken: owner, promotionCode: "INVALID" });
+    expect(result.status).toBe(400); expect(result.body.url).toBeUndefined();
+    expect(calls.create).not.toHaveBeenCalled(); expect(fixture.event?.sparkUnlockedAt).toBeNull();
+  });
+  it("keeps access locked if Stripe rejects a code at session creation", async () => {
+    calls.create.mockRejectedValueOnce({ type: "StripeInvalidRequestError", code: "promotion_code_expired" });
+    const result = await request(await appForTest()).post("/api/checkout/create-session")
+      .send({ email: "typed@example.test", plan: "spark", returnToken: owner, promotionCode: "EXPIRED" });
+    expect(result.status).toBe(400); expect(result.body.url).toBeUndefined();
+    expect(calls.create).toHaveBeenCalledTimes(1); expect(fixture.event?.sparkUnlockedAt).toBeNull();
+  });
+  it("rejects codes on Plus instead of silently charging a subscription", async () => {
+    const result = await request(await appForTest()).post("/api/checkout/create-session")
+      .send({ email: "typed@example.test", plan: "plus", returnToken: owner, promotionCode: "POSY5" });
+    expect(result.status).toBe(400); expect(calls.create).not.toHaveBeenCalled(); expect(calls.promotions).not.toHaveBeenCalled();
   });
   it("rejects another product or an absent event without claiming an unlock", async () => {
     const app = await appForTest(); fixture.session.metadata.plan = "other";

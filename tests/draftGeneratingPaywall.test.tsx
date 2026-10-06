@@ -120,9 +120,10 @@ describe('human review customer gate', () => {
     await act(async () => readiness.resolve({ humanReview: false, kind: 'none', generationState: 'idle' }));
     await screen.findByTestId('button-skip-preview-checkout');
     fireEvent.change(screen.getByTestId('input-spark-email'), { target: { value: EMAIL } });
+    fireEvent.change(screen.getByLabelText('Complimentary or discount code (optional)'), { target: { value: ' POSY5 ' } });
     fireEvent.click(screen.getByTestId('button-skip-preview-checkout'));
     await waitFor(() => expect(callsTo('/api/checkout/create-session')).toHaveLength(1));
-    expect(callsTo('/api/checkout/create-session')[0][2]).toEqual({ email: EMAIL, plan: 'spark', returnToken: OWNER });
+    expect(callsTo('/api/checkout/create-session')[0][2]).toEqual({ email: EMAIL, plan: 'spark', returnToken: OWNER, promotionCode: 'POSY5' });
     expect(callsTo(`/api/events/owner/${OWNER}/prepayment-preview`)).toHaveLength(0);
   });
   it('shows existing Plus access without starting planning while human review is pending', async () => {
@@ -477,8 +478,11 @@ describe('customer keeps and revises artwork in the normal paywall', () => {
     await waitFor(() => expect(callsTo(`/api/events/owner/${OWNER}/prepayment-preview/readiness`).length).toBeGreaterThan(1));
     expect(callsTo(`/api/events/owner/${OWNER}/prepayment-preview`)).toHaveLength(0);
     fireEvent.change(screen.getByTestId('input-spark-email'), { target: { value: EMAIL } });
+    fireEvent.change(screen.getByLabelText('Complimentary or discount code (optional)'), { target: { value: 'POSY5' } });
+    expect(screen.getByTestId('button-unlock-spark').textContent).toBe('Continue with code');
     fireEvent.submit(screen.getByTestId('button-unlock-spark').closest('form')!);
     await waitFor(() => expect(callsTo('/api/checkout/create-session')).toHaveLength(1));
+    expect(callsTo('/api/checkout/create-session')[0][2]).toMatchObject({ plan: 'spark', promotionCode: 'POSY5' });
   });
   it('recovers a lost revision response with GET and locks further changes while the saved request is running', async () => {
     const running = { ...customerBase, version: 3, state: 'generating' };

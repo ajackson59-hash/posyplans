@@ -158,7 +158,7 @@ export default function Pricing() {
                 <Link href="/intake">Start with Spark</Link>
               </Button>
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Have a complimentary or discount code? Start your event, then choose <strong>Add promotion code</strong> at Spark checkout.
+                Have a complimentary or discount code? Start your event, choose Spark, and enter it in the code field before checkout.
               </p>
             </CardContent>
           </Card>

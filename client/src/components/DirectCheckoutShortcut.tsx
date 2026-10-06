@@ -61,11 +61,13 @@ export default function DirectCheckoutShortcut() {
 
     setPending(true);
     try {
+      const promotionCode = (document.getElementById("sparkPromotionCode") as HTMLInputElement | null)?.value.trim();
       const result = await apiRequestJson<{ url: string }>("POST", "/api/checkout/create-session", {
         email,
         plan: plusSelected ? "plus" : "spark",
         ...(plusSelected ? { billingInterval: annualSelected ? "annual" : "monthly" } : {}),
         returnToken: ownerToken,
+        ...(!plusSelected && promotionCode ? { promotionCode } : {}),
       });
       window.location.href = result.url;
     } catch (error) {
