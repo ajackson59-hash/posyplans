@@ -29,7 +29,7 @@ function Invitation({ edited }: { edited: boolean }) {
 function Plan() {
   return <div className="posy-story-plan">
     <div className="posy-story-plan-title"><Sparkles size={17} aria-hidden /><span>A little less on your plate.</span></div>
-    <h4>Your garden dinner</h4>
+    <h4>Garden dinner</h4>
     <div className="posy-story-plan-grid">
       <div className="posy-story-card"><h5><CalendarDays size={16} aria-hidden /> Schedule</h5><p><b>6:00</b> Drinks</p><p><b>6:30</b> Dinner</p><p><b>8:00</b> Dessert</p></div>
       <div className="posy-story-card"><h5><ClipboardList size={16} aria-hidden /> To-do list</h5><p><Check size={12} aria-hidden /> Plan the menu</p><p><Check size={12} aria-hidden /> Set the table</p><p><Check size={12} aria-hidden /> Check the weather</p></div>
@@ -114,7 +114,7 @@ export default function AIDemoShowcase({ bare = false, autoPlay = false }: { bar
         </div> : step < 3 ? <div className={`posy-story-result${step === 2 ? " is-edit" : ""}`}>
           <div className="posy-story-dialogue">
             <span className="posy-story-speaker">{step === 1 ? <><Sparkles size={14} aria-hidden /> POSY</> : "YOU"}</span>
-            <h3 data-testid="demo-step-heading">{step === 1 ? "A little garden magic, just for you." : <><span className="sr-only">{EDIT}</span><span aria-hidden>{typed}<i className="posy-story-cursor" /></span></>}</h3>
+            <h3 data-testid="demo-step-heading">{step === 1 ? "A little garden magic." : <><span className="sr-only">{EDIT}</span><span aria-hidden>{typed}<i className="posy-story-cursor" /></span></>}</h3>
             <p className="posy-story-desktop-note">{step === 1 ? "An invitation image inspired by your idea." : "Same garden. A warmer glow."}</p>
           </div>
           <div className="posy-story-artwork">
