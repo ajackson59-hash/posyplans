@@ -312,7 +312,7 @@ export default function Home() {
         </section>
 
         {/* AI DEMO — scripted auto-playing showcase */}
-        <AIDemoShowcase />
+        <AIDemoShowcase autoPlay />
 
         {/* GET STARTED — functional entry point (AI wizard vs. manual form) */}
         <section id="get-started" className="mx-auto max-w-6xl px-6 pb-14 sm:pb-20">

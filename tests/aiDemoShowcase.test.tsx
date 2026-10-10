@@ -2,13 +2,75 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import AIDemoShowcase from '@/components/AIDemoShowcase';
 
+let visibleRatio: number;
+let onVisibility: IntersectionObserverCallback;
+function showDemo(ratio: number) {
+  act(() => onVisibility([{ isIntersecting: ratio > 0, intersectionRatio: ratio } as IntersectionObserverEntry], {} as IntersectionObserver));
+}
 beforeEach(() => {
+  visibleRatio = 1;
   vi.useFakeTimers();
   vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
+  vi.stubGlobal('IntersectionObserver', class {
+    constructor(callback: IntersectionObserverCallback) { onVisibility = callback; }
+    observe() { onVisibility([{ isIntersecting: visibleRatio > 0, intersectionRatio: visibleRatio } as IntersectionObserverEntry], this as unknown as IntersectionObserver); }
+    disconnect() {}
+  });
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 
 describe('compact product story', () => {
+  it('waits until half the demo is visible before starting automatically', () => {
+    visibleRatio = 0;
+    render(<AIDemoShowcase autoPlay />);
+    act(() => vi.advanceTimersByTime(20000));
+    expect(screen.getByRole('button', { name: 'Watch Posy in action' })).toBeTruthy();
+    expect(screen.getByRole('img').getAttribute('src')).toBe('/demo/garden-warmer.webp');
+    expect(screen.getByRole('link', { name: 'Plan my event' }).getAttribute('href')).toBe('/intake');
+    showDemo(0.2);
+    act(() => vi.advanceTimersByTime(20000));
+    expect(screen.getByRole('button', { name: 'Watch Posy in action' })).toBeTruthy();
+    showDemo(0.5);
+    expect(screen.getByRole('button', { name: 'Pause walkthrough' })).toBeTruthy();
+    act(() => vi.advanceTimersByTime(3500));
+    expect(screen.getByRole('button', { name: 'Step 2: The reveal' }).getAttribute('aria-current')).toBe('step');
+  });
+  it('stops offscreen, resumes on return, and preserves an intentional pause', () => {
+    render(<AIDemoShowcase autoPlay />);
+    act(() => vi.advanceTimersByTime(3500));
+    showDemo(0);
+    act(() => vi.advanceTimersByTime(20000));
+    expect(screen.getByRole('button', { name: 'Step 2: The reveal' }).getAttribute('aria-current')).toBe('step');
+    showDemo(1);
+    act(() => vi.advanceTimersByTime(4000));
+    expect(screen.getByRole('button', { name: 'Step 3: Make it yours' }).getAttribute('aria-current')).toBe('step');
+    fireEvent.click(screen.getByRole('button', { name: 'Pause walkthrough' }));
+    showDemo(0); showDemo(1);
+    act(() => vi.advanceTimersByTime(20000));
+    expect(screen.getByRole('button', { name: 'Play walkthrough' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Step 3: Make it yours' }).getAttribute('aria-current')).toBe('step');
+  });
+  it('pauses while the browser tab is hidden and resumes without skipping scenes', () => {
+    render(<AIDemoShowcase autoPlay />);
+    act(() => vi.advanceTimersByTime(3500));
+    const hidden = vi.spyOn(document, 'hidden', 'get').mockReturnValue(true);
+    fireEvent(document, new Event('visibilitychange'));
+    act(() => vi.advanceTimersByTime(20000));
+    expect(screen.getByRole('button', { name: 'Step 2: The reveal' }).getAttribute('aria-current')).toBe('step');
+    hidden.mockReturnValue(false);
+    fireEvent(document, new Event('visibilitychange'));
+    act(() => vi.advanceTimersByTime(4000));
+    expect(screen.getByRole('button', { name: 'Step 3: Make it yours' }).getAttribute('aria-current')).toBe('step');
+    hidden.mockRestore();
+  });
+  it('offers manual playback when viewport observation is unavailable', () => {
+    vi.stubGlobal('IntersectionObserver', undefined);
+    render(<AIDemoShowcase autoPlay />);
+    act(() => vi.advanceTimersByTime(20000));
+    fireEvent.click(screen.getByRole('button', { name: 'Watch Posy in action' }));
+    act(() => vi.advanceTimersByTime(3500));
+    expect(screen.getByRole('button', { name: 'Step 2: The reveal' }).getAttribute('aria-current')).toBe('step');
+  });
   it('shows the idea, reveals the image, and visibly applies an edit without API calls', () => {
     const fetch = vi.fn(); vi.stubGlobal('fetch', fetch);
     render(<AIDemoShowcase bare />);
