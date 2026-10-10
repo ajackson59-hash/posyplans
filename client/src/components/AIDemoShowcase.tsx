@@ -49,6 +49,7 @@ export default function AIDemoShowcase({ bare = false, autoPlay = false }: { bar
   const [reducedMotion, setReducedMotion] = useState(false);
   const [motionReady, setMotionReady] = useState(false);
   const [inView, setInView] = useState(false);
+  const [autoplayInView, setAutoplayInView] = useState(false);
   const [pageVisible, setPageVisible] = useState(() => !document.hidden);
   const [comparison, setComparison] = useState<boolean | null>(null);
   const container = useRef<HTMLDivElement>(null);
@@ -75,7 +76,10 @@ export default function AIDemoShowcase({ bare = false, autoPlay = false }: { bar
     if (!container.current) return;
     // Older browsers keep manual playback available without starting offscreen.
     if (typeof IntersectionObserver === "undefined") { setInView(true); return; }
-    const observer = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting && entry.intersectionRatio >= 0.5), { threshold: 0.5 });
+    const observer = new IntersectionObserver(([entry]) => {
+      setInView(entry.isIntersecting);
+      setAutoplayInView(entry.isIntersecting && entry.intersectionRatio >= 0.5);
+    }, { threshold: [0, 0.5] });
     observer.observe(container.current);
     return () => observer.disconnect();
   }, []);
@@ -87,12 +91,12 @@ export default function AIDemoShowcase({ bare = false, autoPlay = false }: { bar
   }, []);
 
   useEffect(() => {
-    if (!autoPlay || !motionReady || reducedMotion || !inView || !pageVisible || autoplayHandled.current || typeof IntersectionObserver === "undefined") return;
+    if (!autoPlay || !motionReady || reducedMotion || !autoplayInView || !pageVisible || autoplayHandled.current || typeof IntersectionObserver === "undefined") return;
     autoplayHandled.current = true;
     setShowPoster(false);
     setStarted(true);
     setPlaying(true);
-  }, [autoPlay, motionReady, reducedMotion, inView, pageVisible]);
+  }, [autoPlay, motionReady, reducedMotion, autoplayInView, pageVisible]);
 
   useEffect(() => {
     if (!running) return;

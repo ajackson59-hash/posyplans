@@ -50,6 +50,14 @@ describe('compact product story', () => {
     expect(screen.getByRole('button', { name: 'Play walkthrough' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Step 3: Make it yours' }).getAttribute('aria-current')).toBe('step');
   });
+  it('lets a visitor start playback before the autoplay visibility threshold', () => {
+    visibleRatio = 0.2;
+    render(<AIDemoShowcase autoPlay />);
+    fireEvent.click(screen.getByRole('button', { name: 'Play walkthrough' }));
+    expect(screen.getByRole('button', { name: 'Pause walkthrough' })).toBeTruthy();
+    act(() => vi.advanceTimersByTime(3500));
+    expect(screen.getByRole('button', { name: 'Step 2: The reveal' }).getAttribute('aria-current')).toBe('step');
+  });
   it('pauses while the browser tab is hidden and resumes without skipping scenes', () => {
     render(<AIDemoShowcase autoPlay />);
     act(() => vi.advanceTimersByTime(3500));
