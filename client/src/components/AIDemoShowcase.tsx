@@ -45,12 +45,17 @@ export default function AIDemoShowcase({ bare = false, autoPlay = false }: { bar
   const [elapsed, setElapsed] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [started, setStarted] = useState(false);
+  const [showPoster, setShowPoster] = useState(true);
   const [reducedMotion, setReducedMotion] = useState(false);
-  const [inView, setInView] = useState(true);
+  const [motionReady, setMotionReady] = useState(false);
+  const [inView, setInView] = useState(false);
+  const [autoplayInView, setAutoplayInView] = useState(false);
+  const [pageVisible, setPageVisible] = useState(() => !document.hidden);
   const [comparison, setComparison] = useState<boolean | null>(null);
   const container = useRef<HTMLDivElement>(null);
+  const autoplayHandled = useRef(false);
   const finished = elapsed >= DURATION;
-  const running = playing && !finished;
+  const running = playing && !finished && inView && pageVisible;
   const step = elapsed < 3500 ? 0 : elapsed < 7500 ? 1 : elapsed < 14000 ? 2 : 3;
   const current = CHAPTERS[step];
   const sceneTime = elapsed - current.start;
@@ -61,39 +66,54 @@ export default function AIDemoShowcase({ bare = false, autoPlay = false }: { bar
   useEffect(() => {
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
     setReducedMotion(motion.matches);
-    if (autoPlay && !motion.matches) { setStarted(true); setPlaying(true); }
+    setMotionReady(true);
     const onMotion = () => { setReducedMotion(motion.matches); if (motion.matches) setPlaying(false); };
     motion.addEventListener("change", onMotion);
     return () => motion.removeEventListener("change", onMotion);
-  }, [autoPlay]);
+  }, []);
 
   useEffect(() => {
-    if (!container.current || typeof IntersectionObserver === "undefined") return;
-    const observer = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), { threshold: 0.2 });
+    if (!container.current) return;
+    // Older browsers keep manual playback available without starting offscreen.
+    if (typeof IntersectionObserver === "undefined") { setInView(true); return; }
+    const observer = new IntersectionObserver(([entry]) => {
+      setInView(entry.isIntersecting);
+      setAutoplayInView(entry.isIntersecting && entry.intersectionRatio >= 0.5);
+    }, { threshold: [0, 0.5] });
     observer.observe(container.current);
     return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
-    const pauseWhenHidden = () => { if (document.hidden) setPlaying(false); };
+    const pauseWhenHidden = () => setPageVisible(!document.hidden);
     document.addEventListener("visibilitychange", pauseWhenHidden);
     return () => document.removeEventListener("visibilitychange", pauseWhenHidden);
   }, []);
 
   useEffect(() => {
-    if (!running || !inView) return;
+    if (!autoPlay || !motionReady || reducedMotion || !autoplayInView || !pageVisible || autoplayHandled.current || typeof IntersectionObserver === "undefined") return;
+    autoplayHandled.current = true;
+    setShowPoster(false);
+    setStarted(true);
+    setPlaying(true);
+  }, [autoPlay, motionReady, reducedMotion, autoplayInView, pageVisible]);
+
+  useEffect(() => {
+    if (!running) return;
     const timer = window.setInterval(() => setElapsed(value => Math.min(value + 50, DURATION)), 50);
     return () => window.clearInterval(timer);
-  }, [running, inView]);
+  }, [running]);
 
-  const goTo = (index: number) => { setPlaying(false); setStarted(false); setComparison(null); setElapsed(CHAPTERS[index].start); };
+  const goTo = (index: number) => { autoplayHandled.current = true; setShowPoster(false); setPlaying(false); setStarted(false); setComparison(null); setElapsed(CHAPTERS[index].start); };
   const togglePlayback = () => {
+    autoplayHandled.current = true;
+    setShowPoster(false);
     if (finished) { setElapsed(0); setComparison(null); }
     setStarted(true);
     setPlaying(finished || !playing);
   };
   const compare = (value: boolean) => { setComparison(value); setPlaying(false); };
-  const player = <div ref={container} className={`posy-story${running && inView ? " is-playing" : ""}`} data-testid="ai-demo-container">
+  const player = <div ref={container} className={`posy-story${running ? " is-playing" : ""}`} data-testid="ai-demo-container">
     <div className="posy-story-toolbar">
       <span className="posy-story-brand"><Sparkles size={16} aria-hidden /> posy</span>
       <span className="posy-story-runtime">18-second demo</span>
@@ -104,8 +124,16 @@ export default function AIDemoShowcase({ bare = false, autoPlay = false }: { bar
       </button>
     </div>
     <div className="posy-story-stage" data-testid="demo-canvas" aria-live={running ? "off" : "polite"}>
-      <div className="posy-story-scene" key={step}>
-        {step === 0 ? <div className="posy-story-conversation">
+      <div className="posy-story-scene" key={showPoster ? "poster" : step}>
+        {showPoster ? <div className="posy-story-result posy-story-poster">
+          <div className="posy-story-dialogue">
+            <h3 data-testid="demo-step-heading">Your idea, brought to life.</h3>
+            <p className="posy-story-desktop-note">A beautiful invitation. A plan to go with it.</p>
+          </div>
+          <div className="posy-story-artwork"><Invitation edited />
+            <button type="button" className="posy-story-watch" onClick={togglePlayback}><Play size={16} aria-hidden /> Watch Posy in action</button>
+          </div>
+        </div> : step === 0 ? <div className="posy-story-conversation">
           <div className="posy-story-avatar"><Sparkles size={23} aria-hidden /></div>
           <h3 data-testid="demo-step-heading">What are you imagining?</h3>
           <div className="posy-story-input"><span className="sr-only">{PROMPT}</span><p aria-hidden>{typed}<i className="posy-story-cursor" /></p><span className="posy-story-send" aria-hidden><ArrowUp size={20} /></span></div>
@@ -140,6 +168,7 @@ export default function AIDemoShowcase({ bare = false, autoPlay = false }: { bar
     <div className="posy-story-section-inner">
       <div className="posy-story-intro"><h2 data-testid="text-demo-heading">You imagine it. Posy gets it started.</h2><p>One idea. A beautiful invitation. A plan to go with it.</p></div>
       {player}
+      <a className="posy-story-cta posy-story-section-cta" href="/intake">Plan my event <ArrowRight size={16} aria-hidden /></a>
     </div>
   </section>;
 }
